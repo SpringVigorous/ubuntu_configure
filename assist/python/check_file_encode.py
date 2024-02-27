@@ -4,9 +4,9 @@ import chardet
 def detect_encoding(file_path):
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
-    
+    # print(file_path,result)
     # 返回检测到的编码
-    return result['encoding']
+    return result['encoding'].lower()
 
 # 获取文件路径
 # file_path = r'F:\test_data\gbk.txt'

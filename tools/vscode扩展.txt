@@ -1,0 +1,24 @@
+CodeGeex
+通义灵码
+
+
+c/c++
+c/c++ Runner
+Chinese
+CMake
+Cmake Tools
+Cmake-format
+
+Code Runner
+Dev Containers
+
+
+Python
+Python Debugger
+ 
+
+Remote -SSH
+WSL
+
+
+
