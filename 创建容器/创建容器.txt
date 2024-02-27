@@ -1,0 +1,51 @@
+﻿1.拉取ubuntu最新镜像
+docker pull ubuntu
+
+2.创建编译容器
+docker run -it --name drawing_split --hostname drawing_split -v /mnt/e/Bim/BJY/drawing_split_linux:/src ubuntu bash
+
+
+
+3.在当前的运行的Ubuntu下进行相关apt操作
+
+apt update
+apt -y   install cmake g++ git net-tools vim openssh-server build-essential
+
+4.进入生成容器是挂载的/src目录
+  cd /src
+
+5.配置gitlab下相关ssh key相关内容(按自己要求配置)
+git config --global user.name spring_flourish
+git config --global user.email "spring_flourish@outlook.com"
+ssh-keygen -t rsa -C "spring_flourish@outlook.com"
+
+cat /root/.ssh/id_rsa.pub
+拷贝以上id_rsa.pub到个人gitlab代码仓的ssh key配置
+
+6.获取drawing_split代码仓
+git clone [git@code.hjbim.com:15004]:AI/drawing_split.git
+
+7.进入drawing_split
+cd drawing_split
+
+8.构建与编译
+
+cmake -H. -Bbuild && cmake --build build
+
+9.编译成功后安装omp5
+
+apt install libomp5
+10.启动程序验证
+
+./build/bin/drawing_split_main /src/drawing_split/test/data/ZG5HX-S-04-CZ28-02JG-02-12.dwg
+
+
+
+重启容器
+docker start -i drawing_split
+
+运行容器
+docker exec -it drawing_split /bin/bash
+
+docker exec -it cmake_test /bin/bash
+
