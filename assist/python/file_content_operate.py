@@ -1,4 +1,4 @@
-﻿import str_tools as st
+﻿import string_tools as st
 
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
     # 打开并读取A.txt文件内容到字符串content中
@@ -35,7 +35,7 @@ def convert_encode(source_path,dest_path,source_encoding,dest_encoding):
 
 
 
-if __name__ != '__main__':
+if __name__ == '__main__':
 
     replace_tuples=[
     ('法撒', 'A'),

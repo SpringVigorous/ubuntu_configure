@@ -2,7 +2,7 @@
 import fold_operate as fo
 import file_content_operate as fc
 import check_file_encode as fe
-import str_tools as st
+import string_tools as st
 
 def replace_file_str(source_path, dest_path, replace_list_tuple):
     encoding = fe.detect_encoding(source_path)
@@ -31,5 +31,9 @@ def replace_files_str(source_dir, dest_dir, replace_list_tuple):
 
 
 if __name__ == "__main__":
-    folder=r"F:\vcpkg\installed\x64-windows\share\glm"
+    folder=r"F:\test_data\glm"
+    list_tuple=[
+        ("glm","glm_new"),
+        ("GLM","GLM_new")
+        ]
     replace_files_str(folder,os.path.dirname(folder),[("glm","glm_new"),("GLM","GLM_new")])
