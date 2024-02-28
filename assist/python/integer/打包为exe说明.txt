@@ -1,6 +1,8 @@
 ﻿eg:pyinstaller --onefile --distpath /path/to/output/directory  --icon=your_icon.ico your_script.py 
 
 
+文件夹、内容及文件名 按照指定关键词全替换
+带详细参数调用
 打包：
 pyinstaller --onefile --distpath F:/test/ubuntu_configure/assist/python/exe F:/test/ubuntu_configure/assist/python/integer/replace_folders_params.py
 调用：
@@ -10,7 +12,7 @@ vscode 调试参数：
 
 
 
-
+json文件路径作为参数
 打包：
 pyinstaller --onefile --distpath F:/test/ubuntu_configure/assist/python/exe F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.py
 调用：

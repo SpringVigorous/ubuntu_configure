@@ -6,7 +6,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 # 现在尝试相对导入
 from base import replace_files_str as rf
-
+from base import hold_on as ho
 def main():
     # 检查是否有足够的参数被提供
     if len(sys.argv) < 4:
@@ -23,3 +23,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    ho.hold_on()
