@@ -4,7 +4,8 @@ docker pull ubuntu
 2.创建编译容器
 docker run -it --name drawing_split --hostname drawing_split -v /mnt/e/Bim/BJY/drawing_split_linux:/src ubuntu bash
 
-
+eg:
+docker run -it --name cmake_test --hostname cmake_test -v /mnt/f/test/cmake_test:/src spring:v2 bash
 
 3.在当前的运行的Ubuntu下进行相关apt操作
 
@@ -43,9 +44,23 @@ apt install libomp5
 
 重启容器
 docker start -i drawing_split
+docker start -i cmake_test
+
 
 运行容器
 docker exec -it drawing_split /bin/bash
 
+eg：
 docker exec -it cmake_test /bin/bash
 
+
+打包container到image
+
+container:spring 打包到镜像spring:v1
+docker commit -a spring -m 包含g++\cmake\git  spring spring:v1
+
+docker commit -a spring -m 更新包  cmake_test spring:v2
+
+
+安装常用软件
+sudo apt -y   install cmake g++ git net-tools vim openssh-server build-essential

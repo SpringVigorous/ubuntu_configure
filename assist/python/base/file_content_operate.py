@@ -1,4 +1,4 @@
-﻿import string_tools as st
+﻿import base.string_tools as st
 
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
     # 打开并读取A.txt文件内容到字符串content中

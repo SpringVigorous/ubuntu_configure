@@ -1,0 +1,19 @@
+﻿eg:pyinstaller --onefile --distpath /path/to/output/directory  --icon=your_icon.ico your_script.py 
+
+
+打包：
+pyinstaller --onefile --distpath F:/test/ubuntu_configure/assist/python/exe F:/test/ubuntu_configure/assist/python/integer/replace_folders_params.py
+调用：
+F:/test/ubuntu_configure/assist/python/exe/replace_folders_params.exe  F:/test_data/glm F:/test_data/  glm glm_new GLM GLM_new
+vscode 调试参数：
+"F:/test_data/glm","F:/test_data/","glm","glm_new","GLM","GLM_new"
+
+
+
+
+打包：
+pyinstaller --onefile --distpath F:/test/ubuntu_configure/assist/python/exe F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.py
+调用：
+F:/test/ubuntu_configure/assist/python/exe/replace_folders_json.exe F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.json
+vscode 调试参数：
+"F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.json"

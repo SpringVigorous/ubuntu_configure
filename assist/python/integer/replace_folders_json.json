@@ -1,0 +1,18 @@
+{
+    "items": [
+        {
+            "source_folder": "F:/test_data/glm",
+            "dest_folder": "F:/test_data/",
+            "replace_args": [
+                [
+                    "glm",
+                    "glm_new"
+                ],
+                [
+                    "GLM",
+                    "GLM_new"
+                ]
+            ]
+        }
+    ]
+}

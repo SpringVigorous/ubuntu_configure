@@ -1,8 +1,8 @@
 ﻿import os
-import fold_operate as fo
-import file_content_operate as fc
-import check_file_encode as fe
-import string_tools as st
+import base.fold_operate as fo
+import base.file_content_operate as fc
+import base.check_file_encode as fe
+import base.string_tools as st
 
 def replace_file_str(source_path, dest_path, replace_list_tuple):
     encoding = fe.detect_encoding(source_path)

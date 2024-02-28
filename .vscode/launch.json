@@ -6,7 +6,17 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "args": [ // 添加这里作为参数列表
+        "F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.json"
+        // "F:/test_data/glm",
+        // "F:/test_data/",
+        // "glm",
+        // "glm_new",
+        // "GLM",
+        // "GLM_new"
+      ],
+      "justMyCode": true
     },
     {
       "name": "C/C++ Runner: Debug Session",

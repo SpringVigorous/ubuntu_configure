@@ -1,6 +1,12 @@
 # Prerequisites
 *.d
 *.pyc
+*.spec
+
+
+build/
+__pycache__/
+*/exe/
 
 # Compiled Object files
 *.slo
