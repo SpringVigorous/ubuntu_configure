@@ -4,6 +4,8 @@
 *.spec
 *.log
 
+*.secrets.*
+
 build/
 __pycache__/
 */exe/

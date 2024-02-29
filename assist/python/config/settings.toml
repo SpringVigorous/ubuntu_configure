@@ -1,0 +1,6 @@
+# 默认配置
+
+log_name = "log"
+level = "debug"
+log_level = "debug"
+console_level = "debug"

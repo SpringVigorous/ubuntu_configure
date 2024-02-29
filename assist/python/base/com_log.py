@@ -1,6 +1,11 @@
 ﻿import logging
 from enum import Enum
 import os
+from pathlib import Path
+import json
+import sys
+
+
 
 logger :logging.Logger=None
 def str_to_level(level_str:str)->int:
@@ -13,7 +18,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="debug",conso
         logger = logging.getLogger(logger_name)
         logger.setLevel(str_to_level(level))# 设置日志级别，这里设置为DEBUG，可以根据需要修改
         # 创建一个处理器并设置其输出格式
-        formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(funcName)s() - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s-%(filename)s:%(lineno)d-%(funcName)s()-%(levelname)s-%(message)s')
 
 
         # 再创建一个handler，用于输出到控制台
@@ -36,13 +41,35 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="debug",conso
     return logger    
 
 
+project_root =str(Path(__file__).resolve().parent.parent)
+if not project_root in sys.path:
+    sys.path.insert(0,project_root)
+from config import settings
+log_name=settings.get("log_name","info")
+level=settings.get("level","debug")
+log_level = settings.get("log_level","debug")
+console_level = settings.get("console_level","debug")
+
+create_logger(log_name, level, log_level, console_level)
+
+
 if __name__ == "__main__":
     
     file_name=os.path.basename(__file__)
-
     create_logger(file_name, "debug", "debug", "warning")
     logger.debug("Debugging information")
     logger.info("Normal information message")
     logger.warning("Warning occurred")
     logger.error("An error happened")
     logger.critical("Critical error")
+
+    # folder= os.path.dirname(os.path.dirname(__file__))
+    # with open(os.path.join(folder,"config/log_config.json"), "r",encoding="utf-8-sig") as f:
+    #     log_config = json.load(f)
+    # log_name=log_config.get("log_name","info")
+    # level=log_config.get("level","debug")
+    # log_level = log_config.get("log_level","debug")
+    # console_level = log_config.get("console_level","debug")
+
+    # create_logger(log_name, level, log_level, console_level)
+    

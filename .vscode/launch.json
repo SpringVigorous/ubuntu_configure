@@ -6,7 +6,8 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "args": ["F:/test/ubuntu_configure/assist/python/integer/replace_folders_json.json"]
     },
     {
       "name": "C/C++ Runner: Debug Session",

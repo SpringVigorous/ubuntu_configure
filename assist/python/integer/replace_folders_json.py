@@ -16,12 +16,12 @@ for module_path in [project_root,os.path.join(project_root,"base")]:
 # asp.add_sys_path(os.path.join(project_root,"base"))
 from base.com_log import logger as logger
 
-global logger
 
 # logger.info(sys.path)
 
 import  base.replace_files_str as rf
 import  base.hold_on as ho
+import  base.com_decorator as cd
 
 def show_error():
     template_json={
@@ -45,13 +45,18 @@ def show_error():
     if logger :
         logger.Warning("json文件示例如下：")
         logger.Warning(json.dumps(template_json, indent=4))
+
+
+
+
+@cd.details_decorator
+@cd.exception_decorator
 def main():
     # 检查是否有足够的参数被提供
     if len(sys.argv) < 2:
         if logger:
             logger.error("Not enough arguments provided.")
             return
-                    
     _,json_file,*args=sys.argv
     if not (os.path.exists(json_file) and os.path.isfile(json_file)):
         if logger:
@@ -70,18 +75,24 @@ def main():
         return
 
     has_error=False
-    for item  in data["items"]:
+    for index,item  in  enumerate(data["items"]):
         try:
-            rf.replace_files_str(item["source_folder"],item["dest_folder"],item["replace_args"])
+            if logger :
+                logger.info(f"第{index}个替换数据：{str(item) }")      
+            if not rf.replace_files_str(item["source_folder"],item["dest_folder"],item["replace_args"]):
+                has_error=True
+            if logger :
+                result_str="成功" if not has_error else "失败"
+                fun=logger.error if has_error else logger.info
+                fun(f"第{index}个替换: {result_str}")      
+
         except KeyError:
             has_error=True
     if has_error:
         show_error()
 
 if __name__ == "__main__":
-    from base.com_log import create_logger as create_logger
-    file_name=os.path.basename(__file__)
-
-    logger=create_logger(file_name,"debug","debug","debug")
     main()
+    if logger :
+        logger.info("替换完成")
     ho.hold_on()
