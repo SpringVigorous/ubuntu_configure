@@ -6,12 +6,20 @@ import json
 
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
-# 现在尝试相对导入
-from base import replace_files_str as rf
-from base import hold_on as ho
+project_root =str(Path(__file__).resolve().parent.parent)
 
+for module_path in [project_root,os.path.join(project_root,"base")]:
+    if not module_path in sys.path:
+        sys.path.insert(0,module_path)
+
+
+# import base.add_sys_path as asp
+# asp.add_sys_path(os.path.join(project_root,"base"))
+
+print(sys.path)
+
+import  base.replace_files_str as rf
+import  base.hold_on as ho
 
 def show_error():
     template_json={

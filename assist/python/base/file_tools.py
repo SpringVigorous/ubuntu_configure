@@ -1,19 +1,22 @@
-﻿import base.string_tools as st
+﻿import string_tools as st
+import decorator as cd 
 
+
+@cd.details_decorator
+@cd.timer_decorator
+@cd.exception_decorator
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
-    # 打开并读取A.txt文件内容到字符串content中
-    with open(source_path, 'r',encoding=source_encoding) as file:
-        content = file.read()
+        with open(source_path, 'r',encoding=source_encoding) as file:
+            content = file.read()
 
-    if operate_fun:
-        content=operate_fun(content)
+        if operate_fun:
+            content=operate_fun(content)
 
-    if dest_encoding=="":
-        dest_encoding=source_encoding
-    # 将处理后的content保存到B.txt文件中
-    with open(dest_path, 'w',encoding=dest_encoding) as file:
-        file.write(content)
-
+        if dest_encoding=="":
+            dest_encoding=source_encoding
+        # 将处理后的content保存到B.txt文件中
+        with open(dest_path, 'w',encoding=dest_encoding) as file:
+            file.write(content)
 def replace_content_diff_encode( source_path,dest_path,source_encoding, dest_encoding="",replace_list_tuple=None):
 
     def replace_content(content:str)->str:

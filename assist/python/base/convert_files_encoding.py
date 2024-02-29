@@ -3,8 +3,8 @@ import os
 import codecs
 
 import check_file_encode as ce
-import fold_operate as fs
-import file_content_operate as fc
+import fold_tools as fs
+import file_tools as fc
 # 定义函数：将文件内容从源编码转换为目标编码
 def convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding):
     """

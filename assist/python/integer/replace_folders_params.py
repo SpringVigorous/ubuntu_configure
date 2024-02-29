@@ -1,10 +1,14 @@
 ﻿
 import sys
 from pathlib import Path
+
+
 # 将当前脚本所在项目的根路径添加到sys.path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 # 现在尝试相对导入
+from base import add_sys_path as adp
+adp.add_sys_path(__file__,2)
 from base import replace_files_str as rf
 from base import hold_on as ho
 def main():
