@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
 project_root =str(Path(__file__).resolve().parent.parent)
-
 for module_path in [project_root,os.path.join(project_root,"base")]:
     if not module_path in sys.path:
         sys.path.insert(0,module_path)
@@ -15,8 +14,11 @@ for module_path in [project_root,os.path.join(project_root,"base")]:
 
 # import base.add_sys_path as asp
 # asp.add_sys_path(os.path.join(project_root,"base"))
+from base.com_log import logger as logger
 
-print(sys.path)
+global logger
+
+# logger.info(sys.path)
 
 import  base.replace_files_str as rf
 import  base.hold_on as ho
@@ -39,18 +41,21 @@ def show_error():
             ]
         }
     ]
-}
-    print("json文件示例如下：")
-    print(json.dumps(template_json, indent=4))
+    }
+    if logger :
+        logger.Warning("json文件示例如下：")
+        logger.Warning(json.dumps(template_json, indent=4))
 def main():
     # 检查是否有足够的参数被提供
     if len(sys.argv) < 2:
-        print("Not enough arguments provided.")
-        return
+        if logger:
+            logger.error("Not enough arguments provided.")
+            return
                     
     _,json_file,*args=sys.argv
     if not (os.path.exists(json_file) and os.path.isfile(json_file)):
-        print("json文件未找到")
+        if logger:
+            logger.error("json文件未找到")
         show_error()
         return 
     # 使用内置的open()函数以读模式打开文件
@@ -59,7 +64,8 @@ def main():
          data= json.load(file)
     
     if not "items" in data:
-        print("json文件格式错误:")
+        if logger:
+            logger.error("json文件格式错误:")
         show_error()
         return
 
@@ -73,5 +79,9 @@ def main():
         show_error()
 
 if __name__ == "__main__":
+    from base.com_log import create_logger as create_logger
+    file_name=os.path.basename(__file__)
+
+    logger=create_logger(file_name,"debug","debug","debug")
     main()
     ho.hold_on()

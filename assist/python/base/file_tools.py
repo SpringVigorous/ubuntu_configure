@@ -1,16 +1,23 @@
 ﻿import string_tools as st
-import decorator as cd 
+import com_decorator as cd 
+from com_log import logger as global_logger
 
-
-@cd.details_decorator
-@cd.timer_decorator
+# @cd.details_decorator
+# @cd.timer_decorator
 @cd.exception_decorator
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
         with open(source_path, 'r',encoding=source_encoding) as file:
             content = file.read()
 
+        is_same=True
         if operate_fun:
-            content=operate_fun(content)
+            result_content=operate_fun(content)
+            if result_content ==content:
+                if global_logger:
+                    global_logger.info(f"{source_path}:内容未被修改,保留原始内容")
+            else:
+                is_same=False
+                content=result_content
 
         if dest_encoding=="":
             dest_encoding=source_encoding
@@ -22,7 +29,7 @@ def replace_content_diff_encode( source_path,dest_path,source_encoding, dest_enc
     def replace_content(content:str)->str:
         return st.replace_list_tuple_str(content,replace_list_tuple)
     if dest_encoding=="":
-        dest_encoding=source_encoding
+        dest_encoding=source_encoding 
     operate_content_diff_encode(source_path, dest_path,source_encoding,dest_encoding,replace_content)
 
 def operate_content_same_encode( source_path,dest_path,encoding, operate_fun):

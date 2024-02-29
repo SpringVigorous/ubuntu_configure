@@ -1,23 +1,30 @@
-﻿cd /d F:/test/ubuntu_configure/assist/python
+﻿切换目录：
+cd /d F:/test/ubuntu_configure/assist/python
 或 cd F:/test/ubuntu_configure/assist/python
 
 eg:pyinstaller --onefile --distpath /path/to/output/directory  --icon=your_icon.ico your_script.py 
-
+-p: 添加搜索路径，可以有多个
+-i: 生成程序的图标
+--onefile: 打包成一个exe文件
+--noconsole: 不显示控制
 
 文件夹、内容及文件名 按照指定关键词全替换
 带详细参数调用
+python.exe integer/replace_folders_params.py  F:/test_data/glm F:/test_data/  glm glm_new GLM GLM_new
 打包：
-pyinstaller --onefile --distpath exe -p F:/test/ubuntu_configure/assist/python -p base integer/replace_folders_params.py
-调用：
+pyinstaller --onefile --distpath exe -p . -p base integer/replace_folders_params.py  --strip --name="指定参数替换" --specpath spec
 exe/replace_folders_params.exe  F:/test_data/glm F:/test_data/  glm glm_new GLM GLM_new
+exe/指定参数替换.exe  F:/test_data/glm F:/test_data/  glm glm_new GLM GLM_new
 vscode 调试参数：
 "F:/test_data/glm","F:/test_data/","glm","glm_new","GLM","GLM_new"
 
 
 
+
 json文件路径作为参数
+python.exe integer/replace_folders_json.py integer/replace_folders_json.json
 打包：
-pyinstaller --onefile --distpath exe -p F:/test/ubuntu_configure/assist/python -p base integer/replace_folders_json.py
+pyinstaller --onefile --distpath exe -p . -p base integer/replace_folders_json.py
 调用：
 exe/replace_folders_json.exe integer/replace_folders_json.json
 vscode 调试参数：

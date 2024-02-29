@@ -5,6 +5,7 @@ import codecs
 import check_file_encode as ce
 import fold_tools as fs
 import file_tools as fc
+from com_log import logger as global_logger
 # 定义函数：将文件内容从源编码转换为目标编码
 def convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding):
     """
@@ -42,7 +43,8 @@ def convert_file_to_dest_encoding(file_path, dest_path, dest_encoding):
     dest_encoding (str): 目标文件的字符编码
     """
     source_encoding =ce.detect_encoding(file_path)
-    # print(file_path, "源编码:", source_encoding, "目标编码:", dest_encoding)
+    if global_logger:
+        global_logger.debug(file_path, "源编码:", source_encoding, "目标编码:", dest_encoding)
     if source_encoding!= dest_encoding:
         convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding)
 

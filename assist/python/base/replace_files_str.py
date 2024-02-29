@@ -3,9 +3,9 @@ import fold_tools as fo
 import file_tools as fc
 import check_file_encode as fe
 import string_tools as st
-import decorator as dr 
+import com_decorator as dr 
 import sys
-print(sys.path)
+import path_tools as pt
 
 @dr.exception_decorator
 def replace_file_str(source_path, dest_path, replace_list_tuple):
@@ -18,7 +18,8 @@ def replace_files_str(source_dir, dest_dir, replace_list_tuple):
     org_base_dir=os.path.basename(source_dir)
     folder_name =st.replace_list_tuple_str(org_base_dir,replace_list_tuple)
     dest_dir=os.path.join(dest_dir,folder_name)
-    fo.clear_folder(dest_dir)
+    if pt.path_equal(source_dir,dest_dir):
+        fo.clear_folder(dest_dir)
     for root, dirs, files in os.walk(source_dir):
         # 构建输出文件路径
         relative_path = st.replace_list_tuple_str(os.path.relpath(root, source_dir),replace_list_tuple)

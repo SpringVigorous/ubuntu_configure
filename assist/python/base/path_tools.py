@@ -1,6 +1,7 @@
 ﻿import sys
 from pathlib import Path
 import os
+import system_tools as st
 
 def get_folder_path(dir_path:str,track_index:int=0):
     while track_index>0:
@@ -26,5 +27,13 @@ def add_sys_path(file_path:str,track_index:int=0):
     # 获取当前文件的绝对路径
     parent_dir_path = str(current_file_path.parent)
     return __add_sys_path_by_dir(parent_dir_path,track_index)
+
+def path_equal(path1:str,path2:str)->bool:
+     path1=os.path.normpath(str(Path(path1).resolve()))
+     path2=os.path.normpath(str(Path(path2).resolve()))
+     if st.is_windows():
+        return os.path.normcase(path1)==os.path.normcase(path2)
+     return path1==path2
+
 
 

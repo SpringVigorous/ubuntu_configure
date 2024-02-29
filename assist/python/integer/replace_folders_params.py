@@ -1,20 +1,22 @@
 ﻿
 import sys
 from pathlib import Path
-
+import os
 
 # 将当前脚本所在项目的根路径添加到sys.path
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
-# 现在尝试相对导入
-from base import add_sys_path as adp
-adp.add_sys_path(__file__,2)
+# 将当前脚本所在项目的根路径添加到sys.path
+project_root =str(Path(__file__).resolve().parent.parent)
+for module_path in [project_root,os.path.join(project_root,"base")]:
+    if not module_path in sys.path:
+        sys.path.insert(0,module_path)
+
+
 from base import replace_files_str as rf
 from base import hold_on as ho
 def main():
     # 检查是否有足够的参数被提供
     if len(sys.argv) < 4:
-        print("Not enough arguments provided.")
+        logger.info("Not enough arguments provided.")
         return
                     
     _,org_folder,dest_folder,*args=sys.argv

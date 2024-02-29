@@ -1,8 +1,12 @@
-﻿import add_sys_path as asp
+﻿import path_tools as asp
+
 
 asp.add_sys_path(__file__)
 
-from decorator import exception_decorator
+from com_decorator import exception_decorator
+
+
+
 
 
 
@@ -16,4 +20,3 @@ def replace_list_tuple_str(content:str,replace_list_tuple=None)->str:
         content = content.replace(c, d)
     return content
 
-print()

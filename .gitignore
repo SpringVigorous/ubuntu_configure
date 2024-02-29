@@ -2,7 +2,7 @@
 *.d
 *.pyc
 *.spec
-
+*.log
 
 build/
 __pycache__/

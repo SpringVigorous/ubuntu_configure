@@ -1,10 +1,11 @@
 import chardet
-
+from com_log import logger as global_logger
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path):
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
-    print(file_path,result)
+    if global_logger:
+        global_logger.info(file_path,result)
     # 返回检测到的编码
     return result['encoding'].lower()
 
@@ -18,4 +19,4 @@ def detect_encoding(file_path):
 # with open(file_path, 'r', encoding=encoding) as f:
 #     content = f.read()
 
-# print(content)
+# logger.info(content)
