@@ -1,10 +1,10 @@
 {
-    "LOG_NAME":"tag-log",
+    "LOG_NAME":"tag-info",
     "LOG":{
-        "log_pre":"tag",
         "level":"info",
         "log_level":"debug",
         "console_level":"debug",
-        "log_info":"tag-log"
+        "log_pre":"tag",
+        "log_name":"tag-info"
     }
 }

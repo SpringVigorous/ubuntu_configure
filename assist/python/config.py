@@ -9,12 +9,13 @@ settings = Dynaconf(
     env_switcher="LAUNCH_ENV",
     # envvar_prefix="DYNACONF",
 
-    # settings_files=['config/settings.yaml','config/.secrets.yaml'],
-    settings_files=['config/settings.yaml'],
+    settings_files=['config/settings.yaml','config/.secrets.yaml'],
+    # settings_files=['config/settings.yaml'],
     environments=True,
     # 环境变量前缀，环境变量导出方式 `export CONF_FOO=bar` 变成 `settings.foo == "bar"`
     envvar_prefix="CONFIG",
     lowercase_read=True,
+    merge_enabled=True,
 )
 
 
