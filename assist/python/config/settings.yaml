@@ -1,9 +1,9 @@
-# 默认配置
 
+# 默认配置的环境配置
 config:
+  log_name: &varname "@jinja {{this.log.log_pre}}-log"
   log:
-    log_name: &varname "@jinja {{this.log_pre}}-log"
-    log_pre: info
+    log_pre: tag
     level: info
     log_level: debug
     console_level: debug
