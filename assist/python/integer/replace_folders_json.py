@@ -43,8 +43,7 @@ def show_error():
     ]
     }
     if logger :
-        logger.Warning("json文件示例如下：")
-        logger.Warning(json.dumps(template_json, indent=4))
+        logger.warning("json文件示例如下：\n{}".format(json.dumps(template_json,indent=4)))
 
 
 
@@ -95,4 +94,4 @@ if __name__ == "__main__":
     main()
     if logger :
         logger.info("替换完成")
-    ho.hold_on()
+    # ho.hold_on()

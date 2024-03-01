@@ -1,1 +1,10 @@
-{}
+{
+    "LOG":{
+        "log_name":"-log",
+        "log_pre":"info",
+        "level":"info",
+        "log_level":"debug",
+        "console_level":"debug",
+        "log_info":"-log"
+    }
+}

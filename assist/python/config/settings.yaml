@@ -1,0 +1,10 @@
+# 默认配置
+
+config:
+  log:
+    log_name: &varname "@jinja {{this.log_pre}}-log"
+    log_pre: info
+    level: info
+    log_level: debug
+    console_level: debug
+    log_info: *varname
