@@ -17,12 +17,15 @@ import base.file_tools as  ft
 import base.check_file_encode as fe
 import base.fold_tools as fo
 import base.path_tools as pt
-
+from base.com_log import logger as logger
+import base.com_decorator as dr 
+@dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = fe.detect_encoding(source_path)
     if len(dest_path)==0:
         dest_path=source_path
     ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)
+    logger.info(f"[{source_path}]->[{dest_path}]:{source_encoding}->{dest_encoding}")
 
 
 if __name__ == '__main__':
@@ -49,7 +52,7 @@ if __name__ == '__main__':
 
     input_agrs = args.input
     if not os.path.exists(input_agrs):
-        print(f"文件{input_agrs}不存在")
+        logger.error(f"文件{input_agrs}不存在")
         exit(1)
     # if len(args.output)>0 else input_agrs
     output=args.output
@@ -81,7 +84,7 @@ if __name__ == '__main__':
         
         folder_name = get_real_name(org_base_dir)
         output=os.path.join(output,folder_name)
-        if pt.path_equal(input_agrs,output):
+        if not pt.path_equal(input_agrs,output):
             fo.clear_folder(output)
         for root, dirs, files in os.walk(input_agrs):
             # 构建输出文件路径

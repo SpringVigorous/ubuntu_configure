@@ -39,6 +39,7 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
             dest_encoding=source_encoding
         # 将处理后的content保存到B.txt文件中
         write_content_by_encode(dest_path,dest_encoding,content)
+
 def replace_content_diff_encode( source_path,dest_path,source_encoding, dest_encoding="",replace_list_tuple=None):
 
     def replace_content(content:str)->str:
