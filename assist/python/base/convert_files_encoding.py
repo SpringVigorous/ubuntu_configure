@@ -104,5 +104,5 @@ def convert_folder_encoding(input_folder, file_filter, dest_encoding):
 
 if __name__ == "__main__":
     # 使用示例：将 "F:\test_data" 文件夹下所有 .txt 文件编码转换为 utf-8-sig
-        #gbk，gb2312,ascii,utf8
+        #gbk，gb2312,ascii,utf8,utf-8-sig
     convert_folder_encoding(r"F:\test_data", [".txt"], 'utf-8-sig')

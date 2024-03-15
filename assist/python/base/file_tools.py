@@ -2,13 +2,29 @@
 import com_decorator as cd 
 from com_log import logger as global_logger
 
+#读入文件
+@cd.exception_decorator
+def read_content_by_encode(source_path,source_encoding):
+        with open(source_path, 'r',encoding=source_encoding) as file:
+            content = file.read()
+            return content
+        return None
+    
+# 写到文件
+@cd.exception_decorator
+def write_content_by_encode(dest_path,dest_encoding,content):
+        with open(dest_path, 'w',encoding=dest_encoding) as file:
+            file.write(content)
+
+
 # @cd.details_decorator
 # @cd.timer_decorator
 @cd.exception_decorator
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
-        with open(source_path, 'r',encoding=source_encoding) as file:
-            content = file.read()
-
+        content=read_content_by_encode(source_path,source_encoding)
+        if content is None:
+            return 
+        
         is_same=True
         if operate_fun:
             result_content=operate_fun(content)
@@ -22,8 +38,7 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
         if dest_encoding=="":
             dest_encoding=source_encoding
         # 将处理后的content保存到B.txt文件中
-        with open(dest_path, 'w',encoding=dest_encoding) as file:
-            file.write(content)
+        write_content_by_encode(dest_path,dest_encoding,content)
 def replace_content_diff_encode( source_path,dest_path,source_encoding, dest_encoding="",replace_list_tuple=None):
 
     def replace_content(content:str)->str:
