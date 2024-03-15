@@ -2,11 +2,12 @@
 vcpkg export cereal:x64-windows --output=vcpkg --output-dir="E:/test/cmake_project/3rd" --raw
 
 //后续安装时，直接安装到对应目录
-vcpkg  install cereal:x64-windows --x-install-rat="E:/test/cmake_project/3rd/vcpkg/installed"
+vcpkg  install cereal:x64-windows --x-install-root="E:/test/cmake_project/3rd/vcpkg/installed"
+或
+vcpkg  install cereal:x64-windows --x-install-root="F:/test/cmake_project/3rd/vcpkg/installed"
 
 
 
-
-vcpkg install range-v3:x64-windows cxxopts:x64-windows
+vcpkg install range-v3:x64-windows cxxopts:x64-windows --x-install-root="F:/test/cmake_project/3rd/vcpkg/installed"
 
 
