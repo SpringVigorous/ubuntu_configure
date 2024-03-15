@@ -23,8 +23,14 @@ vscode 调试参数：
 
 json文件路径作为参数
 python.exe integer/replace_folders_json.py integer/replace_folders_json.json
+
+python.exe integer/replace_folders_json.py integer/replace_folders_json_copy.json
+
 打包：
-pyinstaller --onefile --distpath exe -p . -p base integer/replace_folders_json.py
+pyinstaller --onefile --distpath exe -p . -p base -p config integer/replace_folders_json.py
+
+带配置文件
+pyinstaller --onefile --distpath exe -p . -p base -p config --add-data "config/settings.yaml:." --add-data "config/.secrets.yaml:." integer/replace_folders_json.py
 调用：
 exe/replace_folders_json.exe integer/replace_folders_json.json
 vscode 调试参数：

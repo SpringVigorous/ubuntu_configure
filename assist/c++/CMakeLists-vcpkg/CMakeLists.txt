@@ -24,7 +24,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Version must be at end of project params
 project(
-  Recognition
+  ProjectExample
   LANGUAGES CXX C)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/bigobj>")

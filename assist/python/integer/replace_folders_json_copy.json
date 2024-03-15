@@ -1,0 +1,30 @@
+{
+    "items": [
+        {
+            "source_folder": "F:/test/ubuntu_configure/assist/c++/im_export_macro",
+            "dest_folder": "F:/test/test_c",
+            "replace_args": [
+                [
+                    "tools",
+                    "hm_kernel"
+                ],
+                [
+                    "TOOLS",
+                    "HM_KERNEL"
+                ],
+                [
+                    "ExampleClass",
+                    "hm_test"
+                ],
+                [
+                    "EXAMPLE_CLASS",
+                    "HM_TEST"
+                ],
+                [
+                    "example_class",
+                    "hm_test"
+                ]
+            ]
+        }
+    ]
+}

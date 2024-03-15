@@ -17,7 +17,7 @@ target_include_directories(${tools_dll} PUBLIC include)
 set_target_properties(${tools_dll} PROPERTIES DEBUG_POSTFIX "_d")
 ds_source_group_by_dir(tools_all)
 
-include_globally( ${tools_all} logger global_path ${CMAKE_CURRENT_LIST_DIR}/include)
+include_globally(target ${tools_all}  global_path ${CMAKE_CURRENT_LIST_DIR}/include)
 
 # #以下不建议这么做
 # #全局
