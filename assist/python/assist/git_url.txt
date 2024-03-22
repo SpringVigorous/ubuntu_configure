@@ -47,3 +47,4 @@ F:/test/v2024	https://gitee.com/houdunren/v2024.git
 F:/test/vimrc	https://github.com/archibate/vimrc.git
 F:/test/vptree-draw	https://github.com/bfraboni/vptree-draw.git
 F:/test/yazi-web	https://github.com/kaifamiao/yazi-web.git
+"F:\test\co_async" https://github.com/archibate/co_async.git" 

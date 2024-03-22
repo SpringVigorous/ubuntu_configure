@@ -43,6 +43,8 @@ if __name__ == '__main__':
 
     # 添加一个可选参数（optional argument）--output或-o，后面跟随一个值，表示输出文件的路径
     parser.add_argument('-r', '--replace_args', type=str,  help='替换参数文件的路径') 
+    
+
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     # 解析命令行参数并存储到args变量中
@@ -84,6 +86,8 @@ if __name__ == '__main__':
         
         folder_name = get_real_name(org_base_dir)
         output=os.path.join(output,folder_name)
+        if output==folder_name :
+            output=input_agrs
         if not pt.path_equal(input_agrs,output):
             fo.clear_folder(output)
         for root, dirs, files in os.walk(input_agrs):
@@ -102,3 +106,4 @@ if __name__ == '__main__':
 # 使用方法
 # python main.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json 
     
+# python main.py -i F:/test/co_async/co_async -c utf-8-sig 

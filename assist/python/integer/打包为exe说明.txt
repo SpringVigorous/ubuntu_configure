@@ -35,3 +35,9 @@ pyinstaller --onefile --distpath exe -p . -p base -p config --add-data "config/s
 exe/replace_folders_json.exe integer/replace_folders_json.json
 vscode 调试参数：
 "integer/replace_folders_json.json"
+
+
+打包 main
+pyinstaller --onefile --distpath exe -p . -p base -p integer  --add-data "config/*.yaml:config" --distpath .\exe integer/main.py
+
+exe/main.exe --help
