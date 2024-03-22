@@ -46,16 +46,16 @@ if __name__ == '__main__':
     
 
     # 添加一个可选参数（optional argument）--output或-o，后面跟随一个值，表示输出文件的路径
-    parser.add_argument('-f', '--filter', type=str,  help='筛选指定类型:多个值时以“;”分割;为空时取消该筛选类型 ') 
+    parser.add_argument('-f', '--filter', type=str,  help='筛选指定类型:多个值时以“;”分割;为空时取消该筛选类型;eg: .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl') 
                                                                                                                  
     # 添加一个布尔标志（boolean flag）--verbose或-v，无须指定值，存在即为True
-    parser.add_argument('-v', '--verbose', action='store_true', help='开启详细模式')
+    parser.add_argument('-e', '--clear', action='store_true', help='删除目标目录')
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     # 解析命令行参数并存储到args变量中
     args = parser.parse_args()
 
     # 使用解析后的参数执行相应的操作
-    value= args.verbose
+    is_clear= args.clear
     
     input_agrs = args.input
     if input_agrs is None or  not os.path.exists(input_agrs):
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         output=os.path.join(output,folder_name)
         if output==folder_name :
             output=input_agrs
-        if not pt.path_equal(input_agrs,output):
+        if not pt.path_equal(input_agrs,output) and is_clear:
             fo.clear_folder(output)
         for root, dirs, files in os.walk(input_agrs):
             # 构建输出文件路径
@@ -114,4 +114,4 @@ if __name__ == '__main__':
 # 使用方法
 # python main.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json 
     
-# python main.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl
+# python main.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 

@@ -8,7 +8,7 @@
 
 build/
 __pycache__/
-*/exe/
+assist/python/exe/
 
 # Compiled Object files
 *.slo
