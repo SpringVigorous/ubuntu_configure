@@ -3,7 +3,7 @@ import os
 import sys
 from functools import partial
 import json
-
+import sys
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
 project_root =str(Path(__file__).resolve().parent.parent)
@@ -47,16 +47,20 @@ if __name__ == '__main__':
 
     # 添加一个可选参数（optional argument）--output或-o，后面跟随一个值，表示输出文件的路径
     parser.add_argument('-f', '--filter', type=str,  help='筛选指定类型:多个值时以“;”分割;为空时取消该筛选类型 ') 
+                                                                                                                 
+    # 添加一个布尔标志（boolean flag）--verbose或-v，无须指定值，存在即为True
+    parser.add_argument('-v', '--verbose', action='store_true', help='开启详细模式')
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     # 解析命令行参数并存储到args变量中
     args = parser.parse_args()
 
     # 使用解析后的参数执行相应的操作
-
+    value= args.verbose
+    
     input_agrs = args.input
-    if not os.path.exists(input_agrs):
+    if input_agrs is None or  not os.path.exists(input_agrs):
         logger.error(f"文件{input_agrs}不存在")
-        exit(1)
+        sys.exit(0)
     # if len(args.output)>0 else input_agrs
     output=args.output
        
@@ -99,7 +103,7 @@ if __name__ == '__main__':
             dest_dir_path = os.path.abspath(os.path.join(output, relative_path)) 
             for file in files:
                 if has_filter and  not any(file.endswith(ext) for ext in filter_agrs):
-                        continue
+                   continue
                 org_file_path = os.path.join(root, file)
                 os.makedirs(dest_dir_path, exist_ok=True)
                 dest_file_path=os.path.join(dest_dir_path, get_real_name(file))
@@ -110,4 +114,4 @@ if __name__ == '__main__':
 # 使用方法
 # python main.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json 
     
-# python main.py -i F:/test/co_async/co_async -c utf-8-sig 
+# python main.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl

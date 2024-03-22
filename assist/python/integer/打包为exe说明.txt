@@ -38,6 +38,16 @@ vscode 调试参数：
 
 
 打包 main
+linux 或mac:
 pyinstaller --onefile --distpath exe -p . -p base -p integer  --add-data "config/*.yaml:config" --distpath .\exe integer/main.py
 
+windows:
+//config 为空
+pyinstaller --onefile --distpath exe -p . -p base -p integer  --add-data "config/*.yaml;./config" --distpath .\exe integer/main.py
+
+//config 只有settings.yaml，而没有.secrets.yaml
+pyinstaller --distpath exe -p . -p base -p integer  --add-data "config/*.yaml;./config" --distpath .\exe integer/main.py
+
+文件夹形式，不是单独exe;好处是 配置文件 全部在config文件夹中，可以手动修改后，动态运行
+pyinstaller  --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe integer/main.py
 exe/main.exe --help

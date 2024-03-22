@@ -32,14 +32,17 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="debug",conso
         logger.addHandler(console_handler)
 
         # 创建文件Handler并设置日志级别与格式
-        os.makedirs("logs",exist_ok=True)
-        file_handler = logging.FileHandler(f'logs/{logger_name}.log', encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
+        log_dir=os.path.join(os.getcwd(), 'logs')
+        os.makedirs(log_dir,exist_ok=True)
+        log_path=os.path.join(log_dir, f'{logger_name}.log')
+        file_handler = logging.FileHandler(log_path, encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
         file_handler.setLevel(str_to_level(log_level))  # 文件处理器处理的日志级别设为INFO，可根据需求调整
         file_handler.setFormatter(formatter)  # 使用相同的格式化器
         # 添加文件Handler到日志器
         logger.addHandler(file_handler)
 
         # 开始使用日志器记录信息
+        logger.info(f'log file path: {log_path}')
 
     return logger    
 
