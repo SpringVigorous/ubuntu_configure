@@ -45,7 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--replace_args', type=str,  help='替换参数文件的路径') 
     
 
-
+    # 添加一个可选参数（optional argument）--output或-o，后面跟随一个值，表示输出文件的路径
+    parser.add_argument('-f', '--filter', type=str,  help='筛选指定类型:多个值时以“;”分割;为空时取消该筛选类型 ') 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     # 解析命令行参数并存储到args变量中
     args = parser.parse_args()
@@ -64,6 +65,8 @@ if __name__ == '__main__':
     dest_encoding=args.encoding 
     has_encoding =len(args.encoding )>0
     operate_funcs=[]
+    filter_agrs=args.filter.split(";") if args.filter is not None else []
+    has_filter=len(filter_agrs)>0
     if has_replace_args:
         with open(args.replace_args, 'r') as file:
     # 使用json.load()方法将文件内容解析为Python对象（通常是字典）
@@ -95,7 +98,8 @@ if __name__ == '__main__':
             relative_path = get_real_name(os.path.relpath(root, input_agrs))
             dest_dir_path = os.path.abspath(os.path.join(output, relative_path)) 
             for file in files:
-
+                if has_filter and  not any(file.endswith(ext) for ext in filter_agrs):
+                        continue
                 org_file_path = os.path.join(root, file)
                 os.makedirs(dest_dir_path, exist_ok=True)
                 dest_file_path=os.path.join(dest_dir_path, get_real_name(file))
