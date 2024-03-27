@@ -5,7 +5,7 @@ def detect_encoding(file_path):
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
     if global_logger:
-        global_logger.info(file_path,result)
+        global_logger.info(f" {file_path} 检测到文件编码：{result}")
     # 返回检测到的编码
     return result['encoding'].lower()
 

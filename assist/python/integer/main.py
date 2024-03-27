@@ -25,7 +25,7 @@ def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     if len(dest_path)==0:
         dest_path=source_path
     ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)
-    logger.info(f"[{source_path}]->[{dest_path}]:{source_encoding}->{dest_encoding}")
+    logger.info(f"[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
 
 
 if __name__ == '__main__':
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     
     input_agrs = args.input
     if input_agrs is None or  not os.path.exists(input_agrs):
-        logger.error(f"文件{input_agrs}不存在")
+        logger.error(f"文件 {input_agrs} 不存在")
         sys.exit(0)
     # if len(args.output)>0 else input_agrs
     output=args.output

@@ -50,4 +50,5 @@ pyinstaller --distpath exe -p . -p base -p integer  --add-data "config/*.yaml;./
 
 文件夹形式，不是单独exe;好处是 配置文件 全部在config文件夹中，可以手动修改后，动态运行
 pyinstaller  --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe integer/main.py
+
 exe/main.exe --help
