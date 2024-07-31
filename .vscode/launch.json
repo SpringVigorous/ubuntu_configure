@@ -9,18 +9,12 @@
       "console": "integratedTerminal",
       "cwd": "F:/test/ubuntu_configure/assist/python/",
       "args": [
-        "-v",
-        // "-c",
-        // "utf-8-sig",
-        // "-i",
-        // "F:/test/co_async/co_async",
-        // "--verbose",
-        // "F:/test/ubuntu_configure/assist/c++/im_export_macro",
-        // "-o",
-        // "F:/test/test_c",
-        // "-r",
-        // "F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json"
-
+        "-i",
+        "F:/test/co_async/",
+        "-c",
+        "utf-8-sig",
+        "-f",
+        ".hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl"
       ]
     },
     {
@@ -30,14 +24,14 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "f:/test_data",
-      "program": "f:/test_data/build/Debug/outDebug",
+      "cwd": "f:/test/ubuntu_configure/assist/c++/im_export_macro/src",
+      "program": "f:/test/ubuntu_configure/assist/c++/im_export_macro/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-priexenting",
+          "text": "-enable-pretty-printing",
           "ignoreFailures": true
         }
       ]

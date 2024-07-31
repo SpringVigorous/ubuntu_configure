@@ -56,24 +56,33 @@ def remove_directories_and_files(root_dir,del_folder,del_filter,exclude_strs):
             if check_str_in_list(file_extension,del_filter):
                 file_path = os.path.join(root, file_name).replace("\\" , "/")
                 del_dir_file(file_path,exclude_strs)
+from collections import Counter
 
+def unique(original_list):
+    
+    
+    counter = Counter(original_list)
+    return list(counter.keys())
 
 
 if __name__ == '__main__':
 # 调用函数并传入目录路径
 
-    parser = argparse.ArgumentParser(description='删除特定文件夹及特定类型的文件\n eg:  -r  G:/练习集/C++/6.20 -d Debug,Release,ipch,.vs -f .sdf,.suo,.db -x 3rd')
+    parser = argparse.ArgumentParser(description='删除特定文件夹及特定类型的文件,放到回收站中\n eg:  -r  G:/练习集/C++/6.20 -d Debug,Release,ipch,.vs -f .sdf,.suo,.db -x 3rd[删除roott目录下所有Debug,Release,ipch,.vs文件夹及 排除3rd文件夹后所有的.sdf,.suo,.db文件,]')
     
     parser.add_argument('-r', '--root', type=str,  help='当前目录')
     parser.add_argument('-d', '--fold', type=str,  help='删除特定文件夹列表')
     parser.add_argument('-f', '--filter', type=str,  help='特定类型的文件列表')
     parser.add_argument('-x', '--exclude', type=str,  help='排除的特定名称列表')
+
     args = parser.parse_args()
     
     root_agrs = args.root
-    folder_agrs = args.fold.split(',')
-    filter_agrs = args.filter.split(',')
-    exclude_agrs = args.exclude.split(',')
+    folder_agrs = args.fold.split(',') if not args.fold==None else ["."] #默认删除当前目录
+    filter_agrs = args.filter.split(',') if not args.filter==None else []
+    exclude_agrs = args.exclude.split(',') if not args.exclude==None else []
+    
+    folder_agrs=[ s.strip() if s.strip() != "." else root_agrs for s in folder_agrs]
     
     if len(folder_agrs) < 1 :
         folder_agrs == ["Debug","Release","ipch"]
@@ -83,7 +92,7 @@ if __name__ == '__main__':
         exclude_agrs == ["3rd"]
     
     # remove_directories_and_files('your_{expression_str}_path_here',["Debug","Release","ipch"],[".suo",".db"]) 
-    remove_directories_and_files(root_agrs,folder_agrs,filter_agrs,exclude_agrs) 
+    remove_directories_and_files(root_agrs,unique(folder_agrs),unique(filter_agrs),unique(exclude_agrs)) 
     
         
 # 打包说明：pyinstaller --onefile --distpath exe -p . --distpath .\exe remove_special_fold.py
@@ -91,3 +100,7 @@ if __name__ == '__main__':
 
 # exe运行
 # remove_special_fold.exe -r  G:/练习集/C++/6.20 -d Debug,Release,ipch,.vs -f .sdf,.suo,.db -x 3rd
+
+
+# 删除临时文件：remove_special_fold.exe -r F:\test\ubuntu_configure\assist\python\red_book\python代码\ -d exe,log,build
+# 删除临时文件：remove_special_fold.exe -r "F:\test\ubuntu_configure\assist\python\red_book\python代码\" -d . -f .spec

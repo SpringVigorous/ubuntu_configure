@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             // "args": " -r  'F:/练习集/C++' -d 'Debug,Release,ipch,.vs' -f '.sdf,.suo,.db' -x '3rd'"
-            "args": " -i 'E:/小红书竞标/修改后/output/'"
+            "args": " -r 'F:/test/ubuntu_configure/assist/python/red_book/python代码/' -d . -f '.spec'"
         }
     ]
 }
