@@ -1,0 +1,10 @@
+{
+    "LOG_NAME":"tag-info",
+    "LOG":{
+        "level":"trace",
+        "log_level":"debug",
+        "console_level":"debug",
+        "log_pre":"tag",
+        "log_name":"tag-info"
+    }
+}

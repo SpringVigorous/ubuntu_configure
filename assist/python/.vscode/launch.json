@@ -9,7 +9,10 @@
       "console": "integratedTerminal",
       // "cwd": "F:/test/ubuntu_configure/assist/python/",
       // "args": "-i 'F:/test/ubuntu_configure/assist/c++/im_export_macro' -o 'F:/test/test_c' -r 'F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json'"
-      "args":" -r 'F:/test/ubuntu_configure/assist/python/red_book/python代码 - 副本/' -d .,.,. -f '.spec'"
+      // "args":" -r 'F:/test/ubuntu_configure/assist/python/red_book/' -d .,.,. -f '.spec'"
+      // "args":"  -d .,.,. -f '.spec'"
+      "args":"-i 'E:/小红书竞标/参考话题/output'"
+
     },
   ]
 }

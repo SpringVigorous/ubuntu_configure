@@ -5,11 +5,10 @@ from functools import partial
 import json
 import sys
 from pathlib import Path
-# 将当前脚本所在项目的根路径添加到sys.path
-project_root =str(Path(__file__).resolve().parent.parent)
-for module_path in [project_root,os.path.join(project_root,"base")]:
-    if not module_path in sys.path:
-        sys.path.insert(0,module_path)
+
+import __init__
+# print(sys.path)
+        
 import base.string_tools as st
 import base.com_decorator as cd 
 import base.pipe_tools as  ppt 
@@ -22,6 +21,7 @@ import base.com_decorator as dr
 @dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = fe.detect_encoding(source_path)
+    
     if st.is_str_empty(dest_path):
         dest_path=source_path
     if st.is_str_empty(dest_encoding):

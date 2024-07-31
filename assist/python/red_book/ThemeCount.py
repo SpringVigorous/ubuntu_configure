@@ -10,39 +10,38 @@ from docx.shared import Inches
 from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 
+import __init__
+# print(sys.path)
+from base.com_log import logger as logger
 
-import logging
 
-# 创建一个logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 def create_dir_recursive(path):
     try:
         os.makedirs(path, exist_ok=True)
-        print(f"Directory created: {path}")
+        logger.trace(f"Directory created: {path}")
     except OSError as error:
-        print(f"Directory creation failed: {error}")
+        logger.error(f"Directory creation failed: {error}")
         
-def init_logger(dir_name :str):
-    create_dir_recursive(dir_name)
-    log_path=os.path.join(dir_name,"日志.log")
-    # 创建一个handler，用于写入日志文件
-    fh = logging.FileHandler(log_path)
-    fh.setLevel(logging.DEBUG)
+# def init_logger(dir_name :str):
+#     create_dir_recursive(dir_name)
+#     log_path=os.path.join(dir_name,"日志.log")
+#     # 创建一个handler，用于写入日志文件
+#     fh = logging.FileHandler(log_path)
+#     fh.setLevel(logging.DEBUG)
 
-    # 再创建一个handler，用于输出到控制台
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+#     # 再创建一个handler，用于输出到控制台
+#     ch = logging.StreamHandler()
+#     ch.setLevel(logging.DEBUG)
 
-    # 定义handler的输出格式
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+#     # 定义handler的输出格式
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#     fh.setFormatter(formatter)
+#     ch.setFormatter(formatter)
 
-    # 给logger添加handler
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+#     # 给logger添加handler
+#     logger.addHandler(fh)
+#     logger.addHandler(ch)
 
 
 
@@ -207,23 +206,23 @@ def Handle_all(foldPth:str):
     # 创建一个ExcelWriter对象
     writer = pd.ExcelWriter(output_xl_path)
     
-    log_path=os.path.join(foldPth,"py.log")
-    # 创建一个handler，用于写入日志文件
-    fh = logging.FileHandler(log_path)
-    fh.setLevel(logging.DEBUG)
+    # log_path=os.path.join(foldPth,"py.log")
+    # # 创建一个handler，用于写入日志文件
+    # fh = logging.FileHandler(log_path)
+    # fh.setLevel(logging.DEBUG)
 
-    # 再创建一个handler，用于输出到控制台
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    # # 再创建一个handler，用于输出到控制台
+    # ch = logging.StreamHandler()
+    # ch.setLevel(logging.DEBUG)
 
-    # 定义handler的输出格式
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+    # # 定义handler的输出格式
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # fh.setFormatter(formatter)
+    # ch.setFormatter(formatter)
 
-    # 给logger添加handler
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+    # # 给logger添加handler
+    # logger.addHandler(fh)
+    # logger.addHandler(ch)
     
     
     
@@ -268,7 +267,7 @@ def Handle_all(foldPth:str):
     
 
 if __name__ == '__main__':
-    print("程序执行开始！")
+    logger.info("程序执行开始！")
     parser = argparse.ArgumentParser(description='分析话题信息(*.txt)')
     parser.add_argument('-i', '--input', type=str,  help='输入文件夹路径')
     args = parser.parse_args()
@@ -279,14 +278,15 @@ if __name__ == '__main__':
     if input_agrs is None or  not os.path.exists(input_agrs):
         warn_str=f"path {input_agrs} is None" if input_agrs is None else f"path {input_agrs} not exists"
         
-        print(f"参数不匹配，请检查输入路径！{warn_str}")
+        logger.error(f"参数不匹配，请检查输入路径！{warn_str}")
         sys.exit(0)
 
     Handle_all(input_agrs)
-    print("程序执行完毕！")
+    logger.info("程序执行完毕！")
     
 # 打包说明：pyinstaller --onefile --distpath exe -p . --distpath .\exe ThemeCount.py
 # 生成.\exe\ThemeCount.exe，运行即可
 
 # exe运行
-# ThemeCount.exe -i "E:/小红书竞标/修改后 - 副本 - 副本/output/"
+# ThemeCount.exe -i "E:/小红书竞标/参考话题/output"
+ 

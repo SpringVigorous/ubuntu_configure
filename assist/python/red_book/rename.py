@@ -9,6 +9,9 @@ import sys
 
 import re
 
+import __init__
+# print(sys.path)
+
 #判断一个字符串是否满足Windows文件名的要求（仅文件名和后缀不能包含 父目录）
 # 以下是不允许出现在Windows文件名中的字符：
 # < 和 >
