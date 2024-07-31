@@ -1,6 +1,6 @@
 ﻿import string_tools as st
 import com_decorator as cd 
-from com_log import logger as global_logger
+from com_log import logger as logger
 
 #读入文件
 @cd.exception_decorator
@@ -29,8 +29,8 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
         if operate_fun:
             result_content=operate_fun(content)
             if result_content ==content:
-                if global_logger:
-                    global_logger.info(f"{source_path}:内容未被修改,保留原始内容")
+                if logger:
+                    logger.trace(f"{source_path}:内容未被修改,保留原始内容")
             else:
                 is_same=False
                 content=result_content

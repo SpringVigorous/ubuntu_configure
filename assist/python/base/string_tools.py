@@ -20,3 +20,9 @@ def replace_list_tuple_str(content:str,replace_list_tuple=None)->str:
         content = content.replace(c, d)
     return content
 
+def is_str_empty(str_value:str)->bool:
+    if str_value is None:
+        return True
+    if len(str_value.strip())==0:
+        return True
+    return False    

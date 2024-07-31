@@ -13,7 +13,7 @@ import os
 
 def read_json(filefullpath: str):
     data = None
-    with open(filefullpath, "r", encoding='utf-8') as f:
+    with open(filefullpath, "r", encoding='utf-8-sig') as f:
         data = json.loads(f.read())
 
     pf = pd.json_normalize(

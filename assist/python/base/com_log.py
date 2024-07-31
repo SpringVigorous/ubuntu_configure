@@ -5,13 +5,24 @@ from pathlib import Path
 import json
 import sys
 
+# 定义TRACE等级
+TRACE_LEVEL_NUM = logging.DEBUG - 5
+logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
-
+def trace(self, message, *args, **kws):
+    if self.isEnabledFor(TRACE_LEVEL_NUM):
+        self._log(TRACE_LEVEL_NUM, message, args, **kws)
+logging.Logger.trace = trace
 logger :logging.Logger=None
 def str_to_level(level_str:str)->int:
+    
+    #添加Trace
+    if level_str.upper().strip()=="TRACE":
+        return TRACE_LEVEL_NUM
+    
     level= logging.getLevelName(level_str.upper())
-    return level if isinstance(level, int) else logging.DEBUG
-def create_logger(logger_name:str ,level:str="debug",log_level:str="debug",console_level:str="info"):
+    return level if isinstance(level, int) else TRACE_LEVEL_NUM
+def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",console_level:str="info"):
     global logger
     if logger is None:
 # 定义日志器名称
@@ -34,15 +45,24 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="debug",conso
         # 创建文件Handler并设置日志级别与格式
         log_dir=os.path.join(os.getcwd(), 'logs')
         os.makedirs(log_dir,exist_ok=True)
-        log_path=os.path.join(log_dir, f'{logger_name}.log')
-        file_handler = logging.FileHandler(log_path, encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
-        file_handler.setLevel(str_to_level(log_level))  # 文件处理器处理的日志级别设为INFO，可根据需求调整
-        file_handler.setFormatter(formatter)  # 使用相同的格式化器
-        # 添加文件Handler到日志器
-        logger.addHandler(file_handler)
+        
+        def create_file_log(level_str:str):
+            level_str=level_str.lower()
+            
+            log_path=os.path.join(log_dir, f'{logger_name}-{level_str}.log')
+            file_handler = logging.FileHandler(log_path, encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
+            file_handler.setLevel(str_to_level(level_str))  # 文件处理器处理的日志级别设为INFO，可根据需求调整
+            file_handler.setFormatter(formatter)  # 使用相同的格式化器
+            # 添加文件Handler到日志器
+            logger.addHandler(file_handler)
+        
+        
+        create_file_log(log_level)
+        create_file_log("warn")
+        
 
         # 开始使用日志器记录信息
-        logger.info(f'log file path: {log_path}')
+        logger.info(f'log file path: {log_dir}')
 
     return logger    
 
@@ -52,13 +72,44 @@ if not project_root in sys.path:
     sys.path.insert(0,project_root)
 from config import settings
 log_config= settings.log
-create_logger(log_config.log_name, log_config.level, log_config.log_level, log_config.console_level)
+if logger is None:
+    create_logger(log_config.log_name, log_config.level, log_config.log_level, log_config.console_level)
 
 
-# if __name__ == "__main__":
+
+def __log_impl__(mfunc, msg: object, *args: object):
+    if logger is not None and mfunc is not None:
+        mfunc(msg, *args)
+    else:
+        print(msg, *args)
+
+
+def info(msg: object, *args: object):
+    __log_impl__(logger.info,msg, *args) 
+ 
+def trace(msg: object, *args: object):
+    __log_impl__(logger.trace,msg, *args) 
+ 
+def debug(msg: object, *args: object):
+    __log_impl__(logger.debug,msg, *args) 
+ 
+def warn(msg: object, *args: object):
+    __log_impl__(logger.warn,msg, *args) 
+ 
+def info(msg: object, *args: object):
+    __log_impl__(logger.info,msg, *args) 
+ 
+def error(msg: object, *args: object):
+    __log_impl__(logger.error,msg, *args) 
+ 
+
+
+
+
+if __name__ == "__main__":
     
-    # file_name=os.path.basename(__file__)
-    # create_logger(file_name, "debug", "debug", "warning")
+    file_name=os.path.basename(__file__)
+    create_logger(file_name, "debug", "debug", "warning")
     # logger.debug("Debugging information")
     # logger.info("Normal information message")
     # logger.warning("Warning occurred")

@@ -22,15 +22,23 @@ import base.com_decorator as dr
 @dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = fe.detect_encoding(source_path)
-    if len(dest_path)==0:
+    if st.is_str_empty(dest_path):
         dest_path=source_path
+    if st.is_str_empty(dest_encoding):
+        dest_encoding=source_encoding
+    # if dest_encoding.lower()==source_encoding.lower() and dest_path.lower()==source_path.lower():
+    #     logger.trace(f"源文件编码与目标编码相同，无需转换：[ {source_path} ]:{source_encoding}->{dest_encoding}")
+    #     return
+        
     ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)
-    logger.info(f"[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
+    logger.trace(f"成功转换：[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
 
 
+
+#仅修改编码模式
 if __name__ == '__main__':
         # 创建ArgumentParser对象，其中description参数用于提供程序的简短描述
-    parser = argparse.ArgumentParser(description='整合工具合集')
+    parser = argparse.ArgumentParser(description='修改文件编码：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy')
 
     # 添加一个位置参数（positional argument），这里假设我们需要用户提供一个文件名
     parser.add_argument('-i', '--input', type=str,  help='输入文件(夹)的路径')
@@ -112,6 +120,9 @@ if __name__ == '__main__':
 
 
 # 使用方法
-# python main.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/python/integer/replace_folders_json_copy_copy.json 
+# python alter_encoding.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy 
     
-# python main.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 
+# python alter_encoding.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 
+
+#打包成exe
+#pyinstaller  --onefile --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe integer/alter_encoding.py    

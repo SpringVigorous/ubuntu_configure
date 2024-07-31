@@ -1,6 +1,6 @@
 
 default:
-  log_name: &varname "@jinja {{this.log.log_pre}}-info"
+  log_name: &varname "@jinja {{this.log.log_pre}}"
   log:
     log_pre: tag1
 

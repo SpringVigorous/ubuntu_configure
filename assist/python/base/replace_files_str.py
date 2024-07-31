@@ -1,5 +1,5 @@
-﻿from com_log import logger as logger
-global logger
+﻿from com_log import logger as llogger
+
 import os
 import fold_tools as fo
 import file_tools as fc
@@ -10,13 +10,15 @@ import sys
 import path_tools as pt
 
 
+#仅单个文件
 @dr.exception_decorator
 def replace_file_str(source_path, dest_path, replace_list_tuple):
     encoding = fe.detect_encoding(source_path)
     fc.replace_content_same_encode(source_path, dest_path, encoding, replace_list_tuple)
 
+#文件夹中所有
 @dr.exception_decorator
-def replace_files_str(source_dir, dest_dir, replace_list_tuple):
+def replace_dir_str(source_dir, dest_dir, replace_list_tuple):
     # 遍历文件夹
 
     org_base_dir=os.path.basename(source_dir)
@@ -52,4 +54,4 @@ if __name__ == "__main__":
         ("glm","glm_new"),
         ("GLM","GLM_new")
         ]
-    replace_files_str(folder,os.path.dirname(folder),[("glm","glm_new"),("GLM","GLM_new")])
+    replace_dir_str(folder,os.path.dirname(folder),[("glm","glm_new"),("GLM","GLM_new")])

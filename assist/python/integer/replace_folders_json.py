@@ -3,7 +3,7 @@
 import sys
 import os
 import json
-
+import argparse
 
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
@@ -48,7 +48,7 @@ def show_error():
 
 
 
-
+# 仅一个参数：json文件路径
 @cd.details_decorator
 @cd.exception_decorator
 def main():
@@ -64,7 +64,7 @@ def main():
         show_error()
         return 
     # 使用内置的open()函数以读模式打开文件
-    with open(json_file, 'r') as file:
+    with open(json_file, 'r',encoding="utf-8-sig") as file:
         # 使用json.load()方法将文件内容解析为Python对象（通常是字典）
          data= json.load(file)
     
@@ -79,7 +79,7 @@ def main():
         try:
             if logger :
                 logger.info(f"第{index}个替换数据：{str(item) }")      
-            if not rf.replace_files_str(item["source_folder"],item["dest_folder"],item["replace_args"]):
+            if not rf.replace_dir_str(item["source_folder"],item["dest_folder"],item["replace_args"]):
                 has_error=True
             if logger :
                 result_str="成功" if not has_error else "失败"
