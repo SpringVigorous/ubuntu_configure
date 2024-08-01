@@ -26,3 +26,9 @@ def is_str_empty(str_value:str)->bool:
     if len(str_value.strip())==0:
         return True
     return False    
+
+#获取当前exe所在目录
+def cur_execute_path():
+    import os
+    import sys
+    return os.path.dirname(sys.argv[0])

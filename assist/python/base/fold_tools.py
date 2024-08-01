@@ -23,3 +23,6 @@ def clear_folder(folder_path):
             shutil.rmtree(abs_path)
         else:
             os.remove(abs_path)
+
+
+            

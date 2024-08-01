@@ -11,10 +11,7 @@ from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 
 import __init__
-# print(sys.path)
 from base.com_log import logger as logger
-
-
 
 def create_dir_recursive(path):
     try:
@@ -57,7 +54,7 @@ class ThemeItem:
 
 
 class Heading:
-    def __init__(self, num:str, name:str, theme):
+    def __init__(self, num:str, name:str, theme:list):
         self.num = num
         self.name = name
         self.theme = theme
@@ -200,13 +197,13 @@ def set_doc_font(doc: Document):
                 for paragraph in cell.paragraphs:
                     paragraph.style = doc.styles['Normal']
     
-def Handle_all(foldPth:str):
+def Handle_all(dir_path:str):
 
-    output_xl_path=os.path.join(foldPth,"统计结果.xlsx")
+    output_xl_path=os.path.join(dir_path,"统计结果.xlsx")
     # 创建一个ExcelWriter对象
     writer = pd.ExcelWriter(output_xl_path)
     
-    # log_path=os.path.join(foldPth,"py.log")
+    # log_path=os.path.join(dir_path,"py.log")
     # # 创建一个handler，用于写入日志文件
     # fh = logging.FileHandler(log_path)
     # fh.setLevel(logging.DEBUG)
@@ -227,17 +224,19 @@ def Handle_all(foldPth:str):
     
     
     # 创建一个 Word 文档
-    output_doc_path=os.path.join(foldPth,"统计结果.docx")
+    output_doc_path=os.path.join(dir_path,"统计结果.docx")
     doc = Document()
 
     
-    for filename in os.listdir(foldPth):
+    for filename in os.listdir(dir_path):
         # 筛选出.txt文件
         if filename.endswith('.txt'):
-            (name,data)=handle_each(os.path.join(foldPth,filename))
+            cur_file_path=os.path.join(dir_path,filename)
+            (name,data)=handle_each(cur_file_path)
             if len(data)<1 or len(name)<1:
-                logger.warning(f"解析出错：{name}")    
+                logger.warning(f"解析出错：{cur_file_path}")    
                 continue
+            logger.trace(f"{cur_file_path}解析成功：\n{json.dumps(data,ensure_ascii=False)}")
             
             themeTitile="话题"
             df = pd.DataFrame(data,columns=[themeTitile,"关联日记"])
@@ -261,7 +260,7 @@ def Handle_all(foldPth:str):
     doc.save(output_doc_path)
     logger.info(f"统计结果已保存到：{output_doc_path}")    
     
-    logger.info("程序执行完毕！")
+
 
     
     
@@ -285,6 +284,9 @@ if __name__ == '__main__':
     logger.info("程序执行完毕！")
     
 # 打包说明：pyinstaller --onefile --distpath exe -p . --distpath .\exe ThemeCount.py
+#pyinstaller  --onefile --distpath exe -p . -p base -p integer -p red_book --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe red_book/ThemeCount.py    
+
+
 # 生成.\exe\ThemeCount.exe，运行即可
 
 # exe运行

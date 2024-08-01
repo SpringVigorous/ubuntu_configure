@@ -1,9 +1,9 @@
 ﻿import logging
 from enum import Enum
 import os
-from pathlib import Path
 import json
 import sys
+import __init__
 
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
@@ -24,8 +24,8 @@ def str_to_level(level_str:str)->int:
     return level if isinstance(level, int) else TRACE_LEVEL_NUM
 def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",console_level:str="info"):
     global logger
+    # 定义日志器名称
     if logger is None:
-# 定义日志器名称
         is_exist= logger_name in logging.Logger.manager.loggerDict
         logger = logging.getLogger(logger_name)
         if is_exist:
@@ -66,16 +66,22 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
 
     return logger    
 
+def force_create_logger(logger_name:str ,level:str="debug",log_level:str="trace",console_level:str="info"):
+    global logger
+    logger = None
+    create_logger(logger_name, level, log_level, console_level)
 
-project_root =str(Path(__file__).resolve().parent.parent)
-if not project_root in sys.path:
-    sys.path.insert(0,project_root)
-from config import settings
-log_config= settings.log
+    
+    
+# from config import settings
+# log_config= settings.log
+# if logger is None:
+#     create_logger(log_config.log_name, log_config.level, log_config.log_level, log_config.console_level)
+
+#先默认取值,后续若想改，还可以用 force_create_logger(...)
 if logger is None:
-    create_logger(log_config.log_name, log_config.level, log_config.log_level, log_config.console_level)
-
-
+    create_logger(os.path.splitext(os.path.basename(sys.argv[0]))[0] , "trace","trace","info")
+    
 
 def __log_impl__(mfunc, msg: object, *args: object):
     if logger is not None and mfunc is not None:
@@ -106,10 +112,10 @@ def error(msg: object, *args: object):
 
 
 
-if __name__ == "__main__":
     
-    file_name=os.path.basename(__file__)
-    create_logger(file_name, "debug", "debug", "warning")
+    
+    
+    
     # logger.debug("Debugging information")
     # logger.info("Normal information message")
     # logger.warning("Warning occurred")
