@@ -3,6 +3,8 @@ import shutil
 import argparse
 import send2trash
 import sys
+import __init__
+from base.com_log import logger as logger
 
 #判断字符串是否在列表中,忽略大小写
 def check_str_in_list(str,str_list):
@@ -29,15 +31,15 @@ def del_dir_file(cur_path,exclude_strs):
         cur_path = cur_path.replace("/","\\") #send2trash 需要目录中 使用\\而不是 /
         # shutil.rmtree(dir_path)
         send2trash.send2trash(cur_path)
-        print(f"Removed {expression_str} {cur_path}") 
+        logger.error(f"Removed {expression_str} {cur_path}") 
     except FileNotFoundError:
-        print(f"Error: The {expression_str} '{cur_path}' does not exist.")
+        logger.error(f"Error: The {expression_str} '{cur_path}' does not exist.")
     except PermissionError:
-        print(f"Error: Permission denied when trying to move '{cur_path}' to the recycle bin.")
+        logger.error(f"Error: Permission denied when trying to move '{cur_path}' to the recycle bin.")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
     except Exception as e:
-        print(f"Error removing {cur_path}: {e}")
+        logger.error(f"Error removing {cur_path}: {e}")
     
 
 def remove_directories_and_files(root_dir,del_folder,del_filter,exclude_strs):
@@ -56,11 +58,10 @@ def remove_directories_and_files(root_dir,del_folder,del_filter,exclude_strs):
             if check_str_in_list(file_extension,del_filter):
                 file_path = os.path.join(root, file_name).replace("\\" , "/")
                 del_dir_file(file_path,exclude_strs)
-from collections import Counter
+
 
 def unique(original_list):
-    
-    
+    from collections import Counter
     counter = Counter(original_list)
     return list(counter.keys())
 
@@ -108,3 +109,4 @@ if __name__ == '__main__':
 
 # 删除临时文件：remove_special_fold.exe -r F:\test\ubuntu_configure\assist\python\red_book\ -d exe,log,build
 # 删除临时文件：remove_special_fold.exe -r "F:\test\ubuntu_configure\assist\python\red_book\" -d . -f .spec
+# red_book\remove_special_fold.py -r  F:\test\ubuntu_configure\assist\python\ -d logs exe,log,build -f .spec,.log
