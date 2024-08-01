@@ -37,8 +37,6 @@ def del_dir_file(cur_path,exclude_strs):
     except PermissionError:
         logger.error(f"Error: Permission denied when trying to move '{cur_path}' to the recycle bin.")
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-    except Exception as e:
         logger.error(f"Error removing {cur_path}: {e}")
     
 
@@ -100,13 +98,15 @@ if __name__ == '__main__':
     remove_directories_and_files(root_agrs,unique(folder_agrs),unique(filter_agrs),unique(exclude_agrs)) 
     
         
-# 打包说明：pyinstaller --onefile --distpath exe -p . --distpath .\exe remove_special_fold.py
-# 生成.\exe\remove_special_fold.exe，运行即可
+# 打包说明：pyinstaller --onefile --distpath exe -p . --distpath ./exe remove_special_fold.py
+# 生成./exe/remove_special_fold.exe，运行即可
 
 # exe运行
 # remove_special_fold.exe -r  G:/练习集/C++/6.20 -d Debug,Release,ipch,.vs -f .sdf,.suo,.db -x 3rd
 
 
-# 删除临时文件：remove_special_fold.exe -r F:\test\ubuntu_configure\assist\python\red_book\ -d exe,log,build
-# 删除临时文件：remove_special_fold.exe -r "F:\test\ubuntu_configure\assist\python\red_book\" -d . -f .spec
-# red_book\remove_special_fold.py -r  F:\test\ubuntu_configure\assist\python\ -d logs exe,log,build -f .spec,.log
+# 删除临时文件：remove_special_fold.exe -r F:/test/ubuntu_configure/assist/python/red_book/ -d exe,log,build
+# 删除临时文件：remove_special_fold.exe -r "F:/test/ubuntu_configure/assist/python/red_book/" -d . -f .spec
+
+#当前目录 F:/test/ubuntu_configure/assist/python/
+# red_book/remove_special_fold.py -r  F:/test/ubuntu_configure/assist/python/ -d logs,exe,log,build -f .spec,.log
