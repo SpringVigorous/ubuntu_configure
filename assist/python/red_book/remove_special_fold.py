@@ -109,4 +109,5 @@ if __name__ == '__main__':
 # 删除临时文件：remove_special_fold.exe -r "F:/test/ubuntu_configure/assist/python/red_book/" -d . -f .spec
 
 #当前目录 cd F:/test/ubuntu_configure/assist/python/
-# red_book/remove_special_fold.py -r  F:/test/ubuntu_configure/assist/python/ -d logs,exe,log,build -f .spec,.logpi
+# red_book/remove_special_fold.py -r  F:/test/ubuntu_configure/assist/python/ -d logs,exe,log,build -f .spec,.log
+

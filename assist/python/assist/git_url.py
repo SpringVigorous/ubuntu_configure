@@ -30,7 +30,7 @@ def extract_remote_url(config_content):
 
     matches = remote_regex.findall(config_content)
     if matches:
-        # 取第一个远程URL作为默认（通常'origin'是默认的远程）
+        # 取第一个远程URL作为默认（通常'origin'是默认的远程）,子模块先不用管
         url_match = matches[0].split('=', 1)[1].strip()
         return url_match
     else:
