@@ -1,9 +1,9 @@
-﻿from com_log import logger as llogger
+﻿from com_log import logger as logger
 
 import os
 import fold_tools as fo
 import file_tools as fc
-import check_file_encode as fe
+
 import string_tools as st
 import com_decorator as dr 
 import sys
@@ -13,7 +13,7 @@ import path_tools as pt
 #仅单个文件
 @dr.exception_decorator
 def replace_file_str(source_path, dest_path, replace_list_tuple):
-    encoding = fe.detect_encoding(source_path)
+    encoding = fc.detect_encoding(source_path)
     fc.replace_content_same_encode(source_path, dest_path, encoding, replace_list_tuple)
 
 #文件夹中所有

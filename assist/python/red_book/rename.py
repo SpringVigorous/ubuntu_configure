@@ -10,6 +10,7 @@ import sys
 import re
 
 import __init__
+from base.com_log import logger as logger
 # print(sys.path)
 
 #判断一个字符串是否满足Windows文件名的要求（仅文件名和后缀不能包含 父目录）
@@ -44,55 +45,7 @@ def is_valid_windows_path(path):
 
 
 
-# 定义TRACE等级
-TRACE_LEVEL_NUM = logging.DEBUG - 5
-logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
-def trace(self, message, *args, **kws):
-    if self.isEnabledFor(TRACE_LEVEL_NUM):
-        self._log(TRACE_LEVEL_NUM, message, args, **kws)
-logging.Logger.trace = trace
-
-# 创建一个logger
-logger:logging.Logger = None
-
-
-def init_logger():
-    global logger
-    logger = logging.getLogger(__name__)
-    logger.setLevel(TRACE_LEVEL_NUM)
-    
-    log_dir=get_cur_dir()
-
-    log_path=os.path.join(log_dir,"log",f"{get_cur_name()}.log")
-    log_error_path=os.path.join(log_dir,"log",f"{get_cur_name()}_error.log")
-    
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    # 创建一个handler，用于写入日志文件
-    fh = logging.FileHandler(log_path, encoding='utf-8')
-    fh.setLevel(TRACE_LEVEL_NUM)
-
-    fe = logging.FileHandler(log_error_path, encoding='utf-8')
-    fe.setLevel(logging.ERROR)
-
-
-    # 再创建一个handler，用于输出到控制台
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-
-    # 定义handler的输出格式
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    fe.setFormatter(formatter)
-
-    # 给logger添加handler
-    logger.addHandler(fh)
-    logger.addHandler(fe)
-    logger.addHandler(ch)
-    
-    #记录日志路径
-    logger.info(f"全日志路径：{log_path} 仅错误日志：{log_error_path}")    
 
 # 获取当前运行的 exe 文件的完整路径
 def get_cur_path():
@@ -231,7 +184,6 @@ def open_file_dialog():
 
             
 if __name__ == '__main__':
-    init_logger()
     # 调用函数打开文件选择对话框
     file_path = open_file_dialog()
     logger.info(f"Selected file: {file_path}")

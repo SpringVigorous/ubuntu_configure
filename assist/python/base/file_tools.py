@@ -1,6 +1,29 @@
 ﻿import string_tools as st
 import com_decorator as cd 
 from com_log import logger as logger
+import chardet
+
+# 使用chardet模块检测文件的编码
+def detect_encoding(file_path)->str:
+    with open(file_path, 'rb') as f:
+        result = chardet.detect(f.read())
+    logger.trace(f" {file_path} 检测到文件编码：{result}")
+    # 返回检测到的编码
+    return result['encoding'].lower()
+
+# 获取文件路径
+# file_path = r'F:\test_data\gbk.txt'
+
+# 检测编码
+# encoding = detect_encoding(file_path)
+
+# # 使用检测到的编码打开文件
+# with open(file_path, 'r', encoding=encoding) as f:
+#     content = f.read()
+
+# logger.info(content)
+
+
 
 #读入文件
 @cd.exception_decorator
@@ -58,7 +81,13 @@ def replace_content_same_encode( source_path,dest_path,encoding, replace_list_tu
 def convert_encode(source_path,dest_path,source_encoding,dest_encoding):
     operate_content_diff_encode(source_path, dest_path,source_encoding,dest_encoding,None)
 
-
+#按推断的编码读入文件
+def read_content(source_path):
+    source_encoding = detect_encoding(source_path)
+    with open(source_path, 'r',encoding=source_encoding) as file:
+        content = file.read()
+        return content
+    return None
 
 
 if __name__ == '__main__':

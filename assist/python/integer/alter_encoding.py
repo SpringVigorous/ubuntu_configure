@@ -13,14 +13,14 @@ import base.string_tools as st
 import base.com_decorator as cd 
 import base.pipe_tools as  ppt 
 import base.file_tools as  ft 
-import base.check_file_encode as fe
+
 import base.fold_tools as fo
 import base.path_tools as pt
 from base.com_log import logger as logger
 import base.com_decorator as dr 
 @dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
-    source_encoding = fe.detect_encoding(source_path)
+    source_encoding = ft.detect_encoding(source_path)
     
     if st.is_str_empty(dest_path):
         dest_path=source_path

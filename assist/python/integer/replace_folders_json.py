@@ -5,6 +5,8 @@ import os
 import json
 import argparse
 
+#废弃，统一用 replace_folders_files.py代替
+
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
 project_root =str(Path(__file__).resolve().parent.parent)
