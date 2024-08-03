@@ -38,7 +38,7 @@ def operate_imp(source_path,dest_path,dest_encoding,operate_func):
 #仅修改编码模式
 if __name__ == '__main__':
         # 创建ArgumentParser对象，其中description参数用于提供程序的简短描述
-    parser = argparse.ArgumentParser(description='修改文件编码：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy')
+    parser = argparse.ArgumentParser(description='修改文件编码：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy  -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc')
 
     # 添加一个位置参数（positional argument），这里假设我们需要用户提供一个文件名
     parser.add_argument('-i', '--input', type=str,  help='输入文件(夹)的路径')
@@ -85,7 +85,7 @@ if __name__ == '__main__':
             data= json.load(file)
         tupple_vals=data["replace_args"]
         if len(tupple_vals)>0:
-            operate_funcs.append(partial(st.replace_list_tuple_str,replace_list_tuple=tupple_vals))
+            operate_funcs.append(partial(st.replace_list_tuple_str,replace_list_tuple=tupple_vals)) #提前绑定参数值
     
     operate_func=None
     if len(operate_funcs)>0:
