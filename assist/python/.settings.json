@@ -3,7 +3,7 @@
     "LOG":{
         "level":"trace",
         "log_level":"trace",
-        "console_level":"info",
+        "console_level":"warn",
         "log_pre":"tag",
         "log_name":"tag"
     }

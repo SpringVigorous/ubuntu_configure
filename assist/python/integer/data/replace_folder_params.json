@@ -1,0 +1,22 @@
+[
+    {
+        "old_name": "tools",
+        "new_name": "hm_kernel"
+    },
+    {
+        "old_name": "TOOLS",
+        "new_name": "HM_KERNEL"
+    },
+    {
+        "old_name": "ExampleClass",
+        "new_name": "hm_test"
+    },
+    {
+        "old_name": "EXAMPLE_CLASS",
+        "new_name": "HM_TEST"
+    },
+    {
+        "old_name": "example_class",
+        "new_name": "hm_test"
+    }
+]

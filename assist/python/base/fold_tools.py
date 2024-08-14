@@ -25,4 +25,6 @@ def clear_folder(folder_path):
             os.remove(abs_path)
 
 
+
+
             
