@@ -21,10 +21,10 @@ import base.com_decorator as dr
 @dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = ft.detect_encoding(source_path)
-    
-    if st.is_str_empty(dest_path):
+    # source_encoding="gb2312"
+    if st.invalid(dest_path):
         dest_path=source_path
-    if st.is_str_empty(dest_encoding):
+    if st.invalid(dest_encoding):
         dest_encoding=source_encoding
     # if dest_encoding.lower()==source_encoding.lower() and dest_path.lower()==source_path.lower():
     #     logger.trace(f"源文件编码与目标编码相同，无需转换：[ {source_path} ]:{source_encoding}->{dest_encoding}")

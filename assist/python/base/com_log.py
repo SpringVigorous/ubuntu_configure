@@ -71,6 +71,7 @@ def force_create_logger(logger_name:str ,level:str="debug",log_level:str="trace"
     logger = None
     create_logger(logger_name, level, log_level, console_level)
 
+            
     
     
 # from config import settings

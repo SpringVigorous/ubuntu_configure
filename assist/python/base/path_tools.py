@@ -36,4 +36,5 @@ def path_equal(path1:str,path2:str)->bool:
      return path1==path2
 
 
-
+def normal_path(path:str)->str:
+    return os.path.normpath(path).replace("\\","/")

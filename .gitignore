@@ -9,6 +9,11 @@
 build/
 __pycache__/
 assist/python/exe/
+dest/
+temp/
+zip/
+
+.vscode/
 
 # Compiled Object files
 *.slo

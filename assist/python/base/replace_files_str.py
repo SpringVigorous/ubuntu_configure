@@ -54,4 +54,4 @@ if __name__ == "__main__":
         ("glm","glm_new"),
         ("GLM","GLM_new")
         ]
-    replace_dir_str(folder,os.path.dirname(folder),[("glm","glm_new"),("GLM","GLM_new")])
+    replace_dir_str(folder,os.path.dirname(folder),list_tuple)

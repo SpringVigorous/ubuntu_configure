@@ -2,6 +2,9 @@
 import com_decorator as cd 
 from com_log import logger as logger
 import chardet
+# import asyncio
+# import aiohttp
+import aiofiles
 
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
@@ -28,7 +31,8 @@ def detect_encoding(file_path)->str:
 #读入文件
 @cd.exception_decorator
 def read_content_by_encode(source_path,source_encoding):
-        with open(source_path, 'r',encoding=source_encoding) as file:
+    
+        with open(source_path, 'r',encoding=source_encoding,errors="ignore") as file:
             content = file.read()
             return content
         return None
@@ -89,6 +93,33 @@ def read_content(source_path):
         return content
     return None
 
+#异步读、写文件
+async def read_write_async(data,dest_path,mode="w",encoding=None):
+    operator="写入" if mode.find("w")>=0 else "读取"
+    operator_info=f"异步{operator}文件：{dest_path} mode:{mode}"
+    logger.info(f"开始：{operator_info}")
+    
+    try:
+        async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
+            await f.write(data)
+            logger.info(f"完成：{operator_info}")
+            return True
+    except:
+        return False
+
+#同步读、写文件
+def read_write_sync(data,dest_path,mode="w",encoding=None):
+    operator="写入" if mode.find("w")>=0 else "读取"
+    operator_info=f"同步{operator}文件：{dest_path} mode:{mode}"
+    logger.info(f"开始：{operator_info}")
+    
+    try:
+        with  open(dest_path,mode,encoding=encoding) as f:
+            f.write(data)
+            logger.info(f"完成：{operator_info}")
+            return True
+    except:
+        return False
 
 if __name__ == '__main__':
 

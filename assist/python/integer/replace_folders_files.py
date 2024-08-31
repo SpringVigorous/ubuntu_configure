@@ -127,9 +127,9 @@ def main():
     replace_agrs = args.replace
 
     
-    has_org=not is_str_empty(org_agrs)
-    has_dest=not is_str_empty(dest_agrs)
-    has_replace= not is_str_empty(replace_agrs)
+    has_org=not invalid(org_agrs)
+    has_dest=not invalid(dest_agrs)
+    has_replace= not invalid(replace_agrs)
     
 
 
@@ -190,7 +190,7 @@ def main():
                 
             is_fold=os.path.isdir(cur_source)
             if not is_fold:
-                if is_str_empty(cur_dest):
+                if invalid(cur_dest):
                     cur_dest=os.path.dirname(cur_source)
                 elif os.path.isfile(cur_dest):
                     cur_dest=os.path.dirname(cur_dest)
