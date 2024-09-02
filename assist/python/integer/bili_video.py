@@ -142,7 +142,7 @@ def logout_info(data,info:CatalogInfo):
     
 def login_info(data,info:CatalogInfo):
     pages=data["pages"]
-    page_count=len(page_count)
+    page_count=len(pages)
     
     
     catalogs=data["ugc_season"]
@@ -471,7 +471,7 @@ class BiliVideoSet:
 
 if __name__=="__main__":
     # bvid="BV1Ur4y1V7Kh"
-    bvid="BV1eD421u7Rm"
+    bvid="BV1tLH7eGEqB"
     cur_dir=r"F:\教程\哔哩哔哩"
     temp_dir="F:/cache/bilibili"
     collection= BiliVideoSet(bvid,cur_dir,temp_dir)
