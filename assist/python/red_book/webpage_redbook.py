@@ -474,33 +474,41 @@ class RedBookSearchs:
     async def Dumps(self):
         
         dfs=[]
+        root_dir=self.root_dir
+        cache_dir=os.path.join(root_dir,"cache")
+        os.makedirs(cache_dir,exist_ok=True)
+        
         for theme in self.themes:
-            search=RedBookSearch(self.wp,theme,self.root_dir,self.search_count,self.queue_count)
+            search=RedBookSearch(self.wp,theme,root_dir,self.search_count,self.queue_count)
             search.SearchTheme()
             
             tasks=[search.SearchNotes(),search.HandleNotes()]
             task_list=[asyncio.create_task(task) for task in tasks]
             results= await asyncio.gather(*task_list)
-            df= results[1]
+            df:pd.DataFrame= results[1]
             if not df is None:
                 dfs.append((theme,df) )
-                json_dir=os.path.join(self.root_dir,theme,"json/")
-                os.makedirs(json_dir,exist_ok=True)
-
-                df.to_json(os.path.join(json_dir,f"{theme}.json"), orient="records")
+                
+                #临时数据，缓存使用
+                dict_data= df.to_dict("records")
+                with open(os.path.join(cache_dir,f"{theme}.json"),"w",encoding="utf-8") as f:
+                    json.dump(dict_data,f,ensure_ascii=False)
+                
+                # df1=pd.DataFrame(dict_data)
+                # df1.to_excel(os.path.join(cache_dir,f"{theme}.xlsx"),sheet_name=theme,index=False)
+                
+                # df.to_json(os.path.join(root_dir,f"{theme}.json"), orient="records", force_ascii=False)
             search.StopListen()
             # search.CloseBrowser()
             
-        self.InfoToExcel(self.root_dir,dfs)
+        self.InfoToExcel(root_dir,dfs)
         
         
-        """
-        问题： 有重复项目
-        """
+
 if __name__ == '__main__':
     wp=WebPage()
     themes=["四神汤","薏米茶",'八宝茶']
     
-    redbook=RedBookSearchs(themes=themes)
+    redbook=RedBookSearchs(themes=themes,root_dir=setting.redbook_notes_dir,search_count=50,queue_count=100)
     asyncio.run(redbook.Dumps()) 
     
