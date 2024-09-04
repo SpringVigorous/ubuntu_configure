@@ -20,7 +20,7 @@ def create_docx():
 
     # 添加有序列表
     list_paragraph = document.add_paragraph()
-    list_paragraph.add_run('项目 1').bold = True
+    list_paragraph.add_run('项目 1').bold = True 
     list_paragraph.add_run(' - 这是项目 1 的描述。')
     list_paragraph = document.add_paragraph()
     list_paragraph.add_run('项目 2').bold = True
@@ -30,7 +30,9 @@ def create_docx():
 
     # 添加图片
     pic_paragraph = document.add_paragraph()
-    pic=pic_paragraph.add_run().add_picture(r'D:\Document\Tencent\Wechat\WeChat Files\wxid_opokem0kmeqf22\FileStorage\Cache\2024-08\35c7d5e055318963c8b79cb824d0a4e9_t.jpg', width=Inches(1.25))
+    with open(r'F:\worm_practice\red_book\notes\1\1\images\1.jpg',mode='rb') as f:
+        
+        pic=pic_paragraph.add_run().add_picture(f, width=Inches(1.25)) #, width=Inches(1.25)
     pic_paragraph.alignment=WD_PARAGRAPH_ALIGNMENT.CENTER
     # pic.alignment=WD_PARAGRAPH_ALIGNMENT.CENTER
     

@@ -21,10 +21,11 @@ from base.string_tools import sanitize_filename
 # from base.cookies_tools import save_cookies,load_cookies,exist_cookies
 from base.file_tools import read_write_async,read_write_sync,download_async
 from base.com_log import logger as logger
+from base.path_tools import normal_path
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 
-from queue import Queue
+
             
 import asyncio 
 import aiofiles
@@ -33,6 +34,14 @@ import aiohttp
         
 import datetime
 import pandas as pd
+from pathlib import Path
+
+from docx import Document
+from docx.shared import Inches,Cm
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+from uuid import uuid4
+
 
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
@@ -64,13 +73,42 @@ def Num(thums):
     else:
         return 0
 
+from PIL import Image
+def convert_image_to_jpg(image_path,dest_path=None):
+    if not dest_path:
+        dest_path=image_path
+    if not os.path.exists(image_path):
+        logger.error(f"图片文件不存在:{image_path},{image_path}->{dest_path}失败")
+        return
+    # 打开图片
+    image = Image.open(image_path).convert('RGB')
+    # 保存为 JPEG 格式
+
+
+    image.save(dest_path, 'JPEG')
+    if os.path.exists(dest_path):
+        os.remove(image_path)
+    
+        return
+    # 打开图片
+    image = Image.open(image_path).convert('RGB')
+    # 保存为 JPEG 格式
+    if not dest_path:
+        dest_path=image_path
+
+    image.save(dest_path, 'JPEG')
+    
+
 class NoteInfo:
-    def __init__(self,title,content,create_time,update_time,image_lst,author,thumbs,collected,shared,comment,note_id,current_time,video_lst):
+    #CountIndex=0
+    def __init__(self,title,content,create_time,update_time,image_urls,author,thumbs,collected,shared,comment,note_id,current_time,video_urls,image_lst=[],video_lst=[],note_path=""):
         self.title=title
         self.content=content
         self.create_time=create_time    
         self.update_time=update_time  
-        self.image_urls=image_lst
+        self.image_urls=image_urls if isinstance(image_urls,list) else json.loads(image_urls)
+        self.video_urls=video_urls if isinstance(video_urls,list) else json.loads(video_urls)
+        
         self.author=author
         self.thumbs=thumbs
         self.collected=collected
@@ -78,10 +116,11 @@ class NoteInfo:
         self.comment=comment
         self.note_id=note_id
         self.current_time=current_time
-        self.video_urls=video_lst
-        self.image_lst=[]
-        self.video_lst=[]
-        self.note_path=""
+
+        self.image_lst=image_lst if isinstance(image_lst,list) else json.loads(image_lst)
+        self.video_lst=video_lst if isinstance(video_lst,list) else json.loads(video_lst)
+
+        self.note_path=note_path
         
         
     def __str__(self) -> str:
@@ -180,7 +219,16 @@ class NoteInfo:
         return self.video_lst
     
     def set_root_dir(self,root_dir,cur_index:int =-1):
+        # index=cur_index
+        # if cur_index<1:
+        #     NoteInfo.CountIndex+=1
+        #     index= NoteInfo.CountIndex
+            
+
+        # sub_dir=f"{index}"
+
         sub_dir=f"{cur_index}_{self.title}" if cur_index>0 else self.title
+
         cur_dir=os.path.join(root_dir,sub_dir)
 
         dest_image_dir=os.path.join(cur_dir,"images/")
@@ -190,25 +238,101 @@ class NoteInfo:
         os.makedirs(os.path.dirname(dest_image_dir),exist_ok=True)
         os.makedirs(os.path.dirname(dest_video_dir),exist_ok=True)
 
-        self.image_lst=[os.path.join(dest_image_dir,f"{i+1}.jpg") for i in range(len(self.image_urls))]
-        self.video_lst=[os.path.join(dest_video_dir,f"{i+1}.mp4") for i in range(len(self.video_urls))] 
+        self.image_lst=[normal_path(os.path.join(dest_image_dir,f"{i+1}.jpg")) for i in range(len(self.image_urls))]
+        self.video_lst=[normal_path(os.path.join(dest_video_dir,f"{i+1}.mp4")) for i in range(len(self.video_urls))] 
         
           
     async def write_to_notepad(self):
 
         urls=self.image_urls+self.video_urls
-        dests=self.image_lst+self.video_lst
+        
+        #查找前缀
+        suffix=".xxyy"
+        if self.image_urls:
+            url=self.image_urls[0]
+            parts=url.split("_")
+            if len(parts)>2:
+                suffix=parts[-2]
+        
+        image_lst=[Path(file_path).with_suffix("."+suffix)  for file_path in self.image_lst]
+        
+        dests=image_lst+self.video_lst
         #图片 + 视频
         tasks=[download_async(url,dest) for url,dest in zip(urls,dests) ]
         #文本
         tasks.append(read_write_async(str(self),self.note_path,mode="w",encoding="utf-8"))
         
         await asyncio.gather(*tasks)
+        
+        
+        
+        if suffix in ["jpg","jpeg"]:
+            return
+        for file_path,dest_path in zip(image_lst,self.image_lst):
+            convert_image_to_jpg(file_path,dest_path)
+        
 
+    def to_word(self,document:Document):
 
+        document.add_heading(self.title, 2)
+        # 添加表格
+        ls=[
+        ["id",self.note_id],
+        ["作者",self.author],
+        ["点赞",self.thumbs],
+        ["当前时间",self.current_time],
+        ["收藏",self.collected],
+        ["分享",self.shared],
+
+        ["创建时间",self.create_time],
+        ["更新时间",self.update_time],
+        ]
+
+        def TableVal(index:int):
+            if index<len(ls):
+                return f"{ls[index][0]}:{ls[index][1]}"
+            else:
+                return ""
+        
+        #表格
+        table = document.add_table(rows=3, cols=3)
+        k=0
+        for row in range(3):
+            for cell in range(3):
+                table.rows[row].cells[cell].text=TableVal(k)
+                k+=1
+                if k>len(ls):
+                    break
+        
+        
+        
+        #图片
+        if self.image_lst:
+            pic_paragraph = document.add_paragraph()
+            for image_path in self.image_lst:
+                cur_path=normal_path(image_path)
+                try:
+                    pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
+                except:
+                    logger.error(f"image_path:{cur_path} 插入word文档【{self.title}】失败")
+                    continue
+
+        
+        # if self.video_lst:
+        #     video_paragraph = document.add_paragraph().add_run()
+        #     for video_path in self.video_lst:
+        #         video_paragraph.add_video(video_path,width=Inches(1.5))
+        #         video_paragraph.add_run()
+            
+        
+        
+        document.add_paragraph(self.content)
+        pass
 
 async def ParseOrgNote(raw_data):
     # raw_data=json.loads(body)
+    if not "data" in raw_data:
+        return None
     
     await asyncio.sleep(.1)
     
@@ -240,7 +364,7 @@ async def ParseOrgNote(raw_data):
     note_id=note_card["note_id"]
     title=sanitize_filename(note_card["title"])
     if not title:
-        title="无标题"
+        title=str(uuid4())
     current_time=convert_milliseconds_to_datetime(note_data["current_time"])
     video_lst=[video["master_url"] for video in note_card["video"]["media"]["stream"]["h264"]] if "video" in note_card else []
 
@@ -248,7 +372,7 @@ async def ParseOrgNote(raw_data):
                     content=content,
                     create_time=create_time,
                     update_time=update_time,
-                    image_lst=image_urls,
+                    image_urls=image_urls,
                     author=user_name,
                     thumbs=liked_count,
                     collected=collected_count,
@@ -256,7 +380,7 @@ async def ParseOrgNote(raw_data):
                     comment=comment_count,
                     note_id=note_id,
                     current_time=current_time,
-                    video_lst=video_lst)
+                    video_urls=video_lst)
 
 
 class Section:
@@ -342,6 +466,7 @@ class SectionManager:
 
 
 class RedBookSearch:
+    is_first=True
     def __init__(self,wp:WebPage,theme_name:str,root_dir:str=setting.redbook_notes_dir,search_count:int=200,queue_count:int=100) -> None:
         self.wp=wp
         self.theme_name=theme_name
@@ -374,7 +499,8 @@ class RedBookSearch:
         self.wp.get(url)
         
         #等待登录
-        time.sleep(5)
+        if RedBookSearch.is_first:
+            time.sleep(5)
         # time.sleep(.5 if exist_cookie else 5.0) 
         # if not exist_cookie:
         #     save_cookies(self.wp,url)
@@ -421,7 +547,7 @@ class RedBookSearch:
             sec=next(secManager.next()) 
             if not sec:
                 continue
-            await asyncio.sleep(1)
+            await asyncio.sleep(.1)
             
             try:
                 sec.click()
@@ -430,23 +556,33 @@ class RedBookSearch:
                 secManager.update()
                 continue
             pack=self.wp.listen.wait()
-            sec_i+=1
+            body=pack.response.body
             
-            tasks=[
-                self.data_queue.put(pack.response.body),
-            #异步写入临时文件
-                read_write_async(json.dumps(pack.response.body,indent=4,ensure_ascii=False),
-                                   os.path.join(self.ThemeHistoryDir,f"{sec_i:04d}.json"), "w", encoding="utf-8")
+            #非空才写入
+            if body:
+                sec_i+=1
                 
-            ]
-            await asyncio.gather(*tasks)
+                
+                
+                tasks=[
+                    self.data_queue.put(body),
+                #异步写入临时文件
+                    read_write_async(json.dumps(body,indent=4,ensure_ascii=False),
+                                    os.path.join(self.ThemeHistoryDir,f"{sec_i:04d}.json"), "w", encoding="utf-8")
+                    
+                ]
+                await asyncio.gather(*tasks)
 
 
 
 
             close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
             if close_flag:
-                close_flag.click()
+                try:
+                    close_flag.click()
+                except:
+                    continue
+
                 
             
                 
@@ -460,16 +596,19 @@ class RedBookSearch:
                 continue
             
             data=await self.data_queue.get()
-            noteinfo= await ParseOrgNote(data)
-            if noteinfo:
-                lst.append(noteinfo)
-                
-                noteinfo.set_root_dir(self.ThemeDir)
-                await noteinfo.write_to_notepad()
-            self.cur_index+=1
+            if data:
+                noteinfo= await ParseOrgNote(data)
+                if noteinfo:
+                    lst.append(noteinfo)
+                    
+                    noteinfo.set_root_dir(self.ThemeDir)
+                    await noteinfo.write_to_notepad()
+                self.cur_index+=1
             self.data_queue.task_done()
         if lst:
             df=pd.DataFrame([info.__dict__ for info in lst], columns=lst[0].__dict__.keys())
+            if not df is None:
+                df.sort_values(by=["thumbs","create_time"], ascending=[False, True],inplace=True)
             return df
 
     def __CreateNotes():
@@ -486,6 +625,21 @@ class RedBookSearch:
                         noteinfo.set_root_dir(setting.redbook_notes_dir,index)
                         noteinfo.write_to_notepad()
                     index+=1
+                    
+                    
+
+    
+async def to_theme_word(theme_name,root_dir,dict_data):
+    await asyncio.sleep(.1)
+        # 创建一个新的文档
+    document = Document()
+    #整理到word中
+    for note_info in dict_data:
+        info=NoteInfo(**note_info)
+        info.to_word(document)
+    document.save(os.path.join(root_dir,f"{theme_name}.docx"))
+    
+    
                     
 class RedBookSearchs:
     def __init__(self,themes:list,root_dir:str=setting.redbook_notes_dir,search_count:int=5,queue_count:int=100) -> None:
@@ -532,8 +686,11 @@ class RedBookSearchs:
         cache_dir=os.path.join(root_dir,"cache")
         os.makedirs(cache_dir,exist_ok=True)
         start_time=time.time()
-        for theme in self.themes:
+        for index,theme in enumerate(self.themes) :
             cur_time= time.time()
+            if index>0 and RedBookSearch.is_first:
+                RedBookSearch.is_first=False
+                
             search=RedBookSearch(self.wp,theme,root_dir,self.search_count,self.queue_count)
             search.SearchTheme()
             
@@ -545,15 +702,20 @@ class RedBookSearchs:
                 dfs.append((theme,df) )
                 
                 #临时数据，缓存使用、
-                json_data=json.dumps(df.to_dict("records"),indent=4,ensure_ascii=False)
-                await read_write_async(json_data, os.path.join(cache_dir,f"{theme}.json"),mode="w",encoding="utf-8")
+                dict_data=df.to_dict("records")
+                json_data=json.dumps(dict_data,indent=4,ensure_ascii=False)
+                
+                tasks=[read_write_async(json_data, os.path.join(cache_dir,f"{theme}.json"),mode="w",encoding="utf-8"),
+                       to_theme_word(theme_name=theme,root_dir=root_dir,dict_data=dict_data)
+                       ]
+                    
+                await asyncio.gather(*tasks)
 
             
             logger.info(f"查询【{theme}】,用时{time.time()- cur_time}")
             
 
             search.StopListen()
-            # search.CloseBrowser()
             
         self.InfoToExcel(root_dir,dfs)
         logger.info(f"一共用时{time.time()- start_time}")
@@ -562,8 +724,9 @@ class RedBookSearchs:
 
 if __name__ == '__main__':
     wp=WebPage()
-    themes=["四神汤","薏米茶",'八宝茶']
+    # themes=["补气血吃什么","黄芪",'麦冬','怀山药']
+    themes=["薏米"]
     
-    redbook=RedBookSearchs(themes=themes,root_dir=setting.redbook_notes_dir,search_count=2,queue_count=100)
+    redbook=RedBookSearchs(themes=themes,root_dir=setting.redbook_notes_dir,search_count=50,queue_count=100)
     asyncio.run(redbook.Dumps()) 
     
