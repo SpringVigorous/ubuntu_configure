@@ -436,7 +436,7 @@ class BiliVideoSet:
             mode="w",
             encoding="utf-8"
         )
-        tasks = []
+        # tasks = []
 
         # # 添加初始任务
         # tasks.append(asyncio.create_task(run_with_semaphore(read_write_async(

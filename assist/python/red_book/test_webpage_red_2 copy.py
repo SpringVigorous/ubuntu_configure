@@ -14,8 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-
-
+import __init__
+from base.com_log import logger as logger
+import base.setting as setting
+from collections import namedtuple
 
 
 
@@ -28,7 +30,7 @@ def write_to_file( file_name):
         "request_cookies":request_cookies,
         "request_response":response.body,
     }
-    cur_dir=os.path.join(os.getcwd(),"history")
+    cur_dir=setting.redbook_history_dir
     dest_path=os.path.join(cur_dir,
     f"page_{page_id}.json")
     os.makedirs(os.path.dirname(dest_path),exist_ok=True)
@@ -121,7 +123,37 @@ def convert_milliseconds_to_datetime(milliseconds):
 #                 f.write(responds.content)
 #         break
 
+Section= namedtuple('section',["sec","yVal","id","already"])
 
+class SectionManager:
+    def __init__(self,wp):
+        self.wp=wp
+        self.secs=[]
+        self.update()
+        
+    def update(self):
+        time.sleep(.5)
+        org_secs=wp.eles("xpath://section")
+        sorted(org_secs,key=lambda x:x.rect.midpoint.y)
+        secs=[Section(sec,sec.rect.midpoint.y,sec.node_id,False)   for sec in org_secs]
+        self.secs.extend(secs)
+    
+    def next(self):
+        self.update()
+        for sec in self.secs:
+            if not sec.already:
+                sec.already=True
+                yield sec.sec
+    
+    def count(self):
+        self.update()
+        return sum([ 0 if sec.already else 1  for sec in self.secs ])
+
+    
+def update_secs(wp):
+    secs=wp.eles("xpath://section")
+    sorted(secs,key=lambda x:x.rect.midpoint.y)
+    return 
 
             
            
@@ -172,13 +204,12 @@ if __name__ == '__main__':
     # 显式等待
     # wait = WebDriverWait(wp.driver, 10)  # 设置等待时间为 10 秒
     sec_i=0
-    while True:
+    
+    secManager=SectionManager(wp)
+    while secManager.count()>0:
         # sections =wait.until(EC.presence_of_all_elements_located((By.XPATH, "//section")))
         time.sleep(.5)
-        
-        
-        
-        sections = wp.eles("xpath://section")
+        sections = update_secs(wp)
         print(sections)
         if not sections:
             break
@@ -194,7 +225,7 @@ if __name__ == '__main__':
                 ref=ref_divs[0].attr("href")
                 if  ref  and ref not in info:
                     info.append(ref)
-                    sec=wp.eles("xpath://section")[i]
+                    sec=update_secs[i]
 
                     print(f"cur:{num} corners:{sec.rect.corners}")
                     rect_y=max([ pos[1] for pos in sec.rect.corners ]) 

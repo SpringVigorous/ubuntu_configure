@@ -14,3 +14,4 @@ def add_base_path(file_path,*args):
 
 
 add_base_path(__file__)
+__all__ = []
