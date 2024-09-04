@@ -20,7 +20,7 @@ from base import setting as setting
 from base.string_tools import sanitize_filename
 # from base.cookies_tools import save_cookies,load_cookies,exist_cookies
 from base.file_tools import read_write_async,read_write_sync,download_async
-
+from base.com_log import logger as logger
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 
@@ -85,22 +85,7 @@ class NoteInfo:
         
         
     def __str__(self) -> str:
-        # contents=[
-        # f"title:{self.title}"
-        # f"note_id:{self.note_id}",
-        # f"current_time{self.current_time}",
-        # f"create_time{self.create_time}",
-        # f"update_time{self.update_time}",
-        # f"image_urls:{"\n".join(self.image_urls)}",
 
-        # f"video_urls:{"\n".join(self.video_urls)}",
-        # f"author:{self.author}",
-        # f"thumbs:{self.thumbs}",
-        # f"collected:{self.collected}",
-        # f"shared:{self.shared}",
-        # f"comment:{self.comment}",
-        # f"content:{self.content}",
-        # ]
         contents=[]
         if self.has_title:
             contents.append(f"title:{self.title}")
@@ -211,27 +196,15 @@ class NoteInfo:
           
     async def write_to_notepad(self):
 
+        urls=self.image_urls+self.video_urls
+        dests=self.image_lst+self.video_lst
+        #图片 + 视频
+        tasks=[download_async(url,dest) for url,dest in zip(urls,dests) ]
         #文本
-        await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
+        tasks.append(read_write_async(str(self),self.note_path,mode="w",encoding="utf-8"))
         
+        await asyncio.gather(*tasks)
 
-        
-        async def download(urls,dests):  
-            for i in range(len(urls)):
-                url=urls[i]
-                dest_path=dests[i]
-                await download_async(url,dest_path=dest_path)
-                
-                
-                # async  with aiohttp.ClientSession() as clientSession:
-                #     async with clientSession.get(url=url) as responds:
-                #         async with aiofiles.open(dest_path,"wb") as f:
-                #             await f.write(await responds.content.read())           
-        #图片
-        await download(self.image_urls,self.image_lst)
-        
-        #视频
-        await download(self.video_urls,self.video_lst)
 
 
 async def ParseOrgNote(raw_data):
@@ -315,7 +288,7 @@ class SectionManager:
             else:
                 self.secs[sec_ids.index(sec.id)]=sec
         
-        # self.secs.extend(self.cur_secs)
+
 
     def update(self):
         
@@ -324,16 +297,11 @@ class SectionManager:
         
         org_secs=self.wp.eles("xpath://section")
         sorted(org_secs,key=lambda x:x.rect.midpoint[1])
-        # _backend_id 13
-        
-        # self.backends=[sec._backend_id for sec in org_secs]
-        # self.note_ids=[sec.raw_text for sec in org_secs]
+
         
         secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
         
-
-        #_obj_id
-        # secs=list(filter(lambda x: not contain_search_key(x.sec.raw_text),secs) ) 
+ 
         
         if self.secs:
             for sec in secs:
@@ -344,7 +312,7 @@ class SectionManager:
                     
         
         
-        # self.secs.extend(secs)
+
         self.__set_secs(secs)
     def get_by_id(self ,id):
         secs=[sec for sec in self.secs if sec.id==id]
@@ -353,7 +321,7 @@ class SectionManager:
 
     
     def next(self):
-        # self.update()
+
         for sec in self.cur_secs:
             if not sec.already:
                 sec.already=True
@@ -366,7 +334,7 @@ class SectionManager:
         
         
     def count(self):
-        # self.update()
+
         return sum([ 0 if sec.already else 1  for sec in self.cur_secs ])
 
 
@@ -444,7 +412,7 @@ class RedBookSearch:
         secManager.update()
         while (secManager.count())>0:
             
-            if sec_i>=self.search_count:
+            if sec_i>self.search_count:
                 self.stoped=True
                 break
             # secManager.update()
@@ -462,16 +430,18 @@ class RedBookSearch:
                 secManager.update()
                 continue
             pack=self.wp.listen.wait()
-
-
-            await self.data_queue.put(pack.response.body)
             sec_i+=1
-
+            
+            tasks=[
+                self.data_queue.put(pack.response.body),
             #异步写入临时文件
-            await read_write_async(json.dumps(pack.response.body,indent=4,ensure_ascii=False),
+                read_write_async(json.dumps(pack.response.body,indent=4,ensure_ascii=False),
                                    os.path.join(self.ThemeHistoryDir,f"{sec_i:04d}.json"), "w", encoding="utf-8")
-            # with open(os.path.join(cur_dir,f"{sec_i:04d}.json"), "w", encoding="utf-8") as f:
-            #     json.dump(pack.response.body,f,indent=4,ensure_ascii=False)
+                
+            ]
+            await asyncio.gather(*tasks)
+
+
 
 
             close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
@@ -574,22 +544,19 @@ class RedBookSearchs:
             if not df is None:
                 dfs.append((theme,df) )
                 
-                #临时数据，缓存使用
-                dict_data= df.to_dict("records")
-                with open(os.path.join(cache_dir,f"{theme}.json"),"w",encoding="utf-8") as f:
-                    json.dump(dict_data,f,ensure_ascii=False)
+                #临时数据，缓存使用、
+                json_data=json.dumps(df.to_dict("records"),indent=4,ensure_ascii=False)
+                await read_write_async(json_data, os.path.join(cache_dir,f"{theme}.json"),mode="w",encoding="utf-8")
+
             
-            print(f"查询【{theme}】,用时{time.time()- cur_time}")
+            logger.info(f"查询【{theme}】,用时{time.time()- cur_time}")
             
-                # df1=pd.DataFrame(dict_data)
-                # df1.to_excel(os.path.join(cache_dir,f"{theme}.xlsx"),sheet_name=theme,index=False)
-                
-                # df.to_json(os.path.join(root_dir,f"{theme}.json"), orient="records", force_ascii=False)
+
             search.StopListen()
             # search.CloseBrowser()
             
         self.InfoToExcel(root_dir,dfs)
-        print(f"一共用时{time.time()- start_time}")
+        logger.info(f"一共用时{time.time()- start_time}")
         
         
 
