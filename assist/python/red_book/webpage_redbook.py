@@ -20,7 +20,8 @@ from base import setting as setting
 from base.string_tools import sanitize_filename
 # from base.cookies_tools import save_cookies,load_cookies,exist_cookies
 from base.file_tools import read_write_async,read_write_sync,download_async
-from base.com_log import logger as logger
+
+from base.path_tools import normal_path
 from base.path_tools import normal_path
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
@@ -41,7 +42,7 @@ from docx.shared import Inches,Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 from uuid import uuid4
-
+from PIL import Image
 
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
@@ -73,7 +74,7 @@ def Num(thums):
     else:
         return 0
 
-from PIL import Image
+
 def convert_image_to_jpg(image_path,dest_path=None):
     if not dest_path:
         dest_path=image_path
@@ -561,9 +562,7 @@ class RedBookSearch:
             #非空才写入
             if body:
                 sec_i+=1
-                
-                
-                
+
                 tasks=[
                     self.data_queue.put(body),
                 #异步写入临时文件
