@@ -217,7 +217,7 @@ async def fetch_data(url,headers, session, max_retries=3):
 
 
         
-async def download(url,headers,dest_path):
+async def async_download(url,headers,dest_path):
     logger.info(f"开始下载文件：{url} -> {dest_path}")
     
     
@@ -305,12 +305,12 @@ async def handle_video(num,bvid,title,header,cache_dir,html_dir,merge_dir,dest_d
                     audio_url=dict['data']['dash']['audio'][0]['baseUrl']
                     tasks=[]
                     if  not mp3_name in cache_list:
-                        tasks.append(asyncio.create_task(download(audio_url,header,audio_path)))
+                        tasks.append(asyncio.create_task(async_download(audio_url,header,audio_path)))
                     else:
                         logger.info(f"跳过已存在缓存文件：{audio_path}")
                         
                     if not mp4_name in cache_list:
-                        tasks.append(asyncio.create_task(download(video_url,header,video_path)))
+                        tasks.append(asyncio.create_task(async_download(video_url,header,video_path)))
                     else:
                         logger.info(f"跳过已存在缓存文件：{video_path}")
                         

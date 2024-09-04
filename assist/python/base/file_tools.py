@@ -2,9 +2,10 @@
 import com_decorator as cd 
 from com_log import logger as logger
 import chardet
-# import asyncio
-# import aiohttp
+import asyncio
+import aiohttp
 import aiofiles
+
 
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
@@ -120,6 +121,59 @@ def read_write_sync(data,dest_path,mode="w",encoding=None):
             return True
     except:
         return False
+
+
+
+async def __fetch_data(url ,session,max_retries=3,**args):
+    retries = 0
+    while retries < max_retries:
+        try:
+            async with session.get(url,**args) as response:
+                if response.status == 200:
+                    content_length = int(response.headers.get('Content-Length', 0))
+                    received_data = await response.read()
+                    if len(received_data) == content_length:
+                        return received_data
+                    else:
+                        raise aiohttp.ClientError(
+                            response.status,
+                            "Not enough data for satisfy content length header."
+                        )
+                else:
+                    raise Exception(f"HTTP error: {response.status}")
+        except aiohttp.ClientError as e:
+            print(f"{retries} times,Request failed: {e}")
+            retries += 1
+            await asyncio.sleep(5)  # 等待 5 秒后重试
+    return None
+    # raise Exception("Max retries exceeded")
+
+
+
+        
+async def download_async(url,dest_path,**kwargs):
+    logger.info(f"开始下载文件：{url} -> {dest_path}")
+    
+    
+    async with aiohttp.ClientSession() as session:
+        content=await __fetch_data(url,session,5,**kwargs)
+        if not content:
+            logger.error(f"下载文件失败：{url} -> {dest_path}")
+            return False
+        
+        # async with session.get(url,headers=headers) as response:
+        #     content=await response.read()
+            
+        await read_write_async(content,dest_path,mode="wb")
+        
+            # async with  aiofiles.open(dest_path,"wb") as f:
+            #     content= await response.read()
+            #     await f.write(response.content)
+    logger.info(f"下载文件已完成：{url} -> {dest_path}")
+    return True
+
+
+
 
 if __name__ == '__main__':
 

@@ -19,7 +19,7 @@ from base.com_log import logger as logger
 from base import setting as setting
 from base.string_tools import sanitize_filename
 # from base.cookies_tools import save_cookies,load_cookies,exist_cookies
-
+from base.file_tools import read_write_async,read_write_sync,download_async
 
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
@@ -107,11 +107,11 @@ class NoteInfo:
         if self.has_note_id:
             contents.append(f"note_id:{self.note_id}")
         if self.has_current_time:
-            contents.append(f"current_time{self.current_time}")
+            contents.append(f"current_time:{self.current_time}")
         if self.has_create_time:
-            contents.append(f"create_time{self.create_time}")
+            contents.append(f"create_time:{self.create_time}")
         if self.has_update_time:
-            contents.append(f"update_time{self.update_time}")
+            contents.append(f"update_time:{self.update_time}")
         if self.has_images:
             contents.append(f"image_urls:{"\n".join(self.image_urls)}")
         if self.has_video:
@@ -137,62 +137,62 @@ class NoteInfo:
         return '\n'.join(contents)+"\n"
 
     @property
-    def has_title(self):
-        return bool(self.title)
+    def has_title(self)->bool:
+        return self.title
     @property
-    def has_images(self):
-        return bool(self.image_urls)
+    def has_images(self)->bool:
+        return self.image_urls
     
     @property
-    def has_video(self):
-        return bool(self.video_urls)
+    def has_video(self)->bool:
+        return self.video_urls
     
     @property
-    def has_content(self):
-        return bool(self.content)
+    def has_content(self)->bool:
+        return self.content
     
     @property
-    def has_author(self):
-        return bool(self.author)
+    def has_author(self)->bool:
+        return self.author
     
     @property
-    def has_thumbs(self):
-        return bool(self.thumbs)
+    def has_thumbs(self)->bool:
+        return self.thumbs
     
     @property
-    def has_collected(self):
-        return bool(self.collected)
+    def has_collected(self)->bool:
+        return self.collected
     
     @property
-    def has_shared(self):
-        return bool(self.shared)
+    def has_shared(self)->bool:
+        return self.shared
     
     @property
-    def has_comment(self):
-        return bool(self.comment)
+    def has_comment(self)->bool:
+        return self.comment
     
     @property
-    def has_note_id(self):
-        return bool(self.note_id)
+    def has_note_id(self)->bool:
+        return self.note_id
     
     @property
-    def has_create_time(self):
-        return bool(self.create_time)
+    def has_create_time(self)->bool:
+        return self.create_time
     
     @property
-    def has_update_time(self):
-        return bool(self.update_time)
+    def has_update_time(self)->bool:
+        return self.update_time
     
     @property
-    def has_current_time(self):
-        return bool(self.current_time)
+    def has_current_time(self)->bool:
+        return self.current_time
     
     @property
-    def has_image_lst(self):
-        return bool(self.image_lst)
+    def has_image_lst(self)->bool:
+        return self.image_lst
     @property
-    def has_video_lst(self):
-        return bool(self.video_lst)
+    def has_video_lst(self)->bool:
+        return self.video_lst
     
     def set_root_dir(self,root_dir,cur_index:int =-1):
         sub_dir=f"{cur_index}_{self.title}" if cur_index>0 else self.title
@@ -212,17 +212,21 @@ class NoteInfo:
     async def write_to_notepad(self):
 
         #文本
-        async with  aiofiles.open(self.note_path,"w",encoding="utf-8") as f:
-            await f.write(str(self))
+        await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
+        
+
         
         async def download(urls,dests):  
             for i in range(len(urls)):
                 url=urls[i]
                 dest_path=dests[i]
-                async  with aiohttp.ClientSession() as clientSession:
-                    async with clientSession.get(url=url) as responds:
-                        async with aiofiles.open(dest_path,"wb") as f:
-                            await f.write(await responds.content.read())           
+                await download_async(url,dest_path=dest_path)
+                
+                
+                # async  with aiohttp.ClientSession() as clientSession:
+                #     async with clientSession.get(url=url) as responds:
+                #         async with aiofiles.open(dest_path,"wb") as f:
+                #             await f.write(await responds.content.read())           
         #图片
         await download(self.image_urls,self.image_lst)
         
@@ -327,8 +331,7 @@ class SectionManager:
         
         secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
         
-        note_ids=[sec.sec._node_id for sec in secs]
-        print(note_ids)
+
         #_obj_id
         # secs=list(filter(lambda x: not contain_search_key(x.sec.raw_text),secs) ) 
         
@@ -385,7 +388,12 @@ class RedBookSearch:
     @property
     def ThemeDir(self):
         return os.path.join(self.root_dir,self.theme_name)
-    
+    @property
+    def ThemeHistoryDir(self):
+        cur_dir= os.path.join(self.ThemeDir,"history/")
+        if not os.path.exists(cur_dir):
+            os.makedirs(cur_dir)
+        return cur_dir
     #同步进行
     def SearchTheme(self):
         url='https://www.xiaohongshu.com/'
@@ -458,7 +466,10 @@ class RedBookSearch:
 
             await self.data_queue.put(pack.response.body)
             sec_i+=1
-            await asyncio.sleep(1)
+
+            #异步写入临时文件
+            await read_write_async(json.dumps(pack.response.body,indent=4,ensure_ascii=False),
+                                   os.path.join(self.ThemeHistoryDir,f"{sec_i:04d}.json"), "w", encoding="utf-8")
             # with open(os.path.join(cur_dir,f"{sec_i:04d}.json"), "w", encoding="utf-8") as f:
             #     json.dump(pack.response.body,f,indent=4,ensure_ascii=False)
 
@@ -482,8 +493,9 @@ class RedBookSearch:
             noteinfo= await ParseOrgNote(data)
             if noteinfo:
                 lst.append(noteinfo)
-                # noteinfo.set_root_dir(self.ThemeDir,self.cur_index)
-                # await noteinfo.write_to_notepad()
+                
+                noteinfo.set_root_dir(self.ThemeDir)
+                await noteinfo.write_to_notepad()
             self.cur_index+=1
             self.data_queue.task_done()
         if lst:
@@ -585,6 +597,6 @@ if __name__ == '__main__':
     wp=WebPage()
     themes=["四神汤","薏米茶",'八宝茶']
     
-    redbook=RedBookSearchs(themes=themes,root_dir=setting.redbook_notes_dir,search_count=20,queue_count=100)
+    redbook=RedBookSearchs(themes=themes,root_dir=setting.redbook_notes_dir,search_count=2,queue_count=100)
     asyncio.run(redbook.Dumps()) 
     
