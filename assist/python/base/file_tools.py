@@ -5,7 +5,8 @@ import chardet
 import asyncio
 import aiohttp
 import aiofiles
-
+import requests
+import time
 
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
@@ -124,7 +125,7 @@ def read_write_sync(data,dest_path,mode="w",encoding=None):
 
 
 
-async def __fetch_data(url ,session,max_retries=3,**args):
+async def __fetch_async(url ,session,max_retries=3,**args):
     retries = 0
     while retries < max_retries:
         try:
@@ -156,22 +157,51 @@ async def download_async(url,dest_path,**kwargs):
     
     
     async with aiohttp.ClientSession() as session:
-        content=await __fetch_data(url,session,5,**kwargs)
+        content=await __fetch_async(url,session,5,**kwargs)
         if not content:
             logger.error(f"下载文件失败：{url} -> {dest_path}")
             return False
-        
-        # async with session.get(url,headers=headers) as response:
-        #     content=await response.read()
             
         await read_write_async(content,dest_path,mode="wb")
         
-            # async with  aiofiles.open(dest_path,"wb") as f:
-            #     content= await response.read()
-            #     await f.write(response.content)
     logger.info(f"下载文件已完成：{url} -> {dest_path}")
     return True
+def __fetch_sync(url ,max_retries=3,**args):
+    retries = 0
+    while retries < max_retries:
+        try:
+            with requests.get(url,**args) as response:
 
+                if response.status_code == 200:
+                    hearders=response.headers
+                    content_length=int(hearders.get('Content-Length', 0))
+                    received_data =  response.content
+                    if (content_length == 0) or (len(received_data) == content_length):
+                        return received_data
+                    else:
+                        raise requests.exceptions.ConnectionError(
+                            response.status,
+                            "Not enough data for satisfy content length header."
+                        )
+                else:
+                    raise Exception(f"HTTP error: {response.status}")
+        except requests.exceptions.ConnectionError as e:
+            print(f"{retries} times,Request failed: {e}")
+            retries += 1
+            time.sleep(5)  # 等待 5 秒后重试
+    return None
+        
+def download_sync(url,dest_path,**kwargs):
+    logger.info(f"开始下载文件：{url} -> {dest_path}")
+    content=__fetch_sync(url,5,**kwargs)
+    if not content:
+        logger.error(f"下载文件失败：{url} -> {dest_path}")
+        return False
+        
+    read_write_sync(content,dest_path,mode="wb")
+        
+    logger.info(f"下载文件已完成：{url} -> {dest_path}")
+    return True
 
 
 
