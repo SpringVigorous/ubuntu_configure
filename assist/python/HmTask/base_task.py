@@ -3,6 +3,7 @@ import threading
 import multiprocessing
 import queue
 import asyncio
+import time
 # multiprocessing.Queue 、queue.Queue、asyncio.Queue
 
 
@@ -93,7 +94,7 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
         pass
 
     def _imp_run(self):
-        if self.alive:
+        if not self.alive:
             return
         input_data = self.pop_data()
         if input_data is None:
@@ -123,6 +124,7 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
             return data
         except  queue.Empty as e:
             logger.debug("未获取到数据")
+            time.sleep(5)
             return None
         except Exception as e:
             logger.error(f"获取输入数据时发生异常: {e}")

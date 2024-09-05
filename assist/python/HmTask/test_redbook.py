@@ -28,7 +28,7 @@ from base.file_tools import read_write_async,read_write_sync,download_async
 from base.path_tools import normal_path
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
-from tools import *
+from HmTask.redbook_tools import *
 
 
 

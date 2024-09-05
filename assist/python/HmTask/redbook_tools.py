@@ -6,13 +6,17 @@ from pathlib import Path
 from docx import Document
 from docx.shared import Inches,Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+import sys
+sys.path.append("..")
+sys.path.append(".")
 
+from __init__ import *
 from uuid import uuid4
 from PIL import Image
 import os
 import time
 import json
-from base.file_tools import read_write_async,read_write_sync,download_async
+from base.file_tools import read_write_async,read_write_sync,download_async,download_sync
 
 from base.path_tools import normal_path
 from __init__ import *
@@ -54,8 +58,9 @@ def Num(thums):
 def convert_image_to_jpg(image_path,dest_path=None):
     if not dest_path:
         dest_path=image_path
+    info =f"{image_path},{image_path}->{dest_path}"
     if not os.path.exists(image_path):
-        logger.error(f"图片文件不存在:{image_path},{image_path}->{dest_path}失败")
+        logger.error(f"图片文件不存在:{info}失败")
         return
     # 打开图片
     image = Image.open(image_path).convert('RGB')
@@ -74,7 +79,19 @@ def convert_image_to_jpg(image_path,dest_path=None):
         dest_path=image_path
 
     image.save(dest_path, 'JPEG')
+    logger.debug(f"{info}:成功")
+
+def wait_for_file_exist(image_path, timeout=5):
+    start_time = time.time()
+    cur_path = normal_path(image_path)
+    while time.time() - start_time < timeout:
+        if os.path.exists(cur_path):
+            logger.debug(f"等待{time.time()-start_time}秒后，文件 {cur_path} 存在")
+            return True
+        time.sleep(0.5)  # 每0.5秒检查一次
     
+    logger.error(f"等待 {timeout} 秒后，文件 {cur_path} 仍然不存在")
+    return False
 
 class NoteInfo:
     #CountIndex=0
@@ -212,38 +229,36 @@ class NoteInfo:
         self.image_lst=[normal_path(os.path.join(dest_image_dir,f"{i+1}.jpg")) for i in range(len(self.image_urls))]
         self.video_lst=[normal_path(os.path.join(dest_video_dir,f"{i+1}.mp4")) for i in range(len(self.video_urls))] 
         
+        
+    #下载图片及视频
+    def download(self):
+        urls=self.image_urls+self.video_urls
+        
+        #查找前缀
+        suffix=".xxyy"
+        if self.image_urls:
+            url=self.image_urls[0]
+            parts=url.split("_")
+            if len(parts)>2:
+                suffix=parts[-2]
+        
+        image_lst=[Path(file_path).with_suffix("."+suffix)  for file_path in self.image_lst]
+        
+        dests=image_lst+self.video_lst
+        #图片 + 视频
+        for url,dest in zip(urls,dests):
+            download_sync(url,dest) 
+        if suffix in ["jpg","jpeg"]:
+            return
+        for file_path,dest_path in zip(image_lst,self.image_lst):
+            convert_image_to_jpg(file_path,dest_path)
           
-    # async def write_to_notepad(self):
+    #文本
+    def write_to_notepad(self):
+        read_write_sync(str(self),self.note_path,mode="w",encoding="utf-8")
+        logger.debug(f"note_path:{self.note_path} 写入成功")
 
-    #     urls=self.image_urls+self.video_urls
-        
-    #     #查找前缀
-    #     suffix=".xxyy"
-    #     if self.image_urls:
-    #         url=self.image_urls[0]
-    #         parts=url.split("_")
-    #         if len(parts)>2:
-    #             suffix=parts[-2]
-        
-    #     image_lst=[Path(file_path).with_suffix("."+suffix)  for file_path in self.image_lst]
-        
-    #     dests=image_lst+self.video_lst
-    #     #图片 + 视频
-    #     tasks=[download_async(url,dest) for url,dest in zip(urls,dests) ]
-    #     #文本
-    #     tasks.append(read_write_async(str(self),self.note_path,mode="w",encoding="utf-8"))
-        
-    #     await asyncio.gather(*tasks)
-        
-        
-        
-    #     if suffix in ["jpg","jpeg"]:
-    #         return
-    #     for file_path,dest_path in zip(image_lst,self.image_lst):
-    #         convert_image_to_jpg(file_path,dest_path)
-        
-
-    def to_word(self,document:Document):
+    def write_to_word(self,document:Document):
 
         document.add_heading(self.title, 2)
         # 添加表格
@@ -282,6 +297,10 @@ class NoteInfo:
             pic_paragraph = document.add_paragraph()
             for image_path in self.image_lst:
                 cur_path=normal_path(image_path)
+                if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
+                    logger.error(f"image_path:{cur_path} 文件不存在")
+                    continue
+                
                 try:
                     pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
                 except:
@@ -298,60 +317,8 @@ class NoteInfo:
         
         
         document.add_paragraph(self.content)
+        logger.debug(f"word标题:{self.title} 写入成功")
         pass
-
-async def ParseOrgNote(raw_data):
-    # raw_data=json.loads(body)
-    if not "data" in raw_data:
-        return None
-    
-    await asyncio.sleep(.1)
-    
-    note_data=raw_data["data"]
-    note_info=note_data["items"][0]
-    
-    id=note_info["id"]
-    model_type=note_info["model_type"]
-    note_card=note_info["note_card"]
-    topics=[ tag["name"] for tag in note_card["tag_list"]] if "tag_list" in note_card else []
-    if not topics:
-        return None
-    
-    content=note_card["desc"] if "desc" in note_card else ""
-    user=note_card["user"]
-    user_id=user["user_id"]
-    user_name=user["nickname"]
-
-    user_icon=user["avatar_url"] if "avatar_url" in user else ""
-    interact_info=note_card["interact_info"]
-    liked_count=Num(interact_info.get("liked_count"))
-    collected_count=Num(interact_info.get("collected_count",0))
-    share_count=Num(interact_info.get("share_count",0))
-    comment_count=note_info.get("comment_count",0)
-    
-    image_urls=[item["url_default"]  for item in note_card["image_list"]]  if "image_list" in note_card else []
-    create_time=convert_milliseconds_to_datetime(note_card["time"])
-    update_time=convert_milliseconds_to_datetime(note_card["last_update_time"])
-    note_id=note_card["note_id"]
-    title=sanitize_filename(note_card["title"])
-    if not title:
-        title=str(uuid4())
-    current_time=convert_milliseconds_to_datetime(note_data["current_time"])
-    video_lst=[video["master_url"] for video in note_card["video"]["media"]["stream"]["h264"]] if "video" in note_card else []
-
-    return  NoteInfo(title=title,
-                    content=content,
-                    create_time=create_time,
-                    update_time=update_time,
-                    image_urls=image_urls,
-                    author=user_name,
-                    thumbs=liked_count,
-                    collected=collected_count,
-                    shared=share_count,
-                    comment=comment_count,
-                    note_id=note_id,
-                    current_time=current_time,
-                    video_urls=video_lst)
 
 
 class Section:
@@ -431,6 +398,18 @@ class SectionManager:
     def count(self):
 
         return sum([ 0 if sec.already else 1  for sec in self.cur_secs ])
+    
+def to_theme_word(theme_name,root_dir,dict_data):
+        # 创建一个新的文档
+    document = Document()
+    #整理到word中
+    for note_info in dict_data:
+        info=NoteInfo(**note_info)
+        info.write_to_word(document)
+    word_path=os.path.join(root_dir,f"{theme_name}.docx")
+    document.save(word_path)
+    logger.debug(f"word文档：{word_path} 写入成功")
+    
 
 
         

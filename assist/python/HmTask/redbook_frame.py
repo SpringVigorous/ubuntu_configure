@@ -38,10 +38,14 @@ class Interact(threading.Thread):
             count = 20
             i = 0
             while i < count:
-                time.sleep(1)
+                time.sleep(0.5)
                 json_body = f"Interact:{theme} {i}"
+                logger.debug(f"json_queue即将加入:{json_body}")
+                
+                
                 json_queue.put(json_body)
                 i += 1
+                
             stop_event.set()
             parse.join()
             
@@ -64,8 +68,9 @@ class Parse(ThreadTask):
         pass
     def handle_data(self, json_body):
         if json_body:
-            time.sleep(1)
+            time.sleep(0.1)
             data=f"Parse:{json_body}" #处理后获得的数据
+            logger.debug(f"handle_data:{data}")
             return data
         
         pass
@@ -81,43 +86,31 @@ class InputTask(ThreadTask):
     def _run_after(self):
         pass
 
-class DownLoad(InputTask):
+class HandleNote(InputTask):
     def __init__(self, input_queue,  stop_event=None):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
     def handle_data(self, data):
         
-        time.sleep(1)
+        time.sleep(0.7)
         logger.info(f"DownLoad:{data}")
+        time.sleep(0.1)
+        logger.info(f"WriteNotePad:{data}")
         pass
     
 
 
-class WriteNotePad(InputTask):
-
-    def __init__(self, input_queue,  stop_event=None):
-        super().__init__(input_queue=input_queue, stop_event=stop_event)
-    def handle_data(self, data):
-        
-        time.sleep(1)
-        logger.info(f"WriteNotePad:{data}")
-        pass
 
 #以下两个可以并行
-class WriteExcel(InputTask):
+class HandleTheme(InputTask):
     def __init__(self, input_queue,  stop_event=None):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
     def handle_data(self, data):
         time.sleep(1)
         logger.info(f"WriteExcel:{data}")
-        pass
-
-class WriteWord(InputTask):
-    def __init__(self, input_queue,  stop_event=None):
-        super().__init__(input_queue=input_queue, stop_event=stop_event)
-    def handle_data(self, data):
         time.sleep(1)
         logger.info(f"WriteWord:{data}")
         pass
+
 
 
 
@@ -135,34 +128,33 @@ class App:
         stop_event=threading.Event()
         
         interact=Interact(theme_queue=theme_queue,datas_queue=datas_queue,data_queue=data_queue)
-        download=DownLoad(input_queue=data_queue,stop_event=stop_event)
-        write_notepad=WriteNotePad(input_queue=data_queue,stop_event=stop_event)
-        write_excel=WriteExcel(input_queue=datas_queue,stop_event=stop_event)
-        write_word=WriteWord(input_queue=datas_queue,stop_event=stop_event)
+        handle_note=HandleNote(input_queue=data_queue,stop_event=stop_event)
+
+        handle_theme=HandleTheme(input_queue=datas_queue,stop_event=stop_event)
+
         
         
         for theme in themes:
             theme_queue.put(theme)
         
         interact.start()
-        download.start()
-        write_notepad.start()
-        write_word.start()
-        write_excel.start()
+        handle_note.start()
+
+        handle_theme.start()
         
-        stop_event.set()
         interact.join()
+        stop_event.set()
+        
         theme_queue.join()
 
-        download.join()
-        write_notepad.join()
-        write_word.join()
-        write_excel.join()
+        handle_note.join()
+
+        handle_theme.join()
         
 
 
 
 if __name__ == '__main__':
-    lst=[f"item_{i}" for i in range(2)]
+    lst=[f"item_{i}" for i in range(10)]
     app=App()
     app.run(lst)
