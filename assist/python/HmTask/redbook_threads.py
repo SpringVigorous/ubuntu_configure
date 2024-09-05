@@ -149,7 +149,10 @@ class Parse(ThreadTask,NoteDir):
         
         id=note_info["id"]
         model_type=note_info["model_type"]
-        note_card=note_info["note_card"]
+        note_card=note_info.get("note_card",None)
+        if not note_card:
+            return None
+
         topics=[ tag["name"] for tag in note_card["tag_list"]] if "tag_list" in note_card else []
         if not topics:
             return None
@@ -286,6 +289,6 @@ class App:
 
 
 if __name__ == '__main__':
-    lst=['黄精','党参']
+    lst=['八段锦','女生变美']
     app=App()
     app.run(lst)
