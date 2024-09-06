@@ -25,7 +25,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor , wait, ALL_COMPLETED
 
 class Interact(threading.Thread):
-    def __init__(self, theme_queue:Queue, datas_queue:Queue, data_queue:Queue,root_dir:str=setting.redbook_notes_dir,search_count:int=10,output_file_queue:Queue=None):
+    def __init__(self, theme_queue:Queue, datas_queue:Queue, data_queue:Queue,root_dir:str=setting.redbook_notes_dir,search_count:int=10,output_file_queue:Queue=None,stop_event=None):
         super().__init__()
         self.theme_queue = theme_queue
         self.datas_queue = datas_queue
@@ -37,13 +37,29 @@ class Interact(threading.Thread):
         url='https://www.xiaohongshu.com/'
         
         self.wp.get(url)
+        self.stop_event=stop_event
         
 
         time.sleep(5) #初次等待登录
         
     def run(self):
+        has_except=False
+        
+        def clear_queue(q):
+            while not q.empty():
+                try:
+                    val = q.get_nowait()  # 或者使用 q.get(False)
+                    q.task_done()
+                except Empty:
+                    break
+                    
+        
+        
         while not self.theme_queue.empty():
-             
+            if has_except:
+                clear_queue(self.theme_queue)
+                break
+            
             start_time=time.time()
             
             theme = self.theme_queue.get()
@@ -60,8 +76,9 @@ class Interact(threading.Thread):
                           stop_event=stop_event,dest_dir=theme_dir,output_file_queue=self.output_file_queue)
             parse.start()
             i = 0
-            has_except=False
             try:
+                #测试异常
+                # raise FileNotFoundError("helllo")
             
                 #搜索输入框
                 search_input = self.wp.ele('xpath://input[@class="search-input"]')
@@ -97,6 +114,10 @@ class Interact(threading.Thread):
                         body["my_link"]=self.wp.url
                         json_queue.put(body)    #整理到内部队列
                         i += 1
+                        
+                    # if i>3:
+                        #测试异常
+                        # raise FileNotFoundError("helllo")
                     #关闭窗口
                     close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
                     if close_flag:
@@ -107,20 +128,16 @@ class Interact(threading.Thread):
             except Exception as e:
                 logger.error(f"采集{theme_info}异常【{e}】，共采集{i}个，耗时:{time.time()-start_time:.2f}秒")
                 has_except=True
+                self.stop_event.set()
             finally:
                 stop_event.set()
-                parse.join()
-                
                 self.theme_queue.task_done()
+                parse.join()                
                 #清空队列，避免等待队列数据
                 if has_except:
-                    q=self.theme_queue
-                    while not q.empty():
-                        try:
-                            q.get_nowait()  # 或者使用 q.get(False)
-                        except Empty:
-                            break
+                    clear_queue(self.theme_queue)
                     break #退出循环，避免后续任务继续执行
+                
                 logger.info(f"完成采集{theme_info}，共采集{i}个，耗时:{time.time()-start_time:.2f}秒")
                 
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
@@ -312,7 +329,7 @@ class App:
         stop_event=threading.Event()
         root_dir=setting.redbook_notes_dir
         
-        interact=Interact(theme_queue=theme_queue,datas_queue=datas_queue,data_queue=data_queue,root_dir=root_dir,search_count=search_count,output_file_queue=file_queue)
+        interact=Interact(theme_queue=theme_queue,datas_queue=datas_queue,data_queue=data_queue,root_dir=root_dir,search_count=search_count,output_file_queue=file_queue,stop_event=stop_event)
         
         handle_note=HandleNote(input_queue=data_queue,stop_event=stop_event,dest_dir=root_dir)
         handle_theme=HandleTheme(input_queue=datas_queue,stop_event=stop_event,dest_dir=root_dir)
@@ -328,7 +345,7 @@ class App:
         handle_theme.start()
         
         interact.join()
-        stop_event.set()
+        # stop_event.set()
         
         file_writer.join()
         theme_queue.join()
@@ -342,6 +359,6 @@ class App:
 
 
 if __name__ == '__main__':
-    lst=["减肥"]
+    lst=["拉筋","指压"]
     app=App()
     app.run(lst,search_count=50)

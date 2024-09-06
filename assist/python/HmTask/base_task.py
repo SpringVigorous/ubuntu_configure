@@ -123,7 +123,7 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
 
             return data
         except  queue.Empty as e:
-            logger.debug("未获取到数据")
+            # logger.trace("未获取到数据")
             time.sleep(5)
             return None
         except Exception as e:
