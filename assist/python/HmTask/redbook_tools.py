@@ -3,9 +3,9 @@ import datetime
 import pandas as pd
 from pathlib import Path
 
-from docx import Document
-from docx.shared import Inches,Cm
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx import Document,opc,oxml
+from docx.shared import Inches,Cm,Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 import sys
 sys.path.append("..")
 sys.path.append(".")
@@ -23,6 +23,7 @@ from __init__ import *
 from base.com_log import logger as logger
 from base import setting as setting
 from base.string_tools import sanitize_filename
+from docx.enum.style import WD_STYLE_TYPE
 
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
@@ -79,11 +80,44 @@ def convert_image_to_jpg(image_path,dest_path=None):
         dest_path=image_path
 
     image.save(dest_path, 'JPEG')
-    logger.debug(f"{info}:成功")
+    logger.trace(f"图片类型转换成功：{info}")
 
-def wait_for_file_exist(image_path, timeout=5):
+def add_hyperlink(paragraph, url, text, color=None):
+    # 获取文档部分
+    part = paragraph.part
+    
+    # 创建超链接关系
+    r_id = part.relate_to(url, opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+    
+    # 创建超链接元素
+    hyperlink = oxml.shared.OxmlElement('w:hyperlink')
+    hyperlink.set(oxml.shared.qn('r:id'), r_id)
+    
+    # 创建新的运行元素
+    new_run = oxml.shared.OxmlElement('w:r')
+    rPr = oxml.shared.OxmlElement('w:rPr')
+    
+    # 设置颜色
+    if color:
+        c = oxml.shared.OxmlElement('w:color')
+        c.set(oxml.shared.qn('w:val'), color)
+        rPr.append(c)
+    new_run.append(rPr)
+    new_run.text = text
+    hyperlink.append(new_run)
+
+    r = paragraph._p.add_r()
+    r.append(hyperlink)
+
+    return hyperlink
+        
+        
+        
+
+
+def wait_for_file_exist(file_path, timeout=5):
     start_time = time.time()
-    cur_path = normal_path(image_path)
+    cur_path = normal_path(file_path)
     while time.time() - start_time < timeout:
         if os.path.exists(cur_path):
             logger.debug(f"等待{time.time()-start_time}秒后，文件 {cur_path} 存在")
@@ -95,7 +129,9 @@ def wait_for_file_exist(image_path, timeout=5):
 
 class NoteInfo:
     #CountIndex=0
-    def __init__(self,title,content,create_time,update_time,image_urls,author,thumbs,collected,shared,comment,note_id,current_time,video_urls,image_lst=[],video_lst=[],note_path=""):
+    def __init__(self,title,content,create_time,update_time,image_urls,author,thumbs,
+                 collected,shared,comment,note_id,current_time,video_urls,image_lst=[],
+                 video_lst=[],note_path="",type="note",link=""):
         self.title=title
         self.content=content
         self.create_time=create_time    
@@ -115,13 +151,19 @@ class NoteInfo:
         self.video_lst=video_lst if isinstance(video_lst,list) else json.loads(video_lst)
 
         self.note_path=note_path
-        
+        self.type=type if type else ""
+        self.link=link if link else ""
         
     def __str__(self) -> str:
 
         contents=[]
         if self.has_title:
             contents.append(f"title:{self.title}")
+        if self.has_link:
+            contents.append(f"link:{self.link}")
+        if self.has_type:
+            contents.append(f"type:{self.type}")
+        
         if self.has_note_id:
             contents.append(f"note_id:{self.note_id}")
         if self.has_current_time:
@@ -153,6 +195,7 @@ class NoteInfo:
             contents.append(f"video_lst:{"\n".join(self.video_lst)}")
         
         return '\n'.join(contents)+"\n"
+
 
     @property
     def has_title(self)->bool:
@@ -212,6 +255,12 @@ class NoteInfo:
     def has_video_lst(self)->bool:
         return self.video_lst
     
+    @property
+    def has_type(self)->bool:
+        return self.type
+    @property
+    def has_link(self)->bool:
+        return self.link
     def set_root_dir(self,root_dir,cur_index:int =-1):
 
 
@@ -260,41 +309,55 @@ class NoteInfo:
 
     def write_to_word(self,document:Document):
 
-        document.add_heading(self.title, 2)
+        heading = document.add_heading(self.title, 2)
+        heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+
+
+
         # 添加表格
-        ls=[
-        ["id",self.note_id],
-        ["作者",self.author],
+        
+        def merge_val(ls):
+            return ":".join(list(map(str,ls)) )
+        
+        def merge_vals(ls):
+            return " ".join(list(map(merge_val,ls)) )
+        
+        thumbs=[
         ["点赞",self.thumbs],
-        ["当前时间",self.current_time],
         ["收藏",self.collected],
         ["分享",self.shared],
-
-        ["创建时间",self.create_time],
-        ["更新时间",self.update_time],
         ]
+        
+        
+        ls=[
 
-        def TableVal(index:int):
-            if index<len(ls):
-                return f"{ls[index][0]}:{ls[index][1]}"
-            else:
-                return ""
+            [merge_val(["create",self.create_time]),merge_val(["作者",self.author]),],
+            [merge_val(["update",self.update_time]),merge_vals(thumbs),],
+            [merge_val(["now",self.current_time]),merge_val(["类型",self.type]),]
+        ]
         
+        row_count=len(ls)
         #表格
-        table = document.add_table(rows=3, cols=3)
-        k=0
-        for row in range(3):
-            for cell in range(3):
-                table.rows[row].cells[cell].text=TableVal(k)
-                k+=1
-                if k>len(ls):
-                    break
-        
-        
+        table = document.add_table(rows=row_count, cols=2)
+
+        for row in range(row_count):
+            for cell in range(2):
+                table.rows[row].cells[cell].text=ls[row][cell]
+
+        #添加note_id,附带超链接
+        id_paragraph = document.add_paragraph()
+        id_info=f"id:{self.note_id}"
+        #添加链接
+        if self.has_link:
+            add_hyperlink(id_paragraph, self.link,id_info, color='0563C1')
+        else:
+            id_paragraph.add_run(id_info)
         
         #图片
         if self.image_lst:
             pic_paragraph = document.add_paragraph()
+            pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for image_path in self.image_lst:
                 cur_path=normal_path(image_path)
                 if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
@@ -317,6 +380,8 @@ class NoteInfo:
         
         
         document.add_paragraph(self.content)
+        document.add_paragraph('')
+        document.add_paragraph('')
         logger.debug(f"word标题:{self.title} 写入成功")
         pass
 
