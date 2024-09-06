@@ -34,18 +34,18 @@ class BaseTask():
         self.input_queue = input_queue
         self.output_queue = output_queue
     @property
-    def stop(self):
+    def Stopped(self)->bool:
         return  not self.stop_event or self.stop_event.is_set()
     @property
-    def alive(self):
-        return not(self.stop and  self.input_queue.empty())
+    def Valid(self)->bool:
+        return not(self.Stopped and self.InputValid and self.input_queue.empty())
 
     @property
-    def IsInputNone(self):
-        return not self.input_queue
+    def InputValid(self)->bool:
+        return not self.input_queue is None
     @property
-    def IsOutputNone(self):
-        return not self.output_queue
+    def OutputValid(self)->bool:
+        return not self.output_queue is None
 
     def __check_queue_type__(self,obj,type):
         return  not obj and isinstance(obj,type)
@@ -86,15 +86,15 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
     
     
     @abc.abstractmethod
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         pass
         
     @abc.abstractmethod
-    def _run_after(self):
+    def _final_run_after(self):
         pass
 
     def _imp_run(self):
-        if not self.alive:
+        if not self.Valid:
             return
         input_data = self.pop_data()
         if input_data is None:
@@ -102,19 +102,22 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
         output_data = self.handle_data(input_data)
         if output_data:
             self.push_data(output_data)
-        self._imp_run_after(output_data)
+        self._each_run_after(output_data)
     def run(self):
-        while self.alive:
+        while self.Valid:
             try:
                 self._imp_run()
             except Exception as e:
                 logger.error(f"处理数据时发生异常: {e}")
-        self._run_after()
+        self._final_run_after()
     
     def put(self,data):
-        self.input_queue.put(data)
+        if self.InputValid:
+            self.input_queue.put(data)
 
     def pop_data(self):
+        if not self.InputValid:
+            return None
         
         try:
             data = self.input_queue.get(timeout=1)  # 阻塞等待数据
@@ -131,6 +134,9 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
             return None
 
     def push_data(self, data):
+        if not self.OutputValid:
+            return
+        
         try:
             self.output_queue.put(data)
         except Exception as e:
@@ -189,10 +195,18 @@ class ThreadTask(RoutineTask, threading.Thread,metaclass=abc.ABCMeta):
     def __init__(self, input_queue, output_queue=None, stop_event=None):
         super().__init__(input_queue, output_queue, stop_event)
         threading.Thread.__init__(self)
+        
     @abc.abstractmethod
     def handle_data(self, data):
         # 示例同步处理逻辑
         raise NotImplementedError("Subclasses must implement this method")
+
+    def _each_run_after(self,data):
+        pass
+
+
+    def _final_run_after(self):
+        pass
 
 class ProcessTask(RoutineTask, multiprocessing.Process,metaclass=abc.ABCMeta):
     def __init__(self, input_queue, output_queue=None, stop_event=None):

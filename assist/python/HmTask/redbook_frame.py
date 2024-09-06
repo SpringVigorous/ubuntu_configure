@@ -60,9 +60,9 @@ class Parse(ThreadTask):
         self.datas_queue=datas_queue
         self.stop_event=stop_event
         self.datas_lst=[]
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         self.datas_lst.append(data)
-    def _run_after(self):
+    def _final_run_after(self):
         if self.datas_lst:
             self.datas_queue.put(self.datas_lst)
         pass
@@ -81,9 +81,9 @@ class InputTask(ThreadTask):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
 
 
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         pass
-    def _run_after(self):
+    def _final_run_after(self):
         pass
 
 class HandleNote(InputTask):

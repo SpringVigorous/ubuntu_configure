@@ -19,10 +19,44 @@ from HmTask.redbook_tools import *
 
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
-from HmTask.redbook_tools import *
+
 import pandas as pd
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor , wait, ALL_COMPLETED
+from collections import namedtuple
+
+
+JsonData=namedtuple("JsonData",["theme","json_data"])
+class ThemesAllFlag:
+    pass
+
+RawData=namedtuple("RawDataQueue",["file_path","json_data"])
+NotesData=namedtuple("NotesData",["theme","pd"])  #pd
+
+ThemesData=namedtuple("ThemesData",["file_path","pds"]) #pds  [notesData]
+
+theme_queue= Queue()
+json_queue=Queue() #JsonData or ThemesAllFlag
+raw_data_queue=Queue() #RawData
+note_queue=Queue() #NoteInfo
+notes_queue=Queue() #NotesData
+themes_queue=Queue() #ThemesData
+
+
+
+stop_parse_event=threading.Event()
+stop_hanle_note_event=threading.Event()
+stop_file_writer_event=threading.Event()
+stop_handle_notes_event=threading.Event()
+stop_write_excle_event=threading.Event()
+
+
+
+
+
+
+
+
 
 class Interact(threading.Thread):
     def __init__(self, theme_queue:Queue, datas_queue:Queue, data_queue:Queue,root_dir:str=setting.redbook_notes_dir,search_count:int=10,output_file_queue:Queue=None,stop_event=None):
@@ -116,8 +150,8 @@ class Interact(threading.Thread):
                         i += 1
                         
                     # if i>3:
-                        #测试异常
-                        # raise FileNotFoundError("helllo")
+                    #     # 测试异常
+                    #     raise FileNotFoundError("helllo")
                     #关闭窗口
                     close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
                     if close_flag:
@@ -149,9 +183,9 @@ class WriteFile(ThreadTask):
         file_path,content,mode,encoding=file_info
         read_write_sync(content,file_path,mode,encoding)
         
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         pass
-    def _run_after(self):
+    def _final_run_after(self):
         pass
 
 class NoteDir:
@@ -185,10 +219,10 @@ class Parse(ThreadTask,NoteDir):
 
         
         
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         if data:
             self.datas_lst.append(data)
-    def _run_after(self):
+    def _final_run_after(self):
         if self.datas_lst:
             df=pd.DataFrame([info.__dict__ for info in self.datas_lst], columns=self.datas_lst[0].__dict__.keys())
             if not df is None:
@@ -266,9 +300,9 @@ class InputTask(ThreadTask,NoteDir):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
         NoteDir.__init__(self,dest_dir=dest_dir)
 
-    def _imp_run_after(self,data):
+    def _each_run_after(self,data):
         pass
-    def _run_after(self):
+    def _final_run_after(self):
         pass
 
 class HandleNote(InputTask):
@@ -293,7 +327,7 @@ class HandleTheme(InputTask):
 
         self.dfs=[]
         
-    def _run_after(self):
+    def _final_run_after(self):
         outPath = os.path.join(self.CurPath,f"{time_flag()}.xlsx")
         with pd.ExcelWriter(outPath) as writer:
             for theme,df in self.dfs:
