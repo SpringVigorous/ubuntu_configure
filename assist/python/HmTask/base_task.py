@@ -36,6 +36,11 @@ class BaseTask():
     @property
     def Stopped(self)->bool:
         return  not self.stop_event or self.stop_event.is_set()
+    
+    def Stop(self):
+        if self.stop_event:
+            self.stop_event.set()
+    
     @property
     def Valid(self)->bool:
         return not(self.Stopped and self.InputValid and self.input_queue.empty())
@@ -74,6 +79,13 @@ class BaseTask():
     def OutputQueue(self):
         return self.output_queue
     
+def clear_queue(q):
+    while not q.empty():
+        try:
+            val = q.get_nowait()  # 或者使用 q.get(False)
+            q.task_done()
+        except queue.Empty:
+            break
     
 class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
 
@@ -92,6 +104,16 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _final_run_after(self):
         pass
+    
+    @abc.abstractmethod
+    def _each_except_after(self,data):    
+        pass
+    
+    #是否break循环
+    @abc.abstractmethod
+    def final_except(self)->bool:
+        return False
+        pass
 
     def _imp_run(self):
         if not self.Valid:
@@ -100,15 +122,22 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
         if input_data is None:
             return
         output_data = self.handle_data(input_data)
+        #过滤掉空，是否合适待商议
         if output_data:
             self.push_data(output_data)
         self._each_run_after(output_data)
+
+        
     def run(self):
         while self.Valid:
             try:
                 self._imp_run()
             except Exception as e:
                 logger.error(f"处理数据时发生异常: {e}")
+                if self.final_except():
+                    if self.InputValid:
+                        clear_queue(self.input_queue)
+                    break
         self._final_run_after()
     
     def put(self,data):
@@ -206,6 +235,20 @@ class ThreadTask(RoutineTask, threading.Thread,metaclass=abc.ABCMeta):
 
 
     def _final_run_after(self):
+        pass
+    
+    def final_except(self)->bool:
+        return False
+    
+    def _each_except_after(self,data):    
+        pass
+    
+    def _each_run_after(self,data):
+
+        pass
+    
+    def _final_run_after(self):
+
         pass
 
 class ProcessTask(RoutineTask, multiprocessing.Process,metaclass=abc.ABCMeta):
