@@ -10,7 +10,7 @@ from DrissionPage import WebPage
 
 
 from __init__ import *
-from base.com_log import logger as logger
+from base.com_log import logger as logger,usage_time
 from base import setting as setting
 from base.string_tools import sanitize_filename,time_flag
 
@@ -144,13 +144,13 @@ class Interact(ThreadTask):
                         continue
             
         except Exception as e:
-            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，耗时:{time.time()-start_time:.2f}秒"))
+            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，{usage_time(start_time)}"))
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
             return 
             
-        logger.info(record_detail(target,f"完成", f"共采集{i}个，耗时:{time.time()-start_time:.2f}秒"))
+        logger.info(record_detail(target,f"完成", f"共采集{i}个，{usage_time(start_time)}"))
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):
@@ -201,6 +201,9 @@ class Parse(ThreadTask,NoteDir):
         pass
 
     def _final_run_after(self):
+        start_time=time.time()
+        target="汇总excle文件 {outPath}"
+        logger.trace(record_detail(target,"开始", "..."))
         self.handle_theme()
         stop_hanle_event.set()
         #Excle输出
@@ -210,7 +213,7 @@ class Parse(ThreadTask,NoteDir):
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
 
-        logger.trace( record_detail("汇总excle文件","写入成功",f"【{outPath}】"))
+        logger.trace( record_detail(target,"写入成功",usage_time(start_time)))
         pass
     
     def handle_theme(self):
@@ -353,8 +356,8 @@ class App:
        pass
 
     def run(self,themes:list,search_count=20):
-        theme_info=f'【{"、".join(themes)}】'
-        target=f"采集{theme_info}"
+        theme_info=f'{"、".join(themes)}'
+        target=f"采集-{theme_info}"
         
         
         logger.info(record_detail(target,"开始","") )
@@ -392,7 +395,7 @@ class App:
 
         handle_theme.join()
         
-        logger.info(record_detail(target, f"完成",f"一共用时{time.time()- start_time}秒"))
+        logger.info(record_detail(target, f"完成",f"一共{usage_time(start_time)}"))
 
 
 

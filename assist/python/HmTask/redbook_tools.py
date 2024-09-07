@@ -20,7 +20,7 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger ,record_detail
+from base.com_log import logger ,record_detail,usage_time
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
@@ -72,7 +72,7 @@ def convert_image_to_jpg(image_path,dest_path=None):
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    logger.trace(record_detail(target,"失败",detail=f"{detail},用时{time.time()-start_time}秒"))
+    logger.trace(record_detail(target,"成功",detail=f"{detail},用时{time.time()-start_time}秒"))
     
     
 
@@ -116,11 +116,11 @@ def wait_for_file_exist(file_path, timeout=5):
 
     while time.time() - start_time < timeout:
         if os.path.exists(cur_path):
-            logger.debug(record_detail(target,"成功",detail=f"用时{time.time()-start_time}秒"))
+            logger.debug(record_detail(target,"成功",f"{usage_time(start_time)}"))
             return True
         time.sleep(0.5)  # 每0.5秒检查一次
     
-    logger.error(record_detail(target,"失败",detail=f"用时{timeout}秒"))
+    logger.error(record_detail(target,"失败",f"{usage_time(start_time)}"))
     return False
 
 def url_file_suffix(url:str)->str:
@@ -353,77 +353,89 @@ class NoteInfo:
     
     def write_to_word(self,document:Document):
 
-        heading = document.add_heading(self.title, 2)
-        heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        start_time=time.time()
+        target=f"添加文档word标题:{self.title}"
+        
+        logger.trace(record_detail(target,"开始",""))
+        try:
+            heading = document.add_heading(self.title, 2)
+            heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        # 添加表格
-        
-        def merge_val(ls):
-            return ":".join(list(map(str,ls)) )
-        
-        def merge_vals(ls):
-            return " ".join(list(map(merge_val,ls)) )
-        
-        thumbs=[
-        ["点赞",self.thumbs],
-        ["收藏",self.collected],
-        ["分享",self.shared],
-        ]
-        
-        
-        ls=[
-
-            [merge_val(["create",self.create_time]),merge_val(["作者",self.author]),],
-            [merge_val(["update",self.update_time]),merge_vals(thumbs),],
-            [merge_val(["now",self.current_time]),merge_val(["类型",self.type]),]
-        ]
-        
-        row_count=len(ls)
-        #表格
-        table = document.add_table(rows=row_count, cols=2)
-
-        for row in range(row_count):
-            for cell in range(2):
-                table.rows[row].cells[cell].text=ls[row][cell]
-
-        #添加note_id,附带超链接
-        id_paragraph = document.add_paragraph()
-        id_info=f"id:{self.note_id}"
-        #添加链接
-        if self.has_link:
-            add_hyperlink(id_paragraph, self.link,id_info, color='0563C1')
-        else:
-            id_paragraph.add_run(id_info)
-        
-        #图片
-        if self.DestImageLst:
-            pic_paragraph = document.add_paragraph()
-            pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for image_path in self.DestImageLst:
-                cur_path=normal_path(image_path)
-                if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
-                    logger.error( record_detail("获取文件","失败", detail=f"image_path:{cur_path} 文件不存在"))
-                    continue
-                
-                try:
-                    pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
-                except:
-                    logger.error(record_detail("插入图片","失败",f"image_path:{cur_path} 插入word文档【{self.title}】失败"))
-                    continue
-
-        
-        # if self.video_lst:
-        #     video_paragraph = document.add_paragraph().add_run()
-        #     for video_path in self.video_lst:
-        #         video_paragraph.add_video(video_path,width=Inches(1.5))
-        #         video_paragraph.add_run()
+            # 添加表格
             
+            def merge_val(ls):
+                return ":".join(list(map(str,ls)) )
+            
+            def merge_vals(ls):
+                return " ".join(list(map(merge_val,ls)) )
+            
+            thumbs=[
+            ["点赞",self.thumbs],
+            ["收藏",self.collected],
+            ["分享",self.shared],
+            ]
+            
+            
+            ls=[
+
+                [merge_val(["create",self.create_time]),merge_val(["作者",self.author]),],
+                [merge_val(["update",self.update_time]),merge_vals(thumbs),],
+                [merge_val(["now",self.current_time]),merge_val(["类型",self.type]),]
+            ]
+            
+            row_count=len(ls)
+            #表格
+            table = document.add_table(rows=row_count, cols=2)
+
+            for row in range(row_count):
+                for cell in range(2):
+                    table.rows[row].cells[cell].text=ls[row][cell]
+
+            #添加note_id,附带超链接
+            id_paragraph = document.add_paragraph()
+            id_info=f"id:{self.note_id}"
+            #添加链接
+            if self.has_link:
+                add_hyperlink(id_paragraph, self.link,id_info, color='0563C1')
+            else:
+                id_paragraph.add_run(id_info)
+            
+            #图片
+            if self.DestImageLst:
+                pic_paragraph = document.add_paragraph()
+                pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for image_path in self.DestImageLst:
+                    cur_path=normal_path(image_path)
+                    if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
+                        logger.error( record_detail("获取文件","失败", detail=f"image_path:{cur_path} 文件不存在"))
+                        continue
+                    
+                    try:
+                        pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
+                    except:
+                        logger.error(record_detail("插入图片","失败",f"image_path:{cur_path} 插入word文档【{self.title}】失败"))
+                        continue
+
+            
+            # if self.video_lst:
+            #     video_paragraph = document.add_paragraph().add_run()
+            #     for video_path in self.video_lst:
+            #         video_paragraph.add_video(video_path,width=Inches(1.5))
+            #         video_paragraph.add_run()
+                
+            
+            if self.has_content:
+                document.add_paragraph(self.content)
+        except Exception as e:
+            logger.error(record_detail(target,"失败",f"异常:{e},{usage_time(start_time)}"))
+            # raise e
+            
+        document.add_paragraph('')
+        document.add_paragraph('')
         
-        if self.has_content:
-            document.add_paragraph(self.content)
-        document.add_paragraph('')
-        document.add_paragraph('')
-        logger.debug(record_detail("添加文档","成功", f"word标题:{self.title}"))
+        
+        
+        logger.debug(record_detail(target,"成功", usage_time(start_time)))
         pass
 
 
@@ -508,13 +520,25 @@ class SectionManager:
 def to_theme_word(theme_name,root_dir,dict_data):
         # 创建一个新的文档
     document = Document()
-    #整理到word中
-    for note_info in dict_data:
-        info=NoteInfo(**note_info)
-        info.write_to_word(document)
-    word_path=os.path.join(root_dir,f"{theme_name}.docx")
-    document.save(word_path)
-    logger.debug(record_detail("写入word","成功", f"文档{word_path}"))
+    start_time=time.time()
+    target=f"写入文档{word_path}"
+    
+    logger.debug(record_detail(target,"开始", "..."))
+    try:
+        #整理到word中
+        for note_info in dict_data:
+            info=NoteInfo(**note_info)
+            info.write_to_word(document)
+        word_path=os.path.join(root_dir,f"{theme_name}.docx")
+        document.save(word_path)
+    except Exception as e:
+        logger.error(record_detail(target,"失败", detail=f"{str(e)},{usage_time(start_time)}"))
+        # raise e
+        return
+        
+        
+        
+    logger.debug(record_detail(target,"成功", usage_time(start_time)))
     
 
 
