@@ -20,10 +20,12 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger as logger
+from base.com_log import logger ,record_detail
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
+import asyncio
+
 
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
@@ -57,30 +59,22 @@ def Num(thums):
 
 
 def convert_image_to_jpg(image_path,dest_path=None):
+    start_time=time.time()
     if not dest_path:
         dest_path=image_path
-    info =f"{image_path},{image_path}->{dest_path}"
-    if not os.path.exists(image_path):
-        logger.error(f"图片文件不存在:{info}失败")
-        return
-    # 打开图片
-    image = Image.open(image_path).convert('RGB')
-    # 保存为 JPEG 格式
 
-
-    image.save(dest_path, 'JPEG')
-    if os.path.exists(dest_path):
-        os.remove(image_path)
+    target="图片类型转换"
+    detail=f"{image_path}->{dest_path}"
     
+    if not os.path.exists(image_path):
+        logger.error(record_detail(target,"失败",detail=f"图片文件不存在:{detail}"))
         return
     # 打开图片
     image = Image.open(image_path).convert('RGB')
-    # 保存为 JPEG 格式
-    if not dest_path:
-        dest_path=image_path
-
     image.save(dest_path, 'JPEG')
-    logger.trace(f"图片类型转换成功：{info}")
+    logger.trace(record_detail(target,"失败",detail=f"{detail},用时{time.time()-start_time}秒"))
+    
+    
 
 def add_hyperlink(paragraph, url, text, color=None):
     # 获取文档部分
@@ -118,14 +112,28 @@ def add_hyperlink(paragraph, url, text, color=None):
 def wait_for_file_exist(file_path, timeout=5):
     start_time = time.time()
     cur_path = normal_path(file_path)
+    target="等待文件存在"
+
     while time.time() - start_time < timeout:
         if os.path.exists(cur_path):
-            logger.debug(f"等待{time.time()-start_time}秒后，文件 {cur_path} 存在")
+            logger.debug(record_detail(target,"成功",detail=f"用时{time.time()-start_time}秒"))
             return True
         time.sleep(0.5)  # 每0.5秒检查一次
     
-    logger.error(f"等待 {timeout} 秒后，文件 {cur_path} 仍然不存在")
+    logger.error(record_detail(target,"失败",detail=f"用时{timeout}秒"))
     return False
+
+def url_file_suffix(url:str)->str:
+    suffix=".xxyy"
+    if url:
+        parts=url.split("_")
+        if len(parts)>2:
+            suffix=parts[-2]
+    return suffix
+def is_jpg(file_path)->bool:
+    item= Path(file_path)
+    return item.suffix.lower() in [".jpg",".jpeg"]
+
 
 class NoteInfo:
     #CountIndex=0
@@ -150,6 +158,7 @@ class NoteInfo:
         self.image_lst=image_lst if isinstance(image_lst,list) else json.loads(image_lst)
         self.video_lst=video_lst if isinstance(video_lst,list) else json.loads(video_lst)
 
+        
         self.note_path=note_path
         self.type=type if type else ""
         self.link=link if link else ""
@@ -261,6 +270,26 @@ class NoteInfo:
     @property
     def has_link(self)->bool:
         return self.link
+    
+    
+    @property
+    def DestImageLst(self)->list[str]:
+        lst=[]
+        for file_path in self.image_lst:
+            if is_jpg(file_path):
+                lst.append(file_path)
+            else:
+                cache_file=Path(file_path).with_suffix(".jpg")
+                lst.append(str(cache_file))
+        return lst
+        
+    @property
+    def image_cache_dest_lst(self) ->list[tuple[str,str]]:
+        lst=[]
+        for cache,dest in zip(self.image_lst,self.DestImageLst):
+            if cache!=dest:
+                lst.append((cache,dest))
+        return lst
     def set_root_dir(self,root_dir,cur_index:int =-1):
 
 
@@ -274,46 +303,58 @@ class NoteInfo:
 
         os.makedirs(os.path.dirname(dest_image_dir),exist_ok=True)
         os.makedirs(os.path.dirname(dest_video_dir),exist_ok=True)
-
-        self.image_lst=[normal_path(os.path.join(dest_image_dir,f"{i+1}.jpg")) for i in range(len(self.image_urls))]
+        
+        #原始的图片类型
+        self.image_lst=[normal_path(os.path.join(dest_image_dir,f"{i+1}.{url_file_suffix(url)}")) for i,url in enumerate(self.image_urls)]
         self.video_lst=[normal_path(os.path.join(dest_video_dir,f"{i+1}.mp4")) for i in range(len(self.video_urls))] 
         
-        
     #下载图片及视频
-    def download(self):
-        urls=self.image_urls+self.video_urls
+    async def download(self):
+       
+        image_cache_dest_lst=self.image_cache_dest_lst
+        convert_cache=[cache for cache,_ in image_cache_dest_lst]
         
-        #查找前缀
-        suffix=".xxyy"
-        if self.image_urls:
-            url=self.image_urls[0]
-            parts=url.split("_")
-            if len(parts)>2:
-                suffix=parts[-2]
-        
-        image_lst=[Path(file_path).with_suffix("."+suffix)  for file_path in self.image_lst]
-        
-        dests=image_lst+self.video_lst
+        async def cur_download_async(self,url,dest):
+            await download_async(url,dest)
+            
+            #若是 图片类型不是 jpg，则转换为jpg
+            if dest in convert_cache:
+                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
+            
+
         #图片 + 视频
-        for url,dest in zip(urls,dests):
-            download_sync(url,dest) 
-        if suffix in ["jpg","jpeg"]:
-            return
-        for file_path,dest_path in zip(image_lst,self.image_lst):
-            convert_image_to_jpg(file_path,dest_path)
+        tasks=[ cur_download_async(self,url,dest) for url,dest in zip(self.image_urls+self.video_urls,self.image_lst+self.video_lst) ]
+        return tasks
+        # await asyncio.gather(*tasks)
           
     #文本
-    def write_to_notepad(self):
-        read_write_sync(str(self),self.note_path,mode="w",encoding="utf-8")
-        logger.debug(f"note_path:{self.note_path} 写入成功")
+    async def write_to_notepad(self):
+        await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
+        logger.debug(record_detail("写入记事本","成功", f"{self.note_path}"))
+    
+    #异步下载以及写入到文本
+    async def handle_note(self):
+        image_cache_dest_lst=self.image_cache_dest_lst
+        convert_cache=[cache for cache,_ in image_cache_dest_lst]
+        
+        async def cur_download_async(self,url,dest):
+            await download_async(url,dest)
+            
+            #若是 图片类型不是 jpg，则转换为jpg
+            if dest in convert_cache:
+                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
+            
 
+        #图片 + 视频
+        tasks=[ cur_download_async(self,url,dest) for url,dest in zip(self.image_urls+self.video_urls,self.image_lst+self.video_lst) ]
+        tasks.append(self.write_to_notepad())
+        await asyncio.gather(*tasks)
+    
+    
     def write_to_word(self,document:Document):
 
         heading = document.add_heading(self.title, 2)
         heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-
-
 
         # 添加表格
         
@@ -355,19 +396,19 @@ class NoteInfo:
             id_paragraph.add_run(id_info)
         
         #图片
-        if self.image_lst:
+        if self.DestImageLst:
             pic_paragraph = document.add_paragraph()
             pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for image_path in self.image_lst:
+            for image_path in self.DestImageLst:
                 cur_path=normal_path(image_path)
                 if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
-                    logger.error(f"image_path:{cur_path} 文件不存在")
+                    logger.error( record_detail("获取文件","失败", detail=f"image_path:{cur_path} 文件不存在"))
                     continue
                 
                 try:
                     pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
                 except:
-                    logger.error(f"image_path:{cur_path} 插入word文档【{self.title}】失败")
+                    logger.error(record_detail("插入图片","失败",f"image_path:{cur_path} 插入word文档【{self.title}】失败"))
                     continue
 
         
@@ -378,11 +419,11 @@ class NoteInfo:
         #         video_paragraph.add_run()
             
         
-        
-        document.add_paragraph(self.content)
+        if self.has_content:
+            document.add_paragraph(self.content)
         document.add_paragraph('')
         document.add_paragraph('')
-        logger.debug(f"word标题:{self.title} 写入成功")
+        logger.debug(record_detail("添加文档","成功", f"word标题:{self.title}"))
         pass
 
 
@@ -473,7 +514,7 @@ def to_theme_word(theme_name,root_dir,dict_data):
         info.write_to_word(document)
     word_path=os.path.join(root_dir,f"{theme_name}.docx")
     document.save(word_path)
-    logger.debug(f"word文档：{word_path} 写入成功")
+    logger.debug(record_detail("写入word","成功", f"文档{word_path}"))
     
 
 

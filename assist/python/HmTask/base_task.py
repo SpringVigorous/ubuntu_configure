@@ -12,7 +12,7 @@ sys.path.append("..")
 sys.path.append(".")
 
 from __init__ import *
-from base.com_log import logger as logger
+from base.com_log import logger ,record_detail
 
 def asRoutinetask(func,*args, **kwargs):
     loop = asyncio.new_event_loop()
@@ -133,7 +133,7 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
             try:
                 self._imp_run()
             except Exception as e:
-                logger.error(f"处理数据时发生异常: {e}")
+                logger.error(record_detail("处理数据","异常",f"{e}") )
                 if self.final_except():
                     if self.InputValid:
                         clear_queue(self.input_queue)
@@ -155,11 +155,11 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
 
             return data
         except  queue.Empty as e:
-            # logger.trace("未获取到数据")
+            # logger.trace(record_detail("获取数据","异常",未找到数据) )
             time.sleep(5)
             return None
         except Exception as e:
-            logger.error(f"获取输入数据时发生异常: {e}")
+            logger.error(record_detail("获取数据","异常",f"{e}") )
             return None
 
     def push_data(self, data):
@@ -169,7 +169,7 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
         try:
             self.output_queue.put(data)
         except Exception as e:
-            logger.error(f"输出数据时发生异常: {e}")
+            logger.error(record_detail("输出数据","异常",f"{e}") )
 
 class CoroutineTask(BaseTask,metaclass=abc.ABCMeta):
     
@@ -195,7 +195,7 @@ class CoroutineTask(BaseTask,metaclass=abc.ABCMeta):
             try:
                 await self._imp_run()
             except Exception as e:
-                logger.error(f"处理数据时发生异常: {e}")
+                logger.error(record_detail("处理数据","异常",f"{e}") )
     async def put(self,data):
         if self.input_coroutine:
             await self.input_queue.put(data)
@@ -209,14 +209,14 @@ class CoroutineTask(BaseTask,metaclass=abc.ABCMeta):
                 self.input_queue.task_done()  # 标记数据任务完成
             return data
         except Exception as e:
-            logger.error(f"获取输入数据时发生异常: {e}")
+            logger.error(record_detail("获取数据","异常",f"{e}") )
             return None
 
     async def push_data(self, data):
         try:
             (await self.output_queue.put(data)) if self.output_coroutine else self.output_queue.put(data)
         except Exception as e:
-            logger.error(f"输出数据时发生异常: {e}")
+            logger.error(record_detail("输出数据","异常",f"{e}") )
 
 
 

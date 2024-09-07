@@ -82,7 +82,10 @@ class Interact(ThreadTask):
         
 
         theme_info=f"【{theme}】"
-        logger.info(f"开始采集{theme_info}……")
+        
+        target=f"采集{theme_info}"
+        
+        logger.info(record_detail( target,"开始","……"))
         
 
         
@@ -141,13 +144,13 @@ class Interact(ThreadTask):
                         continue
             
         except Exception as e:
-            logger.error(f"采集{theme_info}异常【{e}】，共采集{i}个，耗时:{time.time()-start_time:.2f}秒")
+            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，耗时:{time.time()-start_time:.2f}秒"))
             clear_queue(self.InputQueue)
-            self.Stop()#关闭本身
+            self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
             return 
             
-        logger.info(f"完成采集{theme_info}，共采集{i}个，耗时:{time.time()-start_time:.2f}秒")
+        logger.info(record_detail(target,f"完成", f"共采集{i}个，耗时:{time.time()-start_time:.2f}秒"))
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):
@@ -207,7 +210,7 @@ class Parse(ThreadTask,NoteDir):
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
 
-        logger.trace(f"汇总excle文件【{outPath}】,写入成功")
+        logger.trace( record_detail("汇总excle文件","写入成功",f"【{outPath}】"))
         pass
     
     def handle_theme(self):
@@ -325,15 +328,8 @@ class HandleNote(InputTask):
         super().__init__(input_queue=global_note_queue, stop_event=stop_hanle_event,dest_dir=dest_dir)
     def handle_data(self, noteinfo:NoteInfo):
         
-        funcs=[noteinfo.write_to_notepad,noteinfo.download]
-        threads=[]
-        #以下可以并行运行
-        with ThreadPoolExecutor(10) as t:
-            for func  in funcs:
-                future=t.submit(func)
-                threads.append(future)
-        done, not_done =wait(threads,return_when=ALL_COMPLETED)
-
+        asyncio.run(noteinfo.handle_note())
+        
 #以下两个可以并行
 class HandleTheme(InputTask):
     def __init__(self, dest_dir=setting.redbook_notes_dir):
@@ -358,8 +354,10 @@ class App:
 
     def run(self,themes:list,search_count=20):
         theme_info=f'【{"、".join(themes)}】'
+        target=f"采集{theme_info}"
         
-        logger.info(f"开始采集{theme_info}……")
+        
+        logger.info(record_detail(target,"开始","") )
 
         start_time = time.time()
         
@@ -394,11 +392,11 @@ class App:
 
         handle_theme.join()
         
-        logger.info(f"完成采集{theme_info}，一共用时{time.time()- start_time}s")
+        logger.info(record_detail(target, f"完成",f"一共用时{time.time()- start_time}秒"))
 
 
 
 if __name__ == '__main__':
-    lst=["养胃","健脾"]
+    lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
     app=App()
-    app.run(lst,search_count=3)
+    app.run(lst,search_count=50)
