@@ -18,6 +18,7 @@ import base.fold_tools as fo
 import base.path_tools as pt
 from base.com_log import logger as logger
 import base.com_decorator as dr 
+
 @dr.exception_decorator
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = ft.detect_encoding(source_path)
@@ -31,14 +32,17 @@ def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     #     return
         
     ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)
-    logger.trace(f"成功转换：[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
+    
+    
+    
+    logger.info(f"成功转换：[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
 
 
 
 #仅修改编码模式
 if __name__ == '__main__':
         # 创建ArgumentParser对象，其中description参数用于提供程序的简短描述
-    parser = argparse.ArgumentParser(description='修改文件编码：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy  -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc')
+    parser = argparse.ArgumentParser(description='修改文件编码/替换字符串(含文件名)：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy  -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc')
 
     # 添加一个位置参数（positional argument），这里假设我们需要用户提供一个文件名
     parser.add_argument('-i', '--input', type=str,  help='输入文件(夹)的路径')
@@ -121,6 +125,9 @@ if __name__ == '__main__':
 
 # 使用方法
 # python alter_encoding.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy 
+
+# python "F:/test/ubuntu_configure/assist/python/integer/alter_encoding.py" -i F:/教程/python/不基础的python基础/1  
+# python integer\alter_encoding.py -i "F:\教程\C++\双笙子佯谬\" -c utf-8-sig -f .srt
     
 # python alter_encoding.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 
 

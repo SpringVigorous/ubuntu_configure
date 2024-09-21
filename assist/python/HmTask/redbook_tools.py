@@ -521,6 +521,7 @@ def to_theme_word(theme_name,root_dir,dict_data):
         # 创建一个新的文档
     document = Document()
     start_time=time.time()
+    word_path=os.path.join(root_dir,f"{theme_name}.docx")
     target=f"写入文档{word_path}"
     
     logger.debug(record_detail(target,"开始", "..."))
@@ -529,7 +530,6 @@ def to_theme_word(theme_name,root_dir,dict_data):
         for note_info in dict_data:
             info=NoteInfo(**note_info)
             info.write_to_word(document)
-        word_path=os.path.join(root_dir,f"{theme_name}.docx")
         document.save(word_path)
     except Exception as e:
         logger.error(record_detail(target,"失败", detail=f"{str(e)},{usage_time(start_time)}"))
@@ -541,5 +541,5 @@ def to_theme_word(theme_name,root_dir,dict_data):
     logger.debug(record_detail(target,"成功", usage_time(start_time)))
     
 
-
-        
+if __name__ == '__main__':
+    convert_image_to_jpg(r"F:\手工作业\一家人\放风筝.jfif",r"F:\手工作业\一家人\放风筝.jpg")

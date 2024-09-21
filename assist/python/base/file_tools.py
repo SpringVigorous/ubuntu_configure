@@ -1,12 +1,13 @@
 ﻿import string_tools as st
 import com_decorator as cd 
-from com_log import logger as logger
+from com_log import logger,record_detail,usage_time
 import chardet
 import asyncio
 import aiohttp
 import aiofiles
 import requests
 import time
+import os
 
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
@@ -26,7 +27,7 @@ def detect_encoding(file_path)->str:
 # with open(file_path, 'r', encoding=encoding) as f:
 #     content = f.read()
 
-# logger.info(content)
+# logger.trace(content)
 
 
 
@@ -42,8 +43,10 @@ def read_content_by_encode(source_path,source_encoding):
 # 写到文件
 @cd.exception_decorator
 def write_content_by_encode(dest_path,dest_encoding,content):
-        with open(dest_path, 'w',encoding=dest_encoding) as file:
-            file.write(content)
+    #不存在时 就创建
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    with open(dest_path, 'w',encoding=dest_encoding) as file:
+        file.write(content)
 
 
 # @cd.details_decorator
@@ -95,16 +98,22 @@ def read_content(source_path):
         return content
     return None
 
+
+
 #异步读、写文件
 async def read_write_async(data,dest_path,mode="w",encoding=None):
     operator="写入" if mode.find("w")>=0 else "读取"
-    operator_info=f"异步{operator}文件：{dest_path} mode:{mode}"
-    logger.info(f"开始：{operator_info}")
+
+    
+    target=f"异步{operator}文件,mode:{mode},encoding:{encoding}"
+    detail=f"{dest_path}"
+    start_time=time.time()
+    logger.trace(record_detail(target,"开始",detail))
     
     try:
         async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
             await f.write(data)
-            logger.info(f"完成：{operator_info}")
+            logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
             return True
     except:
         return False
@@ -112,13 +121,17 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
 #同步读、写文件
 def read_write_sync(data,dest_path,mode="w",encoding=None):
     operator="写入" if mode.find("w")>=0 else "读取"
-    operator_info=f"同步{operator}文件：{dest_path} mode:{mode}"
-    logger.info(f"开始：{operator_info}")
+
+    
+    target=f"同步{operator}文件,mode:{mode},encoding:{encoding}"
+    detail=f"{dest_path}"
+    start_time=time.time()
+    logger.trace(record_detail(target,"开始",detail))
     
     try:
         with  open(dest_path,mode,encoding=encoding) as f:
             f.write(data)
-            logger.info(f"完成：{operator_info}")
+            logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
             return True
     except:
         return False
@@ -143,7 +156,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
                 else:
                     raise Exception(f"HTTP error: {response.status}")
         except aiohttp.ClientError as e:
-            print(f"{retries} times,Request failed: {e}")
+            logger.error(record_detail(f"异步获取资源{url}" ,"失败",  f"{retries} times,Request failed: {e}"))
             retries += 1
             await asyncio.sleep(5)  # 等待 5 秒后重试
     return None
@@ -153,18 +166,22 @@ async def __fetch_async(url ,session,max_retries=3,**args):
 
         
 async def download_async(url,dest_path,**kwargs):
-    logger.info(f"开始下载文件：{url} -> {dest_path}")
+    
+    target="异步下载文件"
+    detail=f"{url} -> {dest_path}"
+    logger.trace(record_detail(target,"开始",detail))
+    start_time=time.time()
     
     
     async with aiohttp.ClientSession() as session:
         content=await __fetch_async(url,session,5,**kwargs)
         if not content:
-            logger.error(f"下载文件失败：{url} -> {dest_path}")
+            logger.error(record_detail(target,"失败",f"{usage_time(start_time)}, {detail}"))
             return False
             
         await read_write_async(content,dest_path,mode="wb")
         
-    logger.info(f"下载文件已完成：{url} -> {dest_path}")
+    logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
     return True
 def __fetch_sync(url ,max_retries=3,**args):
     retries = 0
@@ -186,21 +203,26 @@ def __fetch_sync(url ,max_retries=3,**args):
                 else:
                     raise Exception(f"HTTP error: {response.status}")
         except requests.exceptions.ConnectionError as e:
-            print(f"{retries} times,Request failed: {e}")
+            logger.error(record_detail(f"同步获取资源{url}" ,"失败",  f"{retries} times,Request failed: {e}"))
             retries += 1
             time.sleep(5)  # 等待 5 秒后重试
     return None
         
 def download_sync(url,dest_path,**kwargs):
-    logger.info(f"开始下载文件：{url} -> {dest_path}")
+    
+    target="同步下载文件"
+    detail=f"{url} -> {dest_path}"
+    logger.trace(record_detail(target,"开始",detail))
+
+    start_time=time.time()
     content=__fetch_sync(url,5,**kwargs)
     if not content:
-        logger.error(f"下载文件失败：{url} -> {dest_path}")
+        logger.error(record_detail(target,"失败",f"{usage_time(start_time)}, {detail}"))
         return False
         
     read_write_sync(content,dest_path,mode="wb")
         
-    logger.info(f"下载文件已完成：{url} -> {dest_path}")
+    logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
     return True
 
 

@@ -4,7 +4,8 @@ import os
 import json
 import sys
 import __init__
-
+import threading
+from time import time
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
@@ -14,6 +15,12 @@ def trace(self, message, *args, **kws):
         self._log(TRACE_LEVEL_NUM, message, args, **kws)
 logging.Logger.trace = trace
 logger :logging.Logger=None
+
+def record_detail(target:str,status:str,detail:str)->str:
+    return f"【{target}】-【{status}】详情：{detail}"
+
+def usage_time(start_time:time)->str:
+    return f"耗时：{time()-start_time}秒"
 def str_to_level(level_str:str)->int:
     
     #添加Trace
@@ -22,6 +29,14 @@ def str_to_level(level_str:str)->int:
     
     level= logging.getLevelName(level_str.upper())
     return level if isinstance(level, int) else TRACE_LEVEL_NUM
+
+# 自定义日志格式器
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        # 在日志记录中添加当前线程 ID
+        record.thread_id = threading.current_thread().ident
+        return super().format(record)
+
 def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",console_level:str="info"):
     global logger
     # 定义日志器名称
@@ -32,7 +47,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             return logger
         logger.setLevel(str_to_level(level))# 设置日志级别，这里设置为DEBUG，可以根据需要修改
         # 创建一个处理器并设置其输出格式
-        formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-%(levelname)s-%(message)s')
+        formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-%(levelname)s-Thread ID: %(thread_id)s-%(message)s')
 
 
         # 再创建一个handler，用于输出到控制台

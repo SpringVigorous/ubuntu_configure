@@ -36,7 +36,7 @@ def equal_ignore_case(str1:str,str2:str)->bool:
 #符合windows文件名命名规则
 def sanitize_filename(filename:str):
     # 替换不允许的字符
-    sanitized = re.sub(r'[\/:*?"<>| ]', '_', filename)
+    sanitized = re.sub(r'[\/:*?"<>| \.]', '_', filename)
     sanitized=sanitized.strip().replace(' ','_')
     # 限制文件名长度
     max_length = 255
@@ -50,7 +50,7 @@ def date_flag():
     current_time = datetime.now()
     return current_time.strftime('%Y%m%d')
 
-def time_flag():
+def datetime_flag():
     current_time = datetime.now()
     return current_time.strftime('%Y%m%d%H%M%S')
 
@@ -59,3 +59,7 @@ def cur_execute_path():
     import os
     import sys
     return os.path.dirname(sys.argv[0])
+
+
+if __name__ == '__main__':
+    print(sanitize_filename('痤疮痘跟风喝了一个月的金银花水..'))

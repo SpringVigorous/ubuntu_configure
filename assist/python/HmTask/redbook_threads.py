@@ -7,12 +7,15 @@ from base_task import ThreadTask,clear_queue
 import threading
 import time
 from DrissionPage import WebPage
+from DrissionPage.common import Actions,Keys
+
+
 
 
 from __init__ import *
 from base.com_log import logger as logger,usage_time
 from base import setting as setting
-from base.string_tools import sanitize_filename,time_flag
+from base.string_tools import sanitize_filename,datetime_flag
 
 
 from HmTask.redbook_tools import *
@@ -24,6 +27,9 @@ import pandas as pd
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor , wait, ALL_COMPLETED
 from collections import namedtuple
+import json
+from handle_comment import NoteWriter
+
 
 
 JsonData=namedtuple("JsonData",["theme","json_data"]) # str,dict
@@ -46,6 +52,32 @@ stop_parse_event=threading.Event()
 stop_hanle_event=threading.Event()
 
 
+ # 模拟滚动
+def scroll_down(browser , times=5, interval=1):
+    # 执行 JavaScript 代码模拟滚动
+    js_scroll_down = """
+        var totalScrollHeight = document.body.scrollHeight;
+        var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var scrollStep = 100;  // 每次滚动的距离
+
+        function scrollByStep(step) {
+            window.scrollBy(0, step);
+        }
+
+        for (var i = 0; i < times; i++) {
+            scrollByStep(scrollStep);
+            console.log("Scrolling down...");
+            if (currentScrollTop + scrollStep >= totalScrollHeight) {
+                break;
+            }
+            currentScrollTop += scrollStep;
+            // 等待一段时间让页面加载
+            setTimeout(function() {}, interval * 1000);
+        }
+    """
+    browser.run_js(js_scroll_down)
+    
+
 class Interact(ThreadTask):
     def __init__(self, root_dir:str=setting.redbook_notes_dir,search_count:int=10):
         super().__init__(global_theme_queue,output_queue=None,stop_event=stop_interact_event)
@@ -61,7 +93,7 @@ class Interact(ThreadTask):
 
         
 
-        time.sleep(5) #初次等待登录
+        time.sleep(1) #初次等待登录
         
     def final_except(self)->bool:
         return False
@@ -77,6 +109,9 @@ class Interact(ThreadTask):
         stop_parse_event.set()
         pass
     
+    
+   
+    
     def handle_data(self, theme):
         start_time=time.time()
         
@@ -87,13 +122,15 @@ class Interact(ThreadTask):
         
         logger.info(record_detail( target,"开始","……"))
         
-
+        ac = Actions(self.wp)
         
         stop_event = threading.Event()
         theme_dir=os.path.join(self.root_dir, theme)
         os.makedirs(theme_dir, exist_ok=True)
-
+        # ac(self.wp.driver,target)
         i = 0
+        csvj_writer=NoteWriter(os.path.join( theme_dir,f"{theme}.csv"))
+        
         try:
             #测试异常
             # raise FileNotFoundError("helllo")
@@ -109,10 +146,53 @@ class Interact(ThreadTask):
             if not seach_button:
                 sys.exit(0)
             self.wp.ele('xpath://div[@class="search-icon"]').click()
-            self.wp.listen.start(['web/v1/search/notes',"api/sns/web/v1/feed"]) 
+            #全部
+            # all_path= 'xpath://div[@id="note" and @class="channel"]'
+            all_path= 'xpath://div[@id="note"]'
+            #图文
+
+            # normal_path='xpath://div[@id="short_note" and @class="channel active"]'
+            normal_path='xpath://div[@id="short_note"]'
+            #视频
+
+            # video_path='xpath://div[@id="video_note" and @class="channel"]'
+            video_path='xpath://div[@id="video_note"]'
+            #用户
+
+            # user_path='xpath://div[@id="user" and @class="channel"]'
+            user_path='xpath://div[@id="user"]'
+            
+            user_item='xpath://div[@class="user-item-box"]'            
+            
+            user_notes='xpath://section[@class="note-item"]'
+            #悬停
+            filter_box=  'xpath://div[@class="filter-box"]'  
+                
+            filter_path='xpath://svg[@class="reds-icon filter-icon"]'
+            
+            type_button=self.wp.ele(normal_path)
+            if type_button:
+                type_button.click()
+            self.wp.ele('xpath://div[@class="search-icon"]').click() #再次搜索下
+            
+            
+            #抓取评论
+            #/api/sns/web/v2/comment/page
+            listen_lst=['web/v1/search/notes',"api/sns/web/v1/feed","/api/sns/web/v2/comment/page"]
+            def is_comment(type:str):
+                return listen_lst.index(type)==2
+            def is_note(type:str):
+                return listen_lst.index(type)==1
+            
+            
+            self.wp.listen.start(listen_lst) 
             packet = self.wp.listen.wait()
             secManager=SectionManager(self.wp)
             secManager.update()
+            comment_index=0
+            ac=Actions(self.wp)
+            
+            
 
             while i < self.search_count:
                 sec=next(secManager.next()) 
@@ -128,13 +208,90 @@ class Interact(ThreadTask):
                     secManager.resume_cur()
                     secManager.update()
                     continue
-                pack=self.wp.listen.wait()
-                body=pack.response.body
-                if body:
-                    body["my_link"]=self.wp.url
-                    data=JsonData(theme=theme,json_data=body)
-                    global_json_queue.put(data)    #整理到内部队列
-                    i += 1
+                
+                
+                pack=self.wp.listen.wait(2,fit_count=False)
+                is_comment_all=False
+                for index,item in enumerate(pack) :
+                    body=item.response.body
+                    
+
+                    
+                    if not body:
+                        continue
+                    target=item.target
+                    if is_note(target):
+                        body["my_link"]=self.wp.url
+                        body=JsonData(theme=theme,json_data=body)
+                        global_json_queue.put(body)    #整理到内部队列
+                        i += 1
+                        # pic_raw=self.wp.ele('xpath://*[@id="noteContainer"]/div[2]/div/div/div[3]').text
+                        # pic_count=int(pic_raw.split(r"/")[-1])
+                        # for j in range(pic_count+1):
+                        #     ac.key_down(Keys.ARROW_DOWN)
+                        #     time.sleep(.2)
+                        
+                        
+                    elif is_comment(target):
+
+                        
+                        is_comment_all=not body["data"]["has_more"]
+
+                        ac.key_down(Keys.PAGE_DOWN)
+                        time.sleep(.2)
+                        
+                        with open(f"{theme_dir}/pack_{comment_index}.json","w",encoding="utf-8-sig") as f:
+                            body["target"]=item.target
+                            json.dump(body,f,ensure_ascii=False,indent=4)
+                        csvj_writer.handle_comment(body)
+                            
+                            
+                        comment_index+=1
+                            
+
+                            
+                        if not is_comment_all:
+                        #     js='val q=document.documentElement.ScroolTop=1000'
+                        #     self.wp.run_js(js)
+                            
+                        #         #//*[@id="noteContainer"]/div[4]/div[2]/div[3]/div
+                            coment_box=self.wp.ele('xpath://div[@class="comments-container"]')
+                            if not coment_box:
+                                continue
+                            coment_box.focus()
+                            time.sleep(.1)
+                            ac.key_down(Keys.ARROW_DOWN)
+                            time.sleep(.2)
+                            ac.key_down(Keys.PAGE_DOWN)
+                            time.sleep(.2)                           
+                            
+                        #     # # coment_box=self.wp.ele('*[@id="noteContainer"]/div[4]/div[2]/div[3]/div')
+                        #     # vals= coment_box.nexts()
+                        #     # coment_box.send_keys(Keys.PAGE_DOWN)
+                        #     # coment_box.scroll()
+                        #     #滚轮向下滑动
+                        #     # scroll_down(self.wp,times=1,interval=.2)
+                            
+                        #     # self.wp.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        #     self.wp.scroll.down(500)
+                        #     ac.scroll(delta_y =500)
+                        #     ac.down(300)
+                        
+                            self.wp.scroll.to_bottom()
+                            time.sleep(1)
+                        pass
+                
+                
+                    
+                    
+                    
+                
+                # body=pack.response.body
+                # if body:
+                #     body["my_link"]=self.wp.url
+                #     body=JsonData(theme=theme,json_data=body)
+                #     global_json_queue.put(body)    #整理到内部队列
+                #     i += 1
                     
                 close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
                 if close_flag:
@@ -148,8 +305,11 @@ class Interact(ThreadTask):
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
+            
+  
             return 
             
+
         logger.info(record_detail(target,f"完成", f"共采集{i}个，{usage_time(start_time)}"))
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
@@ -207,7 +367,7 @@ class Parse(ThreadTask,NoteDir):
         self.handle_theme()
         stop_hanle_event.set()
         #Excle输出
-        outPath = os.path.join(self.CurPath,f"{time_flag()}.xlsx")
+        outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
         with pd.ExcelWriter(outPath) as writer:
             for info in self.themes_data:
                 if not info.pd is None:
@@ -400,6 +560,7 @@ class App:
 
 
 if __name__ == '__main__':
-    lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
+    # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
+    lst=["补气血吃什么"]
     app=App()
-    app.run(lst,search_count=50)
+    app.run(lst,search_count=1)
