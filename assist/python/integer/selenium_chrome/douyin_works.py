@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 import os
 
 
-domain= "https://www.chanmama.com"
+
 
 def douyin_info(url,driver_path,xls_path):
     with SeleniumHelper(driver_path=drive_path) as driver:
@@ -54,4 +54,4 @@ if __name__ == '__main__':
     url="https://www.douyin.com/user/MS4wLjABAAAAiWLBwkqSxfbwmsDwSiIgsMejChfAhO_U_FTyrqFFoio?from_tab_name=main"
     drive_path=r"D:\Tool\chromedriver-win64\chromedriver.exe"
     xls_path=r"F:\教程\三维讲解建筑结构图"
-    
+    douyin_info(url,drive_path,xls_path)

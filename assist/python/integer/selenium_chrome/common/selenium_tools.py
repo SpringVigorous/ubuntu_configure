@@ -10,6 +10,9 @@ from selenium.webdriver import Chrome,ChromeOptions,ActionChains,ChromeService
 
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.expected_conditions import *
+from typing import Callable,Any
+
+
 
 
 
@@ -35,14 +38,39 @@ class SeleniumHelper(Chrome):
             "download.default_directory": "/path/to/download/directory"
         }
 
+        self.__timeout=2
+        self.__interval=0.2
         service = ChromeService(executable_path=driver_path)
         super().__init__(options=options, service=service)
         # super().__init__(options=options)
         self.execute_cdp_cmd("Page.addSeriptToEvaluataNewDo")
         # 隐式等待
         self.implicitly_wait(wait)
+        
 
+
+    def set_timeout(self,timeout,interval):
+        self.__timeout=timeout
+        self.__interval=interval
     
+    #等待func完成，直到超时或返回 可转换为布尔值 为True的结果
+    def wait_until_func(self,func:Callable[[Chrome], Any])->bool:
+        if not func:
+            return
+        
+        """ 等待单个元素在规定时间内可用 """
+        start_time = time.time()
+        while (time.time() - start_time) < self.__timeout:
+            try:
+                resulst= func(self)
+                if resulst:
+                    return resulst
+            except:
+                pass
+            time.sleep(self.__interval)
+        return None
+        
+
     @property
     def page_height(self):
         """ 获取页面的高度 """
@@ -61,69 +89,115 @@ class SeleniumHelper(Chrome):
         """ 滚动到指定元素 """
         self.execute_script("arguments[0].scrollIntoView();", element)
         
-    def wait_presence_of_element(self, by:By, value:Any, timeout:float=5, interval:float=0.5)->WebElement:
-        """ 等待单个元素在规定时间内可用 """
-        start_time = time.time()
-        while (time.time() - start_time) < timeout:
-            try:
-                element = self.find_element(by, value)
-                return element
-            except:
-                time.sleep(interval)
-        return None
+    def wait_presence_of_element(self, by:By, value:Any)->WebElement:
+        
+        return self.wait_until_func(lambda driver: driver.find_element(by, value))
+        # """ 等待单个元素在规定时间内可用 """
+        # start_time = time.time()
+        # while (time.time() - start_time) < self.__timeout:
+        #     try:
+        #         element = self.find_element(by, value)
+        #         return element
+        #     except:
+        #         time.sleep(self.interval)
+        # return None
     
-    def wait_presence_of_elements(self,by:By, value:Any, timeout:float=5, interval:float=0.5)->list[WebElement]:
+    def wait_presence_of_elements(self,by:By, value:Any)->list[WebElement]:
+        return self.wait_until_func(lambda driver: driver.find_elements(by, value))
         """ 等待多个元素在规定时间内可用 """
         start_time = time.time()
-        while (time.time() - start_time) < timeout:
+        while (time.time() - start_time) < self.__timeout:
             try:
                 elements = self.find_elements(by, value)
                 if elements:
                     return elements
             except:
                 pass
-            time.sleep(interval)
+            time.sleep(self.__interval)
         return []
-    def wait_presence_of_elements_until_last(self,by:By, value:Any, timeout:float=5, interval:float=0.5)->list[WebElement]:
+    def wait_presence_of_elements_until_last(self,by:By, value:Any)->list[WebElement]:
         
-        items=self.wait_presence_of_elements(by,value,timeout,interval)
+        items=self.wait_presence_of_elements(by,value)
+        if not items:
+            return
+        
         count=len(items)
         while count >0:
             self.scroll_to_element(items[-1])
-            time.sleep(interval*3)
+            time.sleep(self.__interval*3)
             
-            items=self.wait_presence_of_elements(by,value,timeout,interval)
+            items=self.wait_presence_of_elements(by,value)
             if len(items)==count:
                 break
             count=len(items)
         return items
 
-    def wait_leave_of_element(self, by:By, value:Any, timeout:float=5, interval:float=0.5)->WebElement:
+    def wait_leave_of_element(self, by:By, value:Any)->WebElement:
         """ 等待单个元素在规定时间内不可用 """
+        return self.wait_until_func(lambda driver: driver.find_element(by, value) is None )
         start_time = time.time()
-        while (time.time() - start_time) < timeout:
+        while (time.time() - start_time) < self.__timeout:
             try:
                 self.find_element(by, value)
             except:
                 return True
-            time.sleep(interval)
+            time.sleep(self.__interval)
         return False
     
-    def wait_leave_of_elements(self,by:By, value:Any, timeout:float=5, interval:float=0.5)->list[WebElement]:
+    def wait_leave_of_elements(self,by:By, value:Any)->list[WebElement]:
+
+        
+        return self.wait_until_func(lambda driver:bool(not driver.find_element(by, value))  )
         """ 等待多个元素在规定时间内不可用 """
         start_time = time.time()
-        while (time.time() - start_time) < timeout:
+        while (time.time() - start_time) < self.__timeout:
             try:
                 elements = self.find_elements(by, value)
                 if not elements:
                     return True
             except:
                 return True
-            time.sleep(interval)
+            time.sleep(self.__interval)
         return False
     
+    def handle_new_url(self,url,func:Callable[[Chrome], None]=None):
+        # 获取当前窗口的句柄
+        original_window = self.current_window_handle
+        # 使用JavaScript执行点击
+        js_click = f"window.open('{url}');"
+        self.execute_script(js_click)
+
+        # 等待新窗口打开
+        WebDriverWait(self, 10).until(number_of_windows_to_be(2))
+
+        # 切换到新窗口
+        for window_handle in self.window_handles:
+            if window_handle != original_window:
+                self.switch_to.window(window_handle)
+                break
+        
+        if  func:
+            # 处理新窗口中的内容
+            # time.sleep(1.5)  # 假设需要处理一些内容
+            print("处理新窗口中的内容...")
+            func(self)
+
+        # 关闭新窗口
+        self.close()
+
+        # 切换回原来的窗口
+        self.switch_to.window(original_window)
+
+        # 继续处理原始页面
+        print("回到原始页面...")
+        self.wait_until_func(lambda driver: driver.current_window_handle == original_window,)
+
+                
+                
+
+    
     #可以代替 self.get()
-    def wait_url_contains(self,url, substring, timeout:float=5, interval:float=0.5):
+    def wait_url_contains(self,url, substring):
         """ 检查是否重定向到了登录页面 """
         self.get(url)
         
@@ -131,7 +205,7 @@ class SeleniumHelper(Chrome):
         """ 检查当前 URL 是否包含某个字符 """
         try:
             # 等待页面加载完成
-            WebDriverWait(self, timeout).until(
+            WebDriverWait(self, self.__timeout).until(
                 url_contains(substring)
             )
             print("当前 URL 包含 'login'，登录窗口已弹出")
@@ -156,14 +230,14 @@ class SeleniumHelper(Chrome):
         """ 添加脚本以在新文档加载时执行 """
         return self.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {'source': source})
     
-    def wait_title_contains(self, substring, timeout=5, interval=0.5):
+    def wait_title_contains(self, substring):
         """ 等待页面标题包含特定字符串 """
         start_time = time.time()
-        while (time.time() - start_time) < timeout:
+        while (time.time() - start_time) < self.__timeout:
             title = self.title
             if substring in title:
                 return True
-            time.sleep(interval)
+            time.sleep(self.__interval)
         return False
     
     def get_user_data_dir(self):
@@ -184,14 +258,14 @@ if __name__ == "__main__":
         helper.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # 等待单个元素出现
-        element = helper.wait_presence_of_element(By.ID, 'some_id', timeout=5, interval=0.5)
+        element = helper.wait_presence_of_element(By.ID, 'some_id')
         if element:
             print("元素已找到:", element.text)
         else:
             print("元素未在规定时间内找到")
 
         # 等待多个元素出现
-        elements = helper.wait_presence_of_elements(By.CLASS_NAME, 'some_class', timeout=5, interval=0.5)
+        elements = helper.wait_presence_of_elements(By.CLASS_NAME, 'some_class')
         if elements:
             for elem in elements:
                 print("元素已找到:", elem.text)
@@ -199,13 +273,13 @@ if __name__ == "__main__":
             print("元素未在规定时间内找到")
 
         # 等待单个元素不在页面上
-        if helper.wait_presence_of_element_not_present(By.ID, 'another_id', timeout=5, interval=0.5):
+        if helper.wait_presence_of_element_not_present(By.ID, 'another_id'):
             print("元素不在页面上")
         else:
             print("元素仍在页面上")
 
         # 等待多个元素不在页面上
-        if helper.wait_leave_of_element(By.CLASS_NAME, 'another_class', timeout=5, interval=0.5):
+        if helper.wait_leave_of_element(By.CLASS_NAME, 'another_class'):
             print("元素不在页面上")
         else:
             print("元素仍在页面上")
@@ -222,7 +296,7 @@ if __name__ == "__main__":
         print("脚本添加结果:", result)
 
         # 等待页面标题包含特定字符串
-        if helper.wait_title_contains('Example', timeout=5, interval=0.5):
+        if helper.wait_title_contains('Example'):
             print("页面标题包含 'Example'")
         else:
             print("页面标题不包含 'Example'")

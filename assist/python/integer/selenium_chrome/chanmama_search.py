@@ -6,6 +6,11 @@ from pandas import DataFrame
 from tqdm import tqdm
 from openpyxl import load_workbook
 import os
+
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
 # 一.登录
 # https://www.chanmama.com/awemeRank?keyword=&time=24h&digg=&gender type
 
@@ -36,16 +41,35 @@ def chanmama_search(url,driver_path,xls_path):
         
         #三.采集 
         rows = driver.wait_presence_of_elements(By.XPATH,'//tbody/tr[@data-v-450a04b2]')
-
+        # 获取当前窗口的句柄
+        original_window = driver.current_window_handle
+        
         list_rows=[]
         for item in tqdm(rows):
+            # print(item)
+            href=item.find_element(By.XPATH,'./td[6]//a').get_attribute("href")
+            real_href=""
+            def fun(driver: SeleniumHelper):
+                nonlocal real_href
+                cur_node= driver.wait_presence_of_element(By.XPATH,'//div[@class="el-tooltip ellipsis-2"]')
+                if cur_node:
+                    real_href= cur_node.find_element(By.XPATH,'./a').get_attribute("href")
+                else:
+                    print(driver.title)
+                pass
+            driver.handle_new_url(href,fun)
+           
+
             dict_row ={
             "视频标题":item.find_element(By.XPATH,'./td[1]//div[@class="ellipsis-2 text-align-left c333 pr5"]//a').text,
             "点赞数":item.find_element(By.XPATH,'./td[3]').text,
             "转发数":item.find_element(By.XPATH,'./td[5]').text,
-            "视频链接":item.find_element(By.XPATH,'./td[6]//a').get_attribute("href")
-            # "视频链接":domain+item.find_element(By.XPATH,'./td[6]//a').get_attribute("href")
+            # "视频链接":item.find_element(By.XPATH,'./td[6]//a').get_attribute("href")
+            "视频链接":real_href
             }
+            
+            
+            
             list_rows.append(dict_row)
         file_name = os.path.join(xls_path, f"{key}热门短视频.xlsx")
         DataFrame(list_rows).to_excel(file_name,index=False)
@@ -72,7 +96,7 @@ def chanmama_search(url,driver_path,xls_path):
         book.save(file_name)
     
 if __name__=="__main__":
-    url="https://www.douyin.com/user/MS4wLjABAAAAiWLBwkqSxfbwmsDwSiIgsMejChfAhO_U_FTyrqFFoio?from_tab_name=main"
+    url="https://www.chanmama.com/awemeRank/?keyword=&time=90d&digg=&gender_type=-1&goods_relatived=0&fans_hottest=0&group_buy_relatived=0"
     drive_path=r"D:\Tool\chromedriver-win64\chromedriver.exe"
     xls_path=r"F:\教程\三维讲解建筑结构图"
     chanmama_search(url,drive_path,xls_path)
