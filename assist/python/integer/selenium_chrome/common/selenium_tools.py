@@ -12,7 +12,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.expected_conditions import *
 from typing import Callable,Any
 
-
+from bs4 import BeautifulSoup
 
 
 
@@ -162,17 +162,22 @@ class SeleniumHelper(Chrome):
     
     def handle_new_url(self,url,func:Callable[[Chrome], None]=None):
         # 获取当前窗口的句柄
-        original_window = self.current_window_handle
+        org_handle = self.current_window_handle
         # 使用JavaScript执行点击
         js_click = f"window.open('{url}');"
         self.execute_script(js_click)
 
         # 等待新窗口打开
         WebDriverWait(self, 10).until(number_of_windows_to_be(2))
+        self.handle_new(org_handle,func)
+       
+        
+    def handle_new(self,org_handle,func:Callable[[Chrome], None]=None):
+
 
         # 切换到新窗口
         for window_handle in self.window_handles:
-            if window_handle != original_window:
+            if window_handle != org_handle:
                 self.switch_to.window(window_handle)
                 break
         
@@ -182,19 +187,43 @@ class SeleniumHelper(Chrome):
             print("处理新窗口中的内容...")
             func(self)
 
-        # 关闭新窗口
-        self.close()
+        self.switch_to_handle(org_handle,True)
 
-        # 切换回原来的窗口
-        self.switch_to.window(original_window)
+                
+                
+    def switch_to_handle(self,org_handle,cur_closed=False):
+        if self.current_window_handle==org_handle:
+            return
+        
+        def func(dirver):
+            nonlocal org_handle
+            nonlocal cur_closed
 
+            if org_handle in dirver.window_handles:
+                if cur_closed:
+                    # 关闭新窗口
+                    dirver.close()
+                # 切换回原来的窗口
+                dirver.switch_to.window(org_handle)
+                return True
+            return False
+        self.wait_until_func(func)
         # 继续处理原始页面
-        print("回到原始页面...")
-        self.wait_until_func(lambda driver: driver.current_window_handle == original_window,)
+        self.wait_until_func(lambda driver: driver.current_window_handle == org_handle)
+        
+        
+    #获取某个元素或者整个网页的 html代码
+    def html_code(self,node=None):
+        
 
-                
-                
+       
+        html= self.execute_script("return arguments[0].outerHTML;", node)  if node else self.page_source
+        
+        # 使用 BeautifulSoup 解析 HTML
+        soup = BeautifulSoup(html, 'lxml')
 
+        # 格式化 HTML
+        return soup.prettify(formatter="html5")
     
     #可以代替 self.get()
     def wait_url_contains(self,url, substring):

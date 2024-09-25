@@ -137,6 +137,7 @@ def redbook_info(url,driver_path,xls_path):
             
         cur_time=time.time()
         coments=[]
+        
         while True:
        
             show_mores=driver.wait_presence_of_elements(By.XPATH,'//div[@class="show-more"]')
@@ -157,12 +158,23 @@ def redbook_info(url,driver_path,xls_path):
         
         cur_time=time.time()
         
+        # with open(os.path.join(xls_path,f"{driver.title}评论.html"),"w",encoding="utf-8") as f:
+        #     f.write(driver.page_source)
 
-        # for item in driver.wait_presence_of_elements(By.XPATH,'//div[@class="parent-comment"'):
+
         items=driver.wait_presence_of_elements(By.XPATH,'.//div[@class="comment-inner-container"]')
         rows=[]
+        
+        
+
+        #参考 cache_data/comment-inner-container.html
         for  index,inner_item in enumerate(tqdm(items)):
-            author_info=inner_item.find_element(By.XPATH,'./div[2]')
+            if index==0:
+                with open(os.path.join(xls_path,f"{index}-{driver.title}评论.html"),"w",encoding="utf-8") as f:
+                    f.write( driver.html_code(inner_item))
+            
+            
+            author_info=inner_item.find_element(By.XPATH,'./div[@class="right"]')
             
             # author=info.find_element(By.XPATH,'./div[1]//div[@class="name"]')
             author=author_info.find_element(By.XPATH,'./div//a[@class="name"]')
@@ -194,6 +206,9 @@ def redbook_info(url,driver_path,xls_path):
                 
             }
             rows.append(data)
+        
+        print(f"获取评论:用时{time.time()-cur_time}秒")
+        cur_time=time.time()
         
         df=DataFrame(rows)
 

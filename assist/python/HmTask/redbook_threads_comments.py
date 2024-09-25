@@ -7,9 +7,12 @@ sys.path.append(".")
 from base_task import ThreadTask,clear_queue
 import threading
 import time
-from DrissionPage import WebPage
-from DrissionPage.common import Actions,Keys
 
+from webpage_tools import WebPageHelper
+
+from DrissionPage import WebPage
+# from DrissionPage.common import Actions,Keys
+from selenium.webdriver.common.by import By
 
 
 
@@ -91,9 +94,7 @@ class Interact(ThreadTask):
         url='https://www.xiaohongshu.com/'
         
         self.wp.get(url)
-
-
-
+        # self.wp.wait_until_url_to_be(url)
 
         
     def final_except(self)->bool:
@@ -123,7 +124,7 @@ class Interact(ThreadTask):
         
         logger.info(record_detail( target,"开始","……"))
         
-        ac = Actions(self.wp)
+
         
         stop_event = threading.Event()
         theme_dir=os.path.join(self.root_dir, theme)
@@ -137,46 +138,49 @@ class Interact(ThreadTask):
             # raise FileNotFoundError("helllo")
         
             #搜索输入框
-            search_input = self.wp.ele('xpath://input[@class="search-input"]')
+            search_input = self.wp.wait_presence_of_element(by=By.ID, value='search-input')
             search_input.clear()
             search_input.input(f'{theme}\n')
-            time.sleep(.4)
+
 
             #搜索按钮
-            seach_button=self.wp.ele('xpath://div[@class="search-icon"]')
+            seach_button=self.wp.wait_presence_of_element(by=By.XPATH, value='//div[@class="search-icon"]')
             if not seach_button:
                 sys.exit(0)
-            self.wp.ele('xpath://div[@class="search-icon"]').click()
+            seach_button.click()
             #全部
-            # all_path= 'xpath://div[@id="note" and @class="channel"]'
-            all_path= 'xpath://div[@id="note"]'
+            # all_path= '//div[@id="note" and @class="channel"]'
+            all_path= '//div[@id="note"]'
             #图文
 
-            # normal_path='xpath://div[@id="short_note" and @class="channel active"]'
-            normal_path='xpath://div[@id="short_note"]'
+            # normal_path='//div[@id="short_note" and @class="channel active"]'
+            normal_path='//div[@id="short_note"]'
             #视频
 
-            # video_path='xpath://div[@id="video_note" and @class="channel"]'
-            video_path='xpath://div[@id="video_note"]'
+            # video_path='//div[@id="video_note" and @class="channel"]'
+            video_path='//div[@id="video_note"]'
             #用户
 
-            # user_path='xpath://div[@id="user" and @class="channel"]'
-            user_path='xpath://div[@id="user"]'
+            # user_path='//div[@id="user" and @class="channel"]'
+            user_path='//div[@id="user"]'
             
-            user_item='xpath://div[@class="user-item-box"]'            
+            user_item='//div[@class="user-item-box"]'            
             
-            user_notes='xpath://section[@class="note-item"]'
+            user_notes='//section[@class="note-item"]'
             #悬停
-            filter_box=  'xpath://div[@class="filter-box"]'  
+            filter_box=  '//div[@class="filter-box"]'  
                 
-            filter_path='xpath://svg[@class="reds-icon filter-icon"]'
-            
-            type_button=self.wp.ele(normal_path)
-            if type_button:
-                type_button.click()
-            self.wp.ele('xpath://div[@class="search-icon"]').click() #再次搜索下
+            filter_path='//svg[@class="reds-icon filter-icon"]'
             
             
+            cur_type=normal_path
+            if cur_type!=all_path:
+                type_button=self.wp.wait_presence_of_element(by=By.XPATH, value=normal_path)
+                if type_button:
+                    type_button.click()
+                self.wp.wait_presence_of_element(by=By.ID, value='search-input').click() #再次搜索下
+                
+                
             #抓取评论
             #/api/sns/web/v2/comment/page
             listen_lst=['web/v1/search/notes',"api/sns/web/v1/feed","/api/sns/web/v2/comment/page"]
@@ -191,15 +195,13 @@ class Interact(ThreadTask):
             secManager=SectionManager(self.wp)
             secManager.update()
             comment_index=0
-            ac=Actions(self.wp)
-            
-            
+                      
 
             while i < self.search_count:
                 sec=next(secManager.next()) 
                 if not sec:
                     continue
-                time.sleep(.1)
+                # time.sleep(.1)
                 
                 # if i>1:
                 #     raise Exception("测试异常")
@@ -215,9 +217,7 @@ class Interact(ThreadTask):
                 is_comment_all=False
                 for index,item in enumerate(pack) :
                     body=item.response.body
-                    
 
-                    
                     if not body:
                         continue
                     target=item.target
@@ -226,39 +226,25 @@ class Interact(ThreadTask):
                         body=JsonData(theme=theme,json_data=body)
                         global_json_queue.put(body)    #整理到内部队列
                         i += 1
-                        comments=[]
-
+                        coments=[]
+        
                         while True:
                             #评论
-                            show_mores=self.wp.eles((By.XPATH,'//div[@class="show-more"]'))
+                            show_mores=self.wp.wait_presence_of_elements(By.XPATH,'//div[@class="show-more"]')
                             if show_mores:
                                 for more_info in show_mores:
                                     more_info.click()
                                     
-                            comment_tuple=(By.XPATH,'//div[@class="content"]')
-                            if not self.wp.wait.eles_loaded(comment_tuple,timeout=2):
+                            func=self.wp.wait_presence_of_elements_until_last if not coments else self.wp.wait_presence_of_elements
+                            cur_coments=  func(By.XPATH,'//div[@class="content"]')
+                            if not cur_coments:
                                 break
-                            is_first=not comments
-                            comments_count=len(comments)
-                            comments=  self.wp.eles(comment_tuple)
-                            if is_first:
-                                count=len(comments)
-                                while count>0:
-                                    result= self.wp.run_js_loaded("arguments[0].scrollIntoView();", comments[-1],timeout=.5)
-                                    time.sleep(.3)
 
-                                    cur_coments= self.wp.eles(comment_tuple)
-                                    if len(cur_coments)==count:
-                                        break
-                                    comments=cur_coments
-                                    count=len(comments)
-                            if len(comments)==comments_count:
-                                print(f"一共{comments_count}条评论，无更多数据")
-                                break  
+                            if len(coments)==len(cur_coments):
+                                break
+                            coments=cur_coments
 
-                                                 
                     elif is_comment(target):
-
                         with open(f"{theme_dir}/pack_{comment_index}.json","w",encoding="utf-8-sig") as f:
                             body["target"]=item.target
                             json.dump(body,f,ensure_ascii=False,indent=4)
@@ -266,22 +252,10 @@ class Interact(ThreadTask):
                             
                             
                         comment_index+=1
-                            
-
 
                         pass
                 
-                
-                    
-                    
-                    
-                
-                # body=pack.response.body
-                # if body:
-                #     body["my_link"]=self.wp.url
-                #     body=JsonData(theme=theme,json_data=body)
-                #     global_json_queue.put(body)    #整理到内部队列
-                #     i += 1
+
                     
                 close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
                 if close_flag:
@@ -553,4 +527,4 @@ if __name__ == '__main__':
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
     lst=["健脾养胃"]
     app=App()
-    app.run(lst,search_count=2)
+    app.run(lst,search_count=20)

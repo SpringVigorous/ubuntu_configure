@@ -25,8 +25,7 @@ from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
 import asyncio
-from DrissionPage.common import By
-from DrissionPage import WebPage
+
 
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
@@ -453,7 +452,7 @@ def contain_search_key(str):
     
 
 class SectionManager:
-    def __init__(self,wp:WebPage):
+    def __init__(self,wp):
         self.wp=wp
         self.cur_secs=[]
         self.secs=[]
@@ -472,11 +471,11 @@ class SectionManager:
 
 
     def update(self):
-
-        if not self.wp.wait.eles_loaded((By.XPATH,"//section")):
-            return
-            
-        org_secs=self.wp.eles((By.XPATH,"//section"))
+        
+        # await asyncio.sleep(.3)
+        time.sleep(.3)
+        
+        org_secs=self.wp.eles("xpath://section")
         sorted(org_secs,key=lambda x:x.rect.midpoint[1])
 
         
