@@ -1,4 +1,4 @@
-#小红书最终版
+﻿#小红书最终版
 from queue import Queue,Empty
 import sys
 sys.path.append("..")
@@ -14,7 +14,7 @@ from DrissionPage.common import Actions,Keys
 
 
 from __init__ import *
-from base.com_log import logger as logger,usage_time,logger_guard
+from base.com_log import logger as logger,usage_time
 from base import setting as setting
 from base.string_tools import sanitize_filename,datetime_flag
 
@@ -114,15 +114,14 @@ class Interact(ThreadTask):
    
     
     def handle_data(self, theme):
-
+        start_time=time.time()
         
 
         theme_info=f"【{theme}】"
         
         target=f"采集{theme_info}"
         
-        theme_logger=logger_guard(target)
-        theme_logger.info("开始")
+        logger.info(record_detail( target,"开始","……"))
         
         ac = Actions(self.wp)
         
@@ -180,7 +179,7 @@ class Interact(ThreadTask):
             
             #抓取评论
             #/api/sns/web/v2/comment/page
-            listen_lst=['web/v1/search/notes',"api/sns/web/v1/feed"]
+            listen_lst=['web/v1/search/notes',"api/sns/web/v1/feed","/api/sns/web/v2/comment/page"]
             def is_comment(type:str):
                 return listen_lst.index(type)==2
             def is_note(type:str):
@@ -195,104 +194,106 @@ class Interact(ThreadTask):
             ac=Actions(self.wp)
             
             
-            generator=secManager.next()
-            i=0
+
             while i < self.search_count:
-                sec=next(generator)
-                if not sec :
-                    secManager.update()
+                sec=next(secManager.next()) 
+                if not sec:
                     continue
-                time.sleep(.5)
-
+                time.sleep(.1)
+                
+                # if i>1:
+                #     raise Exception("测试异常")
                 try:
-
-                    self.wp.wait.ele_displayed(sec)
                     sec.click()
                 except:
                     secManager.resume_cur()
                     secManager.update()
                     continue
                 
-                self.wp.wait.eles_loaded('xpath://div[@class="comments-container"]')
-                item=self.wp.listen.wait()
                 
+                pack=self.wp.listen.wait(2,fit_count=False)
+                is_comment_all=False
+                for index,item in enumerate(pack) :
+                    body=item.response.body
+                    
 
-                
-                note_logger=logger_guard(f"采集：{self.wp.title}")
-                note_logger.info("开始")
+                    
+                    if not body:
+                        continue
+                    target=item.target
+                    if is_note(target):
+                        body["my_link"]=self.wp.url
+                        body=JsonData(theme=theme,json_data=body)
+                        global_json_queue.put(body)    #整理到内部队列
+                        i += 1
+                        comments=[]
 
-
-                body=item.response.body
-
-                if not body:
-                    continue
-                target=item.target
-                if not is_note(target):
-                    continue
-                body["my_link"]=self.wp.url
-                body=JsonData(theme=theme,json_data=body)
-                global_json_queue.put(body)    #整理到内部队列
-                i += 1
-                comments=[]
-
-                #处理评论
-                container=self.wp.ele('xpath://div[@class="comments-container"]')
-                comments_total=0
-                try:
-                    raw_total=container.ele('.total').text
-                    splits=raw_total.split()
-                    if len(splits)>1:
-                        comments_total=int( splits[1])
-                except:
-                    pass
-
-                print(f"总评论数为：{comments_total}")
-                while True:
-                    comment_tuple=(By.XPATH,'//div[@class="content"]')
-                    is_first=not comments
-                    comments_count=len(comments)
-                    comments=  self.wp.eles(comment_tuple)
-                    if is_first:
                         while True:
-                            last_comment=comments[-1]
-                            result= self.wp.run_js("arguments[0].scrollIntoView();", last_comment,timeout=.5)
-                            # last_comment.hover()
-                            # self.wp.wait.ele_displayed(last_comment)
-                            # self.wp.scroll.to_see(last_comment)
-                            #     print(f"{count}条评论未加载完毕")
-                            # time.sleep(.1)
-                            #发现找到 END，则退出
-                            if self.wp.wait.ele_displayed('xpath://div[@class="end-container"]',timeout=.2):
+                            #评论
+                            show_mores=self.wp.eles((By.XPATH,'//div[@class="show-more"]'))
+                            if show_mores:
+                                for more_info in show_mores:
+                                    more_info.click()
+                                    
+                            comment_tuple=(By.XPATH,'//div[@class="content"]')
+                            if not self.wp.wait.eles_loaded(comment_tuple,timeout=3):
                                 break
+                            is_first=not comments
+                            comments_count=len(comments)
                             comments=  self.wp.eles(comment_tuple)
+                            if is_first:
+                                count=len(comments)
+                                while count>0:
+                                    result= self.wp.run_js_loaded("arguments[0].scrollIntoView();", comments[-1],timeout=.5)
+                                    # if not comments[-1].wait.displayed(.5):
+                                    #     print(f"{count}条评论未加载完毕")
+                                    time.sleep(.5)
 
-                    #评论
-                    show_mores=self.wp.eles((By.XPATH,'//div[@class="show-more"]'))
-                    if show_mores:
-                        for more_info in show_mores:
-                            more_info.click()
-                    if len(comments)==comments_count:
-                        note_logger.info("结束",f"一共{comments_count}条评论")
-                        break  
+                                    cur_coments= self.wp.eles(comment_tuple)
+                                    if len(cur_coments)==count:
+                                        break
+                                    comments=cur_coments
+                                    count=len(comments)
+                            if len(comments)==comments_count:
+                                print(f"一共{comments_count}条评论，无更多数据")
+                                break  
+
+                                                 
+                    elif is_comment(target):
+
+                        with open(f"{theme_dir}/pack_{comment_index}.json","w",encoding="utf-8-sig") as f:
+                            body["target"]=item.target
+                            json.dump(body,f,ensure_ascii=False,indent=4)
+                        csvj_writer.handle_comment(body)
+                            
+                            
+                        comment_index+=1
+                            
+
+
+                        pass
+                
+                
                     
-                comment_container=self.wp.ele((By.XPATH,'//div[@class="comments-container"]')).html
-
-                with open(f"{theme_dir}/pack_{comment_index}.html","w",encoding="utf-8-sig") as f:
-                    f.write(comment_container)
-                csvj_writer.handle_comment(comment_container)
-                comment_index+=1
-
-                self.wp.close()
                     
-                # close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
-                # if close_flag:
-                #     try:
-                #         close_flag.click()
-                #     except:
-                #         continue
+                    
+                
+                # body=pack.response.body
+                # if body:
+                #     body["my_link"]=self.wp.url
+                #     body=JsonData(theme=theme,json_data=body)
+                #     global_json_queue.put(body)    #整理到内部队列
+                #     i += 1
+                    
+                close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
+                if close_flag:
+                    try:
+                        close_flag.click()
+                    except:
+                        continue
             
         except Exception as e:
-            theme_logger.error(f"异常【{e}】", f"共采集{i}个")
+            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，{usage_time(start_time)}"))
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
@@ -301,7 +302,7 @@ class Interact(ThreadTask):
             return 
             
 
-        theme_logger.info(f"完成", f"共采集{i}个")
+        logger.info(record_detail(target,f"完成", f"共采集{i}个，{usage_time(start_time)}"))
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):

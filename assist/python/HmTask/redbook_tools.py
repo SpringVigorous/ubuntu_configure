@@ -441,11 +441,14 @@ class NoteInfo:
 
 
 class Section:
-    def __init__(self,sec,yVal,id,already):
+    def __init__(self,sec,yVal,id,already,error_count=0):
         self.sec=sec
         self.yVal=yVal
         self.id=id
         self.already=already
+        self.error_count=error_count
+    def id(self):
+        return self.id
 
 def contain_search_key(str):
     lst=["大家都在搜","相关搜索","热门搜索"]
@@ -455,68 +458,82 @@ def contain_search_key(str):
 class SectionManager:
     def __init__(self,wp:WebPage):
         self.wp=wp
-        self.cur_secs=[]
+
         self.secs=[]
-        self.cur_index=0
+        self.cur_id=""
+
         
-    def __set_secs(self,secs:list):
-        self.cur_secs=secs
+    def __set_secs(self,secs:list[Section]):
+        self.secs=secs
         
-        for sec in self.cur_secs:
-            sec_ids=[sec.id for sec in self.secs]
-            if sec.id not in sec_ids:
-                self.secs.append(sec)
-            else:
-                self.secs[sec_ids.index(sec.id)]=sec
+        # for sec in self.cur_secs:
+        #     sec_ids=[sec.id for sec in self.secs]
+        #     if sec.id not in sec_ids:
+        #         self.secs.append(sec)
+        #     else:
+        #         index=sec_ids.index(sec.id)
+        #         self.secs[index]=sec
         
 
 
     def update(self):
-
-        if not self.wp.wait.eles_loaded((By.XPATH,"//section")):
+        target=(By.XPATH,'//section[@class="note-item"]')
+        if not self.wp.wait.eles_loaded(target):
             return
             
-        org_secs=self.wp.eles((By.XPATH,"//section"))
+        org_secs=self.wp.eles(target)
         sorted(org_secs,key=lambda x:x.rect.midpoint[1])
 
         
-        secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
+        secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False,0)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
         
  
         
         if self.secs:
             for sec in secs:
-                
                 org=self.get_by_id(sec.id)
                 if org:
                     sec.already=org.already
+                    sec.error_count=org.error_count
                     
-        
-        
 
         self.__set_secs(secs)
     def get_by_id(self ,id):
         secs=[sec for sec in self.secs if sec.id==id]
         return secs[0] if secs else None
         
-
+    @property
+    def ids(self):
+        return [sec.id for sec in self.secs]
     
+    
+
     def next(self):
 
-        for sec in self.cur_secs:
+        for sec in self.secs:
             if not sec.already:
                 sec.already=True
-                self.cur_index=self.cur_secs.index(sec)
+                self.cur_id=sec.id
                 yield sec.sec
+        yield None
+
      
     def resume_cur(self):
-        if self.cur_index<len(self.cur_secs):
-            self.cur_secs[self.cur_index].already=False
+        sec=self.get_by_id(self.cur_id)
+        if sec:
+            sec.error_count+=1
+            if sec.error_count>3:
+                print(f"{self.cur_id} 失败次数已超3次")
+                sec.already=True
+                return
+            sec.already=False
+
+
         
         
     def count(self):
 
-        return sum([ 0 if sec.already else 1  for sec in self.cur_secs ])
+        return sum([ 0 if sec.already else 1  for sec in self.secs ])
     
 def to_theme_word(theme_name,root_dir,dict_data):
         # 创建一个新的文档
