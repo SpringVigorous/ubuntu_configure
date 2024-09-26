@@ -17,7 +17,10 @@ logging.Logger.trace = trace
 logger :logging.Logger=None
 
 def record_detail(target:str,status:str,detail:str)->str:
-    return f"【{target}】-【{status}】详情：{detail}"
+    info=f"【{target}】-【{status}】"
+    if detail:
+        info+="详情：{}".format(detail)    
+    return info
 
 def usage_time(start_time:time)->str:
     return f"耗时：{time()-start_time}秒"
@@ -29,6 +32,8 @@ def str_to_level(level_str:str)->int:
     
     level= logging.getLevelName(level_str.upper())
     return level if isinstance(level, int) else TRACE_LEVEL_NUM
+
+
 
 # 自定义日志格式器
 class CustomFormatter(logging.Formatter):
@@ -148,3 +153,39 @@ def error(msg: object, *args: object):
 
     # create_logger(log_name, level, log_level, console_level)
     
+    
+class logger_guard:
+    def __init__(self,target):
+        self.target=target
+        self.start_time=None
+        
+    def _log_impl(self,mfunc,status:str=None,details:str=None):
+        if  self.start_time:
+            details=f"{details} {usage_time(self.start_time)}"
+            
+        #重置时间
+        self.start_time=time()
+        
+        info=record_detail(self.target,status,details)
+        
+        if logger is not None and mfunc is not None:
+            mfunc(info)
+        else:
+            print(info)
+    def debug(self,status:str=None,details:str=None):
+        self._log_impl(info,status,details)
+    
+    def info(self,status:str=None,details:str=None):
+        self._log_impl(info,status,details)
+    
+    def warn(self,status:str=None,details:str=None):
+        self._log_impl(warn,status,details)
+        
+    def error(self,status:str=None,details:str=None):
+        self._log_impl(error,status,details)
+        
+    def trace(self,status:str=None,details:str=None):
+        self._log_impl(trace,status,details)
+
+        
+
