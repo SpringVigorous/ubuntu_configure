@@ -7,18 +7,37 @@ asp.add_sys_path(__file__)
 from com_decorator import exception_decorator
 
 
+#根据原始的大小写情况，替换成目标的大小写
+def replace_pattern(match, replacement):
+    original = match.group(0)
+    if original.islower():
+        return replacement.lower()
+    elif original.isupper():
+        return replacement.upper()
+    else:
+        # 如果是首字母大写的情况
+        return replacement.capitalize()
 
 
 
 
-@exception_decorator
+#支持正则替换 内容为：[(origin_val, new_val,is_regex,is_ignore_case)]
+@exception_decorator()
 def replace_list_tuple_str(content:str,replace_list_tuple=None)->str:
     if not replace_list_tuple or len(replace_list_tuple)==0:
         return content
-    for c, d in replace_list_tuple:
-        if len(c)==0 : 
+    for origin_val, new_val,*extra0 in replace_list_tuple:
+        if len(origin_val)==0 : 
             continue
-        content = content.replace(c, d)
+        extra_count=len(extra0)
+        is_regex=extra_count>0 and extra0[0] 
+        is_ignore_case =extra_count>1 and extra0[1] 
+        if not is_regex:
+            content = content.replace(origin_val, new_val)
+        elif is_ignore_case:
+            content= re.sub(origin_val, lambda m: replace_pattern(m, new_val), content,  flags=re.IGNORECASE) # 忽略大小写
+        else:
+            content = re.sub(origin_val, new_val, content)
     return content
 
 def invalid(str_value:str)->bool:
@@ -63,3 +82,11 @@ def cur_execute_path():
 
 if __name__ == '__main__':
     print(sanitize_filename('痤疮痘跟风喝了一个月的金银花水..'))
+    #替换连续重复字符，只保留一个
+    list_tuple=[(r'(.)\1+',r"\1",True,False),
+                ("He","Ki")]
+    replace_list_tuple_str("Hello,Kitty",list_tuple)
+    
+    data={"replace_args":list_tuple}
+    import json
+    print(json.dumps(data,ensure_ascii=False,indent=4))

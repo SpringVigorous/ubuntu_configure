@@ -1,16 +1,27 @@
 ﻿import pandas as pd
 import os
 import requests
-from queue import Queue,Empty
+from queue import Queue
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image, ImageDraw, ImageFont
 from abc import ABC, abstractmethod
 from pathlib import Path
 import logging
+import configparser
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# 读取配置文件
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# 从配置文件读取配置项
+download_dir_name = config.get('directories', 'download_dir')
+final_dir_name = config.get('directories', 'final_dir')
+max_download_workers = config.getint('threading', 'max_download_workers')
+max_conversion_workers = config.getint('threading', 'max_conversion_workers')
 
 # 定义下载函数
 def download_file(url, local_path):
@@ -77,7 +88,7 @@ def convert_and_add_text(src_path, final_path):
         logging.error(f"转换并添加文字失败: {src_path} -> {final_path}, 错误: {e}")
 
 # 定义基类
-class ThreadBase(Thread, ABC):
+class BaseWorkerThread(Thread, ABC):
     def __init__(self, task_queue, max_workers):
         super().__init__()
         self.task_queue = task_queue
@@ -92,7 +103,7 @@ class ThreadBase(Thread, ABC):
         pass
 
 # 定义生产者基类
-class ProducerThreadBase(ThreadBase, ABC):
+class ProducerThreadBase(BaseWorkerThread, ABC):
     def __init__(self, task_queue, max_workers, items):
         super().__init__(task_queue, max_workers)
         self.items = items
@@ -106,7 +117,7 @@ class ProducerThreadBase(ThreadBase, ABC):
         pass
 
 # 定义消费者基类
-class ConsumerThreadBase(ThreadBase, ABC):
+class ConsumerThreadBase(BaseWorkerThread, ABC):
     def execute_tasks(self, executor):
         while True:
             try:
@@ -153,13 +164,13 @@ class CustomConsumerThread(ConsumerThreadBase):
         executor.submit(convert_and_add_text, src_path, final_path)
 
 # 设置线程池的最大线程数
-def process_images(file_path, sheet_name, max_download_workers, max_conversion_workers):
+def process_images(file_path, sheet_name):
     # 文件路径和目录设置
     cur_dir = os.path.dirname(file_path)
-    download_dir = os.path.join(cur_dir, "图片")
+    download_dir = os.path.join(cur_dir, download_dir_name)
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
-    final_dir = os.path.join(cur_dir, "picture")
+    final_dir = os.path.join(cur_dir, final_dir_name)
     if not os.path.exists(final_dir):
         os.makedirs(final_dir)
 
@@ -198,8 +209,4 @@ if __name__ == "__main__":
     file_path = r"F:\教程\多肉\322种常见多肉植物，1分钟认全.xlsx"
     sheet_name = "多肉"  # 假设工作表的名字为“多肉”
 
-    # 设置线程池的最大线程数
-    max_download_workers = 5  # 下载线程池的最大线程数
-    max_conversion_workers = 15  # 转换线程池的最大线程数
-
-    process_images(file_path, sheet_name, max_download_workers, max_conversion_workers)
+    process_images(file_path, sheet_name)

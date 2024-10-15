@@ -17,26 +17,32 @@ def timer_decorator(func):
     return wrapper
 
 # 定义一个装饰器
-def exception_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            return result
-        except Exception as e:
-        # 这个except块会处理上述try块中的任何异常
-            # 获取当前的异常信息
-            _, exc_value, exc_traceback = sys.exc_info()
+def exception_decorator(error_callback:callable=None):
 
-        if logger:
-            logger.warning(f"\n发现异常：{exc_value}")
-            # 打印异常堆栈信息，其中包含了函数调用的文件信息
-            traceback.print_tb(exc_traceback.tb_next)
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except Exception as e:
+                if error_callback:
+                    error_callback()
+                
+            # 这个except块会处理上述try块中的任何异常
+                # 获取当前的异常信息
+                _, exc_value, exc_traceback = sys.exc_info()
+
+                if logger:
+                    # logger.error(f"\n发现异常：{e}")
+                    logger.warning(f"\n发现异常：{exc_value}")
+                    # 打印异常堆栈信息，其中包含了函数调用的文件信息
+                    traceback.print_tb(exc_traceback.tb_next)
 
 
 
-    return wrapper
-
+        return wrapper
+    return decorator
 def details_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

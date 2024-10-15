@@ -1,0 +1,24 @@
+﻿{
+    "project": [
+        {
+            "old_name": "project_template",
+            "new_name": "world",
+            "is_reg": true,
+            "ignore_case": true
+        },
+        {
+            "old_name": "class_template",
+            "new_name": "kitty",
+            "is_reg": true,
+            "ignore_case": true
+        }
+    ],
+    "copy_files": [
+        {
+            "old_name": "(.*?)(class_template)\\.(h|cpp|hpp)$",
+            "new_name": ["hello1","hello2","hello3","kitty1","kitty2","kitty3"],
+            "is_reg": true,
+            "ignore_case": true
+        }
+    ]
+}

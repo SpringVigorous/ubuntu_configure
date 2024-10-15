@@ -32,7 +32,7 @@ def detect_encoding(file_path)->str:
 
 
 #读入文件
-@cd.exception_decorator
+@cd.exception_decorator()
 def read_content_by_encode(source_path,source_encoding):
     
         with open(source_path, 'r',encoding=source_encoding,errors="ignore") as file:
@@ -41,7 +41,7 @@ def read_content_by_encode(source_path,source_encoding):
         return None
     
 # 写到文件
-@cd.exception_decorator
+@cd.exception_decorator()
 def write_content_by_encode(dest_path,dest_encoding,content):
     #不存在时 就创建
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
@@ -51,7 +51,7 @@ def write_content_by_encode(dest_path,dest_encoding,content):
 
 # @cd.details_decorator
 # @cd.timer_decorator
-@cd.exception_decorator
+@cd.exception_decorator()
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
         content=read_content_by_encode(source_path,source_encoding)
         if content is None:

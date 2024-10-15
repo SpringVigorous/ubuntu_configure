@@ -19,7 +19,7 @@ import base.path_tools as pt
 from base.com_log import logger as logger
 import base.com_decorator as dr 
 
-@dr.exception_decorator
+@dr.exception_decorator()
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = ft.detect_encoding(source_path)
     # source_encoding="gb2312"
@@ -130,6 +130,9 @@ if __name__ == '__main__':
 # python integer\alter_encoding.py -i "F:\教程\C++\双笙子佯谬\" -c utf-8-sig -f .srt
     
 # python alter_encoding.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 
+
+
+# 替换文本  -r 对应的替换内容(json格式)路径  此功能暂时废弃，用 F:\test\ubuntu_configure\assist\python\integer\replace_folders_files.py 替代
 
 #打包成exe
 #pyinstaller  --onefile --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe integer/alter_encoding.py    

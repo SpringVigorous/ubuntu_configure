@@ -52,7 +52,7 @@ def show_error():
 
 # 仅一个参数：json文件路径
 @cd.details_decorator
-@cd.exception_decorator
+@cd.exception_decorator()
 def main():
     # 检查是否有足够的参数被提供
     if len(sys.argv) < 2:

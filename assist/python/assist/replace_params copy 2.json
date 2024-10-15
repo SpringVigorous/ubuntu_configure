@@ -1,0 +1,14 @@
+﻿[
+    {
+        "old_name": "project_template",
+        "new_name": "dynamic_runtime",
+        "is_reg": true,
+        "ignore_case": true
+    },
+    {
+        "old_name": "class_template",
+        "new_name": "runtime",
+        "is_reg": true,
+        "ignore_case": true
+    }
+]
