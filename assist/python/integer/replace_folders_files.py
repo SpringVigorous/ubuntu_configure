@@ -98,7 +98,32 @@ def each_json_str():
     ]
     return json.dumps(data,indent=4)
 
-
+def project_json_str():
+    data={
+        "project": [
+            {
+                "old_name": "project_template",
+                "new_name": "world",
+                "is_reg": True,
+                "ignore_case": True
+            },
+            {
+                "old_name": "class_template",
+                "new_name": "kitty",
+                "is_reg": True,
+                "ignore_case": True
+            }
+        ],
+        "copy_files": [
+            {
+                "old_name": "(.*?)(class_template)\\.(h|cpp|hpp)$",
+                "new_name": ["hello1","hello2","hello3","kitty1","kitty2","kitty3"],
+                "is_reg": True,
+                "ignore_case": True
+            }
+        ]
+    }
+    return json.dumps(data,indent=4)
 
 def show_error():
 
@@ -108,7 +133,7 @@ def show_error():
 def show_eg():
     error_str=f"必须参数 -r(--replace)缺失：\n\
     1.参数为json路径(-o和-d参数可不填写),内容如下：\n{full_json_str()}\n\
-    2.json文件路径(-o和-d参数必须填写),内容如下：\n{json.dumps(replace_strs,indent=4)}或{each_json_str()}\n\
+    2.json文件路径(-o和-d参数必须填写),内容如下：\n{json.dumps(replace_strs,indent=4)}\n或{each_json_str()}\n或{project_json_str()}\n\
     3.参数为替换对列表(-r参数必须填写),内容如下：\n{args_json_str()}"
 
     logger.error(f"参数示例如下：{error_str}")
