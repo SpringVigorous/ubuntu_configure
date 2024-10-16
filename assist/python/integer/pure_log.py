@@ -24,7 +24,7 @@ def pure_log(input_str):
     
     # 使用正则表达式进行替换
     result = re.sub(remove_code, r'\1', input_str, flags=re.DOTALL)
-    # split_pre = r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{1,})-(.*?)详情：(.*?)耗时：(.*?)?(?:\r\n)?'
+
     split_pre=r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{1,})-(.*?)(详情.*?)(?:(耗时.*?))?\n'
     # 使用正则表达式进行匹配
     matches = re.findall(split_pre, result, re.DOTALL)
@@ -38,7 +38,10 @@ def pure_log(input_str):
 
 def main():
     org_str=from_clipboard()
+    if org_str[-1]!="\n":
+        org_str+="\n"
     result=pure_log(org_str.replace("\r",""))
+
     # print(result)
     to_clipboard(result)
 

@@ -20,7 +20,7 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger ,record_detail,usage_time
+from base.com_log import logger ,record_detail,usage_time,info_helper
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
@@ -60,20 +60,20 @@ def Num(thums):
 
 
 def convert_image_to_jpg(image_path,dest_path=None):
-    start_time=time.time()
+
     if not dest_path:
         dest_path=image_path
 
-    target="图片类型转换"
-    detail=f"{image_path}->{dest_path}"
+    
+    helper=info_helper("图片类型转换",f"{image_path}->{dest_path}")
     
     if not os.path.exists(image_path):
-        logger.error(record_detail(target,"失败",detail=f"图片文件不存在:{detail}"))
+        logger.error(helper.info("失败","图片文件不存在"))
         return
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    logger.trace(record_detail(target,"成功",f"{usage_time(start_time)}, {detail}"))
+    logger.trace(helper.info_useage("成功"))
 
     
 

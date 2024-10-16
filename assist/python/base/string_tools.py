@@ -1,7 +1,7 @@
 ﻿import path_tools as asp
 import  re
 from datetime import datetime
-
+from bs4 import BeautifulSoup
 asp.add_sys_path(__file__)
 
 from com_decorator import exception_decorator
@@ -74,11 +74,64 @@ def datetime_flag():
     return current_time.strftime('%Y%m%d%H%M%S')
 
 #获取当前exe所在目录
-def cur_execute_path():
+def exe_dir(exe_path:str=None):
     import os
     import sys
-    return os.path.dirname(sys.argv[0])
+    return os.path.dirname(sys.argv[0] if not exe_path  else exe_path)
 
+#字符串转换为 html 表格，每行用换行符分割，每列用制表符分割
+def convert_to_html_table(table_str,row_split="\n",col_split="\t"):
+    # 按行分割字符串
+    lines = table_str.strip().split(row_split)
+    
+    # 创建 HTML 表格的开头和结尾标签
+    html_table = '<table border="1">\n'
+    
+    # 遍历每一行
+    for line in lines:
+        # 按制表符分割行
+        columns = line.split(col_split)
+        
+        # 创建表格行标签
+        html_table += '  <tr>\n'
+        
+        # 遍历每一列
+        for column in columns:
+            # 创建表格单元格标签
+            html_table += f'    <td>{column}</td>\n'
+        
+        # 结束表格行标签
+        html_table += '  </tr>\n'
+    
+    # 结束 HTML 表格标签
+    html_table += '</table>'
+    
+    return html_table
+
+# html 表格 转换为 字符串，每行用换行符分割，每列用制表符分割
+def html_table_to_str(html_table,row_split="\n",col_split="\t"):
+    # 使用 BeautifulSoup 解析 HTML 表格
+    soup = BeautifulSoup(html_table, 'html.parser')
+    
+    # 提取表头
+    header_row = soup.find('thead').find('tr')
+    datas = [[th.get_text() for th in header_row.find_all('th')]]
+    
+    # 提取表格数据
+    data_rows = soup.find('tbody').find_all('tr')
+
+    for row in data_rows:
+        datas.append([td.get_text() for td in row.find_all('td')])
+    
+    # 将表头和数据转换为以 \n 和 \t 分割的字符串
+
+    
+    return  "\n".join(['\t'.join(row) for row in datas])
+    
+
+    
+    
+    
 
 if __name__ == '__main__':
     print(sanitize_filename('痤疮痘跟风喝了一个月的金银花水..'))

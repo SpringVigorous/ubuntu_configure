@@ -1,0 +1,19 @@
+﻿{
+    
+    "qq": {
+        "smtp_server": "smtp.qq.com",
+        "smtp_port": 465
+    },
+    "outlook": {
+        "smtp_server": "smtp.office365.com",
+        "smtp_port": 587
+    },
+    "aliyun": {
+        "smtp_server": "smtp.mxhichina.com",
+        "smtp_port": 465
+    },
+    "sohu": {
+        "smtp_server": "smtp.sohu.com",
+        "smtp_port": 465
+    }
+}

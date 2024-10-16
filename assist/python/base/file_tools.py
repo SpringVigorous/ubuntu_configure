@@ -113,7 +113,7 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
     try:
         async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
             await f.write(data)
-            logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
+            logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
             return True
     except:
         return False
@@ -131,7 +131,7 @@ def read_write_sync(data,dest_path,mode="w",encoding=None):
     try:
         with  open(dest_path,mode,encoding=encoding) as f:
             f.write(data)
-            logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
+            logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
             return True
     except:
         return False
@@ -176,12 +176,12 @@ async def download_async(url,dest_path,**kwargs):
     async with aiohttp.ClientSession() as session:
         content=await __fetch_async(url,session,5,**kwargs)
         if not content:
-            logger.error(record_detail(target,"失败",f"{usage_time(start_time)}, {detail}"))
+            logger.error(record_detail(target,"失败",f"{detail},{usage_time(start_time)}"))
             return False
             
         await read_write_async(content,dest_path,mode="wb")
         
-    logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
+    logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
     return True
 def __fetch_sync(url ,max_retries=3,**args):
     retries = 0
@@ -217,12 +217,12 @@ def download_sync(url,dest_path,**kwargs):
     start_time=time.time()
     content=__fetch_sync(url,5,**kwargs)
     if not content:
-        logger.error(record_detail(target,"失败",f"{usage_time(start_time)}, {detail}"))
+        logger.error(record_detail(target,"失败",f"{detail},{usage_time(start_time)}"))
         return False
         
     read_write_sync(content,dest_path,mode="wb")
         
-    logger.trace(record_detail(target,"完成",f"{usage_time(start_time)}, {detail}"))
+    logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
     return True
 
 

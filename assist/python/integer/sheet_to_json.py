@@ -43,14 +43,14 @@ test_val={"old_name":["glm","GLM"],
 def test_export_to_excel():
 
     data= pd.DataFrame(test_val)
-    save_to_excel(data, os.path.join(st.cur_execute_path(),"data","replace_folder_params.xlsx"), "args")
+    save_to_excel(data, os.path.join(st.exe_dir(),"data","replace_folder_params.xlsx"), "args")
 
 
 #测试导出到json文件
 def test_export_to_json():
 
     data= pd.DataFrame(test_val)
-    save_as_json(data, os.path.join(st.cur_execute_path(),"data","replace_folder_params.json"))
+    save_as_json(data, os.path.join(st.exe_dir(),"data","replace_folder_params.json"))
 
 if __name__ == "__main__":
     
