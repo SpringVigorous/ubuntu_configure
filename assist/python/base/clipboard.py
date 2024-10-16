@@ -1,20 +1,20 @@
 ﻿import pyperclip
 
-def set_clipboard_text(text):
+def to_clipboard(text):
     """将文本设置到剪切板"""
     pyperclip.copy(text)
 
-def get_clipboard_text():
+def from_clipboard():
     """获取剪切板的文本信息"""
     return pyperclip.paste()
 
 
 if __name__ == '__main__':
     # 设置剪切板文本
-    # set_clipboard_text("这是测试文本")
+    # to_clipboard("这是测试文本")
 
     # 获取剪切板文本
-    clipboard_text = get_clipboard_text()
+    clipboard_text = from_clipboard()
 
 
     # 输出剪切板的文本信息

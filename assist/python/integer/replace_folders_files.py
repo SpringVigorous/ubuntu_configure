@@ -286,6 +286,8 @@ def main():
                 success=repalce_fun(cur_source,cur_dest,item.replace_args,rf.CoverType.NO_COVER)
             elif is_fold:
                 success=rf.clone_dir_str(cur_source,cur_dest,item.replace_args,special.replace_args,rf.CoverType.NO_COVER)
+                
+                
             flag=f"成功" if success else "失败"
             func= logger.trace if success else logger.error
             func(f"{info_pre}替换{flag}")

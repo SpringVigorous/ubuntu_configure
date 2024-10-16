@@ -73,8 +73,8 @@ def convert_image_to_jpg(image_path,dest_path=None):
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    logger.trace(record_detail(target,"成功",detail=f"{detail},用时{time.time()-start_time}秒"))
-    
+    logger.trace(record_detail(target,"成功",f"{usage_time(start_time)}, {detail}"))
+
     
 
 def add_hyperlink(paragraph, url, text, color=None):
