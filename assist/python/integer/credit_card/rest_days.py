@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from  base.clipboard import to_clipboard
-from calculate_rest_days import repay_days_rest
+from calculate_rest_days import next_repay_days_rest,cur_repay_days_rest
 from base.email.special_email import send_email
 from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str
 
@@ -40,9 +40,9 @@ def repay_days_sheet(file_path, sheet_name,current_date):
 
     df['num'] = df['num'].astype(str)
 
-    # 添加新列 `rest_day` 并计算对应的值
-    df['rest_day'] = df.apply(
-        lambda row: repay_days_rest(
+    # 添加新列 `next_rest_day` 并计算对应的值
+    df['next_rest_day'] = df.apply(
+        lambda row: next_repay_days_rest(
             current_date,
             int(row['repayment_day']),
             int(row['billing_day']),
@@ -50,8 +50,15 @@ def repay_days_sheet(file_path, sheet_name,current_date):
         ),
         axis=1
     )
-    # 根据 `rest_day` 列从大到小排序
-    df.sort_values(by='rest_day', ascending=False, inplace=True)
+    df['cur_rest_day'] = df.apply(
+        lambda row: cur_repay_days_rest(
+            current_date,
+            int(row['repayment_day'])
+        ),
+        axis=1
+    )
+    # 根据 `next_rest_day` 列从大到小排序
+    df.sort_values(by='next_rest_day', ascending=False, inplace=True)
     
     # 将 DataFrame 转换为 HTML 表格
     html_table = df.to_html(index=True, classes=['table', 'table-bordered'])

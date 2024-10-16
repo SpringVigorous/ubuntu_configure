@@ -158,8 +158,13 @@ class EmailSender:
             self.server.login(self.email, self.password)
             
             # 发送邮件
+
+            
             self.server.sendmail(self.email, receiver_email, msg.as_string())
-            logger.info(log_helper.info_useage("成功"))
+            
+            msg_info=f"邮件主题：{subject}\n收件人：{recivers}\n正文：{body}\n附件：{attachments}\n正文文件：{body_files}"
+            
+            logger.info(log_helper.info_useage("成功",msg_info))
         except Exception as e:
             logger.error(log_helper.info_useage("失败",f"原因：{e}"))
 
