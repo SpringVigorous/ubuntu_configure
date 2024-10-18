@@ -32,8 +32,8 @@ def handle_credit_detail(data_path):
                 datas.append(each_data)
         # print(datas)
         # print(dates)
-
-        with open(os.path.join(os.path.dirname(data_path),f"{cur_path.name}_detail.txt"),'w',encoding="utf-8") as f:
+        detail_path=cur_path.with_stem(f"{cur_path.stem}_detail")
+        with open(detail_path,'w',encoding="utf-8") as f:
             for date,data in zip(dates,datas):
                 for item in data:
                     f.write(f"{date}\t{item}\n")
