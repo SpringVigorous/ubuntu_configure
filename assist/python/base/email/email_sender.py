@@ -104,7 +104,7 @@ class EmailSender:
         适用于发送带有格式的文本内容，类似于 Word 文档。
         """
     @exception_decorator()
-    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:list=None, body_files:list=None):
+    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:str|list=None, body_files:str|list=None):
         """
         发送邮件
         
@@ -124,13 +124,16 @@ class EmailSender:
         msg['Subject'] = subject
 
         log_helper=info_helper(f"{self.email}->{recivers}","发送邮件")
-
+        
+        attachment_list=attachments if type(attachments)==list else [attachments] if attachments is not None else []
+        bodyfiles_list=body_files if type(body_files)==list else [body_files] if body_files is not None else []
+        
         # 添加正文
         msg.attach(MIMEText(body, body_type))
         
-        if body_files:
-            for body_file in body_files:
-                if not os.path.exists(body_file):
+        if bodyfiles_list:
+            for body_file in bodyfiles_list:
+                if not body_file or not os.path.exists(body_file):
                     continue
                 encoding= detect_encoding(body_file)
                 with open(body_file, 'r', encoding=encoding) as file:
@@ -138,13 +141,13 @@ class EmailSender:
                     msg.attach(MIMEText(file_body, 'plain'))
         
         # 添加附件
-        if attachments:
-            for attachment_path in attachments:
-                if not os.path.exists(attachment_path):
+        if attachment_list:
+            for attachment in attachment_list:
+                if not attachment or not os.path.exists(attachment):
                     continue
-                with open(attachment_path, 'rb') as file:
-                    part = MIMEApplication(file.read(), Name=attachment_path)
-                    part['Content-Disposition'] = f'attachment; filename="{attachment_path}"'
+                with open(attachment, 'rb') as file:
+                    part = MIMEApplication(file.read(), Name=attachment)
+                    part['Content-Disposition'] = f'attachment; filename="{attachment}"'
                     msg.attach(part)
 
         try:
@@ -172,7 +175,7 @@ class EmailSender:
             if self.server:
                 self.server.quit()
 
-def main():
+def test():
     # 使用 QQ 邮箱发送邮件
     sender_email = '960902471@qq.com'
     password = 'txxbbjkizzhabdjg1'
@@ -192,4 +195,4 @@ def main():
 
 # 示例使用
 if __name__ == "__main__":
-    main()
+    test()
