@@ -38,17 +38,17 @@ def compound_month_pay_rate(year_rate, periods):
     b=(q*product_radio)/(product_radio-1) #月供/本金
     return b
     
-#信用卡分期计算的月供比例
-def stage_month_pay_rate(year_rate, periods):
+#信用卡分期计算的月供比例,kickback_rate：佣金比例
+def stage_month_pay_rate(year_rate, periods,kickback_rate=.0):
     q=year_rate/12
     n=periods
-    return q+1.0/n
+    return (q+1.0/n)/(1-kickback_rate)
 
-# 信用卡分期(直接一次性付完所有利息),月供占真实本金的比例
-def stage_month_pre_pay_rate(year_rate,periods):
+# 信用卡分期(直接一次性付完所有利息),月供占真实本金的比例，,kickback_rate：佣金比例
+def stage_month_pre_pay_rate(year_rate,periods,kickback_rate=.0):
     q=year_rate/12
     n=periods
-    return 1/((1-n*q)*n)
+    return (1+q*n)/((1-n*q-kickback_rate)*n)
 
 
 #单利计算的年利率 -根据月供比例换算
@@ -99,39 +99,39 @@ def calculate_annual_year_rate(real_year_rate, periods):
 
 
 
-#年利率:信用卡分期 -> 房贷等额本息
-def convert_stage_to_compound(year_rate, periods):
-    month_pay_rate=stage_month_pay_rate(year_rate,periods)
+#年利率:信用卡分期 -> 房贷等额本息,kickback_rate：佣金比例
+def convert_stage_to_compound(year_rate, periods,kickback_rate=.0):
+    month_pay_rate=stage_month_pay_rate(year_rate,periods,kickback_rate)
     return compound_annual_rate(month_pay_rate,periods)
 
-#年利率:信用卡分期(一次性结清所有利息) -> 房贷等额本息
-def convert_pre_stage_to_compound(year_rate, periods):
-    pay_rate=stage_month_pre_pay_rate(year_rate,periods)
+#年利率:信用卡分期(一次性结清所有利息) -> 房贷等额本息,kickback_rate：佣金比例
+def convert_pre_stage_to_compound(year_rate, periods,kickback_rate=.0):
+    pay_rate=stage_month_pre_pay_rate(year_rate,periods,kickback_rate)
     
     return compound_annual_rate(pay_rate,periods)
 
     
-#年利率:房贷等额本息 ->信用卡分期 
+#年利率:房贷等额本息 ->信用卡分期 ,kickback_rate：佣金比例
 def convert_compound_to_stage(year_rate, periods):
     month_pay_rate=compound_month_pay_rate(year_rate,periods)
     return stage_annual_rate(month_pay_rate,periods)
 
-#年利率：信用卡分期 -> 单利
+#年利率：信用卡分期 -> 单利,kickback_rate：佣金比例
 def convert_stage_to_simple(year_rate, periods):
     month_pay_rate=stage_month_pay_rate(year_rate,periods)
     return simple_annual_rate(month_pay_rate,periods)
 
-#年利率:单利 -> 信用卡分期
+#年利率:单利 -> 信用卡分期,kickback_rate：佣金比例
 def convert_simple_to_stage(year_rate, periods):
     month_pay_rate=simple_month_pay_rate(year_rate,periods) 
     return stage_annual_rate(month_pay_rate,periods)
 
-#年利率:房贷等额本息 ->单利
+#年利率:房贷等额本息 ->单利,kickback_rate：佣金比例
 def convert_compound_to_simple(year_rate, periods):
     month_pay_rate=compound_month_pay_rate(year_rate,periods)
     return simple_annual_rate(month_pay_rate,periods)
 
-#年利率：单利 -> 房贷等额本息
+#年利率：单利 -> 房贷等额本息,kickback_rate：佣金比例
 def convert_simple_to_compound(year_rate, periods):
     month_pay_rate=simple_month_pay_rate(year_rate,periods) 
     return compound_annual_rate(month_pay_rate,periods)
@@ -195,6 +195,7 @@ if __name__=="__main__":
         
     annual_rate=.03
     periods=60
+    kickback_rate=.02
 
 
     # pay_rate=stage_month_pre_pay_rate(annual_rate,periods)
@@ -206,7 +207,7 @@ if __name__=="__main__":
 
 
     # print(val,a)
-    print(convert_pre_stage_to_compound(annual_rate,periods))
+    print(convert_pre_stage_to_compound(annual_rate,periods,kickback_rate))
     # # print(convert_stage_to_compound(annual_rate,periods))
     # print(convert_stage_to_simple(annual_rate,periods))
 
