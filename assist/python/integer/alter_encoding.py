@@ -127,12 +127,15 @@ if __name__ == '__main__':
 # python alter_encoding.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy 
 
 # python "F:/test/ubuntu_configure/assist/python/integer/alter_encoding.py" -i F:/教程/python/不基础的python基础/1  
-# python integer\alter_encoding.py -i "F:\教程\C++\双笙子佯谬\" -c utf-8-sig -f .srt
+# python integer/alter_encoding.py -i "F:/教程/C++/双笙子佯谬/" -c utf-8-sig -f .srt
     
-# python alter_encoding.py -i F:/test/co_async/co_async -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl --clear 
+# python integer/alter_encoding.py -i F:/test/cmake_project/src -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' --clear 
 
 
-# 替换文本  -r 对应的替换内容(json格式)路径  此功能暂时废弃，用 F:\test\ubuntu_configure\assist\python\integer\replace_folders_files.py 替代
+
+
+
+# 替换文本  -r 对应的替换内容(json格式)路径  此功能暂时废弃，用 F:/test/ubuntu_configure/assist/python/integer/replace_folders_files.py 替代
 
 #打包成exe
-#pyinstaller  --onefile --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath .\exe integer/alter_encoding.py    
+#pyinstaller  --onefile --distpath exe -p . -p base -p integer  --add-data "config/settings.yaml:./config" --add-data "config/.secrets.yaml:./config" --distpath ./exe integer/alter_encoding.py    

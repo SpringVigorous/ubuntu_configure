@@ -234,7 +234,7 @@ class ParseParams:
    
             copy_files=json_data["copy_files"] if "copy_files" in json_data else None
             
-            first_data=json_data[0] if not copy_files else None
+            first_data=json_data[0] if not project_json and json_data else None
             items_json=json_data if  first_data and "old_name" in first_data and "new_name" in first_data else None
             # if not(full_json or replace_json or items_json) or full_json==replace_json:
             if not(full_json or replace_json or items_json or project_json):

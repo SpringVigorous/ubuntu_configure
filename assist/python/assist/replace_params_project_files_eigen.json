@@ -8,7 +8,7 @@
         },
         {
             "old_name": "class_template",
-            "new_name": "kitty",
+            "new_name": "Project",
             "is_reg": true,
             "ignore_case": true
         }
@@ -16,7 +16,7 @@
     "copy_files": [
         {
             "old_name": "(.*?)(class_template)\\.(h|cpp|hpp)$",
-            "new_name": ["hello1","hello2","hello3","kitty1","kitty2","kitty3"],
+            "new_name": ["hm_vector","hm_matrix","hm_point","hm_line"],
             "is_reg": true,
             "ignore_case": true
         }
