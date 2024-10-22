@@ -17,7 +17,7 @@ import base.file_tools as  ft
 
 import base.fold_tools as fo
 import base.path_tools as pt
-from base.com_log import logger ,info_helper
+from base.com_log import logger ,logger_helper
 import base.com_decorator as dr 
 
 @dr.exception_decorator()
@@ -28,15 +28,15 @@ def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     if st.invalid(dest_encoding):
         dest_encoding=source_encoding
 
-    helper= info_helper("编码转换",f"[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
+    helper= logger_helper("编码转换",f"[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
 
     if not source_encoding:
-        logger.error(helper.info("失败","无法检测到源文件编码") )
+        helper.error("失败","无法检测到源文件编码") 
         return  ReturnState.FAILED
     state=ReturnState.from_state(ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)) 
 
-    func=logger.info if state else logger.error
-    func(helper.info(state.description) )
+    func=helper.info if state else helper.error
+    func(state.description) 
 
 
 

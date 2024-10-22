@@ -14,7 +14,7 @@ from DrissionPage.common import Actions,Keys
 
 
 from __init__ import *
-from base.com_log import logger as logger,usage_time,logger_guard
+from base.com_log import logger as logger,usage_time,logger_helper
 from base import setting as setting
 from base.string_tools import sanitize_filename,datetime_flag
 
@@ -121,8 +121,8 @@ class Interact(ThreadTask):
         
         target=f"采集{theme_info}"
         
-        theme_logger=logger_guard(target)
-        theme_logger.info("开始")
+        theme_logger=logger_helper("采集",theme_info)
+        theme_logger.info("开始",has_usage_time=True)
         
         ac = Actions(self.wp)
         
@@ -218,8 +218,8 @@ class Interact(ThreadTask):
                 
 
                 
-                note_logger=logger_guard(f"采集：{self.wp.title}")
-                note_logger.info("开始")
+                note_logger=logger_helper("采集",self.wp.title)
+                note_logger.info("开始",has_usage_time=True))
 
 
                 body=item.response.body
@@ -292,7 +292,7 @@ class Interact(ThreadTask):
                 #         continue
             
         except Exception as e:
-            theme_logger.error(f"异常【{e}】", f"共采集{i}个")
+            theme_logger.error(f"异常【{e}】", f"共采集{i}个",has_usage_time=True)
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
@@ -301,7 +301,7 @@ class Interact(ThreadTask):
             return 
             
 
-        theme_logger.info(f"完成", f"共采集{i}个")
+        theme_logger.info(f"完成", f"共采集{i}个",has_usage_time=True)
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):

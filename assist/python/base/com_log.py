@@ -15,6 +15,9 @@ logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 def trace(self, message, *args, **kws):
     if self.isEnabledFor(TRACE_LEVEL_NUM):
         self._log(TRACE_LEVEL_NUM, message, args, **kws)
+        
+        
+
 logging.Logger.trace = trace
 logger :logging.Logger=None
 
@@ -31,22 +34,7 @@ def usage_time(start_time:time)->str:
 def record_detail_usage(target:str,status:str,detail:str,start_time:time)->str:
     return record_detail(target,status,f"{detail},{usage_time(start_time)}")
 
-class info_helper:
-       
-    def __init__(self,target:str,detail:str):
-        self.start_time=time()
-        self.update(target,detail)
-    def update(self,target:str,detail:str):
-        self.target=target
-        self.detail=detail
-        
-    def _detail(self,detail_lat:str=None):
-        return f"{self.detail},{detail_lat}" if detail_lat else self.detail
-        
-    def info(self,status:str,detail_lat:str=None)->str:     
-        return record_detail(self.target,status,self._detail(detail_lat))
-    def info_useage(self,status:str,detail_lat:str=None)->str:
-        return record_detail_usage(self.target,status,self._detail(detail_lat),self.start_time)
+
 
 def str_to_level(level_str:str)->int:
     
@@ -163,66 +151,63 @@ def error(msg: object, *args: object):
     __log_impl__(logger.error,msg, *args) 
  
 
+  
+ 
 
 
-
-    
-    
-    
-    
-    # logger.debug("Debugging information")
-    # logger.info("Normal information message")
-    # logger.warning("Warning occurred")
-    # logger.error("An error happened")
-    # logger.critical("Critical error")
-
-    # folder= os.path.dirname(os.path.dirname(__file__))
-    # with open(os.path.join(folder,"config/log_config.json"), "r",encoding="utf-8-sig") as f:
-    #     log_config = json.load(f)
-    # log_name=log_config.get("log_name","info")
-    # level=log_config.get("level","debug")
-    # log_level = log_config.get("log_level","debug")
-    # console_level = log_config.get("console_level","debug")
-
-    # create_logger(log_name, level, log_level, console_level)
-    
-    
-class logger_guard:
-    def __init__(self,target):
+class logger_helper:
+       
+    def __init__(self,target:str,detail:str):
+        self.reset_time()
+        self.update(target,detail)
+    def update(self,target:str,detail:str):
         self.target=target
-        self.start_time=None
+        self.detail=detail
         
-    def _log_impl(self,mfunc,status:str=None,details:str=None):
-        if  self.start_time:
-            details=f"{details} {usage_time(self.start_time)}"
-            
-        #重置时间
+    def reset_time(self):
         self.start_time=time()
         
-        info=record_detail(self.target,status,details)
+    def _detail(self,detail_lat:str=None):
+        return f"{self.detail},{detail_lat}" if detail_lat else self.detail
         
+    def detail(self,status:str,detail_lat:str=None)->str:     
+        return record_detail(self.target,status,self._detail(detail_lat))
+    def detail_useage(self,status:str,detail_lat:str=None)->str:
+        return record_detail_usage(self.target,status,self._detail(detail_lat),self.start_time)
+    
+    def _log_impl(self,mfunc,status:str=None,details:str=None,has_usage_time=False):
+        
+        func=self.detail_useage if has_usage_time else self.detail
+        info=func(status,details)
+        if has_usage_time:
+            self.reset_time()
+            
+            
         if logger is not None and mfunc is not None:
             mfunc(info)
         else:
             print(info)
-    def debug(self,status:str=None,details:str=None):
-        self._log_impl(info,status,details)
+    def debug(self,status:str=None,details:str=None,has_usage_time=False):
+        self._log_impl(info,status,details,has_usage_time)
     
-    def info(self,status:str=None,details:str=None):
-        self._log_impl(info,status,details)
+    def info(self,status:str=None,details:str=None,has_usage_time=False):
+        self._log_impl(info,status,details,has_usage_time)
     
-    def warn(self,status:str=None,details:str=None):
-        self._log_impl(warn,status,details)
+    def warn(self,status:str=None,details:str=None,has_usage_time=False):
+        self._log_impl(warn,status,details,has_usage_time)
         
-    def error(self,status:str=None,details:str=None):
-        self._log_impl(error,status,details)
+    def error(self,status:str=None,details:str=None,has_usage_time=False):
+        self._log_impl(error,status,details,has_usage_time)
         
-    def trace(self,status:str=None,details:str=None):
-        self._log_impl(trace,status,details)
+    def trace(self,status:str=None,details:str=None,has_usage_time=False):
+        self._log_impl(trace,status,details,has_usage_time)
+    
+    
+    
 
         
 if __name__ == "__main__":
-    helper=info_helper("test","test_detail")
-    print(helper.info("成功","测试"))
+    helper=logger_helper("test","test_detail")
+    print(helper.detail("成功","测试"))
     sleep(1)
-    print(helper.info_useage("成功a","测试1"))
+    print(helper.detail_useage("成功a","测试1"))

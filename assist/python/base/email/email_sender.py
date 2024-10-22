@@ -16,7 +16,7 @@ project_root = os.path.dirname(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from  com_log import logger, info_helper
+from  com_log import logger, logger_helper
 from  com_decorator import exception_decorator
 from file_tools import detect_encoding
 from string_tools import exe_dir
@@ -123,7 +123,7 @@ class EmailSender:
         msg['To'] = recivers
         msg['Subject'] = subject
 
-        log_helper=info_helper(f"{self.email}->{recivers}","发送邮件")
+        log_helper=log_helper(f"{self.email}->{recivers}","发送邮件")
         
         attachment_list=attachments if type(attachments)==list else [attachments] if attachments is not None else []
         bodyfiles_list=body_files if type(body_files)==list else [body_files] if body_files is not None else []
@@ -167,9 +167,9 @@ class EmailSender:
             
             msg_info=f"邮件主题：{subject}\n收件人：{recivers}\n正文：{body}\n附件：{attachments}\n正文文件：{body_files}"
             
-            logger.info(log_helper.info_useage("成功",msg_info))
+            log_helper.info("成功",msg_info,True)
         except Exception as e:
-            logger.error(log_helper.info_useage("失败",f"原因：{e}"))
+            log_helper.error("失败",f"原因：{e}",True)
 
         finally:
             if self.server:

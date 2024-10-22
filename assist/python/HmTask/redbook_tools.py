@@ -20,7 +20,7 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger ,record_detail,usage_time,info_helper
+from base.com_log import logger ,record_detail,usage_time,logger_helper
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
@@ -65,15 +65,15 @@ def convert_image_to_jpg(image_path,dest_path=None):
         dest_path=image_path
 
     
-    helper=info_helper("图片类型转换",f"{image_path}->{dest_path}")
+    helper=logger_helper("图片类型转换",f"{image_path}->{dest_path}")
     
     if not os.path.exists(image_path):
-        logger.error(helper.info("失败","图片文件不存在"))
+        helper.error("失败","图片文件不存在")
         return
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    logger.trace(helper.info_useage("成功"))
+    helper.trace("成功",has_usage_time=True)
 
     
 
