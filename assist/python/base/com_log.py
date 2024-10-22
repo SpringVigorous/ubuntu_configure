@@ -35,12 +35,15 @@ class info_helper:
        
     def __init__(self,target:str,detail:str):
         self.start_time=time()
+        self.update(target,detail)
+    def update(self,target:str,detail:str):
         self.target=target
         self.detail=detail
+        
     def _detail(self,detail_lat:str=None):
         return f"{self.detail},{detail_lat}" if detail_lat else self.detail
         
-    def info(self,status:str,detail_lat:str)->str:     
+    def info(self,status:str,detail_lat:str=None)->str:     
         return record_detail(self.target,status,self._detail(detail_lat))
     def info_useage(self,status:str,detail_lat:str=None)->str:
         return record_detail_usage(self.target,status,self._detail(detail_lat),self.start_time)
@@ -88,7 +91,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
         log_dir=os.path.join(os.getcwd(), 'logs',logger_name)
         os.makedirs(log_dir,exist_ok=True)
         
-        detail_formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-%(levelname)s-Thread ID: %(thread_id)s-%(message)s')
+        detail_formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-Thread ID: %(thread_id)s-%(message)s')
         def create_file_log(level_str:str,log_format:str):
             level_str=level_str.lower()
             
@@ -96,7 +99,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             
             # 创建一个 TimedRotatingFileHandler，每天创建一个新的日志文件
             file_handler = TimedRotatingFileHandler(log_path, when="midnight", encoding='utf-8-sig', interval=1, backupCount=30)
-            file_handler.suffix = "%Y-%m-%d"
+            file_handler.suffix = "%Y-%m-%d.log"
             
             # file_handler = logging.FileHandler(log_path, encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
             file_handler.setLevel(str_to_level(level_str))  # 文件处理器处理的日志级别设为INFO，可根据需求调整
@@ -104,10 +107,10 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             # 添加文件Handler到日志器
             logger.addHandler(file_handler)
         
-        log_less= str_to_level(log_level)<str_to_level("warn")
+        log_less_warn= str_to_level(log_level)<str_to_level("warn")
         
-        create_file_log(log_level,base_formatter if log_less else detail_formatter)
-        if log_less:
+        create_file_log(log_level,base_formatter if log_less_warn else detail_formatter)
+        if log_less_warn:
             create_file_log("warn",detail_formatter)
         
 

@@ -12,35 +12,37 @@ import __init__
 import base.string_tools as st
 import base.com_decorator as cd 
 import base.pipe_tools as  ppt 
+from base.state import ReturnState
 import base.file_tools as  ft 
 
 import base.fold_tools as fo
 import base.path_tools as pt
-from base.com_log import logger as logger
+from base.com_log import logger ,info_helper
 import base.com_decorator as dr 
 
 @dr.exception_decorator()
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
     source_encoding = ft.detect_encoding(source_path)
-    # source_encoding="gb2312"
     if st.invalid(dest_path):
         dest_path=source_path
     if st.invalid(dest_encoding):
         dest_encoding=source_encoding
-    # if dest_encoding.lower()==source_encoding.lower() and dest_path.lower()==source_path.lower():
-    #     logger.trace(f"源文件编码与目标编码相同，无需转换：[ {source_path} ]:{source_encoding}->{dest_encoding}")
-    #     return
-        
-    ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)
-    
-    
-    
-    logger.info(f"成功转换：[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
+
+    helper= info_helper("编码转换",f"[ {source_path} ]->[ {dest_path} ]:{source_encoding}->{dest_encoding}")
+
+    if not source_encoding:
+        logger.error(helper.info("失败","无法检测到源文件编码") )
+        return  ReturnState.FAILED
+    state=ReturnState.from_state(ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)) 
+
+    func=logger.info if state else logger.error
+    func(helper.info(state.description) )
 
 
 
-#仅修改编码模式
-if __name__ == '__main__':
+
+
+def main():
         # 创建ArgumentParser对象，其中description参数用于提供程序的简短描述
     parser = argparse.ArgumentParser(description='修改文件编码/替换字符串(含文件名)：eg -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy  -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc')
 
@@ -120,7 +122,12 @@ if __name__ == '__main__':
                 os.makedirs(dest_dir_path, exist_ok=True)
                 dest_file_path=os.path.join(dest_dir_path, get_real_name(file))
 
-                operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)
+                operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)    
+
+
+#仅修改编码模式
+if __name__ == '__main__':
+    main()
 
 
 # 使用方法
@@ -130,6 +137,7 @@ if __name__ == '__main__':
 # python integer/alter_encoding.py -i "F:/教程/C++/双笙子佯谬/" -c utf-8-sig -f .srt
     
 # python integer/alter_encoding.py -i F:/test/cmake_project/src -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' --clear 
+# python integer/alter_encoding.py -i F:/test/cmake_project/3rd -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' --clear 
 
 
 

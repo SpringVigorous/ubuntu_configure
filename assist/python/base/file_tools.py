@@ -1,4 +1,5 @@
 ﻿import string_tools as st
+import path_tools as pt
 import com_decorator as cd 
 from com_log import logger,record_detail,usage_time
 import chardet
@@ -8,26 +9,21 @@ import aiofiles
 import requests
 import time
 import os
+from state import ReturnState
 
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
+    if not result:
+        return ReturnState.FAILED
     logger.trace(f" {file_path} 检测到文件编码：{result}")
     # 返回检测到的编码
-    return result['encoding'].lower()
-
-# 获取文件路径
-# file_path = r'F:\test_data\gbk.txt'
-
-# 检测编码
-# encoding = detect_encoding(file_path)
-
-# # 使用检测到的编码打开文件
-# with open(file_path, 'r', encoding=encoding) as f:
-#     content = f.read()
-
-# logger.trace(content)
+    encoding=result['encoding']
+    if encoding:
+        return encoding.lower()
+    else:
+        return ReturnState.FAILED
 
 
 
@@ -38,7 +34,7 @@ def read_content_by_encode(source_path,source_encoding):
         with open(source_path, 'r',encoding=source_encoding,errors="ignore") as file:
             content = file.read()
             return content
-        return None
+
     
 # 写到文件
 @cd.exception_decorator()
@@ -47,15 +43,25 @@ def write_content_by_encode(dest_path,dest_encoding,content):
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, 'w',encoding=dest_encoding) as file:
         file.write(content)
+    return ReturnState.SUCCESS
 
 
 # @cd.details_decorator
 # @cd.timer_decorator
 @cd.exception_decorator()
 def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_encoding="",operate_fun=None):
+        if not dest_encoding:
+            dest_encoding=source_encoding
+        
+        same_path_encoding= st.equal_ignore_case(source_encoding,dest_encoding) and pt.path_equal(source_path,dest_path)
+        if same_path_encoding and not operate_fun:
+            logger.trace(f"{source_path}路径相同，编码相同，未指定操作函数,跳过后续处理")
+            return ReturnState.IGNORE
+            
+    
         content=read_content_by_encode(source_path,source_encoding)
-        if content is None:
-            return 
+        if not content :
+            return content
         
         is_same=True
         if operate_fun:
@@ -67,10 +73,12 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
                 is_same=False
                 content=result_content
 
-        if dest_encoding=="":
-            dest_encoding=source_encoding
+        if same_path_encoding and is_same:
+            logger.trace(f"{source_path}路径相同，编码相同，指定操作后内容未修改,跳过后续处理")
+            return ReturnState.IGNORE
+            
         # 将处理后的content保存到B.txt文件中
-        write_content_by_encode(dest_path,dest_encoding,content)
+        return write_content_by_encode(dest_path,dest_encoding,content)
 
 def replace_content_diff_encode( source_path,dest_path,source_encoding, dest_encoding="",replace_list_tuple=None):
 
@@ -93,6 +101,9 @@ def convert_encode(source_path,dest_path,source_encoding,dest_encoding):
 #按推断的编码读入文件
 def read_content(source_path):
     source_encoding = detect_encoding(source_path)
+    if not source_encoding:
+        return None
+    
     with open(source_path, 'r',encoding=source_encoding) as file:
         content = file.read()
         return content

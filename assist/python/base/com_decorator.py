@@ -3,6 +3,9 @@ import traceback
 import time
 from functools import wraps
 from com_log import logger as logger
+from output_agent import OutputAgent
+from state import ReturnState
+
 
 def timer_decorator(func):
     @wraps(func)
@@ -34,10 +37,19 @@ def exception_decorator(error_callback:callable=None):
                 _, exc_value, exc_traceback = sys.exc_info()
 
                 if logger:
-                    # logger.error(f"\n发现异常：{e}")
-                    logger.warning(f"\n发现异常：{exc_value}")
+                    err_detail=""
+
+                    agent = OutputAgent ()
                     # 打印异常堆栈信息，其中包含了函数调用的文件信息
                     traceback.print_tb(exc_traceback.tb_next)
+                    if agent.has_err:
+                        err_detail=agent.err_value
+                    logger.error(f"\n发现异常：{exc_value},详情：\n{err_detail}")
+                    agent.clear()
+                #卸载代理
+                    # agent.uninstall()
+                #异常时 返回空值
+                return ReturnState.EXCEPT
 
 
 

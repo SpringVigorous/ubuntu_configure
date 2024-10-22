@@ -10,7 +10,8 @@
       // "args": " -t '浣犱笘' -s UTF-8",
       // "args": "-o 'F:/test/cmake_project/src/runtime' -d 'F:/test/cmake_project/src/runtime' -r 'assist/replace_params.json',   "
       // "args": "-o 'F:/test/cmake_project/src/project_template' -d 'F:/test/cmake_project/src/' -r 'assist/replace_params_project_files_eigen.json'",
-      "args" : "-i F:/test/cmake_project/src  -c utf-8-sig -f .hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl",
+      // "args" : "-i F:/test/cmake_project/src  -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
+      "args" : "-i 'F:/test/cmake_project/3rd' -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
     },
     {
       "name": "C/C++ Runner: Debug Session",
