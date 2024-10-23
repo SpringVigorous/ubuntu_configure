@@ -61,7 +61,7 @@ def Num(thums):
         return 0
 
 
-def convert_image_to_jpg(image_path,dest_path=None):
+def convert_image_to_jpg(image_path,dest_path=None)->bool:
 
     if not dest_path:
         dest_path=image_path
@@ -71,11 +71,12 @@ def convert_image_to_jpg(image_path,dest_path=None):
     
     if not os.path.exists(image_path):
         helper.error("失败","图片文件不存在")
-        return
+        return False
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
     helper.trace("成功",update_time_type=True)
+    return True
 
     
 
@@ -322,7 +323,9 @@ class NoteInfo:
             
             #若是 图片类型不是 jpg，则转换为jpg
             if dest in convert_cache:
-                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
+                if(convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])):
+                    os.remove(dest)
+                
             
 
         #图片 + 视频
@@ -345,8 +348,8 @@ class NoteInfo:
             
             #若是 图片类型不是 jpg，则转换为jpg
             if dest in convert_cache:
-                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
-            
+                if(convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])):
+                    os.remove(dest)
 
         #图片 + 视频
         tasks=[ cur_download_async(self,url,dest) for url,dest in zip(self.image_urls+self.video_urls,self.image_lst+self.video_lst) ]
@@ -467,23 +470,26 @@ def contain_search_key(str):
     
 
 class SectionManager:
+    
+
+    old_ids=[]
     def __init__(self,wp:WebPage):
-        self.wp=wp
-
         self.secs=[]
+        self.set_wp(wp)
         self.cur_id=""
-
-        
+    
+    def set_wp(self,wp:WebPage):
+        self.wp=wp
+        self._update_old_ids()
+    
+    def _update_old_ids(self):
+        self.old_ids.extend(self.already_ids)
+        self.old_ids=list(set(self.old_ids))
+    
     def __set_secs(self,secs:list[Section]):
         self.secs=secs
         
-        # for sec in self.cur_secs:
-        #     sec_ids=[sec.id for sec in self.secs]
-        #     if sec.id not in sec_ids:
-        #         self.secs.append(sec)
-        #     else:
-        #         index=sec_ids.index(sec.id)
-        #         self.secs[index]=sec
+
         
     @property
     def urls(self):
@@ -494,18 +500,32 @@ class SectionManager:
     def last(self):
         return self.secs[-1].sec if self.secs else None
     
+    
+    @property
+    def all_already(self):
+        return  all([item.already for item in self.secs ])
+    @property
+    def already_ids(self):
+        return [item.id for item in self.secs if item.already]
+        
+    @property
+    def repeat_count(self):
+        return [item.error_count for item in self.secs]
     def update(self):
+        self._update_old_ids()
+        time.sleep(.2)
+        
         target=(By.XPATH,'//section[@class="note-item"]')
         if not self.wp.wait.eles_loaded(target):
             return
             
         org_secs=self.wp.eles(target)
         sorted(org_secs,key=lambda x:x.rect.midpoint[1])
-
+    
+        all_ids=self.old_ids
+        secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False,0)   for sec in org_secs if not contain_search_key(sec.raw_text) and not sec.raw_text in all_ids]
         
-        secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False,0)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
         
-
  
         
         if self.secs:
@@ -525,15 +545,33 @@ class SectionManager:
     def ids(self):
         return [sec.id for sec in self.secs]
     
-    
+    @property
+    def already_index(self):
+        
+        
+        return [ sec.already  for sec in self.secs]
+        
+
 
     def next(self):
-
-        for sec in self.secs:
-            if not sec.already:
-                sec.already=True
-                self.cur_id=sec.id
+        if self.all_already:
+            yield None
+            
+        def check_sec(self,error_count):
+            for sec in self.secs:
+                if not sec.already:
+                    if sec.error_count==error_count:
+                        sec.already=True
+                        self.cur_id=sec.id
+                        return sec
+        i=0
+        while i<3:
+            sec=check_sec(self,i)
+            if sec:
                 yield sec
+            else:
+                i+=1
+
         yield None
 
      

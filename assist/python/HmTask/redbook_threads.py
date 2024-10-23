@@ -208,7 +208,8 @@ class Interact(ThreadTask):
 
                 try:
 
-                    self.wp.wait.ele_displayed(sec)
+                    if not self.wp.wait.ele_displayed(sec):
+                        continue
                     sec.click()
                 except:
                     secManager.resume_cur()

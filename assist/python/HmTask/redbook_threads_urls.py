@@ -33,6 +33,8 @@ import json
 from handle_comment import NoteWriter
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
+from base.state import ReturnState
+import re
 
 
 JsonData=namedtuple("JsonData",["theme","json_data"]) # str,dict
@@ -98,7 +100,8 @@ listen_search='web/v1/search/notes'
 listen_note="api/sns/web/v1/feed"
 listen_comment="api/sns/web/v2/comment/page"
 
-
+#同步输出
+sync_note_comment=False
 
 @exception_decorator()
 def click_more_info(more_info):
@@ -125,7 +128,18 @@ def handle_more(show_mores,comment_logger):
             except Exception as e:
                 comment_logger.error("异常",except_stack(),update_time_type=True)
 
-
+def net_exception(title:str)->bool:
+        # 定义关键词列表
+        keywords = ["网络", "连接", "超时", "错误", "异常", "失败"]
+        
+        # 构建正则表达式模式
+        pattern = "|".join(keywords)
+        
+        # 使用正则表达式搜索
+        return re.search(pattern, title)
+    
+    
+    
 class Interact(ThreadTask):
     def __init__(self, root_dir:str=setting.redbook_notes_dir,search_count:int=10):
         super().__init__(global_theme_queue,output_queue=None,stop_event=stop_interact_event)
@@ -189,14 +203,16 @@ class Interact(ThreadTask):
         try:
 
             #搜索输入框
-            self.wp.wait.ele_displayed(search_input_path)
+            if not self.wp.wait.ele_displayed(search_input_path):
+                return
             search_input = self.wp.ele(search_input_path)
             search_input.clear()
             search_input.input(f'{theme}\n')
             # time.sleep(.4)
 
             #搜索按钮
-            self.wp.wait.ele_displayed(search_button_path)
+            if not self.wp.wait.ele_displayed(search_button_path):
+                return
             seach_button=self.wp.ele(search_button_path)
             if not seach_button:
                 sys.exit(0)
@@ -232,19 +248,22 @@ class Interact(ThreadTask):
         return hrefs
     
     
-    def handle_comment_urls(self,urls,csvj_writer:NoteWriter):
+    def handle_comment_by_urls(self,urls,csvj_writer:NoteWriter):
         
         self.theme_logger.update_target("采集评论—主题")
         self.theme_logger.reset_time()
         self.theme_logger.info("开始")
-        for url in enumerate(urls):
-            self.handle_comment_url(url,csvj_writer)
+        for url in urls:
+            self.wp.get(url)
+            # time.sleep(.3)
+            result=ReturnState.from_state(self.handle_comment(csvj_writer))
+            if result.is_except():
+                return ReturnState.EXCEPT
         self.theme_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         
-            
-    def handle_comment_url(self,url,csvj_writer:NoteWriter):
-        self.wp.get(url)
-        
+    @exception_decorator() 
+    def handle_comment(self,csvj_writer:NoteWriter,note_id:str=""):
+       
         time.sleep(.5)
         #处理评论
         title=self.wp.title
@@ -258,6 +277,9 @@ class Interact(ThreadTask):
             if len(splits)>1:
                 comments_total=int( splits[1])
         except:
+            #网络问题，提前退出
+            if net_exception(title):
+                return ReturnState.EXCEPT
             pass
 
         comment_logger.info("开始",f"总共{comments_total}个",update_time_type=UpdateTimeType.STEP)
@@ -268,6 +290,8 @@ class Interact(ThreadTask):
         scroll_count=0
         while not self.wp.wait.ele_displayed(comment_end_path,timeout=.1):
             #滚动
+            if not self.wp.wait.ele_displayed(note_scroll_path,timeout=.5):
+                break
             scroller= self.wp.ele(note_scroll_path)
             scroller.scroll.to_bottom()
             # time.sleep(.1)
@@ -289,12 +313,16 @@ class Interact(ThreadTask):
 
 
             
-        comment_container=self.wp.ele(comments_container_path).html
+        comment_container=self.wp.ele(comments_container_path,timeout=.5)
+        if not comment_container:
+            return
+        comment_container_html=comment_container.html
+        
         comment_logger.info("结束",f"共计时长",update_time_type=UpdateTimeType.ALL)
 
         with open(f"{self.theme_dir}/{title}.html","w",encoding="utf-8-sig") as f:
-            f.write(comment_container)
-        csvj_writer.handle_comment(comment_container)
+            f.write(comment_container_html)
+        csvj_writer.handle_comment(comment_container_html,note_id=note_id,note_title=title)
 
     #第一步，需要调用这个
     def seach_theme(self,theme):
@@ -305,14 +333,16 @@ class Interact(ThreadTask):
         try:
 
             #搜索输入框
-            self.wp.wait.ele_displayed(search_input_path)
+            if not self.wp.wait.ele_displayed(search_input_path):
+                return False
             search_input = self.wp.ele(search_input_path)
             search_input.clear()
             search_input.input(f'{theme}\n')
             # time.sleep(.4)
 
             #搜索按钮
-            self.wp.wait.ele_displayed(search_button_path)
+            if not self.wp.wait.ele_displayed(search_button_path):
+                return False
             seach_button=self.wp.ele(search_button_path)
             if not seach_button:
                 sys.exit(0)
@@ -327,7 +357,7 @@ class Interact(ThreadTask):
         except:
             return False
 
-    def handle_theme(self,theme):
+    def handle_theme(self,theme,csvj_writer):
 
         if not  self.seach_theme(theme):
             return False
@@ -337,21 +367,26 @@ class Interact(ThreadTask):
             time.sleep(.5)
             self.wp.listen.start(listen_note) 
             
+
+            
             secManager=SectionManager(self.wp)
             secManager.update()
             generator=secManager.next()
-            
             while len(hrefs)<self.search_count:
                 sec_item=next(generator)
-                sec=sec_item.sec
+                sec=sec_item.sec if sec_item else None
                 if not sec :
+                    #更新表格
+                    secManager.set_wp(self.wp)
                     secManager.update()
                     continue
                 time.sleep(.5)
                 
                 try:
-                    self.wp.wait.ele_displayed(sec)
-                    sec.click()
+                    if(self.wp.wait.ele_displayed(sec,timeout=1)):
+                        sec.click()
+                    else:
+                        continue
                 except:
                     secManager.resume_cur()
                     secManager.update()
@@ -369,32 +404,44 @@ class Interact(ThreadTask):
                 body["my_link"]=self.wp.url
                 body=JsonData(theme=self.theme,json_data=body)
                 global_json_queue.put(body)    #整理到内部队列
+                note_id=""
+                try:
+                    note_id=body[1]['data']['items'][0]['id']
+
+                except:
+                    pass
                 
                 #获取url
                 hrefs.append(sec_item.url)
-                
+                if sync_note_comment:
+                    self.handle_comment(csvj_writer,note_id=note_id)
                 self.close_note()
+                time.sleep(.5)
                 
         
         except Exception as e:
+            self.theme_logger.error("异常",except_stack(),update_time_type=True)
             pass
         finally:
+            self.theme_logger.info("完成",f"一共获取{len(hrefs)}个",update_time_type=UpdateTimeType.ALL)
             return hrefs
         
         
         
     def handle_data(self, theme):
-        self.theme=ThemesData
+        self.theme=theme
         stop_event = threading.Event()
         self.theme_dir=os.path.join(self.root_dir, theme)
         os.makedirs(self.theme_dir, exist_ok=True)
         
-        hrefs=self.handle_theme(theme)
         
-        #下列只是针对 评论部分
+        
         csvj_writer=NoteWriter(os.path.join( self.theme_dir,f"{theme}.csv"))
-        # self.handle_urls(self.urls(theme),csvj_writer)
-        self.handle_comment_urls(hrefs,csvj_writer)
+        hrefs=self.handle_theme(theme,csvj_writer)
+        if not sync_note_comment:
+            #下列只是针对 评论部分
+            # self.handle_urls(self.urls(theme),csvj_writer)
+            self.handle_comment_by_urls(hrefs,csvj_writer)
         
         
         return 
@@ -875,4 +922,4 @@ if __name__ == '__main__':
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿","健脾养胃"]
     lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
     app=App()
-    app.run(lst,search_count=2)
+    app.run(lst,search_count=15)

@@ -24,7 +24,7 @@ class NoteWriter:
         header =["user_id","user_name"
             ,"user_link","time","city",
             "thumb_count","reply_count",
-            "content","note_id"]
+            "content","note_id","note_title"]
         self._writer =csv.DictWriter(self._f,header)
         self._writer.writeheader()
 
@@ -68,7 +68,8 @@ class NoteWriter:
             "thumb_count":like_count,
             "reply_count":reply_count,
             "content":comment.strip().replace('\n',''),
-            "note_id":note_id
+            "note_id":note_id,
+            "note_title":note_title,
             }
             self._writer.writerow(data_dict)
             

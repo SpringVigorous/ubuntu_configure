@@ -15,4 +15,7 @@ def except_stack()->str:
     if agent.has_err:
         err_detail=agent.err_value
     agent.clear()
-    return f"{exc_value}\n{err_detail}"
+    
+    lst=[f"{exc_value}",err_detail]
+    
+    return "\n".join(filter(lambda x:x,lst)) 
