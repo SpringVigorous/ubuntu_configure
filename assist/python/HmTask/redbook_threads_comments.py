@@ -138,13 +138,13 @@ class Interact(ThreadTask):
             # raise FileNotFoundError("helllo")
         
             #搜索输入框
-            search_input = self.wp.wait_presence_of_element(by=By.ID, value='search-input')
+            search_input = self.wp.ele((By.ID, 'search-input'),timeout=1)
             search_input.clear()
             search_input.input(f'{theme}\n')
 
 
             #搜索按钮
-            seach_button=self.wp.wait_presence_of_element(by=By.XPATH, value='//div[@class="search-icon"]')
+            seach_button=self.wp.ele((By.XPATH,'//div[@class="search-icon"]'),timeout=1)
             if not seach_button:
                 sys.exit(0)
             seach_button.click()
@@ -175,10 +175,10 @@ class Interact(ThreadTask):
             
             cur_type=normal_path
             if cur_type!=all_path:
-                type_button=self.wp.wait_presence_of_element(by=By.XPATH, value=normal_path)
+                type_button=self.wp.ele((By.XPATH,normal_path))
                 if type_button:
                     type_button.click()
-                self.wp.wait_presence_of_element(by=By.ID, value='search-input').click() #再次搜索下
+                self.wp.ele((By.ID,'search-input')).click() #再次搜索下
                 
                 
             #抓取评论
@@ -230,13 +230,13 @@ class Interact(ThreadTask):
         
                         while True:
                             #评论
-                            show_mores=self.wp.wait_presence_of_elements(By.XPATH,'//div[@class="show-more"]')
+                            show_mores=self.wp.eles((By.XPATH,'//div[@class="show-more"]'))
                             if show_mores:
                                 for more_info in show_mores:
                                     more_info.click()
                                     
-                            func=self.wp.wait_presence_of_elements_until_last if not coments else self.wp.wait_presence_of_elements
-                            cur_coments=  func(By.XPATH,'//div[@class="content"]')
+
+                            cur_coments=  self.wp.eles((By.XPATH,'//div[@class="content"]'))
                             if not cur_coments:
                                 break
 
@@ -525,6 +525,6 @@ class App:
 
 if __name__ == '__main__':
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
-    lst=["健脾养胃"]
+    lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
     app=App()
     app.run(lst,search_count=20)

@@ -151,56 +151,93 @@ def error(msg: object, *args: object):
     __log_impl__(logger.error,msg, *args) 
  
 
-  
- 
+class UpdateTimeType(Enum):
+    NONE=(0,"无更新")
+    TEP=(1,"新增")
+    ALL=(1,"新增")
+
+    def __init__(self, code, description):
+        self.code = code
+        self.description = description
+
+    def is_none(self):
+        return self==UpdateTimeType.NONE
+    
+    def is_tep(self):
+        return self==UpdateTimeType.TEP
+    
+    def is_all(self):
+        return self==UpdateTimeType.ALL
+    
+    @classmethod
+    def from_update(cls, state=None):
+
+        if not str(type(state))==str(cls):
+            return cls.NONE
+        
+        return state
 
 
 class logger_helper:
        
-    def __init__(self,target:str,detail:str):
+    def __init__(self,target:str=None,detail:str=None):
         self.reset_time()
         self.update(target,detail)
-    def update(self,target:str,detail:str):
-        self.target=target
-        self.detail=detail
+        
+    #若是为空，则不更新
+    def update(self,target:str=None,detail:str=None):
+        if target:
+            self.target=target
+        if detail:
+            self.detail=detail
+        
+    def update_step(self):
+        self.step_time=time()
+
+        
         
     def reset_time(self):
         self.start_time=time()
+        self.update_step()
         
     def _detail(self,detail_lat:str=None):
         return f"{self.detail},{detail_lat}" if detail_lat else self.detail
         
-    def detail(self,status:str,detail_lat:str=None)->str:     
+    def content(self,status:str,detail_lat:str=None,update_time=None)->str:     
         return record_detail(self.target,status,self._detail(detail_lat))
-    def detail_useage(self,status:str,detail_lat:str=None)->str:
-        return record_detail_usage(self.target,status,self._detail(detail_lat),self.start_time)
-    
-    def _log_impl(self,mfunc,status:str=None,details:str=None,has_usage_time=False):
+    def content_useage(self,status:str,detail_lat:str=None,update_time=None)->str:
         
-        func=self.detail_useage if has_usage_time else self.detail
-        info=func(status,details)
-        if has_usage_time:
-            self.reset_time()
+        state=UpdateTimeType.from_update(update_time)
+        cur_time=self.start_time if state.is_all() else self.step_time        
+        return record_detail_usage(self.target,status,self._detail(detail_lat),cur_time)
+    
+    def _log_impl(self,mfunc,status:str,details:str=None,update_time_type=None):
+        
+        state=UpdateTimeType.from_update(update_time_type)
+        pfunc=self.content_useage if state.is_none() else self.content
+        info=pfunc(status,details,state)
+        if state.is_step():
+            self.update_step()
             
             
         if logger is not None and mfunc is not None:
             mfunc(info)
         else:
             print(info)
-    def debug(self,status:str=None,details:str=None,has_usage_time=False):
-        self._log_impl(info,status,details,has_usage_time)
+    def debug(self,status:str,details:str=None,update_time_type=None):
+        self._log_impl(debug,status,details,update_time_type)
     
-    def info(self,status:str=None,details:str=None,has_usage_time=False):
-        self._log_impl(info,status,details,has_usage_time)
+    def info(self,status:str,details:str=None,update_time_type=None):
+        self._log_impl(info,status,details,update_time_type)
     
-    def warn(self,status:str=None,details:str=None,has_usage_time=False):
-        self._log_impl(warn,status,details,has_usage_time)
+    def warn(self,status:str,details:str=None,update_time_type=None):
+        self._log_impl(warn,status,details,update_time_type)
         
-    def error(self,status:str=None,details:str=None,has_usage_time=False):
-        self._log_impl(error,status,details,has_usage_time)
+    def error(self,status:str,details:str=None,update_time_type=None):
+        self._log_impl(error,status,details,update_time_type)
         
-    def trace(self,status:str=None,details:str=None,has_usage_time=False):
-        self._log_impl(trace,status,details,has_usage_time)
+    def trace(self,status:str,details:str=None,update_time_type=None):
+        self._log_impl(trace,status,details,update_time_type)
     
     
     
@@ -208,6 +245,6 @@ class logger_helper:
         
 if __name__ == "__main__":
     helper=logger_helper("test","test_detail")
-    print(helper.detail("成功","测试"))
+    print(helper.content("成功","测试"))
     sleep(1)
-    print(helper.detail_useage("成功a","测试1"))
+    print(helper.content_useage("成功a","测试1"))

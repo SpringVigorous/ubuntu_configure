@@ -27,7 +27,9 @@ from docx.enum.style import WD_STYLE_TYPE
 import asyncio
 from DrissionPage.common import By
 from DrissionPage import WebPage
+from DrissionPage._elements.chromium_element import ChromiumElement
 
+from lxml import etree
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
     seconds = milliseconds / 1000.0
@@ -73,7 +75,7 @@ def convert_image_to_jpg(image_path,dest_path=None):
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    helper.trace("成功",has_usage_time=True)
+    helper.trace("成功",update_time_type=True)
 
     
 
@@ -442,6 +444,7 @@ class NoteInfo:
 
 class Section:
     def __init__(self,sec,yVal,id,already,error_count=0):
+        # self.sec:ChromiumElement=sec
         self.sec=sec
         self.yVal=yVal
         self.id=id
@@ -449,6 +452,14 @@ class Section:
         self.error_count=error_count
     def id(self):
         return self.id
+    
+    @property
+    def url(self):
+
+        root = etree.HTML(self.sec.inner_html)
+        # 使用 XPath 提取 href 属性值
+        href_value = root.xpath('//a[@class="cover ld mask"]/@href')
+        return f"https://www.xiaohongshu.com{href_value[0]}" if href_value else ""
 
 def contain_search_key(str):
     lst=["大家都在搜","相关搜索","热门搜索"]
@@ -474,8 +485,15 @@ class SectionManager:
         #         index=sec_ids.index(sec.id)
         #         self.secs[index]=sec
         
+    @property
+    def urls(self):
+        lst= [sec.url for sec in self.secs if sec]
+        return list(filter(lambda x:x,lst))
 
-
+    @property
+    def last(self):
+        return self.secs[-1].sec if self.secs else None
+    
     def update(self):
         target=(By.XPATH,'//section[@class="note-item"]')
         if not self.wp.wait.eles_loaded(target):
@@ -487,6 +505,7 @@ class SectionManager:
         
         secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False,0)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
         
+
  
         
         if self.secs:
