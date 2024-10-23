@@ -13,7 +13,7 @@ sys.path.append(".")
 
 from __init__ import *
 from base.com_log import logger ,record_detail
-
+from base.except_tools import except_stack
 def asRoutinetask(func,*args, **kwargs):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -133,7 +133,10 @@ class RoutineTask(BaseTask,metaclass=abc.ABCMeta):
             try:
                 self._imp_run()
             except Exception as e:
-                logger.error(record_detail("处理数据","异常",f"{e}") )
+
+                logger.error(record_detail("处理数据","异常",except_stack()) )
+                
+                
                 if self.final_except():
                     if self.InputValid:
                         clear_queue(self.input_queue)

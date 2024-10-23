@@ -9,7 +9,7 @@ import threading
 import time
 from DrissionPage import WebPage
 from DrissionPage.common import Actions,Keys
-
+# from DrissionPage._configs.chromium_options import ChromiumOptions
 
 
 
@@ -30,7 +30,7 @@ from concurrent.futures import ThreadPoolExecutor , wait, ALL_COMPLETED
 from collections import namedtuple
 import json
 from handle_comment import NoteWriter
-
+from base.except_tools import except_stack
 
 
 JsonData=namedtuple("JsonData",["theme","json_data"]) # str,dict
@@ -82,7 +82,9 @@ def scroll_down(browser , times=5, interval=1):
 class Interact(ThreadTask):
     def __init__(self, root_dir:str=setting.redbook_notes_dir,search_count:int=10):
         super().__init__(global_theme_queue,output_queue=None,stop_event=stop_interact_event)
-
+        # chrome_options = Options()
+        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--disable-gpu')
 
 
         self.wp=WebPage()
@@ -122,7 +124,7 @@ class Interact(ThreadTask):
         target=f"采集{theme_info}"
         
         theme_logger=logger_helper("采集",theme_info)
-        theme_logger.info("开始",has_usage_time=True)
+        theme_logger.info("开始")
         
         ac = Actions(self.wp)
         
@@ -172,7 +174,7 @@ class Interact(ThreadTask):
                 
             filter_path='xpath://svg[@class="reds-icon filter-icon"]'
             
-            type_button=self.wp.ele(normal_path)
+            type_button=self.wp.ele(all_path)
             if type_button:
                 type_button.click()
             self.wp.ele('xpath://div[@class="search-icon"]').click() #再次搜索下
@@ -213,27 +215,33 @@ class Interact(ThreadTask):
                     secManager.update()
                     continue
                 
+                print(f"当前url:{self.wp.url}")
                 self.wp.wait.eles_loaded('xpath://div[@class="comments-container"]')
-                item=self.wp.listen.wait()
                 
+                while True:
+                    item=self.wp.listen.wait()
+                    
 
-                
-                note_logger=logger_helper("采集",self.wp.title)
-                note_logger.info("开始",has_usage_time=True))
+                    
+                    note_logger=logger_helper("采集",self.wp.title)
+                    note_logger.info("开始")
 
 
-                body=item.response.body
+                    body=item.response.body
 
-                if not body:
-                    continue
-                target=item.target
-                if not is_note(target):
-                    continue
+                    if not body:
+                        continue
+                    target=item.target
+                    if is_note(target):
+                        break
+                    
+                    
                 body["my_link"]=self.wp.url
                 body=JsonData(theme=theme,json_data=body)
                 global_json_queue.put(body)    #整理到内部队列
                 i += 1
                 comments=[]
+                time.sleep(.5)
 
                 #处理评论
                 container=self.wp.ele('xpath://div[@class="comments-container"]')
@@ -247,15 +255,29 @@ class Interact(ThreadTask):
                     pass
 
                 print(f"总评论数为：{comments_total}")
+                
+                comment_logger=logger_helper("采集评论",{self.wp.title})
+                scroll_index=1
+                more_index=1
                 while True:
                     comment_tuple=(By.XPATH,'//div[@class="content"]')
                     is_first=not comments
                     comments_count=len(comments)
                     comments=  self.wp.eles(comment_tuple)
+                    
+                    comment_list=(By.XPATH,'//div[@class="list-container" and @name="list]')
+                    container=self.wp.ele(comment_list)
+
+                    # 模拟 Ctrl + PageDown 操作
+                    # ac.key_down(Keys.CONTROL).key_down(Keys.PAGE_DOWN).key_up(Keys.CONTROL).key_up(Keys.PAGE_DOWN)
+                    # ac.wait()
+                    # ac.scroll(delta_y=500)
+                    
                     if is_first:
                         while True:
                             last_comment=comments[-1]
                             result= self.wp.run_js("arguments[0].scrollIntoView();", last_comment,timeout=.5)
+                            comment_logger.trace("滚动到底部",f"第{scroll_index}次",has_usage_time=True)
                             # last_comment.hover()
                             # self.wp.wait.ele_displayed(last_comment)
                             # self.wp.scroll.to_see(last_comment)
@@ -263,14 +285,28 @@ class Interact(ThreadTask):
                             # time.sleep(.1)
                             #发现找到 END，则退出
                             if self.wp.wait.ele_displayed('xpath://div[@class="end-container"]',timeout=.2):
+                                scroll_index=1
                                 break
+                            comment_logger.trace("查找是否到底部",f"第{scroll_index}次",has_usage_time=True)
+                            
+                            
+                            
                             comments=  self.wp.eles(comment_tuple)
+                            comment_logger.trace("更新comment",f"第{scroll_index}次",has_usage_time=True)
+                            
+                            scroll_index+=1
+                            
 
                     #评论
+                    
                     show_mores=self.wp.eles((By.XPATH,'//div[@class="show-more"]'))
+                    comment_logger.trace("show-more",f"第{more_index}次",has_usage_time=True)
+                    more_index+=1
                     if show_mores:
                         for more_info in show_mores:
                             more_info.click()
+                            comment_logger.trace("more-click",f"第{scroll_index}次",has_usage_time=True)
+                            scroll_index+=1
                     if len(comments)==comments_count:
                         note_logger.info("结束",f"一共{comments_count}条评论")
                         break  
@@ -282,17 +318,19 @@ class Interact(ThreadTask):
                 csvj_writer.handle_comment(comment_container)
                 comment_index+=1
 
-                self.wp.close()
+                # self.wp.close()
                     
-                # close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
-                # if close_flag:
-                #     try:
-                #         close_flag.click()
-                #     except:
-                #         continue
+                close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
+                if close_flag:
+                    try:
+                        close_flag.click()
+                    except:
+                        continue
             
         except Exception as e:
-            theme_logger.error(f"异常【{e}】", f"共采集{i}个",has_usage_time=True)
+            
+
+            theme_logger.error(f"异常", f"共采集{i}个\n{except_stack()}",has_usage_time=True)
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
@@ -551,7 +589,7 @@ class App:
 
 
 if __name__ == '__main__':
-    # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿"]
-    lst=["健脾养胃"]
+    # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿","健脾养胃"]
+    lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
     app=App()
     app.run(lst,search_count=2)
