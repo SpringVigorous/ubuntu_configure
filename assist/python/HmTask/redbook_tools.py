@@ -533,7 +533,7 @@ class SectionManager:
             if not sec.already:
                 sec.already=True
                 self.cur_id=sec.id
-                yield sec.sec
+                yield sec
         yield None
 
      

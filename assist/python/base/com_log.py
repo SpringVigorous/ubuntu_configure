@@ -8,6 +8,8 @@ import __init__
 import threading
 from time import time,sleep
 
+
+
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
@@ -32,7 +34,10 @@ def usage_time(start_time:time)->str:
 
 
 def record_detail_usage(target:str,status:str,detail:str,start_time:time)->str:
-    return record_detail(target,status,f"{detail},{usage_time(start_time)}")
+    
+    lst=[detail,usage_time(start_time)]
+    content=",".join(filter(lambda x:x,lst))
+    return record_detail(target,status,content)
 
 
 
@@ -153,8 +158,8 @@ def error(msg: object, *args: object):
 
 class UpdateTimeType(Enum):
     NONE=(0,"无更新")
-    TEP=(1,"新增")
-    ALL=(1,"新增")
+    STEP=(1,"步长更新")
+    ALL=(2,"起始更新")
 
     def __init__(self, code, description):
         self.code = code
@@ -163,8 +168,8 @@ class UpdateTimeType(Enum):
     def is_none(self):
         return self==UpdateTimeType.NONE
     
-    def is_tep(self):
-        return self==UpdateTimeType.TEP
+    def is_step(self):
+        return self==UpdateTimeType.STEP
     
     def is_all(self):
         return self==UpdateTimeType.ALL
@@ -182,42 +187,48 @@ class logger_helper:
        
     def __init__(self,target:str=None,detail:str=None):
         self.reset_time()
-        self.update(target,detail)
+        self.update_target(target,detail)
         
     #若是为空，则不更新
-    def update(self,target:str=None,detail:str=None):
+    def update_target(self,target:str=None,detail:str=None):
         if target:
-            self.target=target
+            self._target=target
+        elif not hasattr(self,"_target"):
+            self._target=None
         if detail:
-            self.detail=detail
+            self._detail=detail
+        elif not hasattr(self,"_detail"):
+            self._detail=None
         
     def update_step(self):
-        self.step_time=time()
+        self._step_time=time()
 
         
         
     def reset_time(self):
-        self.start_time=time()
+        self._start_time=time()
         self.update_step()
         
-    def _detail(self,detail_lat:str=None):
-        return f"{self.detail},{detail_lat}" if detail_lat else self.detail
+    def detail_content(self,detail_lat:str=None):
+        return f"{self._detail},{detail_lat}" if detail_lat else self._detail
         
     def content(self,status:str,detail_lat:str=None,update_time=None)->str:     
-        return record_detail(self.target,status,self._detail(detail_lat))
+        return record_detail(self._target,status,self.detail_content(detail_lat))
     def content_useage(self,status:str,detail_lat:str=None,update_time=None)->str:
         
         state=UpdateTimeType.from_update(update_time)
-        cur_time=self.start_time if state.is_all() else self.step_time        
-        return record_detail_usage(self.target,status,self._detail(detail_lat),cur_time)
+        cur_time=self._start_time if state.is_all() else self._step_time        
+        return record_detail_usage(self._target,status,self.detail_content(detail_lat),cur_time)
     
     def _log_impl(self,mfunc,status:str,details:str=None,update_time_type=None):
         
         state=UpdateTimeType.from_update(update_time_type)
-        pfunc=self.content_useage if state.is_none() else self.content
+        pfunc=self.content_useage if not state.is_none() else self.content
         info=pfunc(status,details,state)
         if state.is_step():
             self.update_step()
+        elif state.is_all():
+            self.reset_time()
             
             
         if logger is not None and mfunc is not None:
