@@ -232,23 +232,22 @@ class Interact(ThreadTask):
         return hrefs
     
     
-    def handle_urls(self,urls,csvj_writer:NoteWriter):
+    def handle_comment_urls(self,urls,csvj_writer:NoteWriter):
         
-        self.theme_logger.update_target("处理urls")
+        self.theme_logger.update_target("采集评论—主题")
         self.theme_logger.reset_time()
+        self.theme_logger.info("开始")
+        for url in enumerate(urls):
+            self.handle_comment_url(url,csvj_writer)
+        self.theme_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         
-        for index,url in enumerate(urls):
-            self.handle_comment_url(index,url,csvj_writer)
             
-            
-    def handle_comment_url(self,index,url,csvj_writer:NoteWriter):
-        
-        url_logger=logger_helper("采集",self.wp.title)
-        url_logger.info("开始")
+    def handle_comment_url(self,url,csvj_writer:NoteWriter):
         self.wp.get(url)
         
         time.sleep(.5)
         #处理评论
+        title=self.wp.title
         comment_logger=logger_helper("采集评论",self.wp.title)
         
         container=self.wp.ele(comments_container_path,timeout=1)
@@ -293,20 +292,16 @@ class Interact(ThreadTask):
         comment_container=self.wp.ele(comments_container_path).html
         comment_logger.info("结束",f"共计时长",update_time_type=UpdateTimeType.ALL)
 
-        with open(f"{self.theme_dir}/pack_{index}.html","w",encoding="utf-8-sig") as f:
+        with open(f"{self.theme_dir}/{title}.html","w",encoding="utf-8-sig") as f:
             f.write(comment_container)
         csvj_writer.handle_comment(comment_container)
 
-    
-    
-
-    def handle_theme(self,theme):
+    #第一步，需要调用这个
+    def seach_theme(self,theme):
 
         self.theme_logger.update_target("采集主题",theme)
         self.theme_logger.reset_time()
         self.theme_logger.info("开始")
-        
-        hrefs=[]
         try:
 
             #搜索输入框
@@ -327,6 +322,18 @@ class Interact(ThreadTask):
             if type_button:
                 type_button.click()
             self.wp.ele(search_button_path).click() #再次搜索下
+            
+            return True
+        except:
+            return False
+
+    def handle_theme(self,theme):
+
+        if not  self.seach_theme(theme):
+            return False
+        hrefs=[]
+        try:
+
             time.sleep(.5)
             self.wp.listen.start(listen_note) 
             
@@ -348,8 +355,9 @@ class Interact(ThreadTask):
                 except:
                     secManager.resume_cur()
                     secManager.update()
-                    continue              
-
+                    continue  
+                            
+                body=None
                 while True:
                     item=self.wp.listen.wait()
                     body=item.response.body
@@ -365,11 +373,16 @@ class Interact(ThreadTask):
                 #获取url
                 hrefs.append(sec_item.url)
                 
+                self.close_note()
+                
         
         except Exception as e:
             pass
         finally:
             return hrefs
+        
+        
+        
     def handle_data(self, theme):
         self.theme=ThemesData
         stop_event = threading.Event()
@@ -381,7 +394,7 @@ class Interact(ThreadTask):
         #下列只是针对 评论部分
         csvj_writer=NoteWriter(os.path.join( self.theme_dir,f"{theme}.csv"))
         # self.handle_urls(self.urls(theme),csvj_writer)
-        self.handle_urls(hrefs,csvj_writer)
+        self.handle_comment_urls(hrefs,csvj_writer)
         
         
         return 
