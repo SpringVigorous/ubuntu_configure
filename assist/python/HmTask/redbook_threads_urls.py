@@ -4,7 +4,7 @@ import sys
 sys.path.append("..")
 sys.path.append(".")
 
-from base_task import ThreadTask,clear_queue
+
 import threading
 import time
 from DrissionPage import WebPage
@@ -16,7 +16,7 @@ import concurrent.futures
 
 from __init__ import *
 from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType
-from base import setting as setting
+
 from base.string_tools import sanitize_filename,datetime_flag
 
 
@@ -35,6 +35,9 @@ from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
 import re
+from base import ThreadTask
+# from base.task.thread_task import ThreadTask
+
 
 
 JsonData=namedtuple("JsonData",["theme","json_data"]) # str,dict
@@ -56,9 +59,6 @@ stop_interact_event=threading.Event()
 stop_parse_event=threading.Event()
 stop_hanle_event=threading.Event()
 
-
-
-    
 note_type_map={"all":'xpath://div[@id="note"]',
             "normal":'xpath://div[@id="short_note"]',
             "video":'xpath://div[@id="video_note"]',
@@ -70,7 +70,6 @@ search_button_path='xpath://div[@class="search-icon"]'
 close_path='xpath://div[@class="close close-mask-dark"]'
 
 #用户
-
 
 user_path='xpath://div[@id="user"]'
 
@@ -103,6 +102,8 @@ listen_comment="api/sns/web/v2/comment/page"
 #同步输出
 sync_note_comment=False
 
+
+flag_suffix=" - 小红书"
 @exception_decorator()
 def click_more_info(more_info):
     if more_info:
@@ -159,16 +160,10 @@ class Interact(ThreadTask):
         self.theme_logger=logger_helper("采集")
 
         
-    def final_except(self)->bool:
+    def _except_to_break(self)->bool:
         return False
     
-    def _each_except_after(self,data):    
-        pass
-    
-    def _each_run_after(self,data):
-
-        pass
-    
+   
     def _final_run_after(self):
         stop_parse_event.set()
         pass
@@ -257,17 +252,23 @@ class Interact(ThreadTask):
             self.wp.get(url)
             # time.sleep(.3)
             result=ReturnState.from_state(self.handle_comment(csvj_writer))
-            if result.is_except():
+            if result.is_except:
                 return ReturnState.EXCEPT
         self.theme_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         
+        
+    @property
+    def title(self)->str:
+        return self.wp.title.replace(flag_suffix,"")
+        
+    
     @exception_decorator() 
     def handle_comment(self,csvj_writer:NoteWriter,note_id:str=""):
        
         time.sleep(.5)
         #处理评论
-        title=self.wp.title
-        comment_logger=logger_helper("采集评论",self.wp.title)
+        title=self.title
+        comment_logger=logger_helper("采集评论",title)
         
         container=self.wp.ele(comments_container_path,timeout=1)
         comments_total=0
@@ -325,50 +326,47 @@ class Interact(ThreadTask):
         csvj_writer.handle_comment(comment_container_html,note_id=note_id,note_title=title)
 
     #第一步，需要调用这个
+    @exception_decorator()
     def seach_theme(self,theme):
 
         self.theme_logger.update_target("采集主题",theme)
         self.theme_logger.reset_time()
         self.theme_logger.info("开始")
-        try:
 
-            #搜索输入框
-            if not self.wp.wait.ele_displayed(search_input_path):
-                return False
-            search_input = self.wp.ele(search_input_path)
-            search_input.clear()
-            search_input.input(f'{theme}\n')
-            # time.sleep(.4)
-
-            #搜索按钮
-            if not self.wp.wait.ele_displayed(search_button_path):
-                return False
-            seach_button=self.wp.ele(search_button_path)
-            if not seach_button:
-                sys.exit(0)
-            self.wp.ele(search_button_path).click()
-
-            type_button=self.wp.ele(note_type_map["all"])
-            if type_button:
-                type_button.click()
-            self.wp.ele(search_button_path).click() #再次搜索下
-            
-            return True
-        except:
+        #搜索输入框
+        if not self.wp.wait.ele_displayed(search_input_path):
             return False
+        search_input = self.wp.ele(search_input_path)
+        search_input.clear()
+        search_input.input(f'{theme}\n')
+        # time.sleep(.4)
+
+        #搜索按钮
+        if not self.wp.wait.ele_displayed(search_button_path):
+            return False
+        seach_button=self.wp.ele(search_button_path)
+        if not seach_button:
+            sys.exit(0)
+        self.wp.ele(search_button_path).click()
+
+        type_button=self.wp.ele(note_type_map["all"])
+        if type_button:
+            type_button.click()
+        self.wp.ele(search_button_path).click() #再次搜索下
+        
+        return True
+
 
     def handle_theme(self,theme,csvj_writer):
 
-        if not  self.seach_theme(theme):
+        if not self.seach_theme(theme):
             return False
         hrefs=[]
         try:
 
             time.sleep(.5)
             self.wp.listen.start(listen_note) 
-            
 
-            
             secManager=SectionManager(self.wp)
             secManager.update()
             generator=secManager.next()
@@ -428,269 +426,37 @@ class Interact(ThreadTask):
         
         
         
-    def handle_data(self, theme):
+    @exception_decorator()
+    def _handle_data(self, theme):
         self.theme=theme
-        stop_event = threading.Event()
+
         self.theme_dir=os.path.join(self.root_dir, theme)
         os.makedirs(self.theme_dir, exist_ok=True)
-        
-        
-        
-        csvj_writer=NoteWriter(os.path.join( self.theme_dir,f"{theme}.csv"))
+
+        csvj_writer=NoteWriter(os.path.join( self.theme_dir,f"评论-{theme}.csv"))
         hrefs=self.handle_theme(theme,csvj_writer)
-        if not sync_note_comment:
+        if not sync_note_comment and hrefs:
             #下列只是针对 评论部分
             # self.handle_urls(self.urls(theme),csvj_writer)
             self.handle_comment_by_urls(hrefs,csvj_writer)
-        
-        
         return 
 
-        theme_info=f"【{theme}】"
-        
-        target=f"采集{theme_info}"
-        
-        theme_logger=logger_helper("采集",theme_info)
-        theme_logger.info("开始")
-        
-        ac = Actions(self.wp)
-        
-        stop_event = threading.Event()
-        self.theme_dir=os.path.join(self.root_dir, theme)
-        os.makedirs(self.theme_dir, exist_ok=True)
-        # ac(self.wp.driver,target)
-        i = 0
-        csvj_writer=NoteWriter(os.path.join( self.theme_dir,f"{theme}.csv"))
-        
-        try:
-            #测试异常
-            # raise FileNotFoundError("helllo")
-        
-            #搜索输入框
-            search_input = self.wp.ele('xpath://input[@class="search-input"]')
-            search_input.clear()
-            search_input.input(f'{theme}\n')
-            time.sleep(.4)
-
-            #搜索按钮
-            seach_button=self.wp.ele('xpath://div[@class="search-icon"]')
-            if not seach_button:
-                sys.exit(0)
-            self.wp.ele('xpath://div[@class="search-icon"]').click()
-            #全部
-            # all_path= 'xpath://div[@id="note" and @class="channel"]'
-            all_path= 'xpath://div[@id="note"]'
-            #图文
-
-            # normal_path='xpath://div[@id="short_note" and @class="channel active"]'
-            normal_path='xpath://div[@id="short_note"]'
-            #视频
-
-            # video_path='xpath://div[@id="video_note" and @class="channel"]'
-            video_path='xpath://div[@id="video_note"]'
-            #用户
-
-            # user_path='xpath://div[@id="user" and @class="channel"]'
-            user_path='xpath://div[@id="user"]'
-            
-            user_item='xpath://div[@class="user-item-box"]'            
-            
-            user_notes='xpath://section[@class="note-item"]'
-            #悬停
-            filter_box=  'xpath://div[@class="filter-box"]'  
-                
-            filter_path='xpath://svg[@class="reds-icon filter-icon"]'
-            
-            type_button=self.wp.ele(all_path)
-            if type_button:
-                type_button.click()
-            self.wp.ele('xpath://div[@class="search-icon"]').click() #再次搜索下
-            
-            
-            #抓取评论
-            #/api/sns/web/v2/comment/page
-            listen_lst=['web/v1/search/notes',"api/sns/web/v1/feed"]
-            def is_comment(type:str):
-                return listen_lst.index(type)==2
-            def is_note(type:str):
-                return listen_lst.index(type)==1
-            
-            time.sleep(.4)
-            
-            self.wp.listen.start(listen_lst) 
-            packet = self.wp.listen.wait()
-            secManager=SectionManager(self.wp)
-            secManager.update()
-            comment_index=0
-            ac=Actions(self.wp)
-            
-            
-            generator=secManager.next()
-            i=0
-            while i < self.search_count:
-                sec=next(generator)
-                if not sec :
-                    secManager.update()
-                    continue
-                time.sleep(.5)
-
-                try:
-
-                    self.wp.wait.ele_displayed(sec)
-                    sec.click()
-                except:
-                    secManager.resume_cur()
-                    secManager.update()
-                    continue
-                
-                print(f"当前url:{self.wp.url}")
-                self.wp.wait.eles_loaded(comments_container_path)
-                
-                while True:
-                    item=self.wp.listen.wait()
-                    
-
-                    
-                    note_logger=logger_helper("采集",self.wp.title)
-                    note_logger.info("开始")
-
-
-                    body=item.response.body
-
-                    if not body:
-                        continue
-                    target=item.target
-                    if is_note(target):
-                        break
-                    
-                    
-                body["my_link"]=self.wp.url
-                body=JsonData(theme=theme,json_data=body)
-                global_json_queue.put(body)    #整理到内部队列
-                i += 1
-                comments=[]
-                time.sleep(.5)
-
-                #处理评论
-                container=self.wp.ele(comments_container_path)
-                comments_total=0
-                try:
-                    raw_total=container.ele('.total').text
-                    splits=raw_total.split()
-                    if len(splits)>1:
-                        comments_total=int( splits[1])
-                except:
-                    pass
-
-                print(f"总评论数为：{comments_total}")
-                
-                comment_logger=logger_helper("采集评论",{self.wp.title})
-                scroll_index=1
-                more_index=1
-                while True:
-                    
-                    
-                    
-                    
-                    is_first=not comments
-                    comments_count=len(comments)
-                    comments=  self.wp.eles(comment_content_path)
-                    
-                    
-                    container=self.wp.ele(comment_list_path)
-
-                    # 模拟 Ctrl + PageDown 操作
-                    # ac.key_down(Keys.CONTROL).key_down(Keys.PAGE_DOWN).key_up(Keys.CONTROL).key_up(Keys.PAGE_DOWN)
-                    # ac.wait()
-                    # ac.scroll(delta_y=500)
-                    
-                    if is_first:
-                        while True:
-                            last_comment=comments[-1]
-                            result= self.wp.run_js(scroll_to_view_js, last_comment,timeout=.5)
-                            comment_logger.trace("滚动到底部",f"第{scroll_index}次",has_usage_time=True)
-                            # last_comment.hover()
-                            # self.wp.wait.ele_displayed(last_comment)
-                            # self.wp.scroll.to_see(last_comment)
-                            #     print(f"{count}条评论未加载完毕")
-                            # time.sleep(.1)
-                            #发现找到 END，则退出
-                            if self.wp.wait.ele_displayed(comment_end_path,timeout=.2):
-                                scroll_index=1
-                                break
-                            comment_logger.trace("查找是否到底部",f"第{scroll_index}次",has_usage_time=True)
-                            
-                            
-                            
-                            comments=  self.wp.eles(comment_content_path)
-                            comment_logger.trace("更新comment",f"第{scroll_index}次",has_usage_time=True)
-                            
-                            scroll_index+=1
-                            
-
-                    #评论
-                    show_mores=self.wp.eles(comment_more_path)
-                    comment_logger.trace("show-more",f"第{more_index}次",has_usage_time=True)
-                    more_index+=1
-                    if show_mores:
-                        for more_info in show_mores:
-                            more_info.click()
-                            comment_logger.trace("more-click",f"第{scroll_index}次",has_usage_time=True)
-                            scroll_index+=1
-                    if len(comments)==comments_count:
-                        note_logger.info("结束",f"一共{comments_count}条评论")
-                        break  
-                    
-                comment_container=self.wp.ele(comments_container_path).html
-
-                with open(f"{theme_dir}/pack_{comment_index}.html","w",encoding="utf-8-sig") as f:
-                    f.write(comment_container)
-                csvj_writer.handle_comment(comment_container)
-                comment_index+=1
-
-                # self.wp.close()
-                    
-                close_flag=self.wp.ele('xpath://div[@class="close close-mask-dark"]')
-                if close_flag:
-                    try:
-                        close_flag.click()
-                    except:
-                        continue
-            
-        except Exception as e:
-            
-
-            theme_logger.error(f"异常", f"共采集{i}个\n{except_stack()}",has_usage_time=True)
-            clear_queue(self.InputQueue)
-            self.Stop() #关闭本身
-            stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
-            
-  
-            return 
-            
-
-        theme_logger.info(f"完成", f"共采集{i}个",has_usage_time=True)
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):
     def __init__(self):
         super().__init__(input_queue=global_raw_data_queue, stop_event=stop_hanle_event)
         
-    def handle_data(self, file_info):
+    def _handle_data(self, file_info):
         file_path,content=file_info
         read_write_sync(content,file_path,mode="w",encoding="utf-8-sig")
         
-    def _each_run_after(self,data):
-        pass
-    def _final_run_after(self):
-        pass
+
 
 class NoteDir:
     def __init__(self,dest_dir:str=setting.redbook_notes_dir):
         self.dest_dir=dest_dir
 
-
-    
     @property
     def CurName(self):
         return self.CurPath.name
@@ -703,7 +469,11 @@ class NoteDir:
     def ParentDir(self):
 
         return self.CurPath.parent
-
+    
+redbook_dir=r"F:/worm_practice/red_book"
+redbook_history_dir=f"{redbook_dir}/history"
+redbook_notes_dir=f"{redbook_dir}/notes"
+redbook_cache_dir=f"{redbook_notes_dir}/notes"
 
 class Parse(ThreadTask,NoteDir):
     def __init__(self, dest_dir=setting.redbook_notes_dir):
@@ -716,23 +486,23 @@ class Parse(ThreadTask,NoteDir):
         self.cur_theme=""
         self.themes_data:list[NotesData]=[] #多个主题
         
-    def _each_run_after(self,data):
-        pass
+
 
     def _final_run_after(self):
         start_time=time.time()
-        target="汇总excle文件 {outPath}"
-        logger.trace(record_detail(target,"开始", "..."))
-        self.handle_theme()
-        stop_hanle_event.set()
         #Excle输出
         outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
+
+        parse_logger=logger_helper("汇总excle文件",outPath)
+        parse_logger.trace("开始")
+        self.handle_theme()
+        stop_hanle_event.set()
+
         with pd.ExcelWriter(outPath) as writer:
             for info in self.themes_data:
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
-
-        logger.trace( record_detail(target,"写入成功",usage_time(start_time)))
+        parse_logger.trace("写入成功",update_time_type=UpdateTimeType.ALL)
         pass
     
     def handle_theme(self):
@@ -749,7 +519,7 @@ class Parse(ThreadTask,NoteDir):
         
     
     
-    def handle_data(self, data:JsonData):
+    def _handle_data(self, data:JsonData):
 
         theme,raw_data=data.theme,data.json_data
         if not self.cur_theme:
@@ -760,6 +530,7 @@ class Parse(ThreadTask,NoteDir):
             pass    
         
         link=raw_data.get("my_link","")
+        web_title=raw_data.get("title","")
         
         if not "data" in raw_data:
             return None
@@ -840,15 +611,12 @@ class InputTask(ThreadTask,NoteDir):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
         NoteDir.__init__(self,dest_dir=dest_dir)
 
-    def _each_run_after(self,data):
-        pass
-    def _final_run_after(self):
-        pass
+
 
 class HandleNote(InputTask):
     def __init__(self, dest_dir=setting.redbook_notes_dir):
         super().__init__(input_queue=global_note_queue, stop_event=stop_hanle_event,dest_dir=dest_dir)
-    def handle_data(self, noteinfo:NoteInfo):
+    def _handle_data(self, noteinfo:NoteInfo):
         
         asyncio.run(noteinfo.handle_note())
         
@@ -860,7 +628,7 @@ class HandleTheme(InputTask):
     def _final_run_after(self):
         pass
         
-    def handle_data(self, theme_pds):
+    def _handle_data(self, theme_pds):
         theme,df=theme_pds.theme,theme_pds.pd
         #临时数据，缓存使用、
         dict_data=df.to_dict("records")
@@ -875,15 +643,10 @@ class App:
        pass
 
     def run(self,themes:list,search_count=20):
-        theme_info=f'{"、".join(themes)}'
-        target=f"采集-{theme_info}"
-        
-        
-        logger.info(record_detail(target,"开始","") )
 
-        start_time = time.time()
         
-
+        app_logger=logger_helper("主题集合","、".join(themes))
+        app_logger.info("开始")
 
         root_dir=setting.redbook_notes_dir
         
@@ -908,18 +671,20 @@ class App:
         parse.join()
         
         file_writer.join()
-        # theme_queue.join()
+
 
         handle_note.join()
 
         handle_theme.join()
         
-        logger.info(record_detail(target, f"完成",f"一共{usage_time(start_time)}"))
+        app_logger.info("完成",update_time_type=UpdateTimeType.ALL)
 
 
 
 if __name__ == '__main__':
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿","健脾养胃"]
-    lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
+    # lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
+    # lst=["祛湿"]
+    lst=["补气血吃什么"]
     app=App()
-    app.run(lst,search_count=15)
+    app.run(lst,search_count=5)

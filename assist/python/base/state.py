@@ -6,25 +6,34 @@ class ReturnState(Enum):
     EXCEPT = (3, "异常")
     IGNORE = (4, "忽略")
     NONE = (5, "空")
+    NETEXCEPT=(6,"网络异常")
 
     def __init__(self, code, description):
         self.code = code
         self.description = description
 
+    @property
     def is_success(self):
         return self == self.SUCCESS
 
+    @property
     def is_failed(self):
         return self == self.FAILED
 
     def is_except(self):
         return self == self.EXCEPT
 
+    @property
     def is_ignore(self):
         return self == self.IGNORE
 
+    @property
     def is_none(self):
         return self == self.NONE
+    
+    @property
+    def is_netExcept(self):
+        return self == self.NETEXCEPT
 
     def __bool__(self):
         return self in [self.SUCCESS, self.IGNORE,self.NONE,]

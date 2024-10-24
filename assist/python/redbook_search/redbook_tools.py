@@ -6,6 +6,10 @@ from pathlib import Path
 from docx import Document,opc,oxml
 from docx.shared import Inches,Cm,Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+
+
 import sys
 sys.path.append("..")
 sys.path.append(".")
@@ -20,13 +24,23 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger ,record_detail,usage_time
+
+from base.except_tools import except_stack
+from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType,record_detail
+from base.com_decorator import exception_decorator
+
+
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
 import asyncio
+from DrissionPage.common import By
+from DrissionPage import WebPage
+from DrissionPage._elements.chromium_element import ChromiumElement
 
-
+from lxml import etree
+import re
+from handle_config import redbook_config
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
     seconds = milliseconds / 1000.0
@@ -58,24 +72,26 @@ def Num(thums):
         return 0
 
 
-def convert_image_to_jpg(image_path,dest_path=None):
-    start_time=time.time()
+@exception_decorator()
+def convert_image_to_jpg(image_path,dest_path=None)->bool:
+
     if not dest_path:
         dest_path=image_path
 
-    target="图片类型转换"
-    detail=f"{image_path}->{dest_path}"
+    
+    helper=logger_helper("图片类型转换",f"{image_path}->{dest_path}")
     
     if not os.path.exists(image_path):
-        logger.error(record_detail(target,"失败",detail=f"图片文件不存在:{detail}"))
-        return
+        helper.error("失败","图片文件不存在")
+        return False
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    logger.trace(record_detail(target,"成功",detail=f"{detail},用时{time.time()-start_time}秒"))
-    
-    
+    helper.trace("成功",update_time_type=True)
+    return True
 
+    
+@exception_decorator()
 def add_hyperlink(paragraph, url, text, color=None):
     # 获取文档部分
     part = paragraph.part
@@ -104,11 +120,21 @@ def add_hyperlink(paragraph, url, text, color=None):
     r.append(hyperlink)
 
     return hyperlink
-        
-        
-        
+       
+       
+
+def cell_paragraph(cell):
+         # 确保单元格中有一个段落
+    if len(cell.paragraphs) == 0:
+        return cell.add_paragraph()
+    else:
+        return cell.paragraphs[0]
+
+ 
 
 
+
+@exception_decorator()
 def wait_for_file_exist(file_path, timeout=5):
     start_time = time.time()
     cur_path = normal_path(file_path)
@@ -130,6 +156,7 @@ def url_file_suffix(url:str)->str:
         if len(parts)>2:
             suffix=parts[-2]
     return suffix
+@exception_decorator()
 def is_jpg(file_path)->bool:
     item= Path(file_path)
     return item.suffix.lower() in [".jpg",".jpeg"]
@@ -319,7 +346,9 @@ class NoteInfo:
             
             #若是 图片类型不是 jpg，则转换为jpg
             if dest in convert_cache:
-                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
+                if(convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])):
+                    os.remove(dest)
+                
             
 
         #图片 + 视频
@@ -330,7 +359,7 @@ class NoteInfo:
     #文本
     async def write_to_notepad(self):
         await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
-        logger.debug(record_detail("写入记事本","成功", f"{self.note_path}"))
+        logger.info(record_detail("写入记事本","成功", f"{self.note_path}"))
     
     #异步下载以及写入到文本
     async def handle_note(self):
@@ -342,21 +371,23 @@ class NoteInfo:
             
             #若是 图片类型不是 jpg，则转换为jpg
             if dest in convert_cache:
-                convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])
-            
+                if(convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])):
+                    os.remove(dest)
 
         #图片 + 视频
         tasks=[ cur_download_async(self,url,dest) for url,dest in zip(self.image_urls+self.video_urls,self.image_lst+self.video_lst) ]
         tasks.append(self.write_to_notepad())
         await asyncio.gather(*tasks)
     
-    
+    @exception_decorator()
     def write_to_word(self,document:Document):
 
         start_time=time.time()
-        target=f"添加文档word标题:{self.title}"
+
         
-        logger.trace(record_detail(target,"开始",""))
+        word_logger=logger_helper("word文档中添加笔记",f"{self.title}")
+        
+        word_logger.trace("开始")
         try:
             heading = document.add_heading(self.title, 2)
             heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -385,11 +416,11 @@ class NoteInfo:
             
             row_count=len(ls)
             #表格
-            table = document.add_table(rows=row_count, cols=2)
+            vidio_table = document.add_table(rows=row_count, cols=2)
 
             for row in range(row_count):
                 for cell in range(2):
-                    table.rows[row].cells[cell].text=ls[row][cell]
+                    vidio_table.rows[row].cells[cell].text=ls[row][cell]
 
             #添加note_id,附带超链接
             id_paragraph = document.add_paragraph()
@@ -407,124 +438,221 @@ class NoteInfo:
                 for image_path in self.DestImageLst:
                     cur_path=normal_path(image_path)
                     if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
-                        logger.error( record_detail("获取文件","失败", detail=f"image_path:{cur_path} 文件不存在"))
+                        word_logger.warn( "获取文件-失败", f"image_path:{cur_path} 文件不存在")
                         continue
                     
                     try:
                         pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
                     except:
-                        logger.error(record_detail("插入图片","失败",f"image_path:{cur_path} 插入word文档【{self.title}】失败"))
+                        word_logger.error("插入图片-失败",f"image_path:{cur_path} 插入word文档【{self.title}】n{except_stack()}")
                         continue
 
             
-            # if self.video_lst:
-            #     video_paragraph = document.add_paragraph().add_run()
-            #     for video_path in self.video_lst:
-            #         video_paragraph.add_video(video_path,width=Inches(1.5))
-            #         video_paragraph.add_run()
+            if self.video_lst:
+                
+                video_lst=self.video_lst
+
+                vidio_count=len(video_lst)
+                #表格
+                vidio_table = document.add_table(rows=vidio_count, cols=2)
+                note_path=Path(self.note_path)
+                for row in range(vidio_count):
+                    vidio_table.rows[row].cells[0].text="视频："
+                    cell=vidio_table.rows[row].cells[1]
+                    
+                    video_path = video_lst[row]
+                    cur_path=Path(video_path)
+                    relative_path=os.path.relpath(cur_path,note_path.parent.parent.parent)
+                    
+                    add_hyperlink(cell_paragraph(cell) , relative_path,cur_path.name, color='0563C1')
+
+
+
                 
             
             if self.has_content:
                 document.add_paragraph(self.content)
         except Exception as e:
-            logger.error(record_detail(target,"失败",f"异常:{e},{usage_time(start_time)}"))
-            # raise e
+            word_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.STEP)
+
             
         document.add_paragraph('')
         document.add_paragraph('')
         
         
         
-        logger.debug(record_detail(target,"成功", usage_time(start_time)))
+        word_logger.info("成功",update_time_type=UpdateTimeType.ALL)
         pass
 
 
 class Section:
-    def __init__(self,sec,yVal,id,already):
+    def __init__(self,sec,yVal,id,already,error_count=0):
+        # self.sec:ChromiumElement=sec
         self.sec=sec
         self.yVal=yVal
         self.id=id
         self.already=already
+        self.error_count=error_count
+    def id(self):
+        return self.id
+    
+    @property
+    def url(self):
+
+        root = etree.HTML(self.sec.inner_html)
+        # 使用 XPath 提取 href 属性值
+        href_value = root.xpath('//a[@class="cover ld mask"]/@href')
+        return f"https://www.xiaohongshu.com{href_value[0]}" if href_value else ""
 
 def contain_search_key(str):
     lst=["大家都在搜","相关搜索","热门搜索"]
     return  any([key in str for key in lst])
     
+def sort_by_y(secs:list[Section]):
+    return sorted(secs,key=lambda x:x.yVal)
+
+def no_sort(secs:list[Section]):
+    return secs
+    
+
+def next_equal_ids(secs:list[Section],id):
+    return  [sec for sec in secs if sec.id.strip() ==id.strip()]
+
+    
+def next_ignore_ids(secs:list[Section],id):
+    return  [sec for sec in secs if not sec.already and sec.error_count<=3]
+    
+ 
+    
 
 class SectionManager:
-    def __init__(self,wp):
-        self.wp=wp
-        self.cur_secs=[]
+    old_ids=[]
+    
+    def __init__(self,wp:WebPage,next_id_func,sort_func:None):
         self.secs=[]
-        self.cur_index=0
-        
-    def __set_secs(self,secs:list):
-        self.cur_secs=secs
-        
-        for sec in self.cur_secs:
-            sec_ids=[sec.id for sec in self.secs]
-            if sec.id not in sec_ids:
-                self.secs.append(sec)
-            else:
-                self.secs[sec_ids.index(sec.id)]=sec
-        
+        self.set_wp(wp)
+        self.cur_id=""
+        self.sort_func=no_sort
+        self.next_id_func=next_id_func
+    def set_wp(self,wp:WebPage):
+        self.wp=wp
+        self._update_old_ids()
+    
+    def _update_old_ids(self):
+        self.old_ids.extend(self.already_ids)
+        self.old_ids=list(set(self.old_ids))
+    
+    def __set_secs(self,secs:list[Section]):
 
+        self.secs=self.sort_func(secs) if self.sort_func else secs
+    @property
+    def urls(self):
+        lst= [sec.url for sec in self.secs if sec]
+        return list(filter(lambda x:x,lst))
+
+    @property
+    def last(self):
+        return self.secs[-1].sec if self.secs else None
+    
+    
+    @property
+    def all_already(self):
+        return  all([item.already for item in self.secs ])
+    @property
+    def already_ids(self):
+        return [item.id for item in self.secs if item.already]
+        
+    @property
+    def repeat_count(self):
+        return [item.error_count for item in self.secs]
 
     def update(self):
+        self._update_old_ids()
+        time.sleep(.2)
         
-        # await asyncio.sleep(.3)
-        time.sleep(.3)
-        
-        org_secs=self.wp.eles("xpath://section")
-        sorted(org_secs,key=lambda x:x.rect.midpoint[1])
+        target=(By.XPATH,'//section[@class="note-item"]')
+        if not self.wp.wait.eles_loaded(target):
+            return
+            
+        org_secs=self.wp.eles(target)
 
-        
-        secs=[Section(sec,sec.rect.midpoint[1],sec.raw_text,False)   for sec in org_secs if not contain_search_key(sec.raw_text) ]
-        
- 
-        
-        if self.secs:
-            for sec in secs:
-                
-                org=self.get_by_id(sec.id)
-                if org:
-                    sec.already=org.already
-                    
-        
-        
+        all_ids=self.old_ids
+        secs=[]
+        ids=[]
+        for sec in org_secs:
+            
+            val=re.sub(redbook_config.flag.title_prefix_pattern,"",sec.raw_text)
+            
+            id = val.split("\n")[0]
+            if id in ids:
+                continue
+            
+            if id in all_ids:
+                continue
+            if contain_search_key(id):
+                continue
+            sec_item=Section(sec,sec.rect.midpoint[1],id,False,0)
+            org=self.get_by_id(id)
+            if org:
+                sec_item.already=org.already
+                sec_item.error_count=org.error_count
+            secs.append(sec_item)
+            ids.append(id)
 
         self.__set_secs(secs)
     def get_by_id(self ,id):
         secs=[sec for sec in self.secs if sec.id==id]
         return secs[0] if secs else None
         
-
+    @property
+    def ids(self):
+        return [sec.id for sec in self.secs]
     
-    def next(self):
+    @property
+    def yVals(self):
+        return [sec.yVal for sec in self.secs]
+    
+    @property
+    def already_index(self):
+        return [ sec.already  for sec in self.secs]
+        
+        
+        
+    def next(self,id:str):
+        func=self.next_id_func if self.next_id_func else next_ignore_ids
+        ls=func(self.secs,id)
+        if ls:
+            return ls[0]
+        else:
+            return self.first_valid
 
-        for sec in self.cur_secs:
-            if not sec.already:
-                sec.already=True
-                self.cur_index=self.cur_secs.index(sec)
-                yield sec.sec
-     
+    @property
+    def first_valid(self):
+        ls=next_ignore_ids(self.secs,self.cur_id)
+        return ls[0] if ls else None
+
     def resume_cur(self):
-        if self.cur_index<len(self.cur_secs):
-            self.cur_secs[self.cur_index].already=False
-        
-        
+        sec=self.get_by_id(self.cur_id)
+        if sec:
+            sec.error_count+=1
+            if sec.error_count>3:
+                print(f"{self.cur_id} 失败次数已超3次")
+                sec.already=True
+                return
+            sec.already=False
+            
+
     def count(self):
 
-        return sum([ 0 if sec.already else 1  for sec in self.cur_secs ])
+        return sum([ 0 if sec.already else 1  for sec in self.secs ])
     
 def to_theme_word(theme_name,root_dir,dict_data):
         # 创建一个新的文档
     document = Document()
     start_time=time.time()
     word_path=os.path.join(root_dir,f"{theme_name}.docx")
-    target=f"写入文档{word_path}"
-    
-    logger.debug(record_detail(target,"开始", "..."))
+    word_logger=logger_helper("写入文档",word_path)
+    word_logger.trace("开始")
     try:
         #整理到word中
         for note_info in dict_data:
@@ -532,13 +660,11 @@ def to_theme_word(theme_name,root_dir,dict_data):
             info.write_to_word(document)
         document.save(word_path)
     except Exception as e:
-        logger.error(record_detail(target,"失败", detail=f"{str(e)},{usage_time(start_time)}"))
-        # raise e
+        word_logger.error("失败", except_stack(),update_time_type=UpdateTimeType.ALL)
+
         return
-        
-        
-        
-    logger.debug(record_detail(target,"成功", usage_time(start_time)))
+
+    word_logger.info("成功",update_time_type=UpdateTimeType.ALL)
     
 
 if __name__ == '__main__':

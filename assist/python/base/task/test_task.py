@@ -4,7 +4,9 @@ import threading
 import multiprocessing
 import queue
 import aiohttp
-from base_task import *
+from .process_task import ProcessTask
+from .thread_task import ThreadTask
+from .coroutine_task import CoroutineTask
 
 
 
@@ -26,7 +28,7 @@ class DownloadData(ThreadTask):
         super().__init__(data_queue, file_queue, event)
         self.file_path = file_path
 
-    def handle_data(self, data):
+    def _handle_data(self, data):
         try:
             with open(self.file_path, 'w', encoding='utf-8') as file:
                 file.write(data)
@@ -37,7 +39,7 @@ class DownloadData(ThreadTask):
             return None
 
 class TransformData(ProcessTask):
-    def handle_data(self, file_path):
+    def _handle_data(self, file_path):
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 content = file.read()

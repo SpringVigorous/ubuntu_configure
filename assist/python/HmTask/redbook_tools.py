@@ -6,6 +6,10 @@ from pathlib import Path
 from docx import Document,opc,oxml
 from docx.shared import Inches,Cm,Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+
+
 import sys
 sys.path.append("..")
 sys.path.append(".")
@@ -20,7 +24,12 @@ from base.file_tools import read_write_async,read_write_sync,download_async,down
 
 from base.path_tools import normal_path
 from __init__ import *
-from base.com_log import logger ,record_detail,usage_time,logger_helper
+
+from base.except_tools import except_stack
+from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType,record_detail
+from base.com_decorator import exception_decorator
+
+
 from base import setting as setting
 from base.string_tools import sanitize_filename
 from docx.enum.style import WD_STYLE_TYPE
@@ -61,6 +70,7 @@ def Num(thums):
         return 0
 
 
+@exception_decorator()
 def convert_image_to_jpg(image_path,dest_path=None)->bool:
 
     if not dest_path:
@@ -79,7 +89,7 @@ def convert_image_to_jpg(image_path,dest_path=None)->bool:
     return True
 
     
-
+@exception_decorator()
 def add_hyperlink(paragraph, url, text, color=None):
     # 获取文档部分
     part = paragraph.part
@@ -108,11 +118,21 @@ def add_hyperlink(paragraph, url, text, color=None):
     r.append(hyperlink)
 
     return hyperlink
-        
-        
-        
+       
+       
+
+def cell_paragraph(cell):
+         # 确保单元格中有一个段落
+    if len(cell.paragraphs) == 0:
+        return cell.add_paragraph()
+    else:
+        return cell.paragraphs[0]
+
+ 
 
 
+
+@exception_decorator()
 def wait_for_file_exist(file_path, timeout=5):
     start_time = time.time()
     cur_path = normal_path(file_path)
@@ -134,6 +154,7 @@ def url_file_suffix(url:str)->str:
         if len(parts)>2:
             suffix=parts[-2]
     return suffix
+@exception_decorator()
 def is_jpg(file_path)->bool:
     item= Path(file_path)
     return item.suffix.lower() in [".jpg",".jpeg"]
@@ -336,7 +357,7 @@ class NoteInfo:
     #文本
     async def write_to_notepad(self):
         await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
-        logger.debug(record_detail("写入记事本","成功", f"{self.note_path}"))
+        logger.info(record_detail("写入记事本","成功", f"{self.note_path}"))
     
     #异步下载以及写入到文本
     async def handle_note(self):
@@ -356,13 +377,15 @@ class NoteInfo:
         tasks.append(self.write_to_notepad())
         await asyncio.gather(*tasks)
     
-    
+    @exception_decorator()
     def write_to_word(self,document:Document):
 
         start_time=time.time()
-        target=f"添加文档word标题:{self.title}"
+
         
-        logger.trace(record_detail(target,"开始",""))
+        word_logger=logger_helper("word文档中添加笔记",f"{self.title}")
+        
+        word_logger.trace("开始")
         try:
             heading = document.add_heading(self.title, 2)
             heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -391,11 +414,11 @@ class NoteInfo:
             
             row_count=len(ls)
             #表格
-            table = document.add_table(rows=row_count, cols=2)
+            vidio_table = document.add_table(rows=row_count, cols=2)
 
             for row in range(row_count):
                 for cell in range(2):
-                    table.rows[row].cells[cell].text=ls[row][cell]
+                    vidio_table.rows[row].cells[cell].text=ls[row][cell]
 
             #添加note_id,附带超链接
             id_paragraph = document.add_paragraph()
@@ -413,35 +436,50 @@ class NoteInfo:
                 for image_path in self.DestImageLst:
                     cur_path=normal_path(image_path)
                     if not (os.path.exists(cur_path) or wait_for_file_exist(cur_path,5)):
-                        logger.error( record_detail("获取文件","失败", detail=f"image_path:{cur_path} 文件不存在"))
+                        word_logger.warn( "获取文件-失败", f"image_path:{cur_path} 文件不存在")
                         continue
                     
                     try:
                         pic_paragraph.add_run().add_picture( cur_path,width=Cm(7))
                     except:
-                        logger.error(record_detail("插入图片","失败",f"image_path:{cur_path} 插入word文档【{self.title}】失败"))
+                        word_logger.error("插入图片-失败",f"image_path:{cur_path} 插入word文档【{self.title}】n{except_stack()}")
                         continue
 
             
-            # if self.video_lst:
-            #     video_paragraph = document.add_paragraph().add_run()
-            #     for video_path in self.video_lst:
-            #         video_paragraph.add_video(video_path,width=Inches(1.5))
-            #         video_paragraph.add_run()
+            if self.video_lst:
+                
+                video_lst=self.video_lst
+
+                vidio_count=len(video_lst)
+                #表格
+                vidio_table = document.add_table(rows=vidio_count, cols=2)
+                note_path=Path(self.note_path)
+                for row in range(vidio_count):
+                    vidio_table.rows[row].cells[0].text="视频："
+                    cell=vidio_table.rows[row].cells[1]
+                    
+                    video_path = video_lst[row]
+                    cur_path=Path(video_path)
+                    relative_path=os.path.relpath(cur_path,note_path.parent.parent.parent)
+                    
+                    add_hyperlink(cell_paragraph(cell) , relative_path,cur_path.name, color='0563C1')
+
+
+
                 
             
             if self.has_content:
                 document.add_paragraph(self.content)
         except Exception as e:
-            logger.error(record_detail(target,"失败",f"异常:{e},{usage_time(start_time)}"))
-            # raise e
+            word_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.STEP)
+
             
         document.add_paragraph('')
         document.add_paragraph('')
         
         
         
-        logger.debug(record_detail(target,"成功", usage_time(start_time)))
+        word_logger.info("成功",update_time_type=UpdateTimeType.ALL)
         pass
 
 
@@ -597,9 +635,8 @@ def to_theme_word(theme_name,root_dir,dict_data):
     document = Document()
     start_time=time.time()
     word_path=os.path.join(root_dir,f"{theme_name}.docx")
-    target=f"写入文档{word_path}"
-    
-    logger.debug(record_detail(target,"开始", "..."))
+    word_logger=logger_helper("写入文档",word_path)
+    word_logger.trace("开始")
     try:
         #整理到word中
         for note_info in dict_data:
@@ -607,13 +644,11 @@ def to_theme_word(theme_name,root_dir,dict_data):
             info.write_to_word(document)
         document.save(word_path)
     except Exception as e:
-        logger.error(record_detail(target,"失败", detail=f"{str(e)},{usage_time(start_time)}"))
-        # raise e
+        word_logger.error("失败", except_stack(),update_time_type=UpdateTimeType.ALL)
+
         return
-        
-        
-        
-    logger.debug(record_detail(target,"成功", usage_time(start_time)))
+
+    word_logger.info("成功",update_time_type=UpdateTimeType.ALL)
     
 
 if __name__ == '__main__':

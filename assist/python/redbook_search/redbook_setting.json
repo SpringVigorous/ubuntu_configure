@@ -1,0 +1,41 @@
+{
+    "note_type_map": {
+        "all": "xpath://div[@id=\"note\"]",
+        "normal": "xpath://div[@id=\"short_note\"]",
+        "video": "xpath://div[@id=\"video_note\"]"
+    },
+    "path": {
+        "search_input_path": "xpath://input[@class=\"search-input\"]",
+        "search_button_path": "xpath://div[@class=\"search-icon\"]",
+        "close_path": "xpath://div[@class=\"close close-mask-dark\"]",
+        "user_path": "xpath://div[@id=\"user\"]",
+        "user_item": "xpath://div[@class=\"user-item-box\"]",
+        "user_notes": "xpath://section[@class=\"note-item\"]",
+        "filter_box": "xpath://div[@class=\"filter-box\"]",
+        "filter_path": "xpath://svg[@class=\"reds-icon filter-icon\"]",
+        "note_scroll_path": "xpath://div[@class=\"note-scroller\"]",
+        "comments_container_path": "xpath://div[@class=\"comments-container\"]",
+        "comment_content_path": "xpath://div[@class=\"content\"]",
+        "comment_list_path": "xpath:/div[@class=\"list-container\" and @name=\"list\"]",
+        "comment_end_path": "xpath://div[@class=\"end-container\"]",
+        "comment_more_path": "xpath://div[@class=\"show-more\"]"
+    },
+    "scroll_to_view_js": "arguments[0].scrollIntoView();",
+    "listen": {
+        "listen_search": "web/v1/search/notes",
+        "listen_note": "api/sns/web/v1/feed",
+        "listen_comment": "api/sns/web/v2/comment/page"
+    },
+    "sync_note_comment": false,
+    "flag": {
+        "title_suffix": ["小红书","小红书搜索"],
+        "title_prefix": ["多图集合","点赞较多"],
+        "no_tilte_split": " "
+    },
+    "setting": {
+        "root_path": "F:/worm_practice/red_book",
+        "history_path": "F:/worm_practice/red_book/history",
+        "note_path": "F:/worm_practice/red_book/notes",
+        "cache_path": "F:/worm_practice/red_book/cache"
+    }
+}

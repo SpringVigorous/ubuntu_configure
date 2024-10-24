@@ -53,14 +53,14 @@ def equal_ignore_case(str1:str,str2:str)->bool:
     return str1.lower() == str2.lower()
 
 #符合windows文件名命名规则
-def sanitize_filename(filename:str):
+def sanitize_filename(filename:str,limit_length=80):
     # 替换不允许的字符
     sanitized = re.sub(r'[\/:*?"<>| \.]', '_', filename)
     sanitized=sanitized.strip().replace(' ','_')
     # 限制文件名长度
-    max_length = 255
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
+
+    if len(sanitized) > limit_length:
+        sanitized = sanitized[:limit_length]
     
     return sanitized
 

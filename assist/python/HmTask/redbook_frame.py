@@ -66,7 +66,7 @@ class Parse(ThreadTask):
         if self.datas_lst:
             self.datas_queue.put(self.datas_lst)
         pass
-    def handle_data(self, json_body):
+    def _handle_data(self, json_body):
         if json_body:
             time.sleep(0.1)
             data=f"Parse:{json_body}" #处理后获得的数据
@@ -89,7 +89,7 @@ class InputTask(ThreadTask):
 class HandleNote(InputTask):
     def __init__(self, input_queue,  stop_event=None):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
-    def handle_data(self, data):
+    def _handle_data(self, data):
         
         time.sleep(0.7)
         logger.info(f"DownLoad:{data}")
@@ -104,7 +104,7 @@ class HandleNote(InputTask):
 class HandleTheme(InputTask):
     def __init__(self, input_queue,  stop_event=None):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
-    def handle_data(self, data):
+    def _handle_data(self, data):
         time.sleep(1)
         logger.info(f"WriteExcel:{data}")
         time.sleep(1)

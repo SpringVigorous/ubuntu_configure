@@ -432,7 +432,7 @@ class Parse(ThreadTask):
         super().__init__(input_queue=input_queue, output_queue=output_queue,stop_event=stop_event)
         self.datas_queue=datas_queue
         self.datas=[]
-    def handle_data(self, raw_data):
+    def _handle_data(self, raw_data):
         if not "data" in raw_data:
             return None
         
@@ -485,26 +485,26 @@ class Parse(ThreadTask):
 class InputTask(ThreadTask):
     def __init__(self, input_queue, stop_event) -> None:
             super().__init__(input_queue=input_queue, stop_event=stop_event)
-    def handle_data(self, data):
+    def _handle_data(self, data):
         pass
 
 class DownLoad(InputTask):
-    def handle_data(self, data):
+    def _handle_data(self, data):
         pass
 
 class WriteNotePad(InputTask):
 
-    def handle_data(self, data):
+    def _handle_data(self, data):
         pass
 
 #以下两个可以并行
 class WriteExcel(InputTask):
 
-    def handle_data(self, data):
+    def _handle_data(self, data):
         pass
 
 class WriteWord(InputTask):
-    def handle_data(self, data):
+    def _handle_data(self, data):
         pass
 
 

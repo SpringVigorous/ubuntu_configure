@@ -96,7 +96,7 @@ class Interact(ThreadTask):
 
 
         
-    def final_except(self)->bool:
+    def _except_to_break(self)->bool:
         return False
     
     def _each_except_after(self,data):    
@@ -113,7 +113,7 @@ class Interact(ThreadTask):
     
    
     
-    def handle_data(self, theme):
+    def _handle_data(self, theme):
         start_time=time.time()
         
 
@@ -309,7 +309,7 @@ class WriteFile(ThreadTask):
     def __init__(self):
         super().__init__(input_queue=global_raw_data_queue, stop_event=stop_hanle_event)
         
-    def handle_data(self, file_info):
+    def _handle_data(self, file_info):
         file_path,content=file_info
         read_write_sync(content,file_path,mode="w",encoding="utf-8-sig")
         
@@ -382,7 +382,7 @@ class Parse(ThreadTask,NoteDir):
         
     
     
-    def handle_data(self, data:JsonData):
+    def _handle_data(self, data:JsonData):
 
         theme,raw_data=data.theme,data.json_data
         if not self.cur_theme:
@@ -481,7 +481,7 @@ class InputTask(ThreadTask,NoteDir):
 class HandleNote(InputTask):
     def __init__(self, dest_dir=setting.redbook_notes_dir):
         super().__init__(input_queue=global_note_queue, stop_event=stop_hanle_event,dest_dir=dest_dir)
-    def handle_data(self, noteinfo:NoteInfo):
+    def _handle_data(self, noteinfo:NoteInfo):
         
         asyncio.run(noteinfo.handle_note())
         
@@ -493,7 +493,7 @@ class HandleTheme(InputTask):
     def _final_run_after(self):
         pass
         
-    def handle_data(self, theme_pds):
+    def _handle_data(self, theme_pds):
         theme,df=theme_pds.theme,theme_pds.pd
         #临时数据，缓存使用、
         dict_data=df.to_dict("records")
