@@ -46,14 +46,19 @@ def handle_more(show_mores,comment_logger):
                 comment_logger.error("异常",except_stack(),update_time_type=True)
 
 def net_exception(title:str)->bool:
-        # 定义关键词列表
-        keywords = ["网络", "连接", "超时", "错误", "异常", "失败"]
-        
-        # 构建正则表达式模式
-        pattern = "|".join(keywords)
-        
-        # 使用正则表达式搜索
-        return re.search(pattern, title)
+    
+    """"
+    安全限制：
+    """
+    
+    # 定义关键词列表
+    keywords = ["网络", "连接", "超时", "错误", "异常", "失败","安全","限制"]
+    
+    # 构建正则表达式模式
+    pattern = "|".join(keywords)
+    
+    # 使用正则表达式搜索
+    return re.search(pattern, title)
 
 class ResultType(Enum):
     ONLY_NOTE = 1
