@@ -31,11 +31,11 @@ class InteractTheme(ThreadTask,InteractBase):
 
         csvj_writer=NoteCommentWriter(os.path.join( self.theme_dir,f"评论-{theme}.csv"))
         hrefs=self.handle_theme(theme,csvj_writer,self.search_count)
-        if not redbook_config.sync_note_comment and hrefs and  self.result_type.is_only_note:
-            #下列只是针对 评论部分
+        # if not redbook_config.sync_note_comment and hrefs and  self.result_type.is_only_note:
+        #     #下列只是针对 评论部分
 
-            self.handle_comment_by_urls(hrefs,csvj_writer)
-        return 
+        #     self.handle_comment_by_urls(hrefs,csvj_writer)
+        # return 
 
       
 

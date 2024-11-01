@@ -17,9 +17,12 @@ from enum import Enum
 from pathlib import Path
 
 @exception_decorator()
-def click_more_info(more_info):
+def click_more_info(more_info,sleep_time=.1):
     if more_info:
         more_info.click()
+    if sleep_time>.01: 
+        time.sleep(sleep_time)
+        
     # comment_logger.trace("more-click", f"第{index}次", update_time_type=UpdateTimeType.STEP)
 
 #点击 more 子进程
@@ -33,7 +36,7 @@ def handle_more(show_mores,comment_logger):
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         
         # 使用 enumerate 获取索引和元素
-        futures = [executor.submit(click_more_info, more_info) for  more_info in show_mores]
+        futures = [executor.submit(click_more_info, more_info,(index+1.0)/10.0) for index,more_info in enumerate(show_mores)]
         
         # 等待所有任务完成
         for future in concurrent.futures.as_completed(futures):
@@ -405,6 +408,7 @@ class InteractBase():
             scroll_count+=1
             if scroll_count>20 and scroll_count %20 ==0 :
                 time.sleep(1)
+            time.sleep(.1)
     
             #网络问题，提前退出
             if net_exception(title):

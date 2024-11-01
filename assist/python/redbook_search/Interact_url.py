@@ -39,7 +39,7 @@ class InteractUrl(ThreadTask,InteractBase):
         self.wp.wait.url_change(url)
         title=self.title
         hrefs=self.handle_theme(title,self.csvj_writer,1)
-        if not redbook_config.sync_note_comment and hrefs  and  self.result_type.is_only_note:
-            self.handle_comment_by_urls(hrefs,self.csvj_writer)
-            pass
+        # if not redbook_config.sync_note_comment and hrefs  and  self.result_type.is_only_note:
+        #     self.handle_comment_by_urls(hrefs,self.csvj_writer)
+        #     pass
         return 
