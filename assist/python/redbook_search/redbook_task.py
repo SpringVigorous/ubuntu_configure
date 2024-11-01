@@ -7,7 +7,10 @@ from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
 from base import logger as logger_helper,UpdateTimeType
-from base import read_write_sync, datetime_flag
+from base import read_write_sync, datetime_flag,sanitize_filename
+
+
+
 from data import *
 from redbook_tools import *
 
@@ -182,7 +185,10 @@ class CommentTask(InputTask):
         
     def _handle_data(self, info:CommentData):
         csvj_writer,theme,comment_container_html,note_id,note_title=info.writer,info.theme,info.html,info.note_id,info.note_title
-        cache_html_path= os.path.join(self.dest_dir, theme,note_title,f"{note_title}.html")
+        
+        title_filename= sanitize_filename(note_title)
+        
+        cache_html_path= os.path.join(self.dest_dir, theme,title_filename,f"{title_filename}.html")
         os.makedirs(os.path.dirname(cache_html_path), exist_ok=True)
         self.task_logger.update_target("处理评论内容",note_title)
         

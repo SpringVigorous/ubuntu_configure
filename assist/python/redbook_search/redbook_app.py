@@ -101,7 +101,7 @@ class UrlApp:
         stop_parse_event=threading.Event()
         stop_hanle_event=threading.Event()
         
-        interact=InteractUrl(urls_queue,json_queue,stop_interact_event,stop_parse_event,comment_queue,ResultType.ONLY_NOTE,theme=theme)
+        interact=InteractUrl(urls_queue,json_queue,stop_interact_event,stop_parse_event,comment_queue,ResultType.ONLY_COMMENT,theme=theme)
         parse=Parse(json_queue,note_queue,stop_parse_event,stop_hanle_event,out_file_queue=raw_data_queue,datas_queue=notes_queue)
         handle_note=NoteTask(note_queue, stop_hanle_event)
         handle_theme=ThemeTask(notes_queue, stop_hanle_event)
