@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from path_tools import normal_path
+from path_tools import normal_path,windows_path
 from com_exe_path import ffmpeg_path
 import subprocess
 
@@ -11,12 +11,12 @@ def merge_video(temp_paths,dest_path):
         return
     
     
-    temp_file= normal_path(os.path.join(Path(temp_paths[0]).parent,'file_list.txt'))
+    temp_file= windows_path(os.path.join(Path(temp_paths[0]).parent,'file_list.txt'))
     
     # 创建一个文件列表文件
     with open(temp_file, 'w') as file:
         for temp_path in temp_paths:
-            file.write(f"file {temp_path}\n")
+            file.write(f"file {windows_path(temp_path)}\n")
     
     # 使用 FFmpeg 合并文件
 

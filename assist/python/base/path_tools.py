@@ -8,7 +8,7 @@ def get_folder_path(dir_path:str,track_index:int=0)->str:
     org_path= Path(dir_path)
     
     is_file=org_path.is_file()
-        org_path=org_path.parent if is_file else org_path
+    org_path=org_path.parent if is_file else org_path
     
     while track_index>0:
         org_path=org_path.parent
@@ -44,3 +44,10 @@ def path_equal(path1:str,path2:str)->bool:
 
 def normal_path(path:str)->str:
     return os.path.normpath(path).replace("\\","/")
+
+
+def windows_path(path:str)->str:
+    return normal_path(path).replace("/",r"\\")
+
+if __name__ == '__main__':
+    print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

@@ -168,7 +168,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
                 else:
                     raise Exception(f"HTTP error: {response.status}")
         except aiohttp.ClientError as e:
-            logger.error(record_detail(f"异步获取资源{url}" ,"失败",  f"{retries} times,Request failed: {e}"))
+            logger.error(record_detail(f"异步获取资源{url}" ,"失败",  f"{retries+1} times,Request failed: {e}"))
             retries += 1
             await asyncio.sleep(5)  # 等待 5 秒后重试
     return None
@@ -195,7 +195,7 @@ async def download_async(url,dest_path,timout=60,**kwargs):
         
     logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
     return True
-def fetch_sync(url ,max_retries=5,timeout=60,**args):
+def fetch_sync(url ,max_retries=5,timeout=300,**args):
     """
     从给定的 URL 获取内容，支持重试机制和超时设置。
 
@@ -229,15 +229,15 @@ def fetch_sync(url ,max_retries=5,timeout=60,**args):
                 
                 
         except requests.exceptions.ConnectionError as e:
-            fetch_logger.error("失败",  f"{retries} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.STEP)
+            fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.STEP)
             retries += 1
             time.sleep(5)  # 等待 5 秒后重试
             timeout+=30
             
-    fetch_logger.error("失败",  f"{retries} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.ALL)
+    fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.ALL)
     return None
         
-def download_sync(url,dest_path,covered=False,**kwargs):
+def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
     if os.path.exists(dest_path) and not covered:
         return True
     download_logger= logger_helper("同步下载文件",f"{url} -> {dest_path}")
@@ -246,11 +246,12 @@ def download_sync(url,dest_path,covered=False,**kwargs):
     download_logger.trace("开始")
 
     start_time=time.time()
-    content=__fetch_sync(url,5,timeout=60,**kwargs)
+    content=fetch_sync(url,2,timeout=300,**kwargs)
     if not content:
         download_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
-        
+    if lat_fun:
+        content=lat_fun(content)
     read_write_sync(content,dest_path,mode="wb")
         
     download_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
