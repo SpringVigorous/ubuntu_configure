@@ -20,11 +20,26 @@ def clear_folder(folder_path):
         abs_path=os.path.join(folder_path, file)
         
         if os.path.isdir(abs_path):
-            shutil.rmtree(abs_path)
+            delete_directory(abs_path)
         else:
             os.remove(abs_path)
 
+def delete_directory(directory_path):
+    """
+    删除指定目录及其子目录和文件。
 
+    :param directory_path: 要删除的目录路径
+    """
+    try:
+        # 检查目录是否存在
+        if os.path.exists(directory_path):
+            # 删除目录及其子目录和文件
+            shutil.rmtree(directory_path)
+            print(f"Directory {directory_path} and its contents have been deleted.")
+        else:
+            print(f"Directory {directory_path} does not exist.")
+    except OSError as e:
+        print(f"Error: {e.strerror}")
 
 
             

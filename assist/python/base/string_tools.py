@@ -1,11 +1,11 @@
-﻿import path_tools as asp
+﻿# import path_tools as asp
 import  re
 from datetime import datetime
 from bs4 import BeautifulSoup
-asp.add_sys_path(__file__)
+# asp.add_sys_path(__file__)
 
 from com_decorator import exception_decorator
-
+import hashlib
 
 #根据原始的大小写情况，替换成目标的大小写
 def replace_pattern(match, replacement):
@@ -129,7 +129,39 @@ def html_table_to_str(html_table,row_split="\n",col_split="\t"):
     return  "\n".join(['\t'.join(row) for row in datas])
     
 
+# md5
+# sha1
+# sha224
+# sha256
+# sha384
+# sha512
+# blake2b
+# blake2s
+# sha3_224
+# sha3_256
+# sha3_384
+# sha3_512
+# shake_128
+# shake_256
+def hash_text(text, algorithm='sha256',max_length=8):
+    """
+    计算文本的哈希值并返回字符串形式的哈希值。
+
+    :param text: 要哈希的文本
+    :param algorithm: 哈希算法，可选值有 'md5', 'sha1', 'sha256' 等
+    :return: 字符串形式的哈希值
+    """
+    # 创建哈希对象
+    hash_object = hashlib.new(algorithm)
     
+    # 更新哈希对象的数据
+    hash_object.update(text.encode('utf-8'))
+    
+    # 获取哈希值的十六进制表示
+    hex_dig = hash_object.hexdigest()
+    
+    return hex_dig[:max_length]
+
     
     
 

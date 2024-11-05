@@ -29,14 +29,16 @@ def click_more_info(more_info,sleep_time=.1):
 def handle_more(show_mores,comment_logger):
     if not show_mores:
         return
-    if len(show_mores)<2:
-        click_more_info(more_info=show_mores[0])
-        return
+    #同步
+    for more_info in show_mores:
+        click_more_info(more_info,sleep_time=0.5)
+    return
         
+    #多线程
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         
         # 使用 enumerate 获取索引和元素
-        futures = [executor.submit(click_more_info, more_info,(index+1.0)/10.0) for index,more_info in enumerate(show_mores)]
+        futures = [executor.submit(click_more_info, more_info,3.0*(index+1.0)/10.0) for index,more_info in enumerate(show_mores)]
         
         # 等待所有任务完成
         for future in concurrent.futures.as_completed(futures):
@@ -411,9 +413,11 @@ class InteractBase():
             scroller.scroll.to_bottom()
             # time.sleep(.1)
             scroll_count+=1
-            if scroll_count>20 and scroll_count %20 ==0 :
-                time.sleep(1)
-            time.sleep(.1)
+            
+            sleep_time=2 if scroll_count %10 ==0 else 1.5
+            time.sleep(sleep_time)
+            comment_logger.info("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
+            
     
             #网络问题，提前退出
             if net_exception(title):
@@ -422,6 +426,7 @@ class InteractBase():
             
         comment_logger.info("滚动到底",f"共{scroll_count}次",update_time_type=UpdateTimeType.STEP)
                
+        time.sleep(2)
 
         more_index=1
 
@@ -453,6 +458,8 @@ class InteractBase():
             
         comment_container=self.wp.ele(redbook_config.path.comments_container_path,timeout=.5)
         if not comment_container:
+            comment_logger.info("评论为空","直接退出",update_time_type=UpdateTimeType.ALL)
+            time.sleep(5)
             return
         comment_container_html=comment_container.html
         

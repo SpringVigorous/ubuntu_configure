@@ -1,7 +1,8 @@
 ﻿import string_tools as st
 import path_tools as pt
 import com_decorator as cd 
-from com_log import logger,record_detail,usage_time
+from com_log import logger,record_detail,usage_time,logger_helper,record_detail_usage,UpdateTimeType
+from except_tools import except_stack
 import chardet
 import asyncio
 import aiohttp
@@ -10,7 +11,7 @@ import requests
 import time
 import os
 from state import ReturnState
-
+import shutil
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
     with open(file_path, 'rb') as f:
@@ -176,7 +177,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
 
 
         
-async def download_async(url,dest_path,**kwargs):
+async def download_async(url,dest_path,timout=60,**kwargs):
     
     target="异步下载文件"
     detail=f"{url} -> {dest_path}"
@@ -185,7 +186,7 @@ async def download_async(url,dest_path,**kwargs):
     
     
     async with aiohttp.ClientSession() as session:
-        content=await __fetch_async(url,session,5,**kwargs)
+        content=await __fetch_async(url,session,5,timout=timout,**kwargs)
         if not content:
             logger.error(record_detail(target,"失败",f"{detail},{usage_time(start_time)}"))
             return False
@@ -194,17 +195,28 @@ async def download_async(url,dest_path,**kwargs):
         
     logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
     return True
-def __fetch_sync(url ,max_retries=3,**args):
+def fetch_sync(url ,max_retries=5,timeout=60,**args):
+    """
+    从给定的 URL 获取内容，支持重试机制和超时设置。
+
+    :param url: 要请求的 URL
+    :param timeout: 请求超时时间，默认为 60 秒
+    :param max_retries: 最大重试次数，默认为 5
+    :return: 请求的响应内容
+    """
+    fetch_logger=logger_helper("同步获取资源",url)
+    fetch_logger.trace("开始")
     retries = 0
     while retries < max_retries:
         try:
-            with requests.get(url,**args) as response:
+            with requests.get(url,timeout=timeout,**args) as response:
 
                 if response.status_code == 200:
                     hearders=response.headers
                     content_length=int(hearders.get('Content-Length', 0))
                     received_data =  response.content
                     if (content_length == 0) or (len(received_data) == content_length):
+                        fetch_logger.trace("成功", update_time_type=UpdateTimeType.ALL)
                         return received_data
                     else:
                         raise requests.exceptions.ConnectionError(
@@ -213,29 +225,50 @@ def __fetch_sync(url ,max_retries=3,**args):
                         )
                 else:
                     raise Exception(f"HTTP error: {response.status}")
+                
+                
+                
         except requests.exceptions.ConnectionError as e:
-            logger.error(record_detail(f"同步获取资源{url}" ,"失败",  f"{retries} times,Request failed: {e}"))
+            fetch_logger.error("失败",  f"{retries} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.STEP)
             retries += 1
             time.sleep(5)  # 等待 5 秒后重试
+            timeout+=30
+            
+    fetch_logger.error("失败",  f"{retries} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.ALL)
     return None
         
-def download_sync(url,dest_path,**kwargs):
+def download_sync(url,dest_path,covered=False,**kwargs):
+    if os.path.exists(dest_path) and not covered:
+        return True
+    download_logger= logger_helper("同步下载文件",f"{url} -> {dest_path}")
     
-    target="同步下载文件"
-    detail=f"{url} -> {dest_path}"
-    logger.trace(record_detail(target,"开始",detail))
+
+    download_logger.trace("开始")
 
     start_time=time.time()
-    content=__fetch_sync(url,5,**kwargs)
+    content=__fetch_sync(url,5,timeout=60,**kwargs)
     if not content:
-        logger.error(record_detail(target,"失败",f"{detail},{usage_time(start_time)}"))
+        download_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
         
     read_write_sync(content,dest_path,mode="wb")
         
-    logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
+    download_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
     return True
 
+
+def move_file(source_file,destination_file):
+    move_logger= logger_helper("移动文件",f"{source_file} -> {destination_file}")
+    # 移动文件
+    try:
+        shutil.move(source_file, destination_file)
+        move_logger.trace("成功")
+    except FileNotFoundError:
+        move_logger.error("失败",f"{source_file} 不存在")
+    except PermissionError:
+        move_logger.error("失败",f"{source_file} 权限不够")
+    except Exception as e:
+        move_logger.error("失败",except_stack())    
 
 
 if __name__ == '__main__':

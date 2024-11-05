@@ -3,9 +3,15 @@ from pathlib import Path
 import os
 import system_tools as st
 
-def get_folder_path(dir_path:str,track_index:int=0):
+#track_index:0表示当前文件目录，1表示当前文件的父目录，以此类推
+def get_folder_path(dir_path:str,track_index:int=0)->str:
+    org_path= Path(dir_path)
+    
+    is_file=org_path.is_file()
+        org_path=org_path.parent if is_file else org_path
+    
     while track_index>0:
-        dir_path=os.path.dirname(dir_path)
+        org_path=org_path.parent
         track_index-=1
     return dir_path
 
