@@ -6,18 +6,6 @@ from com_decorator import exception_decorator
 from except_tools import except_stack
 
 
-#协程函数，作为 一般函数调用
-def asRoutinetask(func,*args, **kwargs):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    restult = loop.run_until_complete(func(*args, **kwargs))
-    loop.close()
-    return restult
-    
-#一般函数调用 转换为协程函数 
-async def asCoroutine(func,*args, **kwargs):
-    await asyncio.sleep(.1)
-    return func(*args, **kwargs)
 #协程任务
 class CoroutineTask(TaskBase,metaclass=abc.ABCMeta):
     def __init__(self, input_queue, output_queue=None, stop_event=None):

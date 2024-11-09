@@ -151,6 +151,7 @@ def read_write_sync(data,dest_path,mode="w",encoding=None):
 
 
 async def __fetch_async(url ,session,max_retries=3,**args):
+    async_logger=logger_helper("异步获取资源",url)
     retries = 0
     while retries < max_retries:
         try:
@@ -159,6 +160,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
                     content_length = int(response.headers.get('Content-Length', 0))
                     received_data = await response.read()
                     if len(received_data) == content_length:
+                        async_logger.trace("成功", update_time_type=UpdateTimeType.ALL)
                         return received_data
                     else:
                         raise aiohttp.ClientError(
@@ -168,33 +170,46 @@ async def __fetch_async(url ,session,max_retries=3,**args):
                 else:
                     raise Exception(f"HTTP error: {response.status}")
         except aiohttp.ClientError as e:
-            logger.error(record_detail(f"异步获取资源{url}" ,"失败",  f"{retries+1} times,Request failed: {e}"))
+            async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
             retries += 1
             await asyncio.sleep(5)  # 等待 5 秒后重试
     return None
     # raise Exception("Max retries exceeded")
 
 
+async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=None,covered=False,**kwargs):
+    if os.path.exists(dest_path) and not covered:
+        return True
 
-        
-async def download_async(url,dest_path,timout=60,**kwargs):
-    
-    target="异步下载文件"
-    detail=f"{url} -> {dest_path}"
-    logger.trace(record_detail(target,"开始",detail))
+    async_logger=logger_helper("异步下载文件",f"{url} -> {dest_path}")
+    async_logger.trace("开始")
     start_time=time.time()
-    
+    # content=await __fetch_async(url,session,3,timout=timout,**kwargs)
+    content=await __fetch_async(url,session,3,**kwargs)
+    if not content:
+        async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
+        return False
+    if lat_fun:
+        content=lat_fun(content)
+    await read_write_async(content,dest_path,mode="wb")
+        
+    async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+    return True
+        
+async def download_async(url,dest_path,lat_fun=None,covered=False,**kwargs):
     
     async with aiohttp.ClientSession() as session:
-        content=await __fetch_async(url,session,5,timout=timout,**kwargs)
-        if not content:
-            logger.error(record_detail(target,"失败",f"{detail},{usage_time(start_time)}"))
-            return False
-            
-        await read_write_async(content,dest_path,mode="wb")
-        
-    logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
-    return True
+        result= await _download_async(session,url,dest_path,lat_fun,covered,**kwargs)
+        return result
+
+
+
+async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
+    
+    async with aiohttp.ClientSession() as session:
+        tasks = [_download_async(session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths)]
+        await asyncio.gather(*tasks)
+
 def fetch_sync(url ,max_retries=5,timeout=300,**args):
     """
     从给定的 URL 获取内容，支持重试机制和超时设置。
@@ -254,7 +269,7 @@ def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
         content=lat_fun(content)
     read_write_sync(content,dest_path,mode="wb")
         
-    download_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+    download_logger.info("完成",update_time_type=UpdateTimeType.ALL)
     return True
 
 
@@ -262,8 +277,8 @@ def move_file(source_file,destination_file):
     move_logger= logger_helper("移动文件",f"{source_file} -> {destination_file}")
     # 移动文件
     try:
-        shutil.move(source_file, destination_file)
-        move_logger.trace("成功")
+        result= shutil.move(source_file, destination_file)
+        move_logger.info("成功")
     except FileNotFoundError:
         move_logger.error("失败",f"{source_file} 不存在")
     except PermissionError:
@@ -281,4 +296,6 @@ if __name__ == '__main__':
 
 
 
-    replace_content_same_encode(r'F:\test_data\gbk.cpp',r'F:\test_data_output\gbk.cpp', "utf-8-sig", replace_tuples)
+    # replace_content_same_encode(r'F:\test_data\gbk.cpp',r'F:\test_data_output\gbk.cpp', "utf-8-sig", replace_tuples)
+    
+    

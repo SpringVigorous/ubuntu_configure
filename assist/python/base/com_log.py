@@ -69,7 +69,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             return logger
         logger.setLevel(str_to_level(level))# 设置日志级别，这里设置为DEBUG，可以根据需要修改
         # 创建一个处理器并设置其输出格式
-        base_formatter = CustomFormatter('%(asctime)s-%(levelname)s-%(message)s')
+        base_formatter = CustomFormatter('%(asctime)s-%(levelname)s-Thread ID: %(thread_id)s-%(message)s')
 
 
         # 再创建一个handler，用于输出到控制台

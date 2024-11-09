@@ -6,7 +6,9 @@ def except_stack()->str:
     # 获取当前的异常信息
     _, exc_value, exc_traceback = sys.exc_info()
 
-
+    if not exc_traceback:
+        return ""
+    
     err_detail=""
 
     agent = OutputAgent ()
