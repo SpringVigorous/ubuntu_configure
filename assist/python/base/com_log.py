@@ -8,7 +8,7 @@ import __init__
 import threading
 from time import time,sleep
 
-
+from custom_log import CustomLogger
 
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
@@ -21,7 +21,7 @@ def trace(self, message, *args, **kws):
         
 
 logging.Logger.trace = trace
-logger :logging.Logger=None
+logger :CustomLogger=None
 
 def record_detail(target:str,status:str,detail:str)->str:
     info=f"【{target}】-【{status}】"
@@ -103,6 +103,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
         log_less_warn= str_to_level(log_level)<str_to_level("warn")
         
         create_file_log(log_level,base_formatter if log_less_warn else detail_formatter)
+        # create_file_log(log_level,detail_formatter)
         if log_less_warn:
             create_file_log("warn",detail_formatter)
         

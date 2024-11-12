@@ -233,16 +233,14 @@ def main(url,url_pre,dest_name):
     if not success:
         already_path_list=[]
         losts=[]
-        
-        
-        
         for item in temp_path_list:
             if os.path.exists(item):
                 already_path_list.append(item)
             else:
                 losts.append(item)
         with open(os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}-lost.json"),"w",encoding="utf-8-sig") as f:
-            json.dump(losts,f,ensure_ascii=False,indent=4)
+            lost_data={"count":len(losts),"data":losts}
+            json.dump(lost_data,f,ensure_ascii=False,indent=4)
             
         temp_path_list=already_path_list
         if not temp_path_list:
@@ -275,7 +273,8 @@ if __name__=="__main__":
     lst=[
 
 
-        ("https://ukzyll.ukubf6.com/20220530/34sNHPqK/2000kb/hls/index.m3u8","","夏娃"),
+
+        ("https://s6.bfzycdn.com/video/liulangdiqiu2/HD/index.m3u8","","流浪地球2"),
 
 
         

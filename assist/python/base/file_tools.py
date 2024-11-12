@@ -190,7 +190,10 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
         async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
     if lat_fun:
+        # count=len(content)
         content=lat_fun(content)
+        # async_logger.trace(f"pre-{count},latter-{len(content)}" )
+        
     await read_write_async(content,dest_path,mode="wb")
         
     async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)

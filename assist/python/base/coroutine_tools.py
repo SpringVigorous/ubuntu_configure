@@ -49,8 +49,8 @@ class MultiThreadCoroutine:
         count=self.tasks_count
         
         while count/self.concurrent_task_count<self.thread_count:
-            temp:int=max(1,count/self.thread_count) 
-            dest:int=max(1, temp/3)
+            temp:int=max(1,int(count/self.thread_count) )
+            dest:int=max(1, int(temp/3))
             self.concurrent_task_count= dest if dest>1 else temp
             
             pass
