@@ -3,7 +3,7 @@ import time
 import re
 import concurrent.futures
 
-from base import logger as logger_helper,UpdateTimeType
+from base import  logger_helper,UpdateTimeType
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
@@ -49,7 +49,7 @@ def handle_more(show_mores,comment_logger):
             try:
                 future.result()  # 获取结果或处理异常
             except Exception as e:
-                comment_logger.error("异常",except_stack(),update_time_type=True)
+                comment_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
 
 def net_exception(title:str)->bool:
     
@@ -107,23 +107,18 @@ class InteractBase():
                 time.sleep(.5)
             except:
                 self.show_except_stack()
-                
-
     @property
     def theme(self)->str:
         return self._theme
-    
-    
     def set_theme(self,theme:str):
         self._theme=theme
     @property
     def title(self)->str:
         val=re.sub(redbook_config.flag.title_suffix_pattern,"",self.wp.title)
         return val.split(redbook_config.flag.no_tilte_split)[0]
-        
 
     def show_except_stack(self):
-        self.interact_logger.error("异常",except_stack(),update_time_type=True)
+        self.interact_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
 
     #第一步，需要调用这个
     @exception_decorator()
@@ -177,21 +172,19 @@ class InteractBase():
             lst=self.load_theme_urls(theme)
         lst.extend(urls)
         lst=list(set(lst)) #去重
-               
+        
         with open(urls_path,"w",encoding="utf-8-sig") as f:
             json.dump(lst,f,ensure_ascii=False,indent=4)  
         self.interact_logger.info("保存url",urls_path,update_time_type=UpdateTimeType.STEP)
             
     
     def theme_urls(self,theme,search_count):
-
         #测试部分——————————————————————————————————————————————————
         urls_path=os.path.join(self.theme_dir,f"{theme}_urls.json")
         if os.path.exists(urls_path):
             with open(urls_path,"r",encoding="utf-8-sig") as f:
                 return json.load(f) 
         #测试部分——————————————————————————————————————————————————
-
         self.interact_logger.update_target("采集url",theme)
         self.interact_logger.reset_time()
         self.interact_logger.info("开始")
@@ -252,7 +245,7 @@ class InteractBase():
 
             time.sleep(.5)
             self.wp.listen.start(redbook_config.listen.listen_note) 
-
+            #忽略 标题
             secManager=SectionManager(self.wp,self.next_id_func,self.sec_sort_fun)
             secManager.update()
 
@@ -340,8 +333,9 @@ class InteractBase():
             ResultType.BOTH:self.handle_theme_note_comment
         }
         
-        if func_map.get(self.result_type):
-            return func_map[self.result_type](theme,csvj_writer,search_count)
+        func=func_map.get(self.result_type,None)
+        if func:
+            return func(theme,csvj_writer,search_count)
         else:
             return None
         
@@ -450,7 +444,7 @@ class InteractBase():
 
         while True:        
             #更多评论
-            show_mores=self.wp.eles(redbook_config.path.comment_more_path,timeout=5)
+            show_mores=self.wp.eles(redbook_config.path.comment_more_path,timeout=.5)
             comment_logger.trace("show-more",f"第{more_index}次,共{len(show_mores)}个",update_time_type=UpdateTimeType.STEP)
             if not show_mores:
                 break

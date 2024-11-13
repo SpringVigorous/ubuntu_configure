@@ -59,7 +59,7 @@ class Parse(ThreadTask,NoteDir):
 
 
     def _final_run_after(self):
-        start_time=time.time()
+
         #Excle输出
         outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
 

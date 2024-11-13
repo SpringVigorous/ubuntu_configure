@@ -17,7 +17,7 @@ import base.file_tools as  ft
 
 import base.fold_tools as fo
 import base.path_tools as pt
-from base.com_log import logger ,logger_helper
+from base.com_log import logger_helper
 import base.com_decorator as dr 
 
 @dr.exception_decorator()
@@ -72,8 +72,10 @@ def main():
     is_clear= args.clear
     
     input_agrs = args.input
+    
+    encode_logger=logger_helper("编码替换",input_agrs)
     if input_agrs is None or  not os.path.exists(input_agrs):
-        logger.error(f"文件 {input_agrs} 不存在")
+        encode_logger.error("失败",f"文件 {input_agrs} 不存在")
         sys.exit(0)
     # if len(args.output)>0 else input_agrs
     output=args.output

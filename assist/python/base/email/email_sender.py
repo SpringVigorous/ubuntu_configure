@@ -16,7 +16,7 @@ project_root = os.path.dirname(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from  com_log import logger, logger_helper
+from  com_log import  logger_helper
 from  com_decorator import exception_decorator
 from file_tools import detect_encoding
 from string_tools import exe_dir

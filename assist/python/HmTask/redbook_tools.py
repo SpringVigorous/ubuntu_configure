@@ -85,7 +85,7 @@ def convert_image_to_jpg(image_path,dest_path=None)->bool:
     # 打开图片
     image = Image.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
-    helper.trace("成功",update_time_type=True)
+    helper.trace("成功",update_time_type=UpdateTimeType.ALL)
     return True
 
     

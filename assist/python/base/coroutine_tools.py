@@ -116,8 +116,8 @@ class MultiThreadCoroutine:
     # 封装的主函数
     async def run_tasks(self):
         results =[]
-        logger =logger_helper("多线程-协程",f"共{self.tasks_count}个")
-        logger.trace("开始")
+        task_logger =logger_helper("多线程-协程",f"共{self.tasks_count}个")
+        task_logger.trace("开始")
         
         # 创建线程池
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_count) as executor:
@@ -140,7 +140,7 @@ class MultiThreadCoroutine:
                 # 等待所有任务完成
                 results = await asyncio.gather(*futures, return_exceptions=True)
             except Exception as e:
-                logger.error("异常",except_stack(),update_time_type=True)
+                task_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
             finally:
                 loop.close()
         self.result=results

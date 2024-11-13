@@ -3,7 +3,7 @@ import os
 from handle_comment import NoteCommentWriter
 from interact_base import InteractBase,ResultType
 from base import ThreadTask
-from base import logger as logger_helper,UpdateTimeType
+from base import  logger_helper,UpdateTimeType
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base import ReturnState

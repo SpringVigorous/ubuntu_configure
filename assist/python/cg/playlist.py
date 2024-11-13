@@ -124,9 +124,9 @@ def handle_playlist(url_list,temp_paths,key,iv):
         return False
     
 
-    logger= logger_helper("下载文件",Path(temp_paths[0]).parent)
+    playlist_logger= logger_helper("下载文件",Path(temp_paths[0]).parent)
 
-    logger.trace("开始")
+    playlist_logger.trace("开始")
     def decode():
         if not key or not iv:
             return None 
@@ -147,10 +147,10 @@ def handle_playlist(url_list,temp_paths,key,iv):
         if not success:
             info=[multi_thread_coroutine.fail_infos,except_stack()]
             info_str="\n".join(info)
-            logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
+            playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
         return multi_thread_coroutine.success
     except Exception as e:
-        logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
+        playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
         return False
     
 
@@ -204,8 +204,8 @@ def main(url,url_pre,dest_name):
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
     dest_path=normal_path(os.path.join(root_path,f"{dest_name}.mp4"))
     
-    logger= logger_helper("下载",f"{dest_name}-{dest_hash}")
-    logger.info("开始")
+    play_logger= logger_helper("下载",f"{dest_name}-{dest_hash}")
+    play_logger.info("开始")
         
     os.makedirs(temp_dir, exist_ok=True)
     
@@ -255,9 +255,9 @@ def main(url,url_pre,dest_name):
     
     if success:
         delete_directory(temp_dir)
-        logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
+        play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
-        logger.error("部分缺失",update_time_type=UpdateTimeType.ALL)
+        play_logger.error("部分缺失",update_time_type=UpdateTimeType.ALL)
     
 def get_key(url):
 

@@ -1,7 +1,9 @@
 ﻿import __init__
-from base.com_log import logger as logger
+from base.com_log import logger_helper
+from base.except_tools import except_stack
 import base.file_tools as ft
 import os
+import json 
 # 获取含有 指定内容 的的指定行信息，返回一个列表
 def get_special_rows(orgstr:str,*flags):
     # rows=orgstr.split('/n')
@@ -52,8 +54,8 @@ def get_special_from_file(file_path,*flag):
 
 def get_special_from_file_list(file_list,*flag):
     result=[] 
-
     for file_path in file_list:
+        special_logger=logger_helper("查找特定文件",{file_path})
         # os.rename(file_path, f"{file_path}.txt")
         # return result
         
@@ -63,11 +65,11 @@ def get_special_from_file_list(file_list,*flag):
             # original_sd = backup_and_set_permissions(file_path, con.FILE_GENERIC_READ)
             result.extend(get_special_from_file(file_path,*flag))
         except FileNotFoundError:
-            logger.error(f"Error: The {file_path} does not exist.")
+            special_logger.error("失败",f"文件不存在{except_stack()}")
         except PermissionError:
-            logger.error(f"Error: Permission denied when trying to move '{file_path}' to the recycle bin.")
+            special_logger.error("失败",f"权限不够{except_stack()}")
         except Exception as e:
-            logger.error(f"Error {file_path}: {e}")
+            special_logger.error("失败",except_stack())
         finally:
             
             # 恢复原始权限
@@ -106,12 +108,13 @@ def get_special_from_dir(dir_path,sub_dir_filter:list,filename_fileter:list, *fl
         #     # stat_info = os.stat(file_path)
         #     # if os.path.exists(file_path):
         #     result.append(file_path)
-    import json           
-    logger.trace(f"筛选出的文件列表:\n{ json.dumps(file_lists,indent=4) }")
+    special_logger=logger_helper("筛选指定文件",f"根目录:{dir_path},子目录:{sub_dir_filter},文件:{filename_fileter}")    
+          
+    special_logger.trace("成功",f"筛选出的文件列表:\n{ json.dumps(file_lists,indent=4) }")
     results=get_special_from_file_list(file_lists,*flag)
-    logger.trace(f"获得的结果行:\n{ json.dumps(results,indent=4) }")
+    special_logger.trace("成功",f"获得的结果行:\n{ json.dumps(results,indent=4) }")
     results=[item for item in results if item.find("boostorg")<0]
-    logger.trace(f"过滤后的结果行:\n{ json.dumps(results,indent=4) }")
+    special_logger.trace("成功",f"过滤后的结果行:\n{ json.dumps(results,indent=4) }")
 
         # # 构建输出文件路径
         # for file in files:

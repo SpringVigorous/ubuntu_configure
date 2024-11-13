@@ -7,7 +7,7 @@ sys.path.append(".")
 import threading
 from DrissionPage._elements.chromium_element import ChromiumElement
 from __init__ import *
-from base import logger as logger_helper,UpdateTimeType
+from base import  logger_helper,UpdateTimeType
 from base import setting as setting
 from base.string_tools import sanitize_filename,datetime_flag
 from redbook_tools import *
@@ -136,8 +136,9 @@ class UrlApp:
 
 def run_theme_app():
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿","健脾养胃"]
+    lst=["养生","睡眠"]
     # lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
-    lst=["祛湿"]
+    # lst=["祛湿"]
     # lst=["补气血吃什么"]
     app=ThemeApp()
     app.run(lst,search_count=30)
@@ -184,8 +185,8 @@ def run_url_app():
 
 
 if __name__ == '__main__':
-    # run_theme_app()
-    run_url_app()
+    run_theme_app()
+    # run_url_app()
     
     
     # with open(r'F:\test\ubuntu_configure\assist\python\logs\redbook_app\redbook_app-trace.log', 'r', encoding='utf-8') as f:

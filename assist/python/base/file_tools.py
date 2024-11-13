@@ -1,7 +1,7 @@
 ﻿import string_tools as st
 import path_tools as pt
 import com_decorator as cd 
-from com_log import logger,record_detail,usage_time,logger_helper,record_detail_usage,UpdateTimeType
+from com_log import logger_helper,UpdateTimeType
 from except_tools import except_stack
 import chardet
 import asyncio
@@ -14,11 +14,12 @@ from state import ReturnState
 import shutil
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
+    detect_logger= logger_helper("检测文件编码",file_path)
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
     if not result:
         return ReturnState.FAILED
-    logger.trace(f" {file_path} 检测到文件编码：{result}")
+    detect_logger.trace("成功",result,update_time_type=UpdateTimeType.ALL)
     # 返回检测到的编码
     encoding=result['encoding']
     if encoding:
@@ -54,9 +55,10 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
         if not dest_encoding:
             dest_encoding=source_encoding
         
+        content_logger=logger_helper("操作文件内容",f"{source_path} -> {dest_path}")
         same_path_encoding= st.equal_ignore_case(source_encoding,dest_encoding) and pt.path_equal(source_path,dest_path)
         if same_path_encoding and not operate_fun:
-            logger.trace(f"{source_path}路径相同，编码相同，未指定操作函数,跳过后续处理")
+            content_logger.trace("忽略", "路径相同，编码相同，未指定操作函数,跳过后续处理")
             return ReturnState.IGNORE
             
     
@@ -68,14 +70,14 @@ def  operate_content_diff_encode( source_path,dest_path,source_encoding,dest_enc
         if operate_fun:
             result_content=operate_fun(content)
             if result_content ==content:
-                if logger:
-                    logger.trace(f"{source_path}:内容未被修改,保留原始内容")
+                if content_logger:
+                    content_logger.trace("忽略","内容未被修改,保留原始内容")
             else:
                 is_same=False
                 content=result_content
 
         if same_path_encoding and is_same:
-            logger.trace(f"{source_path}路径相同，编码相同，指定操作后内容未修改,跳过后续处理")
+            content_logger.trace("忽略","路径相同，编码相同，指定操作后内容未修改,跳过后续处理")
             return ReturnState.IGNORE
             
         # 将处理后的content保存到B.txt文件中
@@ -116,36 +118,36 @@ def read_content(source_path):
 async def read_write_async(data,dest_path,mode="w",encoding=None):
     operator="写入" if mode.find("w")>=0 else "读取"
 
-    
-    target=f"异步{operator}文件,mode:{mode},encoding:{encoding}"
-    detail=f"{dest_path}"
-    start_time=time.time()
-    logger.trace(record_detail(target,"开始",detail))
+   
+    async_logger=logger_helper(f"异步{operator}->{dest_path}","mode:{mode},encoding:{encoding}")
+
+    async_logger.trace("开始")
     
     try:
         async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
             await f.write(data)
-            logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
+            async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
             return True
     except:
+        async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
 
 #同步读、写文件
 def read_write_sync(data,dest_path,mode="w",encoding=None):
     operator="写入" if mode.find("w")>=0 else "读取"
 
-    
-    target=f"同步{operator}文件,mode:{mode},encoding:{encoding}"
-    detail=f"{dest_path}"
-    start_time=time.time()
-    logger.trace(record_detail(target,"开始",detail))
+   
+    sync_logger=logger_helper(f"同步{operator}->{dest_path}","mode:{mode},encoding:{encoding}")
+
+    sync_logger.trace("开始")
     
     try:
         with  open(dest_path,mode,encoding=encoding) as f:
             f.write(data)
-            logger.trace(record_detail(target,"完成",f"{detail},{usage_time(start_time)}"))
+            sync_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
             return True
     except:
+        sync_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
 
 

@@ -1,4 +1,4 @@
-﻿from com_log import logger as logger
+﻿from com_log import logger_helper,UpdateTimeType 
 
 import os
 import fold_tools as fo
@@ -33,15 +33,18 @@ class CoverType(Enum):
 #部分功能整理到 F:\test\ubuntu_configure\assist\python\integer\alter_encoding.py
 #仅单个文件
 @dr.exception_decorator()
-def replace_file_str(source_path, dest_path, replace_list_tuple,covere_type:CoverType=CoverType.NEW_FILE):
+def replace_file_str(source_path, dest_path, replace_list_tuple,cover_type:CoverType=CoverType.NEW_FILE):
+    
+    replace_logger=logger_helper("替换：{source_path}->{dest_path}",f"{replace_list_tuple},覆盖类型:{cover_type}")
+    replace_logger.trace("开始")
     if os.path.exists(dest_path):
-        if covere_type==covere_type.NO_COVER:
-            logger.info(f"已存在：{dest_path},不进行替换")
+        if cover_type==cover_type.NO_COVER:
+            replace_logger.info("忽略",f"已存在：{dest_path},不进行替换")
             return
-        elif covere_type==CoverType.NEW_FILE:
+        elif cover_type==CoverType.NEW_FILE:
             org_dest=Path(dest_path)
             clone_dest=org_dest.parent.joinpath(org_dest.stem+"_new"+org_dest.suffix)
-            logger.info(f"已存在：{dest_path},不进行替换，更改文件名为{clone_dest}")
+            replace_logger.info("忽略",f"已存在：{dest_path},不进行替换，更改文件名为{clone_dest}")
             dest_path=str(clone_dest) 
 
     
@@ -52,11 +55,13 @@ def replace_file_str(source_path, dest_path, replace_list_tuple,covere_type:Cove
 @dr.exception_decorator()
 def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverType=CoverType.NO_COVER):
     # 遍历文件夹
+    replace_logger=logger_helper("替换：{source_dir}->{dest_dir}",f"{replace_list_tuple},覆盖类型:{cover_type}")
+    replace_logger.trace("开始")
 
     org_base_dir=os.path.basename(source_dir)
     if not (os.path.exists(source_dir) and os.path.isdir(source_dir))  :
-        if logger:
-            logger.error(f"源文件夹不存在：{source_dir}")
+
+        replace_logger.error("异常",f"源文件夹不存在：{source_dir}")
         return False
     
     folder_name =st.replace_list_tuple_str(org_base_dir,replace_list_tuple)
@@ -82,11 +87,12 @@ def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverTyp
 @dr.exception_decorator()
 def clone_dir_str(source_dir, dest_dir, replace_list_tuple,clone_list_tuple,cover_type:CoverType=CoverType.NO_COVER):
     # 遍历文件夹
-
+    replace_logger=logger_helper("拷贝：{source_dir}->{dest_dir}",f"\n替换:{replace_list_tuple},\n拷贝：{clone_list_tuple},\n覆盖类型:{cover_type}")
+    replace_logger.trace("开始")
     org_base_dir=os.path.basename(source_dir)
     if not (os.path.exists(source_dir) and os.path.isdir(source_dir))  :
-        if logger:
-            logger.error(f"源文件夹不存在：{source_dir}")
+
+        replace_logger.error("异常",f"源文件夹不存在：{source_dir}")
         return False
     
     folder_name =st.replace_list_tuple_str(org_base_dir,replace_list_tuple)

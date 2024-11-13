@@ -5,7 +5,7 @@ import codecs
 
 import fold_tools as fs
 import file_tools as fc
-from com_log import logger as logger
+from com_log import logger_helper,UpdateTimeType
 # 定义函数：将文件内容从源编码转换为目标编码
 def convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding):
     """
@@ -43,8 +43,9 @@ def convert_file_to_dest_encoding(file_path, dest_path, dest_encoding):
     dest_encoding (str): 目标文件的字符编码
     """
     source_encoding =fc.detect_encoding(file_path)
-    if logger:
-        logger.debug(file_path, "源编码:", source_encoding, "目标编码:", dest_encoding)
+    encode_logger=logger_helper("编码转换",f"{file_path}:{source_encoding}->{dest_encoding}")
+    encode_logger.trace("开始")
+
     if source_encoding!= dest_encoding:
         convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding)
 

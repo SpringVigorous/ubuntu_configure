@@ -26,7 +26,7 @@ from base.path_tools import normal_path
 from __init__ import *
 
 from base.except_tools import except_stack
-from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType,record_detail
+from base.com_log import logger_helper,UpdateTimeType
 from base.com_decorator import exception_decorator
 
 
@@ -135,18 +135,21 @@ def cell_paragraph(cell):
 
 
 @exception_decorator()
-def wait_for_file_exist(file_path, timeout=5):
+def wait_for_file_exist(file_path, timeout=None):
     start_time = time.time()
     cur_path = normal_path(file_path)
-    target="等待文件存在"
 
+    wait_logger=logger_helper("确保文件存在",cur_path)
     while time.time() - start_time < timeout:
         if os.path.exists(cur_path):
-            logger.debug(record_detail(target,"成功",f"{usage_time(start_time)}"))
+            wait_logger.debug("成功",update_time_type=UpdateTimeType.STEP)
             return True
+        if timeout is not None and time.time() - start_time > timeout:
+            wait_logger.error("失败",update_time_type=UpdateTimeType.STEP)
+            return False
         time.sleep(0.5)  # 每0.5秒检查一次
     
-    logger.error(record_detail(target,"失败",f"{usage_time(start_time)}"))
+    wait_logger.error("失败",update_time_type=UpdateTimeType.ALL)
     return False
 
 def url_file_suffix(url:str)->str:
@@ -335,31 +338,13 @@ class NoteInfo:
         self.image_lst=[normal_path(os.path.join(dest_image_dir,f"{i+1}.{url_file_suffix(url)}")) for i,url in enumerate(self.image_urls)]
         self.video_lst=[normal_path(os.path.join(dest_video_dir,f"{i+1}.mp4")) for i in range(len(self.video_urls))] 
         
-    #下载图片及视频
-    async def download(self):
-       
-        image_cache_dest_lst=self.image_cache_dest_lst
-        convert_cache=[cache for cache,_ in image_cache_dest_lst]
-        
-        async def cur_download_async(self,url,dest):
-            await download_async(url,dest)
-            
-            #若是 图片类型不是 jpg，则转换为jpg
-            if dest in convert_cache:
-                if(convert_image_to_jpg(dest,image_cache_dest_lst[convert_cache.index(dest)][1])):
-                    os.remove(dest)
-                
-            
 
-        #图片 + 视频
-        tasks=[ cur_download_async(self,url,dest) for url,dest in zip(self.image_urls+self.video_urls,self.image_lst+self.video_lst) ]
-        return tasks
-        # await asyncio.gather(*tasks)
           
     #文本
     async def write_to_notepad(self):
         await read_write_async(str(self),self.note_path,mode="w",encoding="utf-8")
-        logger.info(record_detail("写入记事本","成功", f"{self.note_path}"))
+        notepad_logger=logger_helper("写入记事本",f"{self.note_path}")
+        notepad_logger.info("成功")
     
     #异步下载以及写入到文本
     async def handle_note(self):
@@ -382,7 +367,7 @@ class NoteInfo:
     @exception_decorator()
     def write_to_word(self,document:Document):
 
-        start_time=time.time()
+
 
         
         word_logger=logger_helper("word文档中添加笔记",f"{self.title}")
@@ -621,10 +606,13 @@ class SectionManager:
     def next(self,id:str):
         func=self.next_id_func if self.next_id_func else next_ignore_ids
         ls=func(self.secs,id)
-        if ls:
-            return ls[0]
-        else:
-            return self.first_valid
+        
+        
+        sec= ls[0] if ls else self.first_valid
+        if sec:
+            sec.already=True
+            self.cur_id=sec.id
+        return sec
 
     @property
     def first_valid(self):
