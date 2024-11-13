@@ -277,7 +277,7 @@ class InteractBase():
                 
                 body=None
                 while True:
-                    item=self.wp.listen.wait()
+                    item=self.wp.listen.wait(timeout=5)
                     body=item.response.body
                     if not body:
                         continue

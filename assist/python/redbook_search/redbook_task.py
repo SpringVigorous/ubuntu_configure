@@ -72,6 +72,7 @@ class Parse(ThreadTask,NoteDir):
             for info in self.themes_data:
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
+                    parse_logger.trace("成功",f"写入表单：{info.theme}",update_time_type=UpdateTimeType.STEP)
         parse_logger.trace("写入成功",update_time_type=UpdateTimeType.ALL)
         pass
     
