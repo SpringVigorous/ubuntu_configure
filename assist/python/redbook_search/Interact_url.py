@@ -24,13 +24,15 @@ class InteractUrl(ThreadTask,InteractBase):
 
     @exception_decorator()
     def _handle_data(self, url):
-        self.task_logger.update_target("开始处理",f"{url}")
+        self.task_logger.update_target("url采集",f" {self.input_count}\t{url}")
+        self.task_logger.info("开始")
         if self.result_type.is_only_comment:
             result=ReturnState.from_state(self.handle_comment_by_urls([url],self.csvj_writer))
             if result.is_netExcept:
                 self.task_logger.error("网络异常","清空队列",update_time_type=UpdateTimeType.ALL)
                 self.clear_input()
                 return result
+            # self.task_logger.info("完成",update_time_type=UpdateTimeType.ALL)
             return
         
         self.wp.get(url)
@@ -42,4 +44,5 @@ class InteractUrl(ThreadTask,InteractBase):
         # if not redbook_config.sync_note_comment and hrefs  and  self.result_type.is_only_note:
         #     self.handle_comment_by_urls(hrefs,self.csvj_writer)
         #     pass
+        self.task_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         return 

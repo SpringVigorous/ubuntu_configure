@@ -28,6 +28,10 @@ class NoteCommentWriter:
             "content","note_id","note_title"]
         self._writer =csv.DictWriter(self._f,header)
         self._writer.writeheader()
+        self.comment_logger=logger_helper("写入csv评论",file_path)
+        self.comment_logger.info("初始化")
+        #已经写入多少个笔记的评论
+        self.count=0
 
         
     def __destory__(self):
@@ -36,8 +40,9 @@ class NoteCommentWriter:
         
     def handle_comment(self,html_data,note_id:str="",note_title:str=""):
         
-        
-        comment_logger= logger_helper("写入csv评论",note_title)
+        self.count+=1
+        self.comment_logger.update_target("写入csv评论",f"{self.count}:{note_title}")
+        self.comment_logger.update_start()
         soup=BeautifulSoup(html_data,"lxml")
         items=soup.find_all('div',{'class':"comment-inner-container"})
 
@@ -76,7 +81,7 @@ class NoteCommentWriter:
             }
             self._writer.writerow(data_dict)
             
-        comment_logger.trace("完成",f"写入{len(items)}条评论",update_time_type=UpdateTimeType.ALL)
+        self.comment_logger.trace("完成",f"写入{len(items)}条评论",update_time_type=UpdateTimeType.ALL)
     
 
 

@@ -20,7 +20,8 @@ class RoutineTask(TaskBase,metaclass=abc.ABCMeta):
 
     def __init__(self, input_queue, output_queue=None, stop_event=None,out_stop_event=None):
         super().__init__(input_queue, output_queue, stop_event,out_stop_event=out_stop_event)
-        
+        #记录已从队列中获取了多少个
+        self.input_count=0
     
     @abc.abstractmethod
     def _handle_data(self, data):
@@ -52,6 +53,7 @@ class RoutineTask(TaskBase,metaclass=abc.ABCMeta):
         input_data = self._pop_data()
         if input_data is None:
             return
+        self.input_count+=1
         output_data = self._handle_data(input_data)
         #过滤掉空，是否合适待商议
         if output_data:

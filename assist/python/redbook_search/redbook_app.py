@@ -145,6 +145,7 @@ def run_theme_app():
     
 def run_url_app():
     lst= [
+    "https://www.xiaohongshu.com/explore/669e2dce0000000027010112?xsec_token=ABJEiymLYBs9rXnfmY_9FSpI43_EzjEibMvZ7JLzPDRGs=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/649ab9a800000000120339d8?xsec_token=AB6sqXZF3woHZe4QcuilaoEHkj62ZsAT4YhXz3PchbTNw=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/6643423f000000001e0394c3?xsec_token=ABZmeUeYx3L2TzmZ0w24GX04ZGH8U6FGiocsr3-Ols0PU=&xsec_source=pc_search&source=web_search_result_notes",
     "https://www.xiaohongshu.com/explore/66973c5e000000000d00f7da?xsec_token=ABxQJNbsWV3sEb840f5ZXLB2cIRNpyt549FT4ZoKL92cQ=&xsec_source=pc_search&source=web_explore_feed",
@@ -163,7 +164,6 @@ def run_url_app():
     "https://www.xiaohongshu.com/explore/66a49edc000000000600f887?xsec_token=ABgLdozMEWw7FO8EGbUwWfBrWuGgcugiHoJtcRwypPuPg=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/66f3e090000000002a037d0e?xsec_token=ABZ3VOKaYYbI04P_kE-BlShZnDlfx6xuqetMhPg3LKkuk=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/667f558d000000001e0105e4?xsec_token=ABcaORFCs4toC5WX-3JAucBMSYpdZzthN1E_LPJiF7Qeg=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/669e2dce0000000027010112?xsec_token=ABJEiymLYBs9rXnfmY_9FSpI43_EzjEibMvZ7JLzPDRGs=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/66cc096c000000001d0157c9?xsec_token=ABDLMGD5VRuQYQw3MMZWvlrwGliySWVOGYLwk5Zb0NH4k=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/65f2bd8f000000001203f362?xsec_token=ABmtymi81nql7F6feviK-ieGZR55tbiBh0qhb9nFJOz0o=&xsec_source=pc_search&source=web_explore_feed",
     "https://www.xiaohongshu.com/explore/667945a3000000001f0053e4?xsec_token=ABbwKEtDoMw9YHhSAFM5MlEKM-c-3XGbLxGWHU7ev8KnQ=&xsec_source=pc_search&source=web_explore_feed",

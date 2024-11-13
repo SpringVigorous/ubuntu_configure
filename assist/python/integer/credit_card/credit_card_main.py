@@ -83,7 +83,7 @@ def main():
     # print(html_table_to_str(result))
 
     # send_email(f"{current_date}最大还款时间",convert_to_html_table(result) ,body_type='html')
-    send_email(f"{current_date}推荐用卡",result ,body_type='plain')
+    send_email(f"{current_date}推荐用卡",result ,body_type='html')
     # to_clipboard(result)
 
 

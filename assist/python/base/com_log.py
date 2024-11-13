@@ -30,7 +30,7 @@ def record_detail(target:str,status:str,detail:str)->str:
     return info
 
 def usage_time(start_time:time)->str:
-    return f"耗时：{time()-start_time}秒"
+    return f"耗时：{time()-start_time:.3f}秒"
 
 
 def record_detail_usage(target:str,status:str,detail:str,start_time:time)->str:
@@ -161,6 +161,7 @@ class UpdateTimeType(Enum):
     NONE=(0,"无更新")
     STEP=(1,"步长更新")
     ALL=(2,"起始更新")
+    STAGE=(3,"阶段更新")
 
     def __init__(self, code, description):
         self.code = code
@@ -174,6 +175,9 @@ class UpdateTimeType(Enum):
     
     def is_all(self):
         return self==UpdateTimeType.ALL
+        
+    def is_stage(self):
+        return self==UpdateTimeType.STAGE
     
     @classmethod
     def from_update(cls, state=None):
@@ -201,24 +205,53 @@ class logger_helper:
         elif not hasattr(self,"_detail"):
             self._detail=None
         
+    #仅更新 原始初始值
+    def update_start(self):
+        self._start_time=time()
+    #仅更新 详细步骤初始值
     def update_step(self):
         self._step_time=time()
 
-        
+    #仅更新 阶段初始值
+    def update_stage(self):    
+        self._stage_time=time()
         
     def reset_time(self):
-        self._start_time=time()
+        self.update_start()
         self.update_step()
+        self.update_stage()
+       
+    def state_time(self,state:UpdateTimeType):
+        if state.is_step():
+            return self._step_time
+        elif state.is_stage():
+            return self._stage_time
+        elif state.is_all():
+            return self._start_time
+        else:
+            return None
+    def update_time(self,state:UpdateTimeType):
+        if state.is_step():
+            self.update_step()
+        elif state.is_stage():
+            self.update_step()
+            self.update_stage()
+        elif state.is_all():
+            self.reset_time()
+        else:
+            pass
         
     def detail_content(self,detail_lat:str=None):
         return f"{self._detail},{detail_lat}" if detail_lat else self._detail
         
+    #仅内容
     def content(self,status:str,detail_lat:str=None,update_time=None)->str:     
         return record_detail(self._target,status,self.detail_content(detail_lat))
+    #内容+耗时
     def content_useage(self,status:str,detail_lat:str=None,update_time=None)->str:
         
         state=UpdateTimeType.from_update(update_time)
-        cur_time=self._start_time if state.is_all() else self._step_time        
+        cur_time=self.state_time(state) 
         return record_detail_usage(self._target,status,self.detail_content(detail_lat),cur_time)
     
     def _log_impl(self,mfunc,status:str,details:str=None,update_time_type=None):
@@ -226,12 +259,7 @@ class logger_helper:
         state=UpdateTimeType.from_update(update_time_type)
         pfunc=self.content_useage if not state.is_none() else self.content
         info=pfunc(status,details,state)
-        if state.is_step():
-            self.update_step()
-        elif state.is_all():
-            self.reset_time()
-            
-            
+        self.update_time(state)           
         if logger is not None and mfunc is not None:
             mfunc(info)
         else:

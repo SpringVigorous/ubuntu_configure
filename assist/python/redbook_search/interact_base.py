@@ -15,6 +15,10 @@ from redbook_tools import *
 from data import *
 from enum import Enum
 from pathlib import Path
+from redbook_path import *
+
+
+from base import set_attributes,get_attributes
 
 @exception_decorator()
 def click_more_info(more_info,sleep_time=.1):
@@ -30,8 +34,8 @@ def handle_more(show_mores,comment_logger):
     if not show_mores:
         return
     #同步
-    for more_info in show_mores:
-        click_more_info(more_info,sleep_time=0.5)
+    for index,more_info in enumerate(show_mores):
+        click_more_info(more_info,sleep_time=0.2 if index%5==0 else 0)
     return
         
     #多线程
@@ -354,28 +358,42 @@ class InteractBase():
 
     def handle_comment_by_urls(self,urls,csvj_writer:NoteCommentWriter):
         
-        self.interact_logger.update_target("采集评论—主题")
+        self.interact_logger.update_target("采集评论—url")
         self.interact_logger.reset_time()
         self.interact_logger.info("开始")
         for url in urls:
-            self.wp.get(url)
+            self.wp.get(url,timeout=3)
+            # self.interact_logger.update_start()
             # time.sleep(.3)
             result=ReturnState.from_state(self.handle_comment(csvj_writer))
             if result.is_netExcept:
                 return result
         self.interact_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         
-   
-   #针对已打开的笔记，进行评论采集
-    @exception_decorator() 
-    def handle_comment(self,csvj_writer:NoteCommentWriter,note_id:str=""):
-       
-        time.sleep(.5)
-        #处理评论
-        title=self.title
-        comment_logger=logger_helper("采集评论",title)
+    #从缓存文件中获取
+    @exception_decorator()
+    def handle_comment_from_cache(self,title,comment_logger):
+
+        cache_path=comment_html_cache_path(redbook_config.setting.note_path, self.theme,title)
+        comment_container_html=None
+        if os.path.exists(cache_path):
+            with open(cache_path,"r",encoding="utf-8-sig") as f:
+                comment_container_html=f.read()
+            
+            
+        if not comment_container_html:
+            return None
+        total,count=get_attributes(comment_container_html,"div",["total","count"],[0],class_='comments-container')
+        result=comment_container_html if int(total)==int(count)  and int(total)>0 else None
+        if result:
+            comment_logger.trace("已存在",f"从缓存中获取:{cache_path}",update_time_type=UpdateTimeType.STEP)
         
-        container=self.wp.ele(redbook_config.path.comments_container_path,timeout=1)
+        return result
+    
+    @exception_decorator()
+    def handle_comment_from_web(self,title,comment_logger):
+        time.sleep(1)
+        container=self.wp.ele(redbook_config.path.comments_container_path,timeout=3)
         comments_total=0
         try:
             raw_total=container.ele('.total').text
@@ -391,7 +409,7 @@ class InteractBase():
             
             pass
 
-        comment_logger.info("开始",f"总共{comments_total}个",update_time_type=UpdateTimeType.STEP)
+        comment_logger.info("开始",f"总共{comments_total}个",update_time_type=UpdateTimeType.ALL)
         if comments_total<1:
             comment_logger.info("结束",f"共计时长",update_time_type=UpdateTimeType.ALL)
             return
@@ -405,7 +423,7 @@ class InteractBase():
             return ReturnState.NETEXCEPT
         
         
-        while not self.wp.wait.ele_displayed(redbook_config.path.comment_end_path,timeout=.1):
+        while not self.wp.wait.ele_displayed(redbook_config.path.comment_end_path,timeout=.5):
             #滚动
             if not self.wp.wait.ele_displayed(redbook_config.path.note_scroll_path,timeout=.5):
                 break
@@ -413,57 +431,87 @@ class InteractBase():
             scroller.scroll.to_bottom()
             # time.sleep(.1)
             scroll_count+=1
-            
-            sleep_time=2 if scroll_count %10 ==0 else 1.5
-            time.sleep(sleep_time)
-            comment_logger.info("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
+            if scroll_count %10 ==0:
+                sleep_time=2 
+                time.sleep(sleep_time)
+                comment_logger.trace("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
             
     
             #网络问题，提前退出
             if net_exception(title):
-                comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)
+                comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.All)
                 return ReturnState.NETEXCEPT
             
-        comment_logger.info("滚动到底",f"共{scroll_count}次",update_time_type=UpdateTimeType.STEP)
+        comment_logger.info("滚动到底",f"共{scroll_count}次",update_time_type=UpdateTimeType.STAGE)
                
-        time.sleep(2)
+        # time.sleep(2)
 
         more_index=1
 
         while True:        
             #更多评论
-            show_mores=self.wp.eles(redbook_config.path.comment_more_path,timeout=1)
+            show_mores=self.wp.eles(redbook_config.path.comment_more_path,timeout=5)
             comment_logger.trace("show-more",f"第{more_index}次,共{len(show_mores)}个",update_time_type=UpdateTimeType.STEP)
             if not show_mores:
                 break
             handle_more(show_mores,comment_logger)
             more_count=len(show_mores)
             
-            comment_logger.trace("more-click",f"共{more_count}个,完成",update_time_type=UpdateTimeType.STEP)
+            comment_logger.trace("more-click",f"共{more_count}个,完成",update_time_type=UpdateTimeType.STAGE)
             more_index+=1
             if (more_index>10 and more_index %10 ==0 ) or more_count>10:
-                time.sleep(1)
+                time.sleep(2)
     
             #网络问题，提前退出
             if net_exception(title):
-                comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)
+                comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.All)
                 return ReturnState.NETEXCEPT
 
     
         #网络问题，提前退出
         if net_exception(title):
-            comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)
+            comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.All)
             return ReturnState.NETEXCEPT
         
             
-        comment_container=self.wp.ele(redbook_config.path.comments_container_path,timeout=.5)
+        comment_container=self.wp.ele(redbook_config.path.comments_container_path,timeout=1)
         if not comment_container:
             comment_logger.info("评论为空","直接退出",update_time_type=UpdateTimeType.ALL)
-            time.sleep(5)
+            time.sleep(2)
             return
-        comment_container_html=comment_container.html
         
-        comment_logger.info("结束",f"共计时长",update_time_type=UpdateTimeType.ALL)
+        comments=self.wp.eles(redbook_config.path.comment_content_path,timeout=3)
+        html=set_attributes(comment_container.html,"div",["total","count"],[comments_total,len(comments) if comments else 0],class_='comments-container')
+        self.hanlde_comment_to_cache(title,html,comment_logger)
+
+        return  html
+   
+   #缓存评论html
+    def hanlde_comment_to_cache(self,title,comment_container_html,comment_logger):
+
+        cache_path=comment_html_cache_path(redbook_config.setting.note_path, self.theme,title)
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        with open(cache_path,"w",encoding="utf-8-sig") as f:
+            f.write(comment_container_html)
+        comment_logger.trace("写入缓存文件",cache_path,update_time_type=UpdateTimeType.STEP)    
+   
+   
+   #针对已打开的笔记，进行评论采集
+    @exception_decorator() 
+    def handle_comment(self,csvj_writer:NoteCommentWriter,note_id:str=""):
+        #处理评论
+        title=self.title
+        comment_logger=logger_helper("采集评论",title)
+        #从缓存中获取
+        comment_container_html=self.handle_comment_from_cache(title,comment_logger)
+        if not comment_container_html:
+            comment_container_html=self.handle_comment_from_web(title,comment_logger)
+            if not comment_container_html :
+                return
+            elif isinstance(comment_container_html,ReturnState):
+                return comment_container_html 
+        
+        comment_logger.info("完成",f"共计时长",update_time_type=UpdateTimeType.ALL)
 
         #发送到笔记处理队列，并发执行
         comment_data=CommentData(csvj_writer,self.theme,comment_container_html,note_id,title)

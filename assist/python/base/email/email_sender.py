@@ -123,7 +123,7 @@ class EmailSender:
         msg['To'] = recivers
         msg['Subject'] = subject
 
-        log_helper=log_helper(f"{self.email}->{recivers}","发送邮件")
+        email_helper=logger_helper(f"{self.email}->{recivers}","发送邮件")
         
         attachment_list=attachments if type(attachments)==list else [attachments] if attachments is not None else []
         bodyfiles_list=body_files if type(body_files)==list else [body_files] if body_files is not None else []
@@ -167,9 +167,9 @@ class EmailSender:
             
             msg_info=f"邮件主题：{subject}\n收件人：{recivers}\n正文：{body}\n附件：{attachments}\n正文文件：{body_files}"
             
-            log_helper.info("成功",msg_info,True)
+            email_helper.info("成功",msg_info,True)
         except Exception as e:
-            log_helper.error("失败",f"原因：{e}",True)
+            email_helper.error("失败",f"原因：{e}",True)
 
         finally:
             if self.server:

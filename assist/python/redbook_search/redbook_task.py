@@ -13,7 +13,7 @@ from base import read_write_sync, datetime_flag,sanitize_filename
 
 from data import *
 from redbook_tools import *
-
+from redbook_path import *
     
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):
@@ -171,6 +171,8 @@ class Parse(ThreadTask,NoteDir):
         return noteinfo
 
 
+
+
 class InputTask(ThreadTask,NoteDir):
     def __init__(self, input_queue,  stop_event=None,dest_dir=redbook_config.setting.note_path):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
@@ -180,25 +182,25 @@ class InputTask(ThreadTask,NoteDir):
 class CommentTask(InputTask):
     def __init__(self,input_queue,stop_event):
         super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_config.setting.note_path)
-        self.task_logger.update_target("处理评论内容")
+        self.task_logger.update_target("处理评论")
         
         
     def _handle_data(self, info:CommentData):
         csvj_writer,theme,comment_container_html,note_id,note_title=info.writer,info.theme,info.html,info.note_id,info.note_title
         
-        title_filename= sanitize_filename(note_title)
+        # title_filename= sanitize_filename(note_title)
         
-        cache_html_path= os.path.join(self.dest_dir, theme,title_filename,f"{title_filename}.html")
-        os.makedirs(os.path.dirname(cache_html_path), exist_ok=True)
-        self.task_logger.update_target("处理评论内容",note_title)
-        
-        self.task_logger.trace("开始",update_time_type=UpdateTimeType.STEP)    
-        with open(cache_html_path,"a+",encoding="utf-8-sig") as f:
-            f.write(comment_container_html)
-        self.task_logger.trace("写入缓存文件",cache_html_path,update_time_type=UpdateTimeType.STEP)    
+        # cache_html_path= comment_html_cache_path(self.dest_dir, theme,title_filename)
+        # os.makedirs(os.path.dirname(cache_html_path), exist_ok=True)
+        self.task_logger.update_target("",f"{self.input_count}\t {note_title}")
+        self.task_logger.update_step()
+        self.task_logger.trace("开始")    
+        # with open(cache_html_path,"a",encoding="utf-8-sig") as f:
+        #     f.write(comment_container_html)
+        # self.task_logger.trace("写入缓存文件",cache_html_path,update_time_type=UpdateTimeType.STEP)    
         
         csvj_writer.handle_comment(comment_container_html,note_id=note_id,note_title=note_title)
-        self.task_logger.trace("成功","添加入记录表格",update_time_type=UpdateTimeType.ALL)    
+        self.task_logger.trace("成功","添加入记录表格",update_time_type=UpdateTimeType.STEP)    
 
 
 class NoteTask(InputTask):
