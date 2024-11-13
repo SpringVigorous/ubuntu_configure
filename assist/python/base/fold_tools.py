@@ -42,4 +42,35 @@ def delete_directory(directory_path):
         print(f"Error: {e.strerror}")
 
 
-            
+def delete_files(root_dir, exclude_dirs, file_patterns=None):
+    for root, dirs, files in os.walk(root_dir, topdown=True):
+        # 排除指定目录
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        # 遍历文件
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file_patterns is None or any(file.endswith(pattern) for pattern in file_patterns):
+                print(f"删除文件: {file_path}")
+                os.remove(file_path)  # 取消注释以实际删除文件
+                
+                
+if __name__ == '__main__':
+    
+    
+    
+    # 遍历删除debug.release文件夹
+    # 设置根目录和排除目录
+    root_directory = os.path.dirname(os.path.abspath(__file__))
+    exclude_directories = ['.git']
+
+    # 删除 Debug 文件夹中的所有文件
+    delete_files(os.path.join(root_directory, 'Debug'), exclude_directories)
+
+    # 删除 Release 文件夹中的所有文件
+    delete_files(os.path.join(root_directory, 'Release'), exclude_directories)
+
+    # 删除 .ich 文件
+    delete_files(root_directory, exclude_directories, file_patterns=['.ich'])
+
+    input("按任意键继续...")
