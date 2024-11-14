@@ -1,4 +1,4 @@
-﻿from handle_config import redbook_config
+﻿from handle_config import redbook_setting,sync_note_comment
 import os
 from handle_comment import NoteCommentWriter
 from interact_base import InteractBase,ResultType
@@ -17,7 +17,7 @@ class InteractUrl(ThreadTask,InteractBase):
         super().__init__(input_queue,output_queue=output_queue,stop_event=stop_event,out_stop_event=out_stop_event)  
         InteractBase.__init__(self,output_queue,comment_queue,self.task_logger,result_type,next_id_func=next_equal_ids ,sec_sort_fun=no_sort)
         self.set_theme(theme)
-        self.theme_dir=os.path.join(redbook_config.setting.note_path, self.theme)
+        self.theme_dir=os.path.join(redbook_setting.note_path, self.theme)
         os.makedirs(self.theme_dir, exist_ok=True)
         self.csvj_writer=NoteCommentWriter(os.path.join( self.theme_dir,f"评论-{theme}.csv"))        
         
@@ -41,7 +41,7 @@ class InteractUrl(ThreadTask,InteractBase):
         self.wp.wait.url_change(url)
         title=self.title
         hrefs=self.handle_theme(title,self.csvj_writer,1)
-        # if not redbook_config.sync_note_comment and hrefs  and  self.result_type.is_only_note:
+        # if not sync_note_comment and hrefs  and  self.result_type.is_only_note:
         #     self.handle_comment_by_urls(hrefs,self.csvj_writer)
         #     pass
         self.task_logger.info("完成",update_time_type=UpdateTimeType.ALL)

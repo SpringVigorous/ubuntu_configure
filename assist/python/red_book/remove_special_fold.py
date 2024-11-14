@@ -21,7 +21,7 @@ def check_str_exclude_list(path,exclude_strs):
     
     
 
-def del_dir_file(cur_path,exclude_strs):
+def del_dir_file(cur_path,exclude_strs:list=None):
     if not os.path.exists(cur_path) or not check_str_exclude_list(cur_path,exclude_strs):
         return 
     

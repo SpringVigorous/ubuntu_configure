@@ -51,6 +51,17 @@ class Setting:
     cache_path: str
 
 @dataclass
+class SleepTime:
+    wait_count:int
+    small_interval:int|float
+    big_interval:int|float
+    common_interval:int|float
+    
+    def get_interval(self, count: int):
+        sleep_time=self.big_interval if count %self.wait_count ==0 else self.small_interval
+        return sleep_time
+
+@dataclass
 class RedConfig:
     note_type_map: NoteTypeMap
     path: Path
@@ -59,4 +70,6 @@ class RedConfig:
     sync_note_comment: bool
     flag:Flag
     setting: Setting
+    sleep_time: SleepTime
+
     

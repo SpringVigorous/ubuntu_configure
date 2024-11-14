@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from base import ThreadTask
-from handle_config import redbook_config
+from handle_config import redbook_setting
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
@@ -28,7 +28,7 @@ class WriteFile(ThreadTask):
 
 
 class NoteDir:
-    def __init__(self,dest_dir:str=redbook_config.setting.note_path):
+    def __init__(self,dest_dir:str=redbook_setting.note_path):
         self.dest_dir=dest_dir
 
     @property
@@ -48,7 +48,7 @@ class NoteDir:
 class Parse(ThreadTask,NoteDir):
     def __init__(self, input_queue,output_queue,stop_event,out_stop_event,out_file_queue,datas_queue):
         super().__init__(input_queue=input_queue, output_queue=output_queue, stop_event=stop_event,out_stop_event=out_stop_event)
-        NoteDir.__init__(self,dest_dir=redbook_config.setting.note_path)
+        NoteDir.__init__(self,dest_dir=redbook_setting.note_path)
         self.datas_queue=datas_queue
         self.datas_lst:list[NoteInfo]=[] #同一个主题
         self.output_file_queue=out_file_queue
@@ -175,14 +175,14 @@ class Parse(ThreadTask,NoteDir):
 
 
 class InputTask(ThreadTask,NoteDir):
-    def __init__(self, input_queue,  stop_event=None,dest_dir=redbook_config.setting.note_path):
+    def __init__(self, input_queue,  stop_event=None,dest_dir=redbook_setting.note_path):
         super().__init__(input_queue=input_queue, stop_event=stop_event)
         NoteDir.__init__(self,dest_dir=dest_dir)
 
 
 class CommentTask(InputTask):
     def __init__(self,input_queue,stop_event):
-        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_config.setting.note_path)
+        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_setting.note_path)
         self.task_logger.update_target("处理评论")
         
         
@@ -206,7 +206,7 @@ class CommentTask(InputTask):
 
 class NoteTask(InputTask):
     def __init__(self,input_queue,stop_event):
-        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_config.setting.note_path)
+        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_setting.note_path)
         self.task_logger.update_target("处理单个笔记内容")
     def _handle_data(self, noteinfo:NoteInfo):
         
@@ -215,7 +215,7 @@ class NoteTask(InputTask):
 #以下两个可以并行
 class ThemeTask(InputTask):
     def __init__(self,input_queue,stop_event):
-        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_config.setting.note_path)
+        super().__init__(input_queue=input_queue, stop_event=stop_event,dest_dir=redbook_setting.note_path)
         self.task_logger.update_target("处理主题内容")
 
         

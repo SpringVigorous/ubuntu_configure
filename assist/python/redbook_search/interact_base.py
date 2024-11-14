@@ -9,7 +9,7 @@ from base.com_decorator import exception_decorator
 from base.state import ReturnState
 from handle_comment import NoteCommentWriter
 
-from handle_config import redbook_config
+from handle_config import time_info,redbook_setting,web_listen,web_path,content_flag,note_type_map
 from redbook_tools import *
 
 from data import *
@@ -19,6 +19,9 @@ from redbook_path import *
 
 
 from base import set_attributes,get_attributes
+
+
+
 
 @exception_decorator()
 def click_more_info(more_info,sleep_time=.1):
@@ -33,9 +36,10 @@ def click_more_info(more_info,sleep_time=.1):
 def handle_more(show_mores,comment_logger):
     if not show_mores:
         return
+
     #同步
     for index,more_info in enumerate(show_mores):
-        click_more_info(more_info,sleep_time=0.2 if index%5==0 else 0)
+        click_more_info(more_info,time_info.get_interval(index+1) )
     return
         
     #多线程
@@ -99,8 +103,8 @@ class InteractBase():
         self.next_id_func=next_id_func
 
     def close_note(self):
-        self.wp.wait.eles_loaded(redbook_config.path.close_path)
-        close_flag=self.wp.ele(redbook_config.path.close_path)
+        self.wp.wait.eles_loaded(web_path.close_path)
+        close_flag=self.wp.ele(web_path.close_path)
         if close_flag:
             try:
                 close_flag.click()
@@ -114,45 +118,45 @@ class InteractBase():
         self._theme=theme
     @property
     def title(self)->str:
-        val=re.sub(redbook_config.flag.title_suffix_pattern,"",self.wp.title)
-        return val.split(redbook_config.flag.no_tilte_split)[0]
+        val=re.sub(content_flag.title_suffix_pattern,"",self.wp.title)
+        return val.split(content_flag.no_tilte_split)[0]
 
     def show_except_stack(self):
         self.interact_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
 
     #第一步，需要调用这个
     @exception_decorator()
-    def click_seach_theme(self,theme,note_type=redbook_config.note_type_map.all):
+    def click_seach_theme(self,theme,note_type=note_type_map.all):
 
         self.interact_logger.update_target("采集主题",theme)
         self.interact_logger.reset_time()
         self.interact_logger.info("开始")
 
         #搜索输入框
-        if not self.wp.wait.ele_displayed(redbook_config.path.search_input_path):
+        if not self.wp.wait.ele_displayed(web_path.search_input_path):
             return False
-        search_input = self.wp.ele(redbook_config.path.search_input_path)
+        search_input = self.wp.ele(web_path.search_input_path)
         search_input.clear()
         search_input.input(f'{theme}\n')
         # time.sleep(.4)
 
         #搜索按钮
-        if not self.wp.wait.ele_displayed(redbook_config.path.search_button_path):
+        if not self.wp.wait.ele_displayed(web_path.search_button_path):
             return False
-        seach_button=self.wp.ele(redbook_config.path.search_button_path)
+        seach_button=self.wp.ele(web_path.search_button_path)
         if not seach_button:
             sys.exit(0)
         seach_button.click()
 
         #如果是综合，就不需要再次搜索了
-        if note_type==redbook_config.note_type_map.all:
+        if note_type==note_type_map.all:
             return True
 
         
         type_button=self.wp.ele(note_type)
         if type_button:
             type_button.click()
-        self.wp.ele(redbook_config.path.search_button_path).click() #再次搜索下
+        self.wp.ele(web_path.search_button_path).click() #再次搜索下
         return True
     
     def theme_urls_path(self,theme)->str:
@@ -192,27 +196,27 @@ class InteractBase():
         try:
 
             #搜索输入框
-            if not self.wp.wait.ele_displayed(redbook_config.path.search_input_path):
+            if not self.wp.wait.ele_displayed(web_path.search_input_path):
                 return
-            search_input = self.wp.ele(redbook_config.path.search_input_path)
+            search_input = self.wp.ele(web_path.search_input_path)
             search_input.clear()
             search_input.input(f'{theme}\n')
             # time.sleep(.4)
 
             #搜索按钮
-            if not self.wp.wait.ele_displayed(redbook_config.path.search_button_path):
+            if not self.wp.wait.ele_displayed(web_path.search_button_path):
                 return
-            seach_button=self.wp.ele(redbook_config.path.search_button_path)
+            seach_button=self.wp.ele(web_path.search_button_path)
             if not seach_button:
                 sys.exit(0)
-            self.wp.ele(redbook_config.path.search_button_path).click()
+            self.wp.ele(web_path.search_button_path).click()
 
 
             
-            type_button=self.wp.ele(redbook_config.note_type_map.all)
+            type_button=self.wp.ele(note_type_map.all)
             if type_button:
                 type_button.click()
-            self.wp.ele(redbook_config.path.search_button_path).click() #再次搜索下
+            self.wp.ele(web_path.search_button_path).click() #再次搜索下
             time.sleep(.5)
 
             while len(hrefs)<search_count:
@@ -244,7 +248,7 @@ class InteractBase():
         try:
 
             time.sleep(.5)
-            self.wp.listen.start(redbook_config.listen.listen_note) 
+            self.wp.listen.start(web_listen.listen_note) 
             #忽略 标题
             secManager=SectionManager(self.wp,self.next_id_func,self.sec_sort_fun)
             secManager.update()
@@ -281,7 +285,7 @@ class InteractBase():
                     body=item.response.body
                     if not body:
                         continue
-                    if item.target==redbook_config.listen.listen_note:
+                    if item.target==web_listen.listen_note:
                         break
                 url=self.wp.url
                 body["my_link"]=url
@@ -368,7 +372,7 @@ class InteractBase():
     @exception_decorator()
     def handle_comment_from_cache(self,title,comment_logger):
 
-        cache_path=comment_html_cache_path(redbook_config.setting.note_path, self.theme,title)
+        cache_path=comment_html_cache_path(redbook_setting.note_path, self.theme,title)
         comment_container_html=None
         if os.path.exists(cache_path):
             with open(cache_path,"r",encoding="utf-8-sig") as f:
@@ -387,7 +391,7 @@ class InteractBase():
     @exception_decorator()
     def handle_comment_from_web(self,title,comment_logger):
         time.sleep(1)
-        container=self.wp.ele(redbook_config.path.comments_container_path,timeout=3)
+        container=self.wp.ele(web_path.comments_container_path,timeout=time_info.common_interval)
         comments_total=0
         try:
             raw_total=container.ele('.total').text
@@ -416,20 +420,20 @@ class InteractBase():
             comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)
             return ReturnState.NETEXCEPT
         
+
         
-        while not self.wp.wait.ele_displayed(redbook_config.path.comment_end_path,timeout=.5):
+        while not self.wp.wait.ele_displayed(web_path.comment_end_path,timeout=time_info.common_interval):
             #滚动
-            if not self.wp.wait.ele_displayed(redbook_config.path.note_scroll_path,timeout=.5):
+            if not self.wp.wait.ele_displayed(web_path.note_scroll_path,timeout=time_info.common_interval):
                 break
-            scroller= self.wp.ele(redbook_config.path.note_scroll_path)
+            scroller= self.wp.ele(web_path.note_scroll_path)
             scroller.scroll.to_bottom()
-            # time.sleep(.1)
+
             scroll_count+=1
-            if scroll_count %10 ==0:
-                sleep_time=2 
-                time.sleep(sleep_time)
-                comment_logger.trace("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
-            
+            sleep_time=time_info.get_interval(scroll_count) 
+            time.sleep(sleep_time)
+            comment_logger.trace("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
+        
     
             #网络问题，提前退出
             if net_exception(title):
@@ -438,13 +442,13 @@ class InteractBase():
             
         comment_logger.info("滚动到底",f"共{scroll_count}次",update_time_type=UpdateTimeType.STAGE)
                
-        # time.sleep(2)
+        time.sleep(1)
 
         more_index=1
 
         while True:        
             #更多评论
-            show_mores=self.wp.eles(redbook_config.path.comment_more_path,timeout=.5)
+            show_mores=self.wp.eles(web_path.comment_more_path,timeout=.5)
             comment_logger.trace("show-more",f"第{more_index}次,共{len(show_mores)}个",update_time_type=UpdateTimeType.STEP)
             if not show_mores:
                 break
@@ -453,8 +457,8 @@ class InteractBase():
             
             comment_logger.trace("more-click",f"共{more_count}个,完成",update_time_type=UpdateTimeType.STAGE)
             more_index+=1
-            if (more_index>10 and more_index %10 ==0 ) or more_count>10:
-                time.sleep(2)
+
+            time.sleep(time_info.small_interval)
     
             #网络问题，提前退出
             if net_exception(title):
@@ -468,13 +472,13 @@ class InteractBase():
             return ReturnState.NETEXCEPT
         
             
-        comment_container=self.wp.ele(redbook_config.path.comments_container_path,timeout=1)
+        comment_container=self.wp.ele(web_path.comments_container_path,timeout=1)
         if not comment_container:
             comment_logger.info("评论为空","直接退出",update_time_type=UpdateTimeType.ALL)
-            time.sleep(2)
+            time.sleep(time_info.big_interval)
             return
         
-        comments=self.wp.eles(redbook_config.path.comment_content_path,timeout=3)
+        comments=self.wp.eles(web_path.comment_content_path,timeout=3)
         html=set_attributes(comment_container.html,"div",["total","count"],[comments_total,len(comments) if comments else 0],class_='comments-container')
         self.hanlde_comment_to_cache(title,html,comment_logger)
 
@@ -483,7 +487,7 @@ class InteractBase():
    #缓存评论html
     def hanlde_comment_to_cache(self,title,comment_container_html,comment_logger):
 
-        cache_path=comment_html_cache_path(redbook_config.setting.note_path, self.theme,title)
+        cache_path=comment_html_cache_path(redbook_setting.note_path, self.theme,title)
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         with open(cache_path,"w",encoding="utf-8-sig") as f:
             f.write(comment_container_html)

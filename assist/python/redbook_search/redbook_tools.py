@@ -40,7 +40,7 @@ from DrissionPage._elements.chromium_element import ChromiumElement
 
 from lxml import etree
 import re
-from handle_config import redbook_config
+from handle_config import content_flag
 def convert_milliseconds_to_datetime(milliseconds):
     # 将毫秒时间戳转换为秒时间戳
     seconds = milliseconds / 1000.0
@@ -566,7 +566,7 @@ class SectionManager:
         ids=[]
         for sec in org_secs:
             
-            val=re.sub(redbook_config.flag.title_prefix_pattern,"",sec.raw_text)
+            val=re.sub(content_flag.title_prefix_pattern,"",sec.raw_text)
             
             id = val.split("\n")[0]
             if id in ids:

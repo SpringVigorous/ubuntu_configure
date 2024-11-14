@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor , wait, ALL_COMPLETED
 import json
 import re
 from base import ThreadTask
-from handle_config import redbook_config
+
 from data import *
 from redbook_task import *
 
@@ -146,47 +146,47 @@ def run_theme_app():
     
 def run_url_app():
     lst= [
-    "https://www.xiaohongshu.com/explore/669e2dce0000000027010112?xsec_token=ABJEiymLYBs9rXnfmY_9FSpI43_EzjEibMvZ7JLzPDRGs=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/649ab9a800000000120339d8?xsec_token=AB6sqXZF3woHZe4QcuilaoEHkj62ZsAT4YhXz3PchbTNw=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6643423f000000001e0394c3?xsec_token=ABZmeUeYx3L2TzmZ0w24GX04ZGH8U6FGiocsr3-Ols0PU=&xsec_source=pc_search&source=web_search_result_notes",
-    "https://www.xiaohongshu.com/explore/66973c5e000000000d00f7da?xsec_token=ABxQJNbsWV3sEb840f5ZXLB2cIRNpyt549FT4ZoKL92cQ=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66c1da89000000000503b61e?xsec_token=AB9zK8AnUFz4rtkX8W0Bhw4-6xYeMWSLHC_rETtRNg3sU=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66515fe30000000005006b82?xsec_token=ABcTmK7JolOsFzzo5vy1zfmFU3kMh0eZ61wLO0aKvaMMs=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6629ddfb0000000001005f44?xsec_token=ABHNPGvZaA1UxTeN7PrSg5U1LVef_Lf3xmezz4dGR31NQ=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66224489000000001c007c99?xsec_token=ABMe8iac6ldPXvy363td2Kn7eTEeGi-VpGUv8Y9rtUQjo=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6709f4900000000016021140?xsec_token=ABFdU7IQ8fCpxsXuEjHZYJmKMHpieAqf2JI1YAUA-NZRQ=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66ed04f30000000012013949?xsec_token=ABeG6Sh86QMT7_OTU1kFEUu0k99fDuqbw-ZHtZ1PrvIYo=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/661096d9000000001a013d80?xsec_token=ABhp9cv8KkOXjki5iXXxwscbY0wuweYfIcfpU8x84ZuL8=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66665ce6000000000f00dcc9?xsec_token=ABLGYYgu8skqEzGrGPiurmArz_pW0P4D4OjiM4uTeGiZM=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66c075ef000000001e01fd24?xsec_token=ABjLRrt9_1dBk4drmY0WTHuhgEO5RN7Rj516yYaNbxs90=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/65d8015c0000000007026167?xsec_token=AB2OgF72EMSe285GvIDIrZAdmtErKVgGpmNTfwqB0DqwQ=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6672d5bd00000000060078f2?xsec_token=AB5zKGIY_q59X-SrIkLRGC1yca4OsCWRt9wvaCLj6whoY=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66a0ca35000000000600ecc2?xsec_token=ABo2qZE-B48RL9sOkYI1PBfDMwQvIVZJBH6J5ECERiW50=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66a49edc000000000600f887?xsec_token=ABgLdozMEWw7FO8EGbUwWfBrWuGgcugiHoJtcRwypPuPg=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66f3e090000000002a037d0e?xsec_token=ABZ3VOKaYYbI04P_kE-BlShZnDlfx6xuqetMhPg3LKkuk=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/667f558d000000001e0105e4?xsec_token=ABcaORFCs4toC5WX-3JAucBMSYpdZzthN1E_LPJiF7Qeg=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66cc096c000000001d0157c9?xsec_token=ABDLMGD5VRuQYQw3MMZWvlrwGliySWVOGYLwk5Zb0NH4k=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/65f2bd8f000000001203f362?xsec_token=ABmtymi81nql7F6feviK-ieGZR55tbiBh0qhb9nFJOz0o=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/667945a3000000001f0053e4?xsec_token=ABbwKEtDoMw9YHhSAFM5MlEKM-c-3XGbLxGWHU7ev8KnQ=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/662cd44d0000000001007e2f?xsec_token=ABu1o7sAHKYYYBtrtGVeoyI-0vSLQzKvgwD-1MoHNIYBc=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6683aa46000000001c0242a5?xsec_token=ABlUAY5kCf9-tpt-p9oIF9LnrH9oD5CdEYezx3iAlobrg=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66bb044e00000000250333c7?xsec_token=ABlB2o3YnFFOPt46RAZv8fPuV4CVce8eE-WeTLLsrxeYY=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/6655e532000000001401b0a2?xsec_token=ABJ7Pz9tP4ukH5KJQ2XHgbgcG0QoLrEcy9Sn-YUMIyRyo=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66e813860000000012010468?xsec_token=AB41Wo6KBc-eoRIOYQfZCORbZSv31a-w7niaGTpIayUbM=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/66797942000000001e01048c?xsec_token=ABbwKEtDoMw9YHhSAFM5MlEPwSOxOHwp_fSS2FJlql08w=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/669a2ca3000000000d00cb4b?xsec_token=ABTWsnFq2Lhsj0YhanglXVxHxBgINSW1pVRetpLOz8jVU=&xsec_source=pc_search&source=web_explore_feed",
-    "https://www.xiaohongshu.com/explore/61d56ec40000000021038c55?xsec_token=ABuyY7kY9wElG5Mc5mCEy5zCbzXtKSW9f0QWLf8YA5774=&xsec_source=pc_search&source=web_explore_feed"
-    ]
+    "https://www.xiaohongshu.com/explore/6620b76e00000000040184a8?xsec_token=ABEIAE5mjWxWCLXEBGv3H-tCu6eqDpMh7L1G-2X_-uhMc=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66f1440c000000001a020443?xsec_token=ABHSqiiGgFPSuzo-SHxeMsri3YSQ4qYCWsWZY1LABuf0A=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/63c9bf6c000000001b0145a9?xsec_token=ABUKX4XcVblxJVzMYShdOBaoSkD4VVE4fTQelhQmCkhA8=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/661df9f4000000001c00a9a6?xsec_token=ABY29zTJEnyDefmL3qwvjFGfBS4MGmEaAXdHn0t9l8YoU=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/672b1301000000001d03817f?xsec_token=ABpCSwihusVbSYFLKMT0yFBvfZz_nTf1xmtcJgdA4dh0Y=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/671a2bcf0000000021007da0?xsec_token=ABjEt9yoskq_2kya_dpBQ6fUj9QVNP-kqQxwFg2upMr4c=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66497d56000000001401a263?xsec_token=ABPR2Bsd3cUYLoNiGSMUQwHsvJa1vUjs5vWf7E4TQNDCE=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/669e25690000000003025060?xsec_token=ABJEiymLYBs9rXnfmY_9FSpNT6NKJM3uOOiMlIYANbYUk=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66c5b638000000001d018e5a?xsec_token=ABNPVBAhr_po1_zysMTRkLi1Ac4jtOaQHeYibrs5KEvnM=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66b96f740000000009017d12?xsec_token=AB1DP9doXmEkAZiMkf84b028Yi9O9j2UfygJxic8ePT4g=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/657aaf9b0000000038021e26?xsec_token=AB1Ct4kgglphQDMcHYLV8FGBepSA-l4nHiLzb_i4z3Ty0=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6728914b000000001a01fa6c?xsec_token=AB5bOAOPbt-m875qQVmGMFb9ySnzYbiCgxaFs3Xv5gy5g=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66eebfce000000001e01aacc?xsec_token=AB1OeAzlKiX_NVpkqsNVcn8zKThltMoD4B_iQSjKD2avE=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/67274863000000003c01e144?xsec_token=AB8p7K3MLuHrNj9ov6fA4aXCdEL0_KyVPSDcBG3_wAjKs=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66164813000000001a013d8a?xsec_token=ABwwcf16nOKu-PsE94HpUyIfftyevjOHnOWaBVcTItPBE=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66d6d7df000000001f01a648?xsec_token=ABw48FNudLc6hNlyQrsnmz8FBemMIqSF_uDtf69cbA3jg=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66544ad400000000160121cf?xsec_token=ABjkstG5JL5zJOLf3_lb-WHmI5ETwov-gDps6tnSjEENo=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6670525b000000000e03317e?xsec_token=ABdvtNqY5JLdwz2BVUfU1VM3SfhTFSn7AYzoga6_wUQZM=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/65bb6770000000002c017ca1?xsec_token=ABIsnZ-_h-6lNeQyQV6sJF2RzDj6OaVCTp9KHFv65wQJU=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6597d74c000000001d035554?xsec_token=AB3gb0h5qFz0JzmhamQDPVg-eSXNrXk_q2utgYweHs-Ts=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/64cb784e00000000100329d6?xsec_token=AB9LmTS9U5SIPZGhq094_AT0BdF7F-uI9iNt9tQF5uzH4=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/670df7070000000024016e8c?xsec_token=ABG3V4VRRrzh2DtyJBshouf7Otdrvhn5H02ZYnHrPl73A=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66f127e2000000001b0210ce?xsec_token=ABHSqiiGgFPSuzo-SHxeMsrs6XObsvhfw_U1oIWkwqjtU=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/66cc4074000000001f03d435?xsec_token=ABDLMGD5VRuQYQw3MMZWvlr1iB9hb-qlZTJ3d-nSlmTgA=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/65618642000000001701ee86?xsec_token=ABZzGiOvfu-XLYx9FeIqs1XBxyS6hSnwnch0jwh-JnCeo=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6707aa46000000001902f9b8?xsec_token=ABcg_7p9SIVZVZQhAj__Fyiupx7PSancoNPmw3kjwbql0=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/65893039000000003403f0b0?xsec_token=AB26cLcdKMJbLaL51K1e-4AMctVhZiK23nw7fEdXN6dRw=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/672a060b000000001b0112c7?xsec_token=ABFMvwEoN0wZIsCZLgw6h8SQblEtbRBn26Bx6YYi3Fs94=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6702a7c9000000002c02f506?xsec_token=ABXKXEdHHm6edgFtjjU4qIQG03gz3J28uZeX1tMbU4CSA=&xsec_source=pc_search&source=web_explore_feed",
+    "https://www.xiaohongshu.com/explore/6624d6420000000003023397?xsec_token=ABdayys8cRFgUksnxbKT9-Z9Ay0vkl5ULL2hRvoFVy83g=&xsec_source=pc_search&source=web_explore_feed"
+]
     app=UrlApp()
-    app.run("祛湿url",lst)
+    app.run("补气血吃什么_url",lst)
     
     
     
 
 
 if __name__ == '__main__':
-    run_theme_app()
-    # run_url_app()
+    # run_theme_app()
+    run_url_app()
     
     
     # with open(r'F:\test\ubuntu_configure\assist\python\logs\redbook_app\redbook_app-trace.log', 'r', encoding='utf-8') as f:

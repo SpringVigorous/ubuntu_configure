@@ -20,6 +20,7 @@ def load_config(config_path: str=None) -> RedConfig:
     listen = Listen(**config_dict['listen'])
     flag = Flag(**config_dict['flag'])
     setting=Setting(**config_dict['setting'])
+    sleep_time=SleepTime(**config_dict['sleep_time'])
     
     # 初始化 RedConfig 实例
     config = RedConfig(
@@ -29,7 +30,8 @@ def load_config(config_path: str=None) -> RedConfig:
         listen=listen,
         sync_note_comment=config_dict['sync_note_comment'],
         flag=flag,
-        setting=setting
+        setting=setting,
+        sleep_time=sleep_time
     )
     
     return config
@@ -40,7 +42,15 @@ def save_config(config: RedConfig, config_path: str):
         
         
 redbook_config:RedConfig=load_config()
-        
+time_info:SleepTime=redbook_config.sleep_time
+redbook_setting:Setting=redbook_config.setting
+note_type_map:NoteTypeMap=redbook_config.note_type_map
+web_path:Path=redbook_config.path
+web_listen:Listen=redbook_config.listen
+content_flag:Flag=redbook_config.flag
+sync_note_comment:bool=redbook_config.sync_note_comment
+
+
 if __name__=='__main__':
 
 
