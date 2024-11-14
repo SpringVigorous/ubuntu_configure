@@ -7,12 +7,15 @@ from except_tools import except_stack
 import time
 
 def clear_queue(q):
+    ls=[]
     while not q.empty():
         try:
             val = q.get_nowait()  # 或者使用 q.get(False)
+            ls.append(val)
             q.task_done()
         except queue.Empty:
             break
+    return ls
 
 
 #非协程任务
@@ -61,7 +64,7 @@ class RoutineTask(TaskBase,metaclass=abc.ABCMeta):
         self._each_run_after(output_data)
 
     def clear_input(self):
-        clear_queue(self.input_queue)
+        return clear_queue(self.input_queue)
         
     #真正的运行逻辑
     @exception_decorator()

@@ -42,6 +42,7 @@
         "wait_count":3,
         "small_interval":0.5,
         "big_interval":1,
-        "common_interval":1.5
+        "common_interval":1.5,
+        "limit_count":200
     }
 }

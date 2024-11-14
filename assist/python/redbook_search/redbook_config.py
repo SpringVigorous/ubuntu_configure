@@ -1,6 +1,7 @@
 ﻿from dataclasses import dataclass, asdict
 from typing import Dict
 
+
 @dataclass
 class NoteTypeMap:
     all: str
@@ -50,16 +51,26 @@ class Setting:
     note_path: str
     cache_path: str
 
+interact_count:int =0
+
 @dataclass
 class SleepTime:
     wait_count:int
     small_interval:int|float
     big_interval:int|float
     common_interval:int|float
+    #多少次之后，会出现限制
+    limit_count:int
     
     def get_interval(self, count: int):
         sleep_time=self.big_interval if count %self.wait_count ==0 else self.small_interval
         return sleep_time
+    def check_limit(self, count: int=1):
+        global interact_count
+        interact_count+=count
+        return (interact_count>self.limit_count,interact_count)
+
+    
 
 @dataclass
 class RedConfig:

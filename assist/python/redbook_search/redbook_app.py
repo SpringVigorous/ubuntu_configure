@@ -33,7 +33,7 @@ class ThemeApp:
 
     def run(self,themes:list,search_count=20):
        
-        app_logger=logger_helper("主题集合","、".join(themes))
+        app_logger=logger_helper("主题集合","\n"+"\n".join(themes))
         app_logger.info("开始")
 
         theme_queue= Queue()
@@ -87,7 +87,7 @@ class UrlApp:
 
     def run(self,theme, urls:list):
        
-        app_logger=logger_helper("主题集合","、".join(urls))
+        app_logger=logger_helper("主题集合","\n"+"\n".join(urls))
         app_logger.info("开始")
 
         urls_queue= Queue()

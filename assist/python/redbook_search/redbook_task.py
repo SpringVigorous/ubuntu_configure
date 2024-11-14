@@ -59,9 +59,10 @@ class Parse(ThreadTask,NoteDir):
 
 
     def _final_run_after(self):
-
+        if not self.themes_data:
+            return
         #Excle输出
-        outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
+        outPath = os.path.join(self.CurPath,f"笔记-{datetime_flag()}.xlsx")
 
         parse_logger=logger_helper("汇总excle文件",outPath)
         parse_logger.trace("开始")

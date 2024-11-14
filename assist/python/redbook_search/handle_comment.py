@@ -21,24 +21,31 @@ def get_val(org_str,del_str:str)->int:
 
 class NoteCommentWriter:
     def __init__(self,file_path):
-        self._f= open(file_path,"w",encoding="utf-8-sig", newline="")
+        
+        self.file_path=file_path
+        self._f=None
+        
+    def _init_file(self):
+        if self._f:
+            return
+        self._f= open(self.file_path,"w",encoding="utf-8-sig", newline="")
         header =["user_id","user_name"
             ,"user_link","time","city",
             "thumb_count","reply_count",
             "content","note_id","note_title"]
         self._writer =csv.DictWriter(self._f,header)
         self._writer.writeheader()
-        self.comment_logger=logger_helper("写入csv评论",file_path)
+        self.comment_logger=logger_helper("写入csv评论",self.file_path)
         self.comment_logger.info("初始化")
         #已经写入多少个笔记的评论
         self.count=0
 
-        
     def __destory__(self):
         self._f.close()
         
         
     def handle_comment(self,html_data,note_id:str="",note_title:str=""):
+        self._init_file()
         
         self.count+=1
         self.comment_logger.update_target("写入csv评论",f"{self.count}:{note_title}")

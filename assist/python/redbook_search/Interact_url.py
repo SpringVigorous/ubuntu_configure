@@ -29,16 +29,18 @@ class InteractUrl(ThreadTask,InteractBase):
         if self.result_type.is_only_comment:
             result=ReturnState.from_state(self.handle_comment_by_urls([url],self.csvj_writer))
             if result.is_netExcept:
-                self.task_logger.error("网络异常","清空队列",update_time_type=UpdateTimeType.ALL)
-                self.clear_input()
+                ls=[url]
+                ls.extend(self.clear_input())
+                self.task_logger.error("网络异常",f"清空队列,未完成项:\n{'\n'.join(map(str,ls))}",update_time_type=UpdateTimeType.ALL)
+                
                 return result
             # self.task_logger.info("完成",update_time_type=UpdateTimeType.ALL)
             return
         
-        self.wp.get(url)
+        self.webPage.get(url)
         
         #等待页面更新
-        self.wp.wait.url_change(url)
+        self.webPage.wait.url_change(url)
         title=self.title
         hrefs=self.handle_theme(title,self.csvj_writer,1)
         # if not sync_note_comment and hrefs  and  self.result_type.is_only_note:

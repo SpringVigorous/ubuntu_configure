@@ -21,12 +21,20 @@ from redbook_path import *
 from base import set_attributes,get_attributes
 
 
+interact_logger=logger_helper("交互次数","展示")
+def check_interact():
+    limit,count= time_info.check_limit()
+    
+    interact_logger.trace(count,update_time_type=UpdateTimeType.STEP)
+    if limit:
+        time.sleep(time_info.big_interval)
 
 
 @exception_decorator()
 def click_more_info(more_info,sleep_time=.1):
     if more_info:
         more_info.click()
+    check_interact()
     if sleep_time>.01: 
         time.sleep(sleep_time)
         
@@ -87,13 +95,15 @@ class ResultType(Enum):
     def is_both(self)->bool:
         return self==ResultType.BOTH
     
-
+#统计调用多少次会发生异常
+web_logger=logger_helper("webPage","调用次数")
 
 class InteractBase():
     def __init__(self,note_queue,comment_queue,interact_logger, result_type:ResultType.ONLY_NOTE,next_id_func,sec_sort_fun:None):
+        self.call_count=0
         self.wp=WebPage()
         url='https://www.xiaohongshu.com/'
-        self.wp.get(url)
+        self.webPage.get(url)
         self.interact_logger=interact_logger
         self.note_queue=note_queue
         self.comment_queue=comment_queue
@@ -101,16 +111,27 @@ class InteractBase():
         self._theme=""
         self.sec_sort_fun=sec_sort_fun
         self.next_id_func=next_id_func
+        
+
 
     def close_note(self):
-        self.wp.wait.eles_loaded(web_path.close_path)
-        close_flag=self.wp.ele(web_path.close_path)
+        self.webPage.wait.eles_loaded(web_path.close_path)
+        close_flag=self.webPage.ele(web_path.close_path)
         if close_flag:
             try:
                 close_flag.click()
                 time.sleep(.5)
             except:
                 self.show_except_stack()
+                
+    @property
+    def webPage(self):
+        self.call_count+=1
+        # web_logger.trace(self.call_count,update_time_type=UpdateTimeType.STEP)
+        return self.wp
+    
+    
+                
     @property
     def theme(self)->str:
         return self._theme
@@ -118,11 +139,11 @@ class InteractBase():
         self._theme=theme
     @property
     def title(self)->str:
-        val=re.sub(content_flag.title_suffix_pattern,"",self.wp.title)
+        val=re.sub(content_flag.title_suffix_pattern,"",self.webPage.title)
         return val.split(content_flag.no_tilte_split)[0]
 
     def show_except_stack(self):
-        self.interact_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
+        self.interact_logger.error("异常",f"{self.webPage.title}\n{except_stack()}",update_time_type=UpdateTimeType.ALL)
 
     #第一步，需要调用这个
     @exception_decorator()
@@ -133,17 +154,17 @@ class InteractBase():
         self.interact_logger.info("开始")
 
         #搜索输入框
-        if not self.wp.wait.ele_displayed(web_path.search_input_path):
+        if not self.webPage.wait.ele_displayed(web_path.search_input_path):
             return False
-        search_input = self.wp.ele(web_path.search_input_path)
+        search_input = self.webPage.ele(web_path.search_input_path)
         search_input.clear()
         search_input.input(f'{theme}\n')
         # time.sleep(.4)
 
         #搜索按钮
-        if not self.wp.wait.ele_displayed(web_path.search_button_path):
+        if not self.webPage.wait.ele_displayed(web_path.search_button_path):
             return False
-        seach_button=self.wp.ele(web_path.search_button_path)
+        seach_button=self.webPage.ele(web_path.search_button_path)
         if not seach_button:
             sys.exit(0)
         seach_button.click()
@@ -153,10 +174,10 @@ class InteractBase():
             return True
 
         
-        type_button=self.wp.ele(note_type)
+        type_button=self.webPage.ele(note_type)
         if type_button:
             type_button.click()
-        self.wp.ele(web_path.search_button_path).click() #再次搜索下
+        self.webPage.ele(web_path.search_button_path).click() #再次搜索下
         return True
     
     def theme_urls_path(self,theme)->str:
@@ -196,31 +217,31 @@ class InteractBase():
         try:
 
             #搜索输入框
-            if not self.wp.wait.ele_displayed(web_path.search_input_path):
+            if not self.webPage.wait.ele_displayed(web_path.search_input_path):
                 return
-            search_input = self.wp.ele(web_path.search_input_path)
+            search_input = self.webPage.ele(web_path.search_input_path)
             search_input.clear()
             search_input.input(f'{theme}\n')
             # time.sleep(.4)
 
             #搜索按钮
-            if not self.wp.wait.ele_displayed(web_path.search_button_path):
+            if not self.webPage.wait.ele_displayed(web_path.search_button_path):
                 return
-            seach_button=self.wp.ele(web_path.search_button_path)
+            seach_button=self.webPage.ele(web_path.search_button_path)
             if not seach_button:
                 sys.exit(0)
-            self.wp.ele(web_path.search_button_path).click()
+            self.webPage.ele(web_path.search_button_path).click()
 
 
             
-            type_button=self.wp.ele(note_type_map.all)
+            type_button=self.webPage.ele(note_type_map.all)
             if type_button:
                 type_button.click()
-            self.wp.ele(web_path.search_button_path).click() #再次搜索下
+            self.webPage.ele(web_path.search_button_path).click() #再次搜索下
             time.sleep(.5)
 
             while len(hrefs)<search_count:
-                secManager=SectionManager(self.wp,self.fixed_pos)
+                secManager=SectionManager(self.webPage,self.fixed_pos)
                 secManager.update()
                 time.sleep(.5)
                 for item in secManager.urls:
@@ -248,9 +269,9 @@ class InteractBase():
         try:
 
             time.sleep(.5)
-            self.wp.listen.start(web_listen.listen_note) 
+            self.webPage.listen.start(web_listen.listen_note) 
             #忽略 标题
-            secManager=SectionManager(self.wp,self.next_id_func,self.sec_sort_fun)
+            secManager=SectionManager(self.webPage,self.next_id_func,self.sec_sort_fun)
             secManager.update()
 
             while len(hrefs)<search_count:
@@ -259,13 +280,13 @@ class InteractBase():
                 if not sec :
                     #更新表格
                     # secManager.resume_cur()
-                    # secManager.set_wp(self.wp)
+                    # secManager.set_wp(self.webPage)
                     secManager.update()
                     continue
                 time.sleep(.5)
                 
                 try:
-                    if(self.wp.wait.ele_displayed(sec,timeout=5)):
+                    if(self.webPage.wait.ele_displayed(sec,timeout=5)):
                         sec.click()
                     else:
                         secManager.resume_cur()
@@ -281,13 +302,13 @@ class InteractBase():
                 
                 body=None
                 while True:
-                    item=self.wp.listen.wait(timeout=5)
+                    item=self.webPage.listen.wait(timeout=5)
                     body=item.response.body
                     if not body:
                         continue
                     if item.target==web_listen.listen_note:
                         break
-                url=self.wp.url
+                url=self.webPage.url
                 body["my_link"]=url
                 body["title"]=self.title
                 body=JsonData(theme=self.theme,json_data=body)
@@ -360,11 +381,23 @@ class InteractBase():
         self.interact_logger.reset_time()
         self.interact_logger.info("开始")
         for url in urls:
-            self.wp.get(url,timeout=3)
+
+            if not self.webPage.get(url,timeout=10):
+                continue
+                
+                # return ReturnState.NETEXCEPT
+                    
+
+            if net_exception(self.webPage.title):
+                self.interact_logger.info("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)   
+                return ReturnState.NETEXCEPT
+            
+            
             # self.interact_logger.update_start()
             # time.sleep(.3)
             result=ReturnState.from_state(self.handle_comment(csvj_writer))
             if result.is_netExcept:
+                self.interact_logger.info("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.STEP)  
                 return result
         self.interact_logger.info("完成",update_time_type=UpdateTimeType.ALL)
         
@@ -391,7 +424,7 @@ class InteractBase():
     @exception_decorator()
     def handle_comment_from_web(self,title,comment_logger):
         time.sleep(1)
-        container=self.wp.ele(web_path.comments_container_path,timeout=time_info.common_interval)
+        container=self.webPage.ele(web_path.comments_container_path,timeout=time_info.common_interval)
         comments_total=0
         try:
             raw_total=container.ele('.total').text
@@ -422,11 +455,11 @@ class InteractBase():
         
 
         
-        while not self.wp.wait.ele_displayed(web_path.comment_end_path,timeout=time_info.common_interval):
+        while not self.webPage.wait.ele_displayed(web_path.comment_end_path,timeout=time_info.common_interval):
             #滚动
-            if not self.wp.wait.ele_displayed(web_path.note_scroll_path,timeout=time_info.common_interval):
+            if not self.webPage.wait.ele_displayed(web_path.note_scroll_path,timeout=time_info.common_interval):
                 break
-            scroller= self.wp.ele(web_path.note_scroll_path)
+            scroller= self.webPage.ele(web_path.note_scroll_path)
             scroller.scroll.to_bottom()
 
             scroll_count+=1
@@ -434,7 +467,7 @@ class InteractBase():
             time.sleep(sleep_time)
             comment_logger.trace("滚动到底",f"第{scroll_count}次,等待{sleep_time}秒",update_time_type=UpdateTimeType.STEP)
         
-    
+            check_interact()
             #网络问题，提前退出
             if net_exception(title):
                 comment_logger.error("异常",f"{self.title}\n{except_stack()}",update_time_type=UpdateTimeType.All)
@@ -448,7 +481,7 @@ class InteractBase():
 
         while True:        
             #更多评论
-            show_mores=self.wp.eles(web_path.comment_more_path,timeout=.5)
+            show_mores=self.webPage.eles(web_path.comment_more_path,timeout=.5)
             comment_logger.trace("show-more",f"第{more_index}次,共{len(show_mores)}个",update_time_type=UpdateTimeType.STEP)
             if not show_mores:
                 break
@@ -472,13 +505,13 @@ class InteractBase():
             return ReturnState.NETEXCEPT
         
             
-        comment_container=self.wp.ele(web_path.comments_container_path,timeout=1)
+        comment_container=self.webPage.ele(web_path.comments_container_path,timeout=1)
         if not comment_container:
             comment_logger.info("评论为空","直接退出",update_time_type=UpdateTimeType.ALL)
             time.sleep(time_info.big_interval)
             return
         
-        comments=self.wp.eles(web_path.comment_content_path,timeout=3)
+        comments=self.webPage.eles(web_path.comment_content_path,timeout=3)
         html=set_attributes(comment_container.html,"div",["total","count"],[comments_total,len(comments) if comments else 0],class_='comments-container')
         self.hanlde_comment_to_cache(title,html,comment_logger)
 
