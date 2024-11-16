@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from  base.clipboard import to_clipboard
-from calculate_rest_days import next_repay_days_rest,cur_repay_days_rest
+from calculate_rest_days import cur_consume_to_paydays,cur_cycle_to_paydays
 from base.email.special_email import send_email
 from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str
 
@@ -42,16 +42,16 @@ def repay_days_sheet(file_path, sheet_name,current_date):
 
     # 添加新列 `next_rest_day` 并计算对应的值
     df['next_rest_day'] = df.apply(
-        lambda row: next_repay_days_rest(
+        lambda row: cur_consume_to_paydays(
             current_date,
-            int(row['repayment_day']),
-            int(row['billing_day']),
-            bool(row['billday_included'])
+            int(row['billing_day'])+(0 if bool(row['billday_included']) else 1),
+            int(row['repayment_day'])
+            
         ),
         axis=1
     )
     df['cur_rest_day'] = df.apply(
-        lambda row: cur_repay_days_rest(
+        lambda row: cur_cycle_to_paydays(
             current_date,
             int(row['repayment_day'])
         ),

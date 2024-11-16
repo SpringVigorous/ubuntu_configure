@@ -185,8 +185,8 @@ def run_url_app():
 
 
 if __name__ == '__main__':
-    # run_theme_app()
-    run_url_app()
+    run_theme_app()
+    # run_url_app()
     
     
     # with open(r'F:\test\ubuntu_configure\assist\python\logs\redbook_app\redbook_app-trace.log', 'r', encoding='utf-8') as f:
