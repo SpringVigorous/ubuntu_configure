@@ -81,7 +81,7 @@ def check_date(cur_date:datetime.date,day):
     
 
 #当天消费距离下一周期还款日的 剩余天数
-def cur_consume_to_paydays(current_date, billing_day, repayment_day):
+def cur_consume_to_paydays_impl(current_date, billing_day, repayment_day):
     
     if billing_day<1 or repayment_day<1:
         return 0
@@ -102,29 +102,63 @@ def cur_consume_to_paydays(current_date, billing_day, repayment_day):
         # 计算距离还款日的天数
         days_until_repayment = (repayment_date - current_date).days
         
-        # return days_until_repayment,current_date,billing_date, repayment_date, billing_day, repayment_day
-        return days_until_repayment
+        return days_until_repayment,current_date,billing_date, repayment_date, billing_day, repayment_day
+        # return days_until_repayment
     except Exception as e:
         return 0
-
+def cur_consume_to_paydays(current_date, billing_day, repayment_day):
+    result= cur_consume_to_paydays_impl(current_date, billing_day, repayment_day)
+    
+    return result[0] if result else 0
 
 if __name__ == '__main__':
-    current_date = datetime.datetime.now().date()
-    print(get_date(2021,0,31))
-    print(get_date(2021,18,31))
-    print(get_date(2021,-10,31))
-    print(get_date(2011,24,31))
 
 
-    exit(0)
+
+    bi_pay_days=[
+    (24,18),
+    (13,2),
+    (18,7),
+    (18,6),
+    (18,8),
+    (5,30),
+    (9,27),
+    (21,10),
+    (28,22),
+    (17,6),
+    (7,25),
+    (3,23),
+    (4,24),
+    ]
+
+
+    import pandas  as pd
+    current_date=datetime.date(2023,12,1)
     
-    next_month=month_add(current_date,5)
-    next_month=month_add(next_month,-8)
+    all_lst=[]
     
-    repayment_day = 1
-    billing_day = 13
-    is_billing_day_included = True
+    for bi_day,pay_day in bi_pay_days:
+        lst=[]
+        name=f"{bi_day}-{pay_day}"
+        for i in range(1,120):
+            
+            dest_date=day_add(current_date,i)
+            rest_days,date,billing_date, repayment_date, billing_day, repayment_day = cur_consume_to_paydays_impl(dest_date, bi_day, pay_day)
+            dic={
+                "rest_days":rest_days,
+                "current_date":date,
+                "billing_date":billing_date,
+                "repayment_date":repayment_date,
+                "billing_day":billing_day,
+                "repayment_day":repayment_day,
+            }
+            lst.append(dic)
+        all_lst.append((name,lst))
+        
+        
+    with pd.ExcelWriter("pay_rest_days.xlsx") as writer:
+        for name,lst in all_lst:
+            df=pd.DataFrame(lst)
+            df.to_excel(writer,sheet_name=name)
+
     
-    days_until_repayment = cur_consume_to_paydays(current_date, repayment_day, billing_day, is_billing_day_included)
-    
-    print(days_until_repayment)
