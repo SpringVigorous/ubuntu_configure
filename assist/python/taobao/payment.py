@@ -171,8 +171,22 @@ def get_dataframe(file_path):
     df = pd.DataFrame(extracted_data[1:], columns=extracted_data[0])
     return df.fillna(0)
 
+def sort_date(df):
+    df.sort_values(by=["发生时间",], ascending=[True,],inplace=True,ignore_index=True,axis=0)
+    df["start_time"]=df.loc[0,"发生时间"]
+    # if len(df)>2:
+    #     print(df)
+    
+    return df
 
 def data_scale(df):
+    # col_names= df.columns.tolist()
+    # col_names.remove("type")
+    # # col_names.remove("order_id")
+    # col_dic={i:"first"  for i in col_names}
+    # col_dic["amount"]="sum"
+
+    # df1= df.groupby('type',sort=False).agg(col_dic).reset_index()
     df1= df.groupby('type',sort=False).agg({'amount': 'sum', '发生时间': 'first',"备注":'first'}).reset_index()
     matches=df1["type"]==cusume_payment
     matches_rows=df1[matches]
@@ -181,12 +195,12 @@ def data_scale(df):
         sum_val=matches_rows['amount'].sum()
         other_rows.loc[:,"scale"]=other_rows['amount'].apply(lambda x: f"{x/sum_val:.2%}")
         # other_rows.loc[:,"scale_all"]=other_rows['amount'].sum()/sum_val
-        types= other_rows.loc[:,"type"].tolist()
-        if types.count(cusume_payment)>0:
-            other_rows.loc[types==cusume_payment,"scale"]="100.00%"
+        # types= other_rows.loc[:,"type"].tolist()
+        # if types.count(cusume_payment)>0:
+        #     other_rows.loc[types==cusume_payment,"scale"]="100.00%"
+
             
-            
-        df1=pd.concat([matches_rows,other_rows], axis=0)
+        df1=pd.concat([other_rows,matches_rows], axis=0)
         # df1["scale_all"]=other_rows['amount'].sum()/sum_val
     return df1.reset_index(drop=True)
 
@@ -225,10 +239,15 @@ def handle_data(df,dir_path):
     # print(df.columns)
     # return
 
-    df.sort_values(by=["order_id","发生时间",], ascending=[True, True],inplace=True,ignore_index=True,axis=0)
+    # df.sort_values(by=["order_id","发生时间",], ascending=[True, True],inplace=True,ignore_index=True,axis=0)
     #根据 order_id 对df进行分组汇总
     # grouped_df = df.groupby('order_id',sort=False,group_keys=True,as_index=True)
     id_df = df.groupby('order_id',sort=False)
+    df=id_df.apply(sort_date, include_groups=False)
+    # df.sort_values(by=["start_time"], ascending=[True],inplace=True,ignore_index=True,axis=0)
+    
+    # id_df = df.groupby('order_id',sort=False)
+    
     result = id_df.apply(data_scale, include_groups=False)
 
 
