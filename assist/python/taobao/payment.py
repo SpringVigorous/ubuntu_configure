@@ -173,11 +173,7 @@ def get_dataframe(file_path):
 
 def sort_date(df):
     df.sort_values(by=["发生时间",], ascending=[True,],inplace=True,ignore_index=True,axis=0)
-    df["start_time"]=df.loc[0,"发生时间"]
-    # if len(df)>2:
-    #     print(df)
-    
-    return df
+    return df.reset_index(drop=True)
 
 def data_scale(df):
     # col_names= df.columns.tolist()
@@ -187,21 +183,23 @@ def data_scale(df):
     # col_dic["amount"]="sum"
 
     # df1= df.groupby('type',sort=False).agg(col_dic).reset_index()
-    df1= df.groupby('type',sort=False).agg({'amount': 'sum', '发生时间': 'first',"备注":'first'}).reset_index()
-    matches=df1["type"]==cusume_payment
-    matches_rows=df1[matches]
-    other_rows=df1[~matches].reset_index(drop=True)
-    if not( matches_rows.empty or other_rows.empty): 
-        sum_val=matches_rows['amount'].sum()
-        other_rows.loc[:,"scale"]=other_rows['amount'].apply(lambda x: f"{x/sum_val:.2%}")
-        # other_rows.loc[:,"scale_all"]=other_rows['amount'].sum()/sum_val
-        # types= other_rows.loc[:,"type"].tolist()
-        # if types.count(cusume_payment)>0:
-        #     other_rows.loc[types==cusume_payment,"scale"]="100.00%"
-
-            
-        df1=pd.concat([other_rows,matches_rows], axis=0)
-        # df1["scale_all"]=other_rows['amount'].sum()/sum_val
+    # df1= df.groupby('type',sort=False).agg({'amount': 'sum', '发生时间': 'first',"备注":'first'}).reset_index()
+    df1= df.groupby('type',sort=False).agg({'amount': 'sum', '发生时间': 'first'}).reset_index()
+    df1["scale"]=""
+    type_series=df1["type"]
+    # print(type_series,type(type_series))
+    
+    matches=type_series==cusume_payment
+    matches_rows=df1.loc[matches,'amount']
+    #保证金、运费险、提升计划服务费、交易付款 需要排除
+    other_match=~type_series.isin([cusume_payment,security,traffic_secuirty_normal,traffic_secuirty])
+    other_amount=df1.loc[other_match,'amount']
+    if not( matches_rows.empty or other_amount.empty): 
+        sum_val=matches_rows.sum()
+        if sum_val<=0:
+            return df1
+        df1.loc[other_match,'scale']=other_amount.apply(lambda x: f"{x/sum_val:.2%}")
+        # print(df1)
     return df1.reset_index(drop=True)
 
 def handle_data(df,dir_path):
@@ -227,35 +225,23 @@ def handle_data(df,dir_path):
     
     
     
-    special_matches= df[df["type"].isin(special_types)].copy()
-    special_matches["fee"]=special_matches["amount"]
-    # print(special_matches)
-    cols=df.columns.tolist()
-    df=pd.merge(df, special_matches, on=cols, how='left')
+    special_series=df["type"].isin(special_types)
     
+    special_matches= df[special_series].copy()
+    # 更新特殊类型的 fee 列
+    df.loc[special_series, "fee"] = special_matches["amount"]
     special_sum=special_matches["amount"].sum()
     
     print(special_sum)
-    # print(df.columns)
-    # return
 
-    # df.sort_values(by=["order_id","发生时间",], ascending=[True, True],inplace=True,ignore_index=True,axis=0)
-    #根据 order_id 对df进行分组汇总
-    # grouped_df = df.groupby('order_id',sort=False,group_keys=True,as_index=True)
-    id_df = df.groupby('order_id',sort=False)
-    df=id_df.apply(sort_date, include_groups=False)
-    # df.sort_values(by=["start_time"], ascending=[True],inplace=True,ignore_index=True,axis=0)
+    id_group = df.groupby('order_id',sort=False)
     
-    # id_df = df.groupby('order_id',sort=False)
-    
-    result = id_df.apply(data_scale, include_groups=False)
+    org_df=id_group.apply(sort_date, include_groups=False)
+    merge_df = id_group.apply(data_scale, include_groups=False)
 
-
-    
-    
     with pd.ExcelWriter(os.path.join(dir_path,"汇总.xlsx")) as writer:
-            df.to_excel(writer,sheet_name="org")
-            result.to_excel(writer,sheet_name="汇总")
+            org_df.to_excel(writer,sheet_name="org")
+            merge_df.to_excel(writer,sheet_name="汇总")
 
 
 
