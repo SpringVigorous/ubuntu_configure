@@ -25,7 +25,10 @@ def cal_weight(product_wight, box_unit_count, deliver_unit_count,box_info,bill_i
 
     
 config=TeaConfig(r"E:\花茶\价格")
-product_path= os.path.join(config.src_dir, "product_result.xlsx")
+result_dir=os.path.join(config.src_dir,"结果")
+os.makedirs(result_dir,exist_ok=True)
+product_path= os.path.join(result_dir, "product_result.xlsx")
+
 def product_df():
     if os.path.exists(product_path):
         return pd.read_excel(product_path)\
@@ -51,7 +54,11 @@ def product_df():
     result["一口价折扣"]=config.normal_cut_radio
     result["定价折扣"]=config.org_rebate
     result["产品规格"]=result.apply(lambda x: f"{x['产品']}-{x['小包数']}包-{x['盒数']}盒", axis=1)
-    result.to_excel(product_path)
+    # result["快递费"]=result.apply(lambda x: x['单包总价']*config.express_ratio, axis=1)
+    
+    os.makedirs(os.path.dirname(product_path), exist_ok=True)
+
+    result.to_excel(product_path,index=False)
     
     
     return result
@@ -62,8 +69,10 @@ def product_df():
 
 if __name__=="__main__":
     result=product_df()
-
-
+    
+    # result["单盒费用"]
+    
+    # result["单盒费用"]
     
     
     result["成本价"]=result.apply(lambda x: cal_fix_cost(x['单包总价'],x['小包数'],x['盒数'],
@@ -75,7 +84,7 @@ if __name__=="__main__":
     result["总质量(kg)"]=result.apply(lambda x:cal_weight(x['单包总质量'],x['小包数'],x['盒数'],
                                                       config.fix_box_info,config.fix_bill_info), axis=1)
 
-    result.to_excel(os.path.join(config.src_dir, "result.xlsx"))
+    result.to_excel(os.path.join(result_dir, "result.xlsx"))
     
     
     
