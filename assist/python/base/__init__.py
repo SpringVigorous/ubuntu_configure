@@ -24,5 +24,7 @@ from .com_exe_path import *
 from .video_tools import *
 from .coroutine_tools import *
 from .xml_tools import *
+from .replace_unit import *
+from .formula_calculator import *
 
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]

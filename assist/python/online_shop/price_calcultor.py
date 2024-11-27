@@ -53,12 +53,14 @@ def cal_org_price(profit,fix_cost,real_cut_ratio,normal_cut_ratio,normal_coupon,
 #brokerage_cut:佣金;m
 #real_cut_cost:到手价扣点成本;g
 #final_cost:最终成本;e
-
-
-
-
-
 class PriceCalculator:
+    
+    _formulas=[
+        
+        
+        
+        
+    ]
     
     #profit:利润;d
     #fix_cost:固定成本;f
@@ -68,7 +70,13 @@ class PriceCalculator:
     #brokerage_cut_ratio:佣金比例（基数：一口价);l
     #org_discont:定价折扣（8折扣->.8);k
     def __init__(self,profit:float,fix_cost:float,real_cut_ratio:float=.2,normal_cut_ratio:float=.05,normal_coupon:float=20,brokerage_cut_ratio:float=.1,org_discont:float=.9):
-        self.reset(profit,fix_cost,real_cut_ratio,normal_cut_ratio,normal_coupon,brokerage_cut_ratio,org_discont)
+        
+        formulas=[
+
+        ]
+        formulas.extend(PriceCalculator._formulas)
+        self.calculator=FormulaCalculator(formulas)
+
 
     def reset(self,profit:float,fix_cost:float,real_cut_ratio:float=.2,normal_cut_ratio:float=.05,normal_coupon:float=20,brokerage_cut_ratio:float=.1,org_discont:float=.9):
                 #定价折扣 八折->.8
@@ -101,16 +109,38 @@ class PriceCalculator:
     def brokerage_cut(self):
         return self.brokerage_cut_ratio*self.normal_price
 
+
+        """
+        org_discont:k
+        org_price:a
+        normal_price:b
+        real_price:c
+        normal_cut_ratio:j
+        normal_coupon:i
+        profit:d
+        fix_cost:f
+        real_cut_ratio:h
+        brokerage_cut_ratio:l
+        brokerage_cut:m
+        real_cut_cost:g
+        final_cost:e
+
+        """
     #normal_price:一口价;b
     @property
     def normal_price(self):
         return (self.normal_coupon*(self.real_cut_ratio-1)-self.profit-self.fix_cost)/((1-self.normal_cut_ratio)*(self.real_cut_ratio-1)+self.brokerage_cut_ratio)
+        # return ((i*l-d-f)+(h-1)*i)/(l+(1-i)*(h-1))
+        # return ((self.normal_coupon*self.brokerage_cut_ratio-self.profit-self.fix_cost)+(self.real_cut_ratio-1)*self.normal_coupon)/(self.brokerage_cut_ratio+(1-self.normal_coupon)*(self.real_cut_ratio-1))
+
         
 
     #real_price:到手价;c
     @property
     def real_price(self):
         return -((1-self.normal_cut_ratio)*(self.profit+self.fix_cost)+self.brokerage_cut_ratio*self.normal_coupon)/((self.real_cut_ratio-1)*(1-self.normal_cut_ratio)+self.brokerage_cut_ratio)
+        # return -(l*i*j+(d+f)*(1-j))/((1-j)*(h-1)+l)
+        # return -(self.brokerage_cut_ratio*self.normal_coupon*self.normal_cut_ratio+(self.profit+self.fix_cost)*(1-self.normal_cut_ratio))/((1-self.normal_cut_ratio)*(self.real_cut_ratio-1)+self.brokerage_cut_ratio)
 
     #org_price:定价;a
     @property
@@ -136,32 +166,32 @@ class PriceCalculator:
         return val
 
     def info(self):
-        print("定价：{},折扣率：{}".format(self.org_price,self.org_discont))
-        print("一口价：{},折扣率：{},优惠券：{}".format(self.normal_price,self.normal_cut_ratio,self.normal_coupon))
-        print("到手价：{}".format(self.real_price))
-        print("固定成本：{}".format(self.fix_cost))
-        print("佣金：{},佣金比率：{}".format(self.brokerage_cut,self.brokerage_cut_ratio))
-        print("扣点成本{},扣点比率：{}".format(self.real_cut_cost,self.real_cut_ratio))
-        print("最终成本：{}".format(self.final_cost))
-        print("利润：{}".format(self.profit))
+        print("定价：{:.2f},折扣率：{:.2f}".format(self.org_price,self.org_discont))
+        print("一口价：{:.2f},折扣率：{:.2f},优惠券：{:.2f}".format(self.normal_price,self.normal_cut_ratio,self.normal_coupon))
+        print("到手价：{:.2f}".format(self.real_price))
+        print("固定成本：{:.2f}".format(self.fix_cost))
+        print("佣金：{:.2f},佣金比率：{:.2f}".format(self.brokerage_cut,self.brokerage_cut_ratio))
+        print("扣点成本{:.2f},扣点比率：{:.2f}".format(self.real_cut_cost,self.real_cut_ratio))
+        print("最终成本：{:.2f}".format(self.final_cost))
+        print("利润：{:.2f}".format(self.profit))
 
 if __name__=="__main__":
     profit=5
     fix_cost=20
-    real_cut_ratio=.25
+    real_cut_ratio=.1
     normal_cut_ratio=0
     normal_coupon=20
-    brokerage_cut_ratio=.3
+    brokerage_cut_ratio=.05
     org_discont=.8
 
     calculator=PriceCalculator(profit,fix_cost,real_cut_ratio,normal_cut_ratio,normal_coupon,brokerage_cut_ratio,org_discont)
     calculator.info()
     print("-"*30)
-    calculator.cal_profit_by_org_price(110)
+    calculator.cal_profit_by_org_price(90)
     calculator.info()
-    
-    
+
     exit(0)
+
     #一口价->定价
     normal_price=10000
     org_discont=0.9
