@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 from price_config import *
-from price_calcultor import *
+from calcluate_tools import *
 
 
 def cal_fix_cost(product_price, box_unit_count, deliver_unit_count,box_info,bill_info,cut_ratio,profit):
@@ -27,11 +27,11 @@ def cal_weight(product_wight, box_unit_count, deliver_unit_count,box_info,bill_i
 config=TeaConfig(r"E:\花茶\价格")
 result_dir=os.path.join(config.src_dir,"结果")
 os.makedirs(result_dir,exist_ok=True)
-product_path= os.path.join(result_dir, "product_result.xlsx")
+product_path= os.path.join(result_dir, "产品规格.xlsx")
 
 def product_df():
     if os.path.exists(product_path):
-        return pd.read_excel(product_path)\
+        return pd.read_excel(product_path,sheet_name="规格")
             
     product_price=config.product_prices_df.copy()
     box_unit_price=config.box_unit_df.copy()
@@ -58,7 +58,7 @@ def product_df():
     
     os.makedirs(os.path.dirname(product_path), exist_ok=True)
 
-    result.to_excel(product_path,index=False)
+    result.to_excel(product_path,sheet_name="规格",index=False)
     
     
     return result
