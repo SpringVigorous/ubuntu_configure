@@ -1,6 +1,11 @@
 ﻿import os
 import pandas as pd 
 import numpy as np 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from base.com_log import logger_helper
+from base.df_tools import *
 class TeaConfig:
     def __init__(self,org_dir=r"E:\花茶\价格") -> None:
         self.src_dir=org_dir
@@ -16,16 +21,9 @@ class TeaConfig:
         pass
     
     @staticmethod
-    def search_mathes_by_name(df,col_name,val):
-        return df[col_name].str.contains(val, case=False, na=False)
-    
-    @staticmethod
     def search_rows_by_name(df,col_name,val,target_name):
-        rows= df.loc[TeaConfig.search_mathes_by_name(df,col_name,val),target_name]
-        if not rows.empty:
-            return rows.values
-        print(f"查找{target_name}失败，未找到{col_name}:{val}")
-        return []
+        vals=find_values_by_col_val_contains(df,col_name,val,target_name).tolist()
+        return vals
     
     def medical_price(self,name):
         rows=TeaConfig.search_rows_by_name(self.purchase_price_df,'产品',name,'单价')
@@ -104,36 +102,37 @@ class TeaConfig:
         
     def init_data(self):
         
-        
-        # 读取 "单包" 表
-        self.fix_pack_df = pd.read_excel(self.consume_path, sheet_name='单包')
-        self.fix_pack_info = (self.fix_pack_df['单价'].sum(),self.fix_pack_df['质量'].sum())
-        
-        # 读取 "单盒" 表
-        self.fix_box_df = pd.read_excel(self.consume_path, sheet_name='单盒')
-        self.fix_box_info = (self.fix_box_df['单价'].sum(),self.fix_box_df['质量'].sum())
-        
-        # 读取 "单次" 表
-        self.fix_bill_df = pd.read_excel(self.consume_path, sheet_name='单次')
-        self.fix_bill_info = (self.fix_bill_df['单价'].sum(),self.fix_bill_df['质量'].sum())
+        with pd.ExcelFile(self.consume_path) as reader:
+            # 读取 "单包" 表
+            self.fix_pack_df = reader.parse('单包')
+            self.fix_pack_info = (self.fix_pack_df['单价'].sum(),self.fix_pack_df['质量'].sum())
+            
+            # 读取 "单盒" 表
+            self.fix_box_df = reader.parse('单盒')
+            self.fix_box_info = (self.fix_box_df['单价'].sum(),self.fix_box_df['质量'].sum())
+            
+            # 读取 "单次" 表
+            self.fix_bill_df = reader.parse('单次')
+            self.fix_bill_info = (self.fix_bill_df['单价'].sum(),self.fix_bill_df['质量'].sum())
         
         
 
         self.reduce_ratio_df = pd.read_excel(self.cut_ratio_path, sheet_name='扣费比率')
         self.fix_cut_ratio = self.reduce_ratio_df['比率'].sum()
         
+        with pd.ExcelFile(self.discount_path) as reader:
         
-        self.each_discount_df = pd.read_excel(self.discount_path, sheet_name='跨店满减')
-        self.normal_discount_df = pd.read_excel(self.discount_path, sheet_name='满减')
-        
-        normal_rebate_df= pd.read_excel(self.discount_path, sheet_name='每满减折扣')
-        self.normal_cut_radio=1-normal_rebate_df.loc[0]["折扣"]
-        org_rebate_df= pd.read_excel(self.discount_path, sheet_name='定价折扣')
-        self.org_rebate=org_rebate_df.iloc[0]["折扣"]
+            self.each_discount_df = reader.parse('跨店满减')
+            self.normal_discount_df = reader.parse('满减')
+            
+            normal_rebate_df= reader.parse('每满减折扣')
+            self.normal_cut_radio=1-normal_rebate_df.loc[0]["折扣"]
+            org_rebate_df= reader.parse('定价折扣')
+            self.org_rebate=org_rebate_df.iloc[0]["折扣"]
         unit_path=os.path.join(self.src_dir, "产品规格.xlsx")
-        
-        self.box_unit_df=pd.read_excel(unit_path,sheet_name="盒规格")
-        self.deliver_unit_df=pd.read_excel(unit_path,sheet_name="快递规格")
+        with pd.ExcelFile(unit_path) as reader:
+            self.box_unit_df=reader.parse("盒规格")
+            self.deliver_unit_df=reader.parse("快递规格")
         self.init_product()
         pass
     @property

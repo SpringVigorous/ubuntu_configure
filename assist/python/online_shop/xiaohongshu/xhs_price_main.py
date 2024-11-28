@@ -8,7 +8,7 @@ from price_calculator import PriceCalculator
 from price_config import *
 # from calcluate_tools import *
 from base.math_tools import *
-from base.df_tools import find_value_by_col_val
+from base.df_tools import find_last_value_by_col_val
 
 def cal_fix_cost(product_price, box_unit_count, deliver_unit_count,box_info,bill_info):
     # 进行第一次交叉连接
@@ -66,14 +66,14 @@ def product_df():
     
 
     
-    result["提现费率"]=find_value_by_col_val(ratio_df,"名称",'提现费率', '比率',.005)
+    result["提现费率"]=find_last_value_by_col_val(ratio_df,"名称",'提现费率', '比率',.005)
     result["运费险"]=1.5
 
     # result["物料费"]=0
     result["快递费"]=8
     result["平台券"]=0
     result["商家券"]=5
-    result["佣金比率"]=find_value_by_col_val(ratio_df,"名称",'佣金比率', '比率',.03)
+    result["佣金比率"]=find_last_value_by_col_val(ratio_df,"名称",'佣金比率', '比率',.03)
     
     os.makedirs(os.path.dirname(product_path), exist_ok=True)
     result.to_excel(product_path,sheet_name="规格",index=False)
