@@ -17,17 +17,21 @@ class TeaConfig:
         self.sub_dir="详情"
         self.product_medical_name="产品药材价格"
         self.product_price_name="产品价格"
+        self.medical_price_dict={}
         self.init_data()
+        
         pass
     
-    @staticmethod
-    def search_rows_by_name(df,col_name,val,target_name):
-        vals=find_values_by_col_val_contains(df,col_name,val,target_name).tolist()
-        return vals
-    
     def medical_price(self,name):
-        rows=TeaConfig.search_rows_by_name(self.purchase_price_df,'产品',name,'单价')
-        return rows[0] if len(rows)>0 else 0.0
+        if self.medical_price_dict.get(name,None):
+            return self.medical_price_dict.get(name)
+        else:
+            rows=find_values_by_col_val_contains(self.purchase_price_df,'产品',name,'单价').tolist()
+            val= rows[0] if len(rows)>0 else 0.0
+            self.medical_price_dict[name]=val
+            return val
+            
+            
 
     def init_product(self):
         
@@ -69,8 +73,7 @@ class TeaConfig:
             .reset_index()
         )
 
-        product_df= pd.DataFrame({"产品":self.product_medical_prices_df["产品"]})
-        print(type(product_df))
+
         
         
         self.product_medical_prices_df["产品"].to_excel( os.path.join(self.src_dir,"产品名.xlsx"))

@@ -33,9 +33,6 @@ os.makedirs(result_dir,exist_ok=True)
 product_path= os.path.join(result_dir, "产品规格.xlsx")
 
 
-    
-    
-    
 def product_df():
     if os.path.exists(product_path):
         return pd.read_excel(product_path,sheet_name="规格")
