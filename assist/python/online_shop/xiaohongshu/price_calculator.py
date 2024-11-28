@@ -26,7 +26,7 @@ symbols_dict={
     's':"平台券",
     't':"商家优惠",
     'u':"商家券",
-    'v':"一口价折扣比率",
+    'v':"每满减折扣比率",
     'w':"定价折扣",
     'y':"收款抵扣后",
 }
@@ -74,7 +74,7 @@ class PriceCalculator(PriceCalculatorBase):
     #platform_coupon:平台券:s
     #cash_out_ratio:提现费率:q
     #ship_insure:运费险:m
-    #normal_cut_ratio:一口价折扣比率:v
+    #normal_cut_ratio:每满减折扣比率:v
     #brokerage_cut_ratio:佣金比率:o
     #org_discont:定价折扣（8折扣->.8):w
     """

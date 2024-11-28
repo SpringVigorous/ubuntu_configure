@@ -106,27 +106,27 @@ class TeaConfig:
         
         
         # 读取 "单包" 表
-        df = pd.read_excel(self.consume_path, sheet_name='单包')
-        self.fix_pack_info = (df['单价'].sum(),df['质量'].sum())
+        self.fix_pack_df = pd.read_excel(self.consume_path, sheet_name='单包')
+        self.fix_pack_info = (self.fix_pack_df['单价'].sum(),self.fix_pack_df['质量'].sum())
         
         # 读取 "单盒" 表
-        df = pd.read_excel(self.consume_path, sheet_name='单盒')
-        self.fix_box_info = (df['单价'].sum(),df['质量'].sum())
+        self.fix_box_df = pd.read_excel(self.consume_path, sheet_name='单盒')
+        self.fix_box_info = (self.fix_box_df['单价'].sum(),self.fix_box_df['质量'].sum())
         
         # 读取 "单次" 表
-        df = pd.read_excel(self.consume_path, sheet_name='单次')
-        self.fix_bill_info = (df['单价'].sum(),df['质量'].sum())
+        self.fix_bill_df = pd.read_excel(self.consume_path, sheet_name='单次')
+        self.fix_bill_info = (self.fix_bill_df['单价'].sum(),self.fix_bill_df['质量'].sum())
         
         
 
-        df = pd.read_excel(self.cut_ratio_path, sheet_name='扣费比率')
-        self.fix_cut_ratio = df['比率'].sum()
+        self.reduce_ratio_df = pd.read_excel(self.cut_ratio_path, sheet_name='扣费比率')
+        self.fix_cut_ratio = self.reduce_ratio_df['比率'].sum()
         
         
         self.each_discount_df = pd.read_excel(self.discount_path, sheet_name='跨店满减')
         self.normal_discount_df = pd.read_excel(self.discount_path, sheet_name='满减')
         
-        normal_rebate_df= pd.read_excel(self.discount_path, sheet_name='一口价折扣')
+        normal_rebate_df= pd.read_excel(self.discount_path, sheet_name='每满减折扣')
         self.normal_cut_radio=1-normal_rebate_df.loc[0]["折扣"]
         org_rebate_df= pd.read_excel(self.discount_path, sheet_name='定价折扣')
         self.org_rebate=org_rebate_df.iloc[0]["折扣"]

@@ -2,7 +2,7 @@
 #org_price:定价;a
 #normal_price:一口价;b
 #real_price:到手价;c
-#normal_cut_ratio:一口价折扣比率（8折扣->.2);j
+#normal_cut_ratio:每满减折扣比率（8折扣->.2);j
 #normal_coupon:优惠券金额;i
 #profit:利润;d
 #fix_cost:固定成本;f

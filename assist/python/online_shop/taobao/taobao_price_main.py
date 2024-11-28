@@ -51,7 +51,7 @@ def product_df():
         result.rename(columns={'Unnamed: 0': '产品规格'}, inplace=True)
     result["利润"]=5
     result["优惠"]=config.get_normal_discount()
-    result["一口价折扣"]=config.normal_cut_radio
+    result["每满减折扣"]=config.normal_cut_radio
     result["定价折扣"]=config.org_rebate
     result["产品规格"]=result.apply(lambda x: f"{x['产品']}-{x['小包数']}包-{x['盒数']}盒", axis=1)
     # result["快递费"]=result.apply(lambda x: x['单包总价']*config.express_ratio, axis=1)
@@ -77,7 +77,7 @@ if __name__=="__main__":
     
     result["成本价"]=result.apply(lambda x: cal_fix_cost(x['单包总价'],x['小包数'],x['盒数'],
                                                       config.fix_box_info,config.fix_bill_info,config.fix_cut_ratio,x['利润']), axis=1)
-    result["一口价"]=result.apply(lambda x: real_to_normal(x["成本价"],x["一口价折扣"],x["优惠"]), axis=1)
+    result["一口价"]=result.apply(lambda x: real_to_normal(x["成本价"],x["每满减折扣"],x["优惠"]), axis=1)
     result["定价"]=result.apply(lambda x: normal_to_org(x['一口价'],x["定价折扣"]), axis=1)
     
 
