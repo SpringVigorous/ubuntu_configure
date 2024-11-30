@@ -44,7 +44,10 @@ class PriceCalculatorBase(ABC):
     def calculate_by_normal_price(self,normal_price:float):
         pass
 
-    
+    def result_value(self,key,default_value=0):
+        val=self.result(key,default_value)
+        return float(val)
+        
     def result(self,key,default_value=0):
         return self._calculator.result(key,default_value)
     

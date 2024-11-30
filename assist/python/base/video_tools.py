@@ -8,6 +8,23 @@ import subprocess
 
 from com_log import logger_helper,UpdateTimeType
 
+def get_all_files_pathlib(directory,include_suffix:list=None):
+    """
+    获取指定目录下的所有文件的全路径
+    :param directory: 目标目录
+    :return: 文件全路径列表
+    """
+    file_paths = []
+    for file in Path(directory).rglob('*'):
+        org_path=str(file.resolve())
+        if include_suffix and not file.suffix in include_suffix:
+            continue
+        if file.is_file():
+            file_paths.append(str(file.resolve()))
+    return file_paths
+
+
+
 def merge_video(temp_paths,dest_path):
     if not temp_paths or not dest_path:
         return
@@ -25,7 +42,8 @@ def merge_video(temp_paths,dest_path):
     command = [ffmpeg_path(),'-y', '-f', 'concat', '-safe', '0', '-i', temp_file, '-c', 'copy', dest_path]
     # subprocess.run(command, check=True)
     # 运行命令并获取返回值
-    result = subprocess.run(command, capture_output=True, text=True)
+    # result = subprocess.run(command, capture_output=True, text=True,encoding="utf-8",errors="ignore",check=True)
+    result = subprocess.run(command, capture_output=True, text=True,errors="ignore",check=True)
 
 
 
@@ -45,3 +63,8 @@ def merge_video(temp_paths,dest_path):
     #     os.remove(temp_path)   
 
     # os.remove(temp_file)
+
+def merge_video_from_src_dir(src_dir,dest_path,include_suffix:list=None):
+    if not src_dir or not dest_path:
+        return
+    merge_video(get_all_files_pathlib(src_dir,include_suffix),dest_path)

@@ -28,8 +28,7 @@ def matches_by_col_val_contains(df, col_name,val,default_val=pd.Series()):
         return default_val
 def find_values_by_col_val_contains(df, col_name,val,dest_name,default_val=pd.Series()):
 
-    if val=="玫瑰花":
-        print(val)
+
     log=logger_helper(f"模糊查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")
     try:
         matches=matches_by_col_val_contains(df,col_name,val)

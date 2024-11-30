@@ -28,6 +28,7 @@ symbols_dict={
     'u':"商家券",
     'v':"每满减折扣比率",
     'w':"定价折扣",
+    'x':"利润率",
     'y':"收款抵扣后",
 }
 class PriceCalculator(PriceCalculatorBase):
@@ -43,6 +44,7 @@ class PriceCalculator(PriceCalculatorBase):
         "y=e-m",
         "t=u+f*v",
         "r=t+s",
+        "x=b/f"
     ]
     _profit_formulas=[
         "c=(m*q-b-i)/(o+(1-o)*q-1)-s",
@@ -61,6 +63,7 @@ class PriceCalculator(PriceCalculatorBase):
     _normal_formulas=[
         "g=f/w",
     ]
+
     _org_formulas.extend(_org_normal_formulas)
     _normal_formulas.extend(_org_normal_formulas)
     
@@ -105,6 +108,17 @@ class PriceCalculator(PriceCalculatorBase):
     #一口价作为已知条件
     def calculate_by_normal_price(self,normal_price:float):
         return self._calculate_impl("f",normal_price,PriceCalculator._normal_formulas)
-
+    
+    
+    #利润率作为已知条件
+    def calculate_by_profit_ratio(self,profit_ratio:float):
+        result={}
+        if not self._calculator._result:
+            result=self.calculate_by_profit(10)
+        time=0
+        while abs(self.result_value("利润率")/profit_ratio-1)>.0005:
+            result=self.calculate_by_profit(self.result_value("一口价")*profit_ratio)
+            time+=1
+        return result
     
     
