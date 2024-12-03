@@ -1,6 +1,6 @@
 ﻿import os
 import sys
-
+import pandas as pd
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -114,11 +114,19 @@ class PriceCalculator(PriceCalculatorBase):
     def calculate_by_profit_ratio(self,profit_ratio:float):
         result={}
         if not self._calculator._result:
-            result=self.calculate_by_profit(10)
+            result=self.calculate_by_profit(5)
         time=0
+        
+        # lst=[self.result_info]
+        
         while abs(self.result_value("利润率")/profit_ratio-1)>.0005:
             result=self.calculate_by_profit(self.result_value("一口价")*profit_ratio)
             time+=1
+        #     lst.append(result)
+            
+        # df=pd.DataFrame(lst) 
+        # df.to_excel("price_calculator_recursive.xlsx",index=False)
+            
         return result
     
     

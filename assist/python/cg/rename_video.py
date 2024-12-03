@@ -154,7 +154,7 @@ def restore_names():
     
     for key,_ in old_dict.items():
         print(key)
-
+ 
 
 if __name__ == "__main__":
     target_directory = r"F:\数据库"

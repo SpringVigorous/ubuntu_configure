@@ -12,6 +12,7 @@ sys.path.extend([root_dir,os.path.join(root_dir,"base")])
 
 from base.video_tools import merge_video
 from base.com_log import logger_helper,UpdateTimeType
+from base.except_tools import except_stack
 
 from datetime import datetime, timedelta
 
@@ -69,14 +70,15 @@ def convert_medio_to_mp4(input_file, output_file):
     """
     # 构建 ffmpeg 命令
     command = ['ffmpeg', '-i', input_file, '-c:v', 'libx264', '-c:a', 'aac', output_file]
-    
+    log=logger_helper("视频转换",f"{input_file} 转换为 {output_file}")
+    log.trace("开始")
     try:
         # 执行命令
         subprocess.run(command, check=True)
-        print(f"成功将 {input_file} 转换为 {output_file}")
+        log.trace("成功",update_time_type=UpdateTimeType.ALL)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"转换失败: {e}")
+    except :
+        log.trace("失败",except_stack(), update_time_type=UpdateTimeType.ALL)
         return False
         
 
@@ -299,16 +301,21 @@ if __name__=="__main__":
              ]
     
     cur_dir=r"F:\数据库"
-    for name,time_seg in params:
-        clip_times=[(time_to_seconds(start),time_to_seconds(end))  for start,end in time_seg]
-        split_movie(os.path.join(cur_dir,name), clip_times)
-    import time
+    # for name,time_seg in params:
+    #     clip_times=[(time_to_seconds(start),time_to_seconds(end))  for start,end in time_seg]
+    #     split_movie(os.path.join(cur_dir,name), clip_times)
+    # import time
 
-    # 设置 1 秒后关机
-    subprocess.run(['shutdown', '/s', '/t', '1'])
+    # # 设置 1 秒后关机
+    # subprocess.run(['shutdown', '/s', '/t', '1'])
 
-    # 等待 1 秒，以便观察效果
-    time.sleep(2)
+    # # 等待 1 秒，以便观察效果
+    # time.sleep(2)
 
     # 取消关机（可选）
     # subprocess.run(['shutdown', '/a'])
+    
+    for name in ["立花里子-白衣护士.wmv","立花里子-女佣-02.wmv"]:
+        cur_path=Path(os.path.join(cur_dir,name))
+        dest_path=cur_path.with_suffix(".mp4")
+        convert_medio_to_mp4(cur_path,  dest_path)

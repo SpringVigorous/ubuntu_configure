@@ -136,12 +136,12 @@ class UrlApp:
 
 def run_theme_app():
     # lst=["补气血吃什么","黄芪","淮山药","麦冬","祛湿","健脾养胃"]
-    lst=["静坐","太极拳","站桩","冥想","瑜伽"]
+    lst=["美容养颜茶","荷叶薏米祛湿茶","助眠茶","上热下寒通中焦","气血双补茶"]
     # lst=["新图纸来啦！简化版儿童擎天柱头盔图纸"]
     # lst=["祛湿"]
     # lst=["补气血吃什么"]
     app=ThemeApp()
-    app.run(lst,search_count=30)
+    app.run(lst,search_count=50)
     
     
 def run_url_app():

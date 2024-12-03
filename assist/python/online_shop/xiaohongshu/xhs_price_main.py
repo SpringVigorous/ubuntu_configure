@@ -105,8 +105,8 @@ if __name__=="__main__":
             row["佣金比率"],
             row["定价折扣"],)
         
-        calculator.calculate_by_profit_ratio(.2)
-        calculator.calculate_by_profit(row["利润"])
+        calculator.calculate_by_profit_ratio(.4)
+        # calculator.calculate_by_profit(row["利润"])
         
         normal_price=ceil_5(calculator.result("一口价"))
         

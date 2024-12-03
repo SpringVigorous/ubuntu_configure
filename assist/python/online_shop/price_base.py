@@ -28,8 +28,11 @@ class PriceCalculatorBase(ABC):
         self._calculator.add_variable(key,val)
         self._calculator.add_formlua(formulas)
         self._calculator.calculate()
+        return self.result_info
+    @property
+    def result_info(self):
         return self._calculator.info()
-
+    
     #利润作为已知条件
     @abstractmethod
     def calculate_by_profit(self,profit:float=5):
