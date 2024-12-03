@@ -20,7 +20,7 @@ if __name__=="__main__":
     ship_insure:float=1.5
     normal_cut_ratio:float=.05
     brokerage_cut_ratio:float=.1
-    org_discont:float=.8
+
 
     calculator=PriceCalculator(material_cost,
             ship_fee,
@@ -30,7 +30,7 @@ if __name__=="__main__":
             ship_insure,
             normal_cut_ratio,
             brokerage_cut_ratio,
-            org_discont,)
+            )
 
 
 
@@ -46,11 +46,8 @@ if __name__=="__main__":
     
     calculator.show_formulas()
 
-    org_price=ceil_5(float(calculator.result("定价")))
-    normal_price=ceil_5(float(calculator.result("一口价")))
-    
-    lst.append(calculator.calculate_by_org_price(org_price))
-    calculator.show_formulas()
+    normal_price=ceil_5(float(calculator.result("定价")))
+
     
     lst.append(calculator.calculate_by_normal_price(normal_price))
     calculator.show_formulas()

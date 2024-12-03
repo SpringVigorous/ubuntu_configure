@@ -128,10 +128,9 @@ class TeaConfig:
             self.each_discount_df = reader.parse('跨店满减')
             self.normal_discount_df = reader.parse('满减')
             
-            normal_rebate_df= reader.parse('每满减折扣')
+            normal_rebate_df= reader.parse('满减折扣')
             self.normal_cut_radio=1-normal_rebate_df.loc[0]["折扣"]
-            org_rebate_df= reader.parse('定价折扣')
-            self.org_rebate=org_rebate_df.iloc[0]["折扣"]
+
         unit_path=os.path.join(self.src_dir, "产品规格.xlsx")
         with pd.ExcelFile(unit_path) as reader:
             self.box_unit_df=reader.parse("盒规格")

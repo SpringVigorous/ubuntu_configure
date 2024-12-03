@@ -11,8 +11,8 @@ symbols_dict={
     'c':"实付款",
     'd':"佣金基数",
     'e':"收入金额",
-    'f':"一口价",
-    'g':"定价",
+    'f':"定价",
+
     'i':"固定成本",
     'j':"浮动成本",
     'k':"物料费",
@@ -26,8 +26,8 @@ symbols_dict={
     's':"平台券",
     't':"商家优惠",
     'u':"商家券",
-    'v':"每满减折扣比率",
-    'w':"定价折扣",
+    'v':"满减折扣比率",
+
     'x':"利润率",
     'y':"收款抵扣后",
 }
@@ -49,7 +49,7 @@ class PriceCalculator(PriceCalculatorBase):
     _profit_formulas=[
         "c=(m*q-b-i)/(o+(1-o)*q-1)-s",
         "f=(u+s+c)/(1-v)",
-        "g=f/w",
+
     ]
     #共有的
     _org_normal_formulas=[
@@ -58,10 +58,8 @@ class PriceCalculator(PriceCalculatorBase):
     ]
     
     _org_formulas=[
-        "f=g*w",
     ]
     _normal_formulas=[
-        "g=f/w",
     ]
 
     _org_formulas.extend(_org_normal_formulas)
@@ -77,11 +75,11 @@ class PriceCalculator(PriceCalculatorBase):
     #platform_coupon:平台券:s
     #cash_out_ratio:提现费率:q
     #ship_insure:运费险:m
-    #normal_cut_ratio:每满减折扣比率:v
+    #normal_cut_ratio:满减折扣比率:v
     #brokerage_cut_ratio:佣金比率:o
-    #org_discont:定价折扣（8折扣->.8):w
+
     """
-    def __init__(self,material_cost:float=10,ship_fee:float=8,seller_coupon:float=20,platform_coupon:float=5,cash_out_ratio:float=.005,ship_insure:float=1.5,normal_cut_ratio:float=.05,brokerage_cut_ratio:float=.1,org_discont:float=.9):
+    def __init__(self,material_cost:float=10,ship_fee:float=8,seller_coupon:float=20,platform_coupon:float=5,cash_out_ratio:float=.005,ship_insure:float=1.5,normal_cut_ratio:float=.05,brokerage_cut_ratio:float=.1):
         super().__init__()
 
         self.set_symbols(symbols_dict)
@@ -94,39 +92,46 @@ class PriceCalculator(PriceCalculatorBase):
         self.add_variable("u",seller_coupon)
         self.add_variable("v",normal_cut_ratio)
         self.add_variable("o",brokerage_cut_ratio)
-        self.add_variable("w",org_discont)
+
         
         self.add_formlua(PriceCalculator._common_formulas)
+        
+        
+        self.recursive_lst=[]
 
     #利润作为已知条件
     def calculate_by_profit(self,profit:float=5):
         return self._calculate_impl("b",profit,PriceCalculator._profit_formulas)
 
-    # 定价作为已知条件
-    def calculate_by_org_price(self,org_price:float):
-        return self._calculate_impl("g",org_price,PriceCalculator._org_formulas)
-    #一口价作为已知条件
+
+    #定价作为已知条件
     def calculate_by_normal_price(self,normal_price:float):
         return self._calculate_impl("f",normal_price,PriceCalculator._normal_formulas)
     
-    
+
     #利润率作为已知条件
     def calculate_by_profit_ratio(self,profit_ratio:float):
         result={}
         if not self._calculator._result:
-            result=self.calculate_by_profit(5)
+            result=self.calculate_by_profit(100)
         time=0
-        
-        # lst=[self.result_info]
-        
+
+        self.recursive_lst.append(self.result_info)
         while abs(self.result_value("利润率")/profit_ratio-1)>.0005:
-            result=self.calculate_by_profit(self.result_value("一口价")*profit_ratio)
+            result=self.calculate_by_profit(self.result_value("定价")*profit_ratio)
             time+=1
-        #     lst.append(result)
-            
-        # df=pd.DataFrame(lst) 
-        # df.to_excel("price_calculator_recursive.xlsx",index=False)
+            self.recursive_lst.append(self.result_info)
+
             
         return result
     
+
+    def recursive_info(self,flag_name,name):
+        for item in self.recursive_lst:
+            item[flag_name]=name
+        
+        
+        return self.recursive_lst
+        df=pd.DataFrame(self.recursive_lst) 
+        df.to_excel("price_calculator_recursive.xlsx",index=False)
     

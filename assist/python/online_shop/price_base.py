@@ -38,11 +38,8 @@ class PriceCalculatorBase(ABC):
     def calculate_by_profit(self,profit:float=5):
         pass
 
-    # 定价作为已知条件
-    @abstractmethod
-    def calculate_by_org_price(self,org_price:float):
-        pass
-    #一口价作为已知条件
+
+    #定价作为已知条件
     @abstractmethod
     def calculate_by_normal_price(self,normal_price:float):
         pass

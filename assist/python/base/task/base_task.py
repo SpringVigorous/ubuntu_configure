@@ -3,10 +3,14 @@
 import multiprocessing
 import asyncio
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ..com_log import logger_helper,UpdateTimeType
-from ..com_decorator import exception_decorator
-from ..except_tools import except_stack
+
+from com_log import logger_helper,UpdateTimeType
+from com_decorator import exception_decorator
+from except_tools import except_stack
 
 
 #生产者-消费者模型(一个输入队列，一个输出队列)
