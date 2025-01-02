@@ -142,6 +142,7 @@ if __name__ == '__main__':
 # python integer/alter_encoding.py -i F:/test/cmake_project/3rd -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' --clear 
 
 
+#python integer/alter_encoding.py -i F:/temp/bill.txt -c ascii -f '.txt' --clear 
 
 
 

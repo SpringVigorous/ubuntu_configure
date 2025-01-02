@@ -33,3 +33,7 @@ if response.status_code == 200:
         print("未找到指定的 table 元素")
 else:
     print(f"请求失败，状态码: {response.status_code}")
+    
+    
+if __name__ == '__main__':
+    pass

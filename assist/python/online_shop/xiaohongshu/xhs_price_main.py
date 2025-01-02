@@ -93,6 +93,7 @@ if __name__=="__main__":
                                                       config.fix_box_info,config.fix_bill_info,), axis=1)
 
     recursive_dict=[]
+    show_recursive=False
     def cal_fun(row):
         calculator= PriceCalculator(row["物料费"],
             row["快递费"],
@@ -114,7 +115,8 @@ if __name__=="__main__":
         key="产品规格"
         dic={key:row[key]}
         #查看递归过程
-        recursive_dict.extend(calculator.recursive_info(key,row[key]))  
+        if show_recursive:
+            recursive_dict.extend(calculator.recursive_info(key,row[key]))  
         
         
         
@@ -131,7 +133,8 @@ if __name__=="__main__":
         datas.to_excel(writer,sheet_name="推荐定价",index=False)
         
         
-        pd.DataFrame(recursive_dict).to_excel(writer,sheet_name="递归过程",index=False)
+        if show_recursive:
+            pd.DataFrame(recursive_dict).to_excel(writer,sheet_name="递归过程",index=False)
 
     
     

@@ -19,7 +19,7 @@ class CustomLogger(logging.Logger):
         while hasattr(frame, "f_code"):
             co = frame.f_code
             filename = os.path.normcase(co.co_filename) 
-            if filename == logging._srcfile or Path(filename).name in ("custom_log.py","com_log.py"):
+            if filename == logging._srcfile or Path(filename).name in ("__init__.py","com_log.py"):
                 frame = frame.f_back
                 continue
 

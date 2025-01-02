@@ -204,7 +204,7 @@ def main(url,url_pre,dest_name):
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
     dest_path=normal_path(os.path.join(root_path,f"{dest_name}.mp4"))
     
-    play_logger= logger_helper("下载",f"{dest_name}-{dest_hash}")
+    play_logger= logger_helper("下载",f"{url}:{url_pre}->{dest_name}-{dest_hash}")
     play_logger.info("开始")
         
     os.makedirs(temp_dir, exist_ok=True)
@@ -258,6 +258,8 @@ def main(url,url_pre,dest_name):
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
         play_logger.error("部分缺失",update_time_type=UpdateTimeType.ALL)
+        
+    return True
     
 def get_key(url):
 
@@ -271,23 +273,19 @@ if __name__=="__main__":
 
     
     lst=[
-
-
-
-        ("https://s6.bfzycdn.com/video/liulangdiqiu2/HD/index.m3u8","","流浪地球2"),
-
-
-        
-        
+        ("https://ikcdn01.ikzybf.com/20221202/RTlcGvU8/2000kb/hls/index.m3u8","","波多野结衣之慾望金鱼妻"),
     ]
     
     # names=[print(name[2],hash_text(name[2]))  for name in lst]
     
     
     
-    for url,url_pre,dest_name,*args in lst:
-        main(url,url_pre,dest_name)
-
+    result=[main(url,url_pre,dest_name) for url,url_pre,dest_name,*args in lst]
+    if all(result):    
+        import os
+        os.system("shutdown /s /t 60")
+    else:
+        print("有失败")
     # key=get_key("https://hd.ijycnd.com/play/Le32QD9d/enc.key")
 
     # iv=bytes.fromhex("00000000000000000000000000000000")

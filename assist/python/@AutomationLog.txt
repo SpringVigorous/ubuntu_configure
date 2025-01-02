@@ -1,0 +1,15 @@
+2024-12-09 11:34:45.163 auto_back.py[10] <module> -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:35:01.456 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:35:14.235 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:35:26.005 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:35:40.197 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:35:52.253 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:36:03.891 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:36:16.115 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:36:27.705 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:36:39.771 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:36:51.921 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:37:03.812 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {Name: '微信', ControlType: WindowControl}
+2024-12-09 11:37:15.426 pydevd_resolver.py[189] _get_py_dictionary -> 2024-12-09 11:40:52.952 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {ControlType: TextControl}
+2024-12-09 11:41:03.011 pydevd_resolver.py[189] _get_py_dictionary -> Find Control Timeout(10s): {ControlType: TextControl}
+2024-12-09 11:41:49.004 auto_back.py[37] <module> -> 2024-12-09 11:48:46.617 auto_back.py[52] <module> -> Find Control Timeout(10s): {SubName: '您好', ControlType: TextControl}

@@ -96,9 +96,11 @@ def func(time, start, end, kind):
 
 
     front_content = requests.get(front_url, params=data, headers=header)
-    front_content.encoding = "utf-8"
+    front_content.encoding = "utf-8-sig"
+    raw_data=front_content.text
     front_content.close()    #关闭requests
-    result = front_content.json()['data']['result']    #返回json字典数据
+    
+    result = raw_data['data']['result']    #返回json字典数据
     # print(result)
     lst_G = [] #高铁信息
     lst_KTZ = [] #火车信息
