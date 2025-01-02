@@ -3,7 +3,7 @@ from openpyxl.cell.cell import Cell
 from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 import pandas as pd
-
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 #合并单元格，并设置居中对齐
 def merge_cells_center(ws:Worksheet, start_row, start_column, end_row, end_column,lat_func=None):
@@ -18,13 +18,13 @@ def merge_cells_center(ws:Worksheet, start_row, start_column, end_row, end_colum
 def merge_column_cells(ws, start_row, start_col, row_count=-1):
     merge_cells_center(ws, start_row=start_row, start_column=start_col, end_row=start_row+row_count-1 if row_count!=-1 else ws.max_row, end_column=start_col)
 
-#写入表头，并设置居中对齐
-def write_df_headers(ws:Worksheet, headers, start_row=1, start_column=1):
+#仅写入表头，并设置居中对齐
+def write_headers(ws:Worksheet, headers, start_row=1, start_column=1):
     for col_idx, header in enumerate(headers, start=1):
         ws.cell(row=start_row, column=col_idx, value=header)
         ws.cell(row=start_row, column=col_idx).alignment = Alignment(horizontal='center', vertical='center')
-# 将 DataFrame 写入 Excel 工作表
-def dataframe_to_rows(ws:Worksheet, df_stock:pd.DataFrame, index=False, header=False):
+# 将 DataFrame 写入 Excel 工作表，可选择是否包含 表头
+def write_dataframe_content(ws:Worksheet, df_stock:pd.DataFrame, index=False, header=False):
     for r in dataframe_to_rows(df_stock, index=index, header=header):
         ws.append(r)
 
