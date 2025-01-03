@@ -5,11 +5,16 @@ from openpyxl.drawing.image import Image
 import pandas as pd
 from openpyxl.utils.dataframe import dataframe_to_rows
 
+
+def set_cell_center(cell:Cell):
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+
 #合并单元格，并设置居中对齐
 def merge_cells_center(ws:Worksheet, start_row, start_column, end_row, end_column,lat_func=None):
     ws.merge_cells(start_row=start_row, start_column=start_column, end_row=end_row, end_column=end_column)
     cell=ws.cell(row=start_row, column=start_column)
-    cell.alignment = Alignment(horizontal='center', vertical='center')
+    set_cell_center(cell=cell)
+
     
     #后续操作
     lat_func(ws,cell.coordinate) if lat_func else None
@@ -87,7 +92,7 @@ def merge_cells_original_size(target_cell:Cell):
 
 
 #单元格添加图片
-def add_image_to_cell(cell:Cell, image_path,width=100,height=100,show_height=10):
+def add_image_to_cell(cell:Cell, image_path,width=100,height=100):
     if not cell:
         return
 
@@ -98,12 +103,8 @@ def add_image_to_cell(cell:Cell, image_path,width=100,height=100,show_height=10)
     img.width = width
     img.height = height
     ws.add_image(img, cell.coordinate)
-    info =merge_cells_original_size(ws, cell)
-    if info:
-        min_col, min_row, max_col, max_row = info
-        if max_row-min_row>2:
-            return
-    ws.row_dimensions[cell.row].height =show_height
+
+    
     
     
     

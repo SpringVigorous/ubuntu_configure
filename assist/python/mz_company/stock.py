@@ -1,7 +1,7 @@
 ﻿import pandas as pd
 import os
 import requests
-from PIL import Image
+from PIL import Image as PILImage
 import re
 import aiohttp
 import asyncio
@@ -14,11 +14,13 @@ from openpyxl.styles import Alignment
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from base.xls_tools import *
-
+from base.file_tools import download_async
 
 def is_cloth(title:str):
     pattern = r'赠品|手提包|面罩|帽|袋|背包|冲锋包'
     match = re.search(pattern, title)
+    
+    # return True
     return not bool(match) 
 
     
@@ -31,7 +33,7 @@ def convert_image_to_jpg(image_path,dest_path=None)->bool:
     if not os.path.exists(image_path):
         return False
     # 打开图片
-    image = Image.open(image_path).convert('RGB')
+    image = PILImage.open(image_path).convert('RGB')
     image.save(dest_path, 'JPEG')
 
 
@@ -98,8 +100,8 @@ def handle_collect_df(collect_path,sheet_name="Sheet1"):
 dest_num_name='货号编码'
 def handle_merge_df(df_stock, df_collect,merge_detail_path:str):
         # 根据“编码”列进行内连接
-    merged_df = pd.merge(df_stock, df_collect, on='商品编码', how='inner')
-    # merged_df = pd.merge(df_stock, df_collect, on='商品编码', how='outer', indicator=True)
+    # merged_df = pd.merge(df_stock, df_collect, on='商品编码', how='inner')
+    merged_df = pd.merge(df_stock, df_collect, on='商品编码', how='outer', indicator=True)
     merged_df["颜色"]=merged_df["color_index"].apply(get_color_name)
     # merged_df.sort_values(by=['num',"color_index","size"],ascending=[True,True,True],inplace=True)
 
@@ -142,6 +144,8 @@ def handle_summary_df(dest_df,summary_path):
 
 #下载某一个图片
 async def _download_image(session, url, cur_path):
+    if not url:
+        return None
     headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
 }
@@ -153,6 +157,9 @@ async def _download_image(session, url, cur_path):
             return url
     return None
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+}
 #从备选中，下载一个图片，直到成功下载为止
 async def download_image(session, urls, num,picture_dir):
     cur_path = os.path.join(picture_dir, f"{num}.jpg")
@@ -160,6 +167,10 @@ async def download_image(session, urls, num,picture_dir):
         return num,urls[0],cur_path
     dest_url=None
     for url in urls:
+        if not url:
+            continue
+        # download_async(url, cur_path, **headers)
+        
         dest_url=await  _download_image(session, url, cur_path)
         if  dest_url:
             break
@@ -254,9 +265,9 @@ def export_to_excel(dest_df,picture_map,dest_path):
                     # 计算图片插入的位置
                     cell = ws.cell(row=row_index, column=1)  
 
-                    # 设置行高
-                    if count<3:
-                        ws.row_dimensions[row_index].height = img.height                
+                    # # 设置行高
+                    # if count<3:
+                    #     ws.row_dimensions[row_index].height = img.height                
                     ws.add_image(img, cell.coordinate)
 
     # 保存Excel文件
@@ -264,7 +275,7 @@ def export_to_excel(dest_df,picture_map,dest_path):
     ws.column_dimensions["A"].width = 10
     
     #合并单元格
-    # merge_all_identical_column_cells(ws)
+    merge_all_identical_column_cells(ws)
 
     ws.freeze_panes = 'A2'  # 冻结首行
     wb.save(dest_path)
@@ -293,6 +304,7 @@ def main(dir_path, stock_name, collect_name, dest_out):
     picture_map= asyncio.run(handle_goods_df(dest_df,picture_dir=picture_dir,goods_path=os.path.join(dest_dir, "商品信息.xlsx")))
     #导出merge_df结果
 
+    # exit(0)
     dest_path=os.path.join(dest_dir, "merge_result.xlsx")
     export_to_excel(dest_df,picture_map,dest_path)
     

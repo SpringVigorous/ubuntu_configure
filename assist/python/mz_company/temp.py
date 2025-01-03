@@ -67,3 +67,6 @@ excel_path = 'grouped_stock.xlsx'
 wb.save(excel_path)
 
 print(f"分组结果已保存到 {excel_path}")
+
+
+
