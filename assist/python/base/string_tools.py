@@ -162,10 +162,23 @@ def hash_text(text, algorithm='sha256',max_length=8):
     
     return hex_dig[:max_length]
 
+# 秒时间戳
+def convert_seconds_to_datetime(seconds:int):
+    # 将秒时间戳转换为 datetime 对象
+    dt = datetime.fromtimestamp(seconds)
+    
+    # 格式化 datetime 对象为年月日时分秒格式
+    formatted_date = dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    return formatted_date
+    
     
     
 
 if __name__ == '__main__':
+    
+    print(convert_seconds_to_datetime(1736778814092))
+    exit(0)
     print(sanitize_filename('痤疮痘跟风喝了一个月的金银花水..'))
     #替换连续重复字符，只保留一个
     list_tuple=[(r'(.)\1+',r"\1",True,False),

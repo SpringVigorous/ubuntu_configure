@@ -18,8 +18,12 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128,get_folder_path,UpdateTimeType
-from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video
+from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine
+
+
+
+
 
 class video_info:
     def __init__(self,url) -> None:
@@ -48,7 +52,7 @@ class video_info:
                
         """
         从给定的字符串中提取 METHOD、URI 和 IV 的值。
-    
+      
         :param line: 要处理的字符串
         :return: 包含 METHOD、URI 和 IV 的字典
         """
@@ -111,9 +115,6 @@ def get_playlist(url):
 
     return playlist
     
-    
-
-    
 
         
 
@@ -138,9 +139,22 @@ def handle_playlist(url_list,temp_paths,key,iv):
         async with semaphore:
             url, temp_path=args
             result=  await download_async(url, temp_path,decode()) 
+            
+            #转换为标准的mp4,看需求 转换
+            # is_convert=True
+            # if result and is_convert:
+            #     org_path=Path(temp_path)
+            #     output_path = os.path.join(f"{org_path.parent}_output",org_path.stem + '.mp4')
+            #     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            #     convert_video_to_mp4(temp_path,output_path)
+            #     move_file(output_path,temp_path)
+
+            
             return result
-        
-    multi_thread_coroutine = MultiThreadCoroutine(download,list(zip(url_list,temp_paths)))
+    lst=[(url,path) for url,path in zip(url_list,temp_paths) if not os.path.exists(path) ]
+    # if not lst:
+    #     return True
+    multi_thread_coroutine = MultiThreadCoroutine(download,lst)
     try:
         asyncio.run(multi_thread_coroutine.run_tasks()) 
         success=multi_thread_coroutine.success
@@ -148,6 +162,8 @@ def handle_playlist(url_list,temp_paths,key,iv):
             info=[multi_thread_coroutine.fail_infos,except_stack()]
             info_str="\n".join(info)
             playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
+        print(multi_thread_coroutine.result)
+        
         return multi_thread_coroutine.success
     except Exception as e:
         playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
@@ -156,7 +172,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
 
             
 def temp_paths(count,temp_dir):
-    return [normal_path(os.path.join(temp_dir, f"{index}.mp4"))    for index in range(count)]
+    return [normal_path(os.path.join(temp_dir, f"{index:04}.mp4"))    for index in range(count)]
 
 
 def decryp_video(org_path,dest_path,key,iv):
@@ -218,8 +234,11 @@ def main(url,url_pre,dest_name):
     info_list=info.playlist
     if not info_list:
         return
+    total_len= [float(item[1])   for item in info_list]
+    
+    play_logger.info(f"总时长:{sum(total_len)}s")
     with open(os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json"),"w",encoding="utf-8-sig") as f:
-        info={"url":url,"name":dest_name,"hash":dest_hash, "playlist":info_list}
+        info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len), "playlist":info_list}
         json.dump(info,f,ensure_ascii=False,indent=4)
     
 
@@ -230,6 +249,7 @@ def main(url,url_pre,dest_name):
     temp_path_list=temp_paths(len(url_list),temp_dir)
 
     success=handle_playlist(url_list,temp_path_list,key,iv)
+    lost_count=0
     if not success:
         already_path_list=[]
         losts=[]
@@ -238,6 +258,7 @@ def main(url,url_pre,dest_name):
                 already_path_list.append(item)
             else:
                 losts.append(item)
+        lost_count=len(losts)
         with open(os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}-lost.json"),"w",encoding="utf-8-sig") as f:
             lost_data={"count":len(losts),"data":losts}
             json.dump(lost_data,f,ensure_ascii=False,indent=4)
@@ -257,7 +278,7 @@ def main(url,url_pre,dest_name):
         delete_directory(temp_dir)
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
-        play_logger.error("部分缺失",update_time_type=UpdateTimeType.ALL)
+        play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
         
     return True
     
@@ -266,14 +287,34 @@ def get_key(url):
     key=fetch_sync(url)
     return key
     
+    
+    
+    
+
 if __name__=="__main__":
     
-
     
+    # temp_dir=r"E:\FFOutput"
+    # suffix=[".mp4"]
+    # # convert_video_to_mp4_from_src_dir(temp_dir,suffix)
 
+    # temp_path_list=get_all_files_pathlib(temp_dir,suffix)
+    # dest_dir=r"F:\worm_practice\player"
+    # temp_name="1111.mp4"
+    # dest_name="13.mp4"
+    # temp_path=f"{dest_dir}\\{temp_name}"
+    # merge_video(temp_path_list,temp_path)
+    # move_file(temp_path,f"{dest_dir}\\{dest_name}")
+    # exit(0)
     
     lst=[
-        ("https://ikcdn01.ikzybf.com/20221202/RTlcGvU8/2000kb/hls/index.m3u8","","波多野结衣之慾望金鱼妻"),
+
+
+        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/f4b4143e1397757896294681067/playlist_eof.m3u8?t=6786E131&us=qtd5fkxw99&sign=0ed7bafb3dae4d5a2103433282079379","","ai好课-第二课"),
+
+
+
+        
     ]
     
     # names=[print(name[2],hash_text(name[2]))  for name in lst]
@@ -281,7 +322,10 @@ if __name__=="__main__":
     
     
     result=[main(url,url_pre,dest_name) for url,url_pre,dest_name,*args in lst]
-    if all(result):    
+    
+    # exit(0)
+    # if all(result):    
+    if True:    
         import os
         os.system("shutdown /s /t 60")
     else:

@@ -9,7 +9,7 @@ from time import time
 import operator
 from com_log import logger_helper,UpdateTimeType
 from except_tools import except_stack
-
+import random
 
     
 # 转换为协程函数
@@ -38,7 +38,12 @@ def as_normal(func,*args, **kwargs):
 
 class MultiThreadCoroutine:
     def __init__(self, coroutine_func, args_list:list[list|tuple],threads_count:int=10, concurrent_task_count:int=100, semaphore_count:int=20):
-        self.args_list = args_list
+        # 使用 shuffle() 函数对列表进行随机排列,避免某一项出现异常，导致 对应的线程退出（多重复几次）
+        self.args_list = args_list.copy()
+        random.shuffle(self.args_list)
+
+        
+        
         self.thread_count = threads_count
         self.concurrent_task_count = concurrent_task_count
         self.coroutine_func = coroutine_func
@@ -48,7 +53,7 @@ class MultiThreadCoroutine:
     def _reset_count(self):
         count=self.tasks_count
         
-        while count/self.concurrent_task_count<self.thread_count:
+        while count/self.concurrent_task_count<self.thread_count and count>0:
             temp:int=max(1,int(count/self.thread_count) )
             dest:int=max(1, int(temp/3))
             self.concurrent_task_count= dest if dest>1 else temp
@@ -118,6 +123,9 @@ class MultiThreadCoroutine:
         results =[]
         task_logger =logger_helper("多线程-协程",f"共{self.tasks_count}个")
         task_logger.trace("开始")
+        if self.tasks_count<1:
+            task_logger.trace("没有任务")
+            return results
         
         # 创建线程池
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_count) as executor:
@@ -125,7 +133,7 @@ class MultiThreadCoroutine:
             # 创建一个事件循环
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            results=[]
+
             # 将任务分配到线程池
             try:
                 for i in range(0, self.tasks_count, self.concurrent_task_count):

@@ -652,4 +652,5 @@ def to_theme_word(theme_name,root_dir,dict_data):
     
 
 if __name__ == '__main__':
-    convert_image_to_jpg(r"F:\手工作业\一家人\放风筝.jfif",r"F:\手工作业\一家人\放风筝.jpg")
+    # convert_image_to_jpg(r"F:\手工作业\一家人\放风筝.jfif",r"F:\手工作业\一家人\放风筝.jpg")
+    print(convert_milliseconds_to_datetime(1736595021*1000))

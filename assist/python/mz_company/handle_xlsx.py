@@ -203,12 +203,6 @@ def handle_xlsx(org_path,sheet_name):
     stock_df=get_stock_df(org_df=org_df,org=org)
     dest_df= get_dest_df(goods_df,stock_df,size_lst,org)
     export_to_excel(dest_df,org)
-    
-    exit(0)
-    
-   
-    
-    
-    
+
 if __name__=="__main__":
     handle_xlsx(r"E:\公司文件\库存\副本全店价格表1月2号.xlsx","Sheet1")

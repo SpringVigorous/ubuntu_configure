@@ -262,6 +262,14 @@ if __name__=="__main__":
 ("00:42:01","00:54:30"),
 
 
+("00:01:26","00:15:33"),
+("00:19:01","00:33:36"),
+("00:36:40","00:49:31"),
+("01:00:12","01:11:40"),
+("01:14:26","01:29:07"),
+
+
+
 
     """
 
@@ -280,30 +288,25 @@ if __name__=="__main__":
     
     #方式2：保存的太慢了
     params=[
-                ("1.mp4",
+                ("姐妹邻居.mp4",
                     [
-                        ("00:0:1","00:6:45"),
-                        ("00:10:01","00:17:37"),
-                        ("00:23:36","00:26:40"),
-                        ("00:28:50","00:38:42"),
-                        ("00:42:01","00:54:30"),
+                        ("00:01:26","00:15:33"),
+                        ("00:19:01","00:33:36"),
+                        ("00:36:40","00:49:31"),
+                        ("01:00:12","01:11:40"),
+                        ("01:14:26","01:29:07"),
                     ]
                 ),
-                ("2.mp4",
-                    [
-                        ("00:5:20","00:08:59"),
-                        ("00:10:17","00:27:01"),
-                        ("00:34:10","00:38:55"),
-                        ("00:44:30","01:9:55"),
-                        ("01:1:30","01:11:54"),
-                    ]
-                ),
+
              ]
     
-    cur_dir=r"F:\数据库"
-    # for name,time_seg in params:
-    #     clip_times=[(time_to_seconds(start),time_to_seconds(end))  for start,end in time_seg]
-    #     split_movie(os.path.join(cur_dir,name), clip_times)
+    cur_dir=r"F:\worm_practice\player"
+    for name,time_seg in params:
+        clip_times=[(time_to_seconds(start),time_to_seconds(end))  for start,end in time_seg]
+        split_movie(os.path.join(cur_dir,name), clip_times)
+        
+    exit(0)    
+    
     # import time
 
     # # 设置 1 秒后关机
