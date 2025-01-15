@@ -1,8 +1,7 @@
 {
-  "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python 调试程序: 当前文件",
+      "name": "Python 调试程序: 包含参数的当前文件",
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
@@ -13,25 +12,6 @@
       // "args" : "-i F:/test/cmake_project/src  -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
       // "args" : "-i 'F:/test/cmake_project/3rd/vcpkg/installed/x64-windows/include/Eigen/src/Core/arch/Default/BFloat16.h' -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
       "args" : "-i 'F:/temp/bill.txt'  -c ascii -f '.txt' ",
-    },
-    {
-      "name": "C/C++ Runner: Debug Session",
-      "type": "cppdbg",
-      "request": "launch",
-      "args": [],
-      "stopAtEntry": false,
-      "externalConsole": true,
-      "cwd": "f:/test/cmake_project/src/test/src",
-      "program": "f:/test/cmake_project/src/test/src/build/Debug/outDebug",
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
     }
   ]
 }

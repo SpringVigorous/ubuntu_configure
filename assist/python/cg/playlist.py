@@ -31,7 +31,8 @@ class video_info:
         self.method=None
         self.uri=None
         self.iv=None
-        content=requests.get(url).text
+        response=requests.get(url)
+        content=response.text
         # print(content)
         # 正则表达式模式
         self._init_urls(content)
@@ -152,8 +153,8 @@ def handle_playlist(url_list,temp_paths,key,iv):
             
             return result
     lst=[(url,path) for url,path in zip(url_list,temp_paths) if not os.path.exists(path) ]
-    # if not lst:
-    #     return True
+    if not lst:
+        return True
     multi_thread_coroutine = MultiThreadCoroutine(download,lst)
     try:
         asyncio.run(multi_thread_coroutine.run_tasks()) 
@@ -209,46 +210,66 @@ def decryp_videos(org_paths,dest_dir,key,iv):
     return success
     
     
+def load_url_data(url_json_path):
+    if  not os.path.exists(url_json_path):
+        return
+    with open(url_json_path,"r",encoding="utf-8-sig") as f:
+        data=json.load(f)
+        return data
+    return None
     
-    
+def save_url_data(url_json_path,data):
+    with open(url_json_path,"w",encoding="utf-8-sig") as f:
+        json.dump(data,f,ensure_ascii=False,indent=4)
 
+
+def get_url_data(url,url_json_path):
+    info=load_url_data(url_json_path)
+    if not info:
+        video=video_info(url)
+        key= video.key
+        iv=video.iv
+        info_list=video.playlist
+        if not info_list:
+            return
+        total_len= [float(item[1])   for item in info_list]
+        dest_name,dest_hash=os.path.basename(url_json_path).split(".")[0].split("-")
+        info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len),"key":key,"iv":iv ,"playlist":info_list}
+        #保存
+        save_url_data(url_json_path,info)
+        
+    return info.get("key",""),info.get("iv",""),info.get("playlist",[]),info.get("total_len",0)
+        
+    
 @exception_decorator()
-def main(url,url_pre,dest_name):
+def main(url,dest_name,dest_dir:str=None,force_merge=False):
     root_path="F:/worm_practice/player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
-    dest_path=normal_path(os.path.join(root_path,f"{dest_name}.mp4"))
+    dest_path=normal_path(os.path.join(root_path,"video",f"{dest_name}.mp4")) if not dest_dir else normal_path(os.path.join(dest_dir,f"{dest_name}.mp4"))
     
-    play_logger= logger_helper("下载",f"{url}:{url_pre}->{dest_name}-{dest_hash}")
+    play_logger= logger_helper("下载",f"{url}->{dest_name}-{dest_hash}")
     play_logger.info("开始")
         
     os.makedirs(temp_dir, exist_ok=True)
     
-    info=video_info(url)
-    # key=None
-    # iv=None
-    key= info.key
-    iv=info.iv
+    #加载已有数据
+    url_json_path=os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json")
+    key,iv,info_list,total_len=get_url_data(url,url_json_path)
+    play_logger.info(f"总时长:{total_len}s",update_time_type=UpdateTimeType.ALL)
 
-    info_list=info.playlist
-    if not info_list:
-        return
-    total_len= [float(item[1])   for item in info_list]
-    
-    play_logger.info(f"总时长:{sum(total_len)}s")
-    with open(os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json"),"w",encoding="utf-8-sig") as f:
-        info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len), "playlist":info_list}
-        json.dump(info,f,ensure_ascii=False,indent=4)
-    
 
-    if not url_pre:
-        url_pre=url
+
         
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
     temp_path_list=temp_paths(len(url_list),temp_dir)
+    
+    play_logger.info("开始","下载",update_time_type=UpdateTimeType.ALL)
 
     success=handle_playlist(url_list,temp_path_list,key,iv)
+    play_logger.info("完成","下载",update_time_type=UpdateTimeType.ALL)
+
     lost_count=0
     if not success:
         already_path_list=[]
@@ -266,12 +287,21 @@ def main(url,url_pre,dest_name):
         temp_path_list=already_path_list
         if not temp_path_list:
             return
+    play_logger.info("统计已下载量",f"完成{len(url_list)-lost_count}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
 
     # decryp_video(org_path,dest_path,key,iv)
     
     # decryp_videos(url_list,temp_decode_dir,key,iv)
     
+    #提前退出,避免合并
+    if lost_count>0 and not force_merge:
+        return True
+    
+    
+    play_logger.info("开始","合并",update_time_type=UpdateTimeType.ALL)
     merge_video(temp_path_list,temp_path)
+    play_logger.info("完成","合并",update_time_type=UpdateTimeType.ALL)
+    
     move_file(temp_path,dest_path)
     
     if success:
@@ -308,22 +338,16 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-
-
-        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/f4b4143e1397757896294681067/playlist_eof.m3u8?t=6786E131&us=qtd5fkxw99&sign=0ed7bafb3dae4d5a2103433282079379","","ai好课-第二课"),
-
-
-
-        
+        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/f4b4143e1397757896294681067/playlist_eof.m3u8?t=6787BCA2&us=xfbojtgv6d&sign=8479f1d256946913deca8fa191f9221c","ai好课-第二课",r"F:\教程\短视频教程\ai好课",False),
     ]
     
     # names=[print(name[2],hash_text(name[2]))  for name in lst]
     
     
     
-    result=[main(url,url_pre,dest_name) for url,url_pre,dest_name,*args in lst]
+    result=[main(url,url_pre,dest_name,*args) for url,url_pre,dest_name,*args in lst]
     
-    # exit(0)
+    exit(0)
     # if all(result):    
     if True:    
         import os

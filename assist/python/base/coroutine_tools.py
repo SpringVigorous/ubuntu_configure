@@ -56,8 +56,12 @@ class MultiThreadCoroutine:
         while count/self.concurrent_task_count<self.thread_count and count>0:
             temp:int=max(1,int(count/self.thread_count) )
             dest:int=max(1, int(temp/3))
-            self.concurrent_task_count= dest if dest>1 else temp
             
+            result=dest if dest>1 else temp
+            
+            self.concurrent_task_count= result
+            if result<10:
+                break
             pass
         
         

@@ -81,7 +81,11 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
 
         # 创建文件Handler并设置日志级别与格式
 
-        log_dir=os.path.join(os.getcwd(), 'logs',logger_name)
+        root_dir=r"F:\worm_practice"
+        if not os.path.exists(root_dir):
+            root_dir=os.getcwd()
+        
+        log_dir=os.path.join(root_dir, 'logs',logger_name)
         os.makedirs(log_dir,exist_ok=True)
         
         detail_formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-Thread ID: %(thread_id)s-%(message)s')

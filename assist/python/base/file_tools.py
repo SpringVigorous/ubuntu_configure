@@ -119,7 +119,7 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
     operator="写入" if mode.find("w")>=0 else "读取"
 
    
-    async_logger=logger_helper(f"异步{operator}->{dest_path}","mode:{mode},encoding:{encoding}")
+    async_logger=logger_helper(f"异步{operator}->{dest_path}",f"mode:{mode},encoding:{encoding}")
 
     async_logger.trace("开始")
     
