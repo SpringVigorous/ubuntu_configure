@@ -7,14 +7,14 @@ import __init__
 from base.com_log import logger as logger
 
 #判断字符串是否在列表中,忽略大小写
-def check_str_in_list(str,str_list):
+def check_str_in_list(str,str_list:list=None):
     if str_list == None or len(str_list) < 1:
         return False
     lower_str = str.lower()
     return any(s.lower()  in lower_str for s in str_list)
 
 #判断路径中 是否全部 不包含 排除的字符串,忽略大小写
-def check_str_exclude_list(path,exclude_strs):
+def check_str_exclude_list(path,exclude_strs:list=None):
     if(exclude_strs == None or len(exclude_strs) < 1):
         return True
     return not check_str_in_list(path,exclude_strs)
@@ -39,8 +39,8 @@ def del_dir_file(cur_path,exclude_strs:list=None):
     except Exception as e:
         logger.error(f"Error removing {cur_path}: {e}")
     
-
-def remove_directories_and_files(root_dir,del_folder,del_filter,exclude_strs):
+#实现函数
+def remove_directories_and_files(root_dir,del_folder:list=[],del_filter:list=[],exclude_strs:list=[]):
     # 遍历目录树
     for root, dirs, files in os.walk(root_dir, topdown=True):
         # 删除debug, release, ipch目录

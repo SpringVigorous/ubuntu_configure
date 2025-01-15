@@ -178,17 +178,18 @@ class AIMsg(MsgBase):
 
 
 
+
         headers = {
             'authority': 'cgateway.bjmantis.net.cn',
             'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
-            'csign': 'db9f56b540c64eaa6f9d5470467fa674',
-            'x-authorizationaccess': 'Bearer c6317733927c4c98807ddec27921b321',
+            'csign': 'eea4af67e3ae0267ad8bc19318f255f5',
+            'x-authorizationaccess': 'Bearer 60b2199ecc224e9cae6617f49f4def77',
             'sec-ch-ua-mobile': '?1',
-            'authorization': 'Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ7XCJjb21wYW55SWRcIjo4MDk3NixcIm9wZW5JZFwiOlwib2czVmw2YzkweVV6dGtLbUF6VzNaWE40SG1ZOFwiLFwidW5pb25JZFwiOlwib1NCRGo2dTdxU21manUtRm5fSC1tUDUzNGpvRVwifSIsImlhdCI6MTczNjg2Mjc3OSwiZXhwIjoxNzM3ODAwNTc5fQ.u6E6kRi-_Yp7Um7UT8lBQ6sFmGjiZCr_iBijVONzklRq6sRnjapmyrJU4Uhwde1HwJXS_fd5dZPKZ7GGXjU_QbpD3UrezOayAeR_4kvWfH14Bpg2keOU6Laqtd51VMX0mUzu5g7APUquTN2pVdkFdx1BRvdE2LFJABfwIVvZp4_lE9Sjq-Pd0xuRF-45pYOyJXhIvtvjoMsiciBXjfKIj7Vmfx-mWTEAf8nCaOYYOhys_nSUaa3mNQs-ZoEYEmFB6YstzPZ0cbPadk-I7Peui5ufitWm08b1Tqs3cLNCG0p97_cavVxsj8Jq-ZDrLry4MXP29mCJ7U-2x0GXQWAp8Q',
+            'authorization': 'Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ7XCJjb21wYW55SWRcIjo4MDk3NixcIm9wZW5JZFwiOlwib2czVmw2YzkweVV6dGtLbUF6VzNaWE40SG1ZOFwiLFwidW5pb25JZFwiOlwib1NCRGo2dTdxU21manUtRm5fSC1tUDUzNGpvRVwifSIsImlhdCI6MTczNjk0ODcwNCwiZXhwIjoxNzM3ODU0MTA0fQ.BJ5KTQZxILSHWvfXG6AnI4e2dbNHfATxn097YB-sa7OVC94mbXPcWoGmeoSdhEcNsdmmmaJPAlp3ZWKI5Ka-RkRQwj2ftKm_0BN6FkER4vzvVjr1k9VrrXUFo-dZ8Si_zGZdg6kFgMTvxsyZ4_P6fHQYkesI-J80e8QqxsipG7h-hYHfhpEWrsJtdSOUo7CxUZSNVBhM7M2vSby2tF4zCpKCwaY__udNKDaI5xXu1oSX6R-j_AZHUNTi_05UJJ21eyjoNcCp2PYUeknfn94oYnJmrBFek2xc11h97oECEjX8_RadtByUM6gbGMJOW94waE4Evm7PfNZBu0wF8Ljmow',
             # Already added when you pass json=
             # 'content-type': 'application/json',
             'accept': 'application/json, text/plain, */*',
-            'timestamp': '1736864813248',
+            'timestamp': '1736948754372',
             'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Mobile Safari/537.36',
             'uuid': '80976=bf6461899d7f4aee94d3b5c4a5082acc=064a4b5853e80b320591a3f3463597c7',
             'cid': '80976',
@@ -203,10 +204,15 @@ class AIMsg(MsgBase):
 
         json_data = {
             'companyId': '80976',
-            'liveId': '688',
+            'liveId': '689',
             'size': 200,
-            'startTime': 1736855541,
+            'startTime': 1736940003,
         }
+
+
+
+
+        # response = requests.post('https://cgateway.bjmantis.net.cn/micor-live-guest/tenc/live/im/getLiveImEsList', headers=headers, json=json_data)
         url='https://cgateway.bjmantis.net.cn/micor-live-guest/tenc/live/im/getLiveImEsList'
 
 
@@ -263,6 +269,8 @@ class AIMsg(MsgBase):
             
             
             raw_data,last_time=handle_raw_data(response.text)
+            if not raw_data:
+                break
             self.logger.trace("成功",f"第{i}次请求\nurl:{url}\nheader:{headers}\njson:{json_data}\ncount:{len(raw_data)}")
             
             if not raw_data:
@@ -536,7 +544,7 @@ if __name__=="__main__":
     # print(convert_seconds_to_datetime(662800001))
     # exit(0)
    
-    ai=AIMsg(r"F:\教程\短视频教程\ai好课\msg\2-1.json")
+    ai=AIMsg(r"F:\教程\短视频教程\ai好课\msg\3.json")
     ai.handle()
 
     # huore=HuoReMsg(r"F:\教程\短视频教程\火热短剧\msg\1.json")

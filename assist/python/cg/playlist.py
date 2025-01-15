@@ -170,7 +170,40 @@ def handle_playlist(url_list,temp_paths,key,iv):
         playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
         return False
     
-
+def process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash):
+    play_logger=logger_helper(f"下载{dest_name}")
+    
+    download_time=1
+    lost_count = 0
+    success =False
+    already_path_list = []
+    while True:
+        play_logger.update_target(detail=f"第{download_time}次")
+        play_logger.info("开始", update_time_type=UpdateTimeType.ALL)
+        success = handle_playlist(url_list, temp_path_list, key, iv)
+        play_logger.info("完成", update_time_type=UpdateTimeType.ALL)
+        download_time+=1
+        if success:
+            return True,0,temp_path_list
+        else:
+            losts = []
+            already_path_list = []
+            for item in temp_path_list:
+                if os.path.exists(item):
+                    already_path_list.append(item)
+                else:
+                    losts.append(item)
+            lost_count = len(losts)
+            with open(os.path.join(root_path, "urls", f"{dest_name}-{dest_hash}-lost.json"), "w", encoding="utf-8-sig") as f:
+                lost_data = {"count": len(losts), "data": losts}
+                json.dump(lost_data, f, ensure_ascii=False, indent=4)
+                
+            play_logger.info("统计",f"已下载{len(already_path_list)}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
+                
+        if download_time>10 or lost_count<1:
+            break
+    
+    return success,lost_count,already_path_list
             
 def temp_paths(count,temp_dir):
     return [normal_path(os.path.join(temp_dir, f"{index:04}.mp4"))    for index in range(count)]
@@ -233,6 +266,8 @@ def get_url_data(url,url_json_path):
         if not info_list:
             return
         total_len= [float(item[1])   for item in info_list]
+        temp=os.path.basename(url_json_path)
+        
         dest_name,dest_hash=os.path.basename(url_json_path).split(".")[0].split("-")
         info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len),"key":key,"iv":iv ,"playlist":info_list}
         #保存
@@ -258,44 +293,24 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     url_json_path=os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json")
     key,iv,info_list,total_len=get_url_data(url,url_json_path)
     play_logger.info(f"总时长:{total_len}s",update_time_type=UpdateTimeType.ALL)
-
-
-
         
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
     temp_path_list=temp_paths(len(url_list),temp_dir)
     
     play_logger.info("开始","下载",update_time_type=UpdateTimeType.ALL)
 
-    success=handle_playlist(url_list,temp_path_list,key,iv)
-    play_logger.info("完成","下载",update_time_type=UpdateTimeType.ALL)
 
-    lost_count=0
-    if not success:
-        already_path_list=[]
-        losts=[]
-        for item in temp_path_list:
-            if os.path.exists(item):
-                already_path_list.append(item)
-            else:
-                losts.append(item)
-        lost_count=len(losts)
-        with open(os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}-lost.json"),"w",encoding="utf-8-sig") as f:
-            lost_data={"count":len(losts),"data":losts}
-            json.dump(lost_data,f,ensure_ascii=False,indent=4)
-            
-        temp_path_list=already_path_list
-        if not temp_path_list:
-            return
-    play_logger.info("统计已下载量",f"完成{len(url_list)-lost_count}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
+
+
+    success,lost_count,temp_path_list=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
 
     # decryp_video(org_path,dest_path,key,iv)
     
     # decryp_videos(url_list,temp_decode_dir,key,iv)
     
     #提前退出,避免合并
-    if lost_count>0 and not force_merge:
-        return True
+    # if lost_count>0 and not force_merge:
+    #     return True
     
     
     play_logger.info("开始","合并",update_time_type=UpdateTimeType.ALL)
@@ -338,7 +353,7 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/f4b4143e1397757896294681067/playlist_eof.m3u8?t=6787BCA2&us=xfbojtgv6d&sign=8479f1d256946913deca8fa191f9221c","ai好课-第二课",r"F:\教程\短视频教程\ai好课",False),
+        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9","ai好课_第三课",r"F:\教程\短视频教程\ai好课",False),
     ]
     
     # names=[print(name[2],hash_text(name[2]))  for name in lst]
