@@ -4,8 +4,13 @@
         "password": "txxbbjkizzhabdjg"
     },
     "receiver": {
-        "email": [
-            "1107917658@qq.com"
-        ]
+        "email": {
+            "明": [
+                "1107917658@qq.com"
+            ],
+            "真": [
+                "spring_flourish@163.com"
+            ]
+        }
     }
 }

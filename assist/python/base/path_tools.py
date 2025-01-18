@@ -49,5 +49,22 @@ def normal_path(path:str)->str:
 def windows_path(path:str)->str:
     return normal_path(path).replace("/",r"\\")
 
+
+def get_all_files_pathlib(directory,include_suffix:list=None):
+    """
+    获取指定目录下的所有文件的全路径
+    :param directory: 目标目录
+    :return: 文件全路径列表
+    """
+    file_paths = []
+    for file in Path(directory).rglob('*'):
+        org_path=str(file.resolve())
+        if include_suffix and not file.suffix in include_suffix:
+            continue
+        if file.is_file():
+            file_paths.append(str(file.resolve()))
+    return file_paths
+
+
 if __name__ == '__main__':
     print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

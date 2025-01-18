@@ -17,10 +17,22 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
+
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128,get_folder_path,UpdateTimeType
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine
+from urls_tools import arrange_urls,postfix
+import pandas as pd
 
+def get_real_url(url:str,url_page):
+    if is_http_or_https(url) :
+        return url
+    if url[:1]==r'/':
+        return   f"{get_homepage_url(url_page) }{url}"
+    else:
+        org_path=Path(url_page)
+        name=org_path.name
+        return url_page.replace(name,url)
 
 
 
@@ -31,7 +43,27 @@ class video_info:
         self.method=None
         self.uri=None
         self.iv=None
-        response=requests.get(url)
+        # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
+        headers = {
+            'Connection': 'keep-alive',
+            'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
+            'sec-ch-ua-mobile': '?1',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Mobile Safari/537.36',
+            # 'sec-ch-ua-platform': '"Android"',
+            # 'Accept': '*/*',
+            # 'Origin': 'https://scrm.xuehaoke.com.cn',
+            # 'Sec-Fetch-Site': 'cross-site',
+            # 'Sec-Fetch-Mode': 'cors',
+            # 'Sec-Fetch-Dest': 'empty',
+            # 'Referer': 'https://scrm.xuehaoke.com.cn/',
+            # 'Accept-Language': 'zh-CN,zh;q=0.9',
+        }
+
+
+
+        
+        
+        response=requests.get(url, headers=headers)
         content=response.text
         # print(content)
         # 正则表达式模式
@@ -43,11 +75,20 @@ class video_info:
 
         matches = pattern.findall(content)
         playlist=[]
-        for index,val in enumerate(matches) :
+        for val in matches :
             duration, ts_file =val
-            playlist.append((index+1,duration,ts_file))
+            playlist.append([float(duration),get_real_url(ts_file,self.url)])
         
-        self.playlist=playlist
+        arrage_lst= arrange_urls(playlist)   
+            
+        dest_list=[[index,seg["duration"],seg["url"]]    for index,seg in enumerate(arrage_lst)]
+        
+        self.playlist=dest_list
+        self.org_playlist=[[index,*seg]   for index,seg in enumerate(playlist)  ]
+        
+    @property
+    def has_raw_list(self):
+        return len(self.org_playlist)>len(self.playlist)
         
     def _init_keys(self,content):
                
@@ -86,35 +127,9 @@ class video_info:
         return get_homepage_url(self.url)
 
 
-def get_real_url(url:str,url_page):
-    if is_http_or_https(url) :
-        return url
-    if url[:1]==r'/':
-        return   f"{get_homepage_url(url_page) }{url}"
-    else:
-        org_path=Path(url_page)
-        name=org_path.name
-        return url_page.replace(name,url)
+
     
 
-
-
-
-@exception_decorator()
-def get_playlist(url):
-
-    responds=requests.get(url)
-    # 正则表达式模式
-    pattern = re.compile(r'#EXTINF:(.*?),\s*(\S+)\s')
-
-
-    matches = pattern.findall(responds.text)
-    playlist=[]
-    for index,val in enumerate(matches) :
-        duration, ts_file =val
-        playlist.append((index+1,duration,ts_file))
-
-    return playlist
     
 
         
@@ -170,43 +185,58 @@ def handle_playlist(url_list,temp_paths,key,iv):
         playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
         return False
     
-def process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash):
-    play_logger=logger_helper(f"下载{dest_name}")
+def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, dest_hash):
+    play_logger=logger_helper(f"{dest_name}")
     
     download_time=1
+    all_count=len(url_list)
     lost_count = 0
     success =False
-    already_path_list = []
+
+    
+    urls=url_list.copy()
+    temp_paths=all_path_list.copy()
+    success_paths=[]
+    last_lost_count=0
+    
     while True:
         play_logger.update_target(detail=f"第{download_time}次")
         play_logger.info("开始", update_time_type=UpdateTimeType.ALL)
-        success = handle_playlist(url_list, temp_path_list, key, iv)
+        success = handle_playlist(urls, temp_paths, key, iv)
         play_logger.info("完成", update_time_type=UpdateTimeType.ALL)
         download_time+=1
+        
+        #检查下载情况
         if success:
-            return True,0,temp_path_list
+            return 0,all_path_list
         else:
             losts = []
-            already_path_list = []
-            for item in temp_path_list:
-                if os.path.exists(item):
-                    already_path_list.append(item)
+
+            for url,temp_path in  zip(urls,temp_paths):
+                if not os.path.exists(temp_path):
+                    losts.append({"url":url,"path":temp_path})
                 else:
-                    losts.append(item)
+                    success_paths.append(temp_path)
             lost_count = len(losts)
-            with open(os.path.join(root_path, "urls", f"{dest_name}-{dest_hash}-lost.json"), "w", encoding="utf-8-sig") as f:
-                lost_data = {"count": len(losts), "data": losts}
-                json.dump(lost_data, f, ensure_ascii=False, indent=4)
+            play_logger.info("统计",f"已下载{all_count-lost_count}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
                 
-            play_logger.info("统计",f"已下载{len(already_path_list)}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
-                
-        if download_time>10 or lost_count<1:
+        if download_time>10 or lost_count<1 or (last_lost_count==lost_count):
             break
-    
-    return success,lost_count,already_path_list
+        last_lost_count=lost_count
+        
+    #输出未成功下载的文件信息
+    if lost_count>0:    
+        with open(os.path.join(root_path, "urls", f"{dest_name}-{dest_hash}-lost.json"), "w", encoding="utf-8-sig") as f:
+            lost_data = {"count": len(losts),"time":download_time, "data": losts}
+            json.dump(lost_data, f, ensure_ascii=False, indent=4)
             
-def temp_paths(count,temp_dir):
-    return [normal_path(os.path.join(temp_dir, f"{index:04}.mp4"))    for index in range(count)]
+            
+    lost_path=[temp_path   for item in losts for _,temp_path in item.items()]  
+    success_paths=[item for item in all_path_list if item not in lost_path]
+    return lost_count,success_paths
+            
+def temp_video_paths(count,temp_dir,postfix=".mp4"):
+    return [normal_path(os.path.join(temp_dir, f"{index:04}{postfix}"))    for index in range(count)]
 
 
 def decryp_video(org_path,dest_path,key,iv):
@@ -270,6 +300,10 @@ def get_url_data(url,url_json_path):
         
         dest_name,dest_hash=os.path.basename(url_json_path).split(".")[0].split("-")
         info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len),"key":key,"iv":iv ,"playlist":info_list}
+        if video.has_raw_list:
+            info["org_playlist"]=video.org_playlist
+        
+        
         #保存
         save_url_data(url_json_path,info)
         
@@ -292,17 +326,16 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     #加载已有数据
     url_json_path=os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json")
     key,iv,info_list,total_len=get_url_data(url,url_json_path)
-    play_logger.info(f"总时长:{total_len}s",update_time_type=UpdateTimeType.ALL)
-        
+    # url_list=[get_real_url(urls[2],url)  for urls in info_list]
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
-    temp_path_list=temp_paths(len(url_list),temp_dir)
+    play_logger.info(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.ALL)
+
+    
+    temp_path_list=temp_video_paths(len(url_list),temp_dir,postfix(url_list[0]))
     
     play_logger.info("开始","下载",update_time_type=UpdateTimeType.ALL)
 
-
-
-
-    success,lost_count,temp_path_list=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
+    lost_count,success_paths=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
 
     # decryp_video(org_path,dest_path,key,iv)
     
@@ -312,15 +345,16 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     # if lost_count>0 and not force_merge:
     #     return True
     
+    # return True
     
     play_logger.info("开始","合并",update_time_type=UpdateTimeType.ALL)
-    merge_video(temp_path_list,temp_path)
+    merge_video(success_paths,temp_path)
     play_logger.info("完成","合并",update_time_type=UpdateTimeType.ALL)
     
     move_file(temp_path,dest_path)
     
-    if success:
-        delete_directory(temp_dir)
+    if lost_count==0 :
+        # delete_directory(temp_dir)
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
         play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
@@ -331,12 +365,57 @@ def get_key(url):
 
     key=fetch_sync(url)
     return key
+from pathlib import Path
+
+
+def rename_postfix(file_path, postfix):
+    cur_path=Path(file_path)
+    dest_path=cur_path.with_suffix(postfix)
+    return cur_path.rename(dest_path)
+
+def rename_ts(dir_path,postfix=".jpeg"):
+
+       # 遍历目录中的所有文件
+    for file in get_all_files_pathlib(dir_path,[postfix]):
+        rename_postfix(file,postfix)
+
+
+     
     
     
+def force_merge(dir_path,dest_path):
+    temp_path_list=get_all_files_pathlib(dir_path,[".ts"])
+    temp_path=f"F:/worm_practice/player/temp/{hash_text(dest_path)}.mp4"
+    merge_video(temp_path_list,temp_path)
+    move_file(temp_path,dest_path)
+    delete_directory(dir_path)
+def shut_down(time:10):
+    os.system(f"shutdown /s /t {time}")
+def force_merges():
+    raw_df=pd.read_excel(r"F:\worm_practice\player\urls\log_urls.xlsx",index_col=1)
+    already_df=pd.read_excel(r"F:\worm_practice\player\urls\hash_path.xlsx")
+    dest_dir=r"F:\worm_practice\player\video"
     
+    already_df["hash"]=already_df["hash_path"].apply(lambda x:Path(x).name)
+    merge_df=pd.merge(already_df,raw_df,on="hash",how="inner")
+    for index,row in merge_df.iterrows():
+        force_merge(row["hash_path"],os.path.join(dest_dir,f"{row["name"]}.mp4")) 
     
+    shut_down(10)
 
 if __name__=="__main__":
+    
+    force_merges()
+    exit(0)
+    
+    # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
+    # print(val)
+    # exit(0)
+    # temp_dir=r"F:\worm_practice\player\temp"
+    # rename_ts(temp_dir,".jpeg")
+    # exit(0)
+    # force_merge(temp_dir,r"F:\worm_practice\player\video\1.mp4")
+    # exit(0)
     
     
     # temp_dir=r"E:\FFOutput"
@@ -347,20 +426,25 @@ if __name__=="__main__":
     # dest_dir=r"F:\worm_practice\player"
     # temp_name="1111.mp4"
     # dest_name="13.mp4"
-    # temp_path=f"{dest_dir}\\{temp_name}"
+    # temp_path=f"{dest_dir}/{temp_name}"
     # merge_video(temp_path_list,temp_path)
-    # move_file(temp_path,f"{dest_dir}\\{dest_name}")
+    # move_file(temp_path,f"{dest_dir}/{dest_name}")
     # exit(0)
     
     lst=[
-        ("https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9","ai好课_第三课",r"F:\教程\短视频教程\ai好课",False),
+        ("https://vod01.zmengzhu.com/video/hls-hd/1735277615085049b90b8a58bea2762f.m3u8","千星计划",r"F:\教程\短视频教程",False),
+
+# ("https://vip.lz15uu.com/20221116/617_1d8cbf58/1200k/hls/mixed1.m3u8","123"),
+
+
+        
     ]
     
     # names=[print(name[2],hash_text(name[2]))  for name in lst]
     
     
     
-    result=[main(url,url_pre,dest_name,*args) for url,url_pre,dest_name,*args in lst]
+    result=[main(*item) for item in lst]
     
     exit(0)
     # if all(result):    

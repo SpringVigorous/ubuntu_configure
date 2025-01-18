@@ -41,7 +41,7 @@ def load_setting():
         return sender_email,password,receiver_email
 
 @exception_decorator()
-def send_email(subject,body,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None):
+def send_email(subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None):
         
         sender_email,password,receiver_email=load_setting() 
         
@@ -52,7 +52,40 @@ def send_email(subject,body,body_type='plain',attachment_path:str|list=None,body
         
         email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles)
 
-    
+@exception_decorator()
+def send_emails(subject:str,body_dict:dict,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None):
+        
+        sender_email,password,receiver_email=load_setting() 
+        
+        
+        email_sender = EmailSender(sender_email, password)
+        # attachment_list=attachment_path if type(attachment_path)==list else [attachment_path] if attachment_path is not None else []
+        # bodyfiles_list=bodyfiles if type(bodyfiles)==list else [bodyfiles] if bodyfiles is not None else []
+        
+        body_vals=list(body_dict.values())
+        body_names=list(body_dict.keys())
+        
+        for name,recievers in receiver_email.items():
+            dest=[]
+            if name not in body_dict:
+                dest=body_vals
+            else:
+                index=body_names.index(name)
+                dest.append(body_vals[index])
+                others=[body_vals[i] for i in range(len(body_names)) if i!=index]
+                dest.extend(others)
+            body="\n".join(dest)
+        
+        # for name,body in body_dict.items():
+        #     if name not in receiver_email:
+        #         continue
+        #     receiver=receiver_email[name]
+            
+            
+            
+            email_sender.send_email(recievers, subject, body,body_type, attachment_path, bodyfiles)
+        
+
     
     
     
