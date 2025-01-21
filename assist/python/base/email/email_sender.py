@@ -38,6 +38,20 @@ class EmailType(Enum):
                 return member
         raise ValueError(f"无效的值: {value}")
 
+from PIL import Image
+import os
+
+def is_image(file_path):
+    try:
+        # 尝试打开文件
+        with Image.open(file_path) as img:
+            # 如果成功打开，则文件是图片
+            return True
+    except (IOError, SyntaxError):
+        # 如果打开失败，则文件不是图片
+        return False
+
+
 class EmailSender:
     def __init__(self, sender_email:str, password:str):
         """
@@ -146,9 +160,13 @@ class EmailSender:
                 if not attachment or not os.path.exists(attachment):
                     continue
                 with open(attachment, 'rb') as file:
-                    part = MIMEApplication(file.read(), Name=attachment)
+                    data=file.read()
+                    
+                    part = MIMEApplication(data, Name=attachment)
                     part['Content-Disposition'] = f'attachment; filename="{attachment}"'
                     msg.attach(part)
+
+                    
 
         try:
             # 连接到服务器
