@@ -6,7 +6,7 @@ import concurrent.futures
 
 from pathlib import Path
 
-import operator
+
 
 import re
 import json
@@ -18,12 +18,14 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 
-from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128,get_folder_path,UpdateTimeType
+from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine
 from urls_tools import arrange_urls,postfix
 import pandas as pd
 
+
+from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8
 def get_real_url(url:str,url_page):
     if is_http_or_https(url) :
         return url
@@ -47,24 +49,31 @@ class video_info:
         headers = {
             'Connection': 'keep-alive',
             'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
-            'sec-ch-ua-mobile': '?1',
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Mobile Safari/537.36',
-            # 'sec-ch-ua-platform': '"Android"',
-            # 'Accept': '*/*',
-            # 'Origin': 'https://scrm.xuehaoke.com.cn',
-            # 'Sec-Fetch-Site': 'cross-site',
-            # 'Sec-Fetch-Mode': 'cors',
-            # 'Sec-Fetch-Dest': 'empty',
-            # 'Referer': 'https://scrm.xuehaoke.com.cn/',
-            # 'Accept-Language': 'zh-CN,zh;q=0.9',
+            'sec-ch-ua-mobile': '?0',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 SE 2.X MetaSr 1.0',
+            'sec-ch-ua-platform': '"Windows"',
+            'Accept': '*/*',
+            'Origin': 'https://haokeyouxuanedu.edu.gzfeice.com',
+            'Sec-Fetch-Site': 'cross-site',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Referer': 'https://haokeyouxuanedu.edu.gzfeice.com/',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
         }
-
 
 
         
         
         response=requests.get(url, headers=headers)
+        self.logger=logger_helper("解析m3u8",f"{self.url}")
+
         content=response.text
+        try:
+            header=content.split('#EXTINF:')[0].replace(",","\n")
+
+            self.logger.info("内容头",f"\n{header}\n")
+        except:
+            pass
         # print(content)
         # 正则表达式模式
         self._init_urls(content)
@@ -110,17 +119,28 @@ class video_info:
         if match:
             self.method=match.group('method')
             self.uri=match.group('uri')
-            self.iv=bytes.fromhex(match.group('iv').replace('0x',''))
+            iv=match.group('iv')
+            self.iv=bytes.fromhex(iv.replace('0x',''))
+
+
             
     @property
     def key(self):
         if not self.uri:
             return None
-        
-        org_path=Path(self.url)
-        name=org_path.name
-        url=self.url.replace(name,self.uri)
-        return fetch_sync(url)
+        url=self.uri
+        if not is_http_or_https(url):
+
+            org_path=Path(self.url)
+            name=org_path.name
+            url=self.url.replace(name,self.uri)
+        key=fetch_sync(url)
+
+
+        self.logger.info("加密信息",f"\nmethod:{self.method},\nuri:{self.uri},\niv:{self.iv},\nkey:{key}")
+        # print(len(self.iv))
+        # print(len(key))
+        return key
 
     @property
     def domain(self):
@@ -148,7 +168,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
         if not key or not iv:
             return None 
         def _decode(encrypted_data):
-            return decrypt_aes_128(key,iv,encrypted_data)
+            return decrypt_aes_128_from_key(key,iv,encrypted_data)
         return _decode
     
     async def download(semaphore,args:list|tuple):
@@ -243,7 +263,7 @@ def decryp_video(org_path,dest_path,key,iv):
     data=None
     with open(org_path,"rb") as f:
         encrypted_data=f.read()
-        data=decrypt_aes_128(key,iv,encrypted_data)
+        data=decrypt_aes_128_from_key(key,iv,encrypted_data)
     if data:
         with open(dest_path,"wb") as f:
             f.write(data)
@@ -273,6 +293,7 @@ def decryp_videos(org_paths,dest_dir,key,iv):
     return success
     
     
+@exception_decorator()
 def load_url_data(url_json_path):
     if  not os.path.exists(url_json_path):
         return
@@ -281,24 +302,33 @@ def load_url_data(url_json_path):
         return data
     return None
     
+@exception_decorator()
 def save_url_data(url_json_path,data):
     with open(url_json_path,"w",encoding="utf-8-sig") as f:
         json.dump(data,f,ensure_ascii=False,indent=4)
 
 
+@exception_decorator()
 def get_url_data(url,url_json_path):
     info=load_url_data(url_json_path)
     if not info:
         video=video_info(url)
         key= video.key
         iv=video.iv
+
+        if key :
+            key= bytes_to_base64_utf8(key)
+        if iv :
+            iv= bytes_to_base64_utf8(iv)
+
+
         info_list=video.playlist
         if not info_list:
             return
         total_len= [float(item[1])   for item in info_list]
         temp=os.path.basename(url_json_path)
         
-        dest_name,dest_hash=os.path.basename(url_json_path).split(".")[0].split("-")
+        dest_name,dest_hash=temp.split(".")[0].split("-")
         info={"url":url,"name":dest_name,"hash":dest_hash,"total_len":sum(total_len),"key":key,"iv":iv ,"playlist":info_list}
         if video.has_raw_list:
             info["org_playlist"]=video.org_playlist
@@ -306,13 +336,23 @@ def get_url_data(url,url_json_path):
         
         #保存
         save_url_data(url_json_path,info)
-        
-    return info.get("key",""),info.get("iv",""),info.get("playlist",[]),info.get("total_len",0)
+
+    try:    
+        key=info.get("key","")
+        iv=info.get("iv","")
+        if key:
+            key=base64_utf8_to_bytes(key)
+        if iv:
+            iv=base64_utf8_to_bytes(iv)
+        # return None,None,info.get("playlist",[]),info.get("total_len",0)
+        return key,iv,info.get("playlist",[]),info.get("total_len",0)
+    except:
+        return None,None,info.get("playlist",[]),info.get("total_len",0)
         
     
 @exception_decorator()
 def main(url,dest_name,dest_dir:str=None,force_merge=False):
-    root_path="F:/worm_practice/player/"
+    root_path="D:/Project/worm_practice/player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
@@ -405,8 +445,8 @@ def force_merges():
 
 if __name__=="__main__":
     
-    force_merges()
-    exit(0)
+    # force_merges()
+    # exit(0)
     
     # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
     # print(val)
@@ -432,7 +472,10 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-        ("https://vod01.zmengzhu.com/video/hls-hd/1735277615085049b90b8a58bea2762f.m3u8","千星计划",r"F:\教程\短视频教程",False),
+
+
+        ("https://video.gzfeice.cn/b7554d95vodtranscq1254019786/5296e01c1397757903358079695/voddrm.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9~eyJ0eXBlIjoiRHJtVG9rZW4iLCJhcHBJZCI6MTI1NDAxOTc4NiwiZmlsZUlkIjoiMTM5Nzc1NzkwMzM1ODA3OTY5NSIsImN1cnJlbnRUaW1lU3RhbXAiOjAsImV4cGlyZVRpbWVTdGFtcCI6MjE0NzQ4MzY0NywicmFuZG9tIjowLCJvdmVybGF5S2V5IjoiIiwib3ZlcmxheUl2IjoiIiwiY2lwaGVyZWRPdmVybGF5S2V5IjoiNmM1OGI3YThiMWRmODA5NWM2NThmNDUyNDYxMmZkZWEwOWRlMGZmMTVmZDU1MmZlNmJkYWFjYzBjMGE3M2ExNGVlZjk2ZWVjOThiNTNjYTg0Y2U3NmNkYzcyYjQwZWViYmQ5ODM4N2FkMjMxNzE1MjNiMTI4MmYxYThlY2Y3YTU4ZjY3MDJhZmY5YzIzNGE1ZDA4YjJiNGIzYjM2MmNlM2FkZmFkMTAwOWY2NzBkMzNmYWNhOWI3MGUzNzhlY2IxZGM1MDQyMzZmYzFlZjY4ZmU0OTk3ZjdiYzZkMWI0MmMzMjQzOGEyZmNmMzIxZWQzOTY5MGUzNzU1MjM0NGZiMCIsImNpcGhlcmVkT3ZlcmxheUl2IjoiMjZjYzdiZDg4ZmQ2NjRmYjVlNDQyZjIwN2E3YThhMTk2NDRlMmQ5MDVlZmVlNjZhMmZlNTlmNGRjZGQyYjdmYWQxNzI4MjBiZThiODlhOTc0MjU2OTNjZTE1YzA3MDU5NGM2ZWU3M2EzMDI3ODk3Y2RhMjE0YTkzZmQ5OWQ1N2I3NDFmY2VkMDc1MDk2N2JkMDhmMzVlYjBlODFmZjgxNjYwYjg5MmFkZjI4YmQ0ZDQwNjQxZjc1OTg5ZWRlYmNkYjM1NDU3MDA5MGM5NjQzNTcxOGJkZWM2Y2UzZjI4YWVkZGI2ZmM2OWFlMzhhOTVmYzdkMGRiNDA3NDY1MWU4ZiIsImtleUlkIjoxLCJzdHJpY3RNb2RlIjowLCJwZXJzaXN0ZW50IjoiIiwicmVudGFsRHVyYXRpb24iOjAsImZvcmNlTDFUcmFja1R5cGVzIjpudWxsfQ~Evr4YUvlcwsHH_1xkr7WbKdXbVPD-qvelazjBW1R9iM.video_1444917_2.m3u8?encdomain=cmv1","外包项目分享课",r"D:\Project\教程\Python全栈0基础入门",False),
+        ("https://video.gzfeice.cn/b7554d95vodtranscq1254019786/195f12ff1397757889910859613/voddrm.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9~eyJ0eXBlIjoiRHJtVG9rZW4iLCJhcHBJZCI6MTI1NDAxOTc4NiwiZmlsZUlkIjoiMTM5Nzc1Nzg4OTkxMDg1OTYxMyIsImN1cnJlbnRUaW1lU3RhbXAiOjAsImV4cGlyZVRpbWVTdGFtcCI6MjE0NzQ4MzY0NywicmFuZG9tIjowLCJvdmVybGF5S2V5IjoiIiwib3ZlcmxheUl2IjoiIiwiY2lwaGVyZWRPdmVybGF5S2V5IjoiMWQxYWY0ZGY5NjI1MDI0NDg4OGE4MmE1Mzc2Y2RkODY1Y2QxNDNhMTBiNGM2MDIxOGMxNmFlMzZjNDc5YWFiZmE4MzA4Y2ZlM2YyNmNmMDg2Y2U5ZTMyMjYxZTBhZGM2Yjc3OWZiMWU3YjY5NDdkOWQyOTQyM2Y4MGE5Y2JhNTg2NTJjZDI3MTk4NjllNmI4ODliYzNkMmM5MzNhM2ZlZDQxM2EyMzc1OGJlYWI2MTQyMDcwZGRkMzAwM2E3M2U1ZjI1YWQ3OTNkM2FkYzgwMzFkZDM2NDE1ODA3OTQ1ZmE2ODAwYmNkNjIzNjZmNzFlMjA5MDkwOTNjOTRiMWIwMCIsImNpcGhlcmVkT3ZlcmxheUl2IjoiYjAxOTA3ZDNlNmQwYzk4ZDJkNzAxYjdkMzJhZWU3NjYyNmY2OTQzOWNjYmNlMzg0Y2JjNzVlYWY4YzNiZDk4YmE1MDZlZDJkNjM2ZTI0ZjBkMmZjMDlhYzViMjJiZWQzZmQyNWM2YmUwNDY3NzJhNGM4NTVmOWI3NjAzMTU4MzVhOWJlNWZkMjI3NDY4NDRlYjEwMWNiMDc1NjMxNjI2ZWUxNzJlYWU4YzQxZjJkZWIzZGZlNDBjMDllYjY1MTMwYzk2MmVlZDc1MzQxMjQwNzk2M2E1M2YxMGM1NzQ5NzBhM2QzOGI1OWQ0ZWYzODBhNGNmNjZlN2M0ZWQ1ZTlmNiIsImtleUlkIjoxLCJzdHJpY3RNb2RlIjowLCJwZXJzaXN0ZW50IjoiIiwicmVudGFsRHVyYXRpb24iOjAsImZvcmNlTDFUcmFja1R5cGVzIjpudWxsfQ~6nWPenMjyukbOW00BsW8gytdTzf6tyburUc_209IoNQ.video_1444917_2.m3u8?encdomain=cmv1","群发连点器",r"D:\Project\教程\Python全栈0基础入门",False),
 
 # ("https://vip.lz15uu.com/20221116/617_1d8cbf58/1200k/hls/mixed1.m3u8","123"),
 

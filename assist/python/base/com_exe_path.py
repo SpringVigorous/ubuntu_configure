@@ -13,3 +13,5 @@ def ffmpeg_path():
         ffmpeg_paths = glob.glob(ffmpeg_pattern)
         if ffmpeg_paths:
             return windows_path(ffmpeg_paths[0]) 
+        
+    print(f"ffmpeg 未找到，请查看本地是否安装了此软件或环境变量path是否存在对应目录")

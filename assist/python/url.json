@@ -1,0 +1,321 @@
+{
+    "data": {
+        "id": 3882935,
+        "type": 9,
+        "title": "D1 开营班会和平台禁忌及养号技巧",
+        "duration": 3359,
+        "user": {
+            "partner_id": 62307,
+            "uid": "60231625",
+            "role": "user",
+            "nickname": "劲竹韧石",
+            "roomid": 1435927,
+            "expire": 1737709288,
+            "gender": 0,
+            "avatar": "",
+            "course_id": 3882935,
+            "codes": "PjY3IighJmgsaiMv",
+            "pid": 62307,
+            "xid": "1244693471",
+            "regtime": 1737705688,
+            "attr": [],
+            "gid": "0",
+            "a": 1,
+            "rname": "1435927_3882935_9",
+            "asset_id": 3882935,
+            "asset_type": 9
+        },
+        "avatar": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/spadmin_1.png",
+        "vodLive": 0,
+        "medias": [
+            {
+                "url": [
+                    "https://v8.talk-fun.com/7/video/57/19/bb/74a07d5fd628da8446a3da46a0/48ba1b41_video.mp4?auth_key=1737792299-0-0-0c59522ce4f3c3b9a05b421df6630ca1\u0026ksk=3e5ee70137ea32724ee4af13c9ade7f0\u0026kst=1737792299\u0026pid=62307\u0026limit=126K\u0026cdt=1734010368\u0026part=1\u0026from=tfvod",
+                    "https://v11.talk-fun.com/7/video/57/19/bb/74a07d5fd628da8446a3da46a0/48ba1b41_video.mp4?sign=1737792299-20250124160459-422348159-c2ed83c2bb013824cede9e0b5e015cab\u0026auth_key=1737792299-0-0-0c59522ce4f3c3b9a05b421df6630ca1\u0026pid=62307\u0026limit=126K\u0026cdt=1734010368\u0026part=1\u0026from=tfvod"
+                ],
+                "start": "0.00",
+                "end": "3359.00",
+                "snapshot": [],
+                "filesize": "361525399",
+                "name": "desktop",
+                "width": "608",
+                "height": "1080"
+            }
+        ],
+        "commandsV2": "https://s2.talk-fun.com/7/course/951/50/3882935/commandsV2.json?v=1737702481",
+        "pid": "62307",
+        "end_time": "1737636959",
+        "start_time": "1737633600",
+        "roomid": 1435927,
+        "emotions": {
+            "base": "//static-1.talk-fun.com/open/cooperation/common/emotions/v3/",
+            "maps": {
+                "[slime]": "slime.png",
+                "[laugh]": "laugh.png",
+                "[love]": "love.png",
+                "[tongue]": "tongue.png",
+                "[daze]": "daze.png",
+                "[handclap]": "handclap.png",
+                "[titter]": "titter.png",
+                "[handssors]": "handssors.png",
+                "[six]": "666.png",
+                "[heart]": "heart.png",
+                "[melon]": "melon-eating.png",
+                "[silly]": "silly-laugh.png",
+                "[like]": "like.png",
+                "[dog]": "dog.png",
+                "[expect]": "expect.png",
+                "[flower]": "flower.png"
+            },
+            "system": {
+                "[S_FLOWER]": "//static-1.talk-fun.com/open/maituo/static/css/img/rose_ico0.png"
+            },
+            "mobileBase": "//static-1.talk-fun.com/open/cooperation/common/emotions/v3/"
+        },
+        "swfUrl": "https://static-1.talk-fun.com/open/maituo/static/swf/level1/vodPlayer.swf?v=1",
+        "flashvar": {
+            "xid": "1244693471",
+            "uid": "60231625",
+            "osc": 1,
+            "pid": 62307,
+            "hostGroup": "[[\u0022lp2-4.talk-fun.com\u0022,\u0022lp2-3.talk-fun.com\u0022,\u0022lp2.talk-fun.com\u0022],[\u0022lp3-4.talk-fun.com\u0022,\u0022lp3-3.talk-fun.com\u0022,\u0022lp3.talk-fun.com\u0022],[\u0022lp4-3.talk-fun.com\u0022,\u0022lp4.talk-fun.com\u0022],[\u0022lp5-3.talk-fun.com\u0022,\u0022lp5.talk-fun.com\u0022],[\u0022lp7-13.talk-fun.com\u0022,\u0022lp7-4.talk-fun.com\u0022],[\u0022lp8-4.talk-fun.com\u0022,\u0022lp8-13.talk-fun.com\u0022],[\u0022lp1-3.talk-fun.com\u0022,\u0022lp1.talk-fun.com\u0022],[\u0022log.talk-fun.com\u0022,\u0022log-1.talk-fun.com\u0022],[\u0022a2.talk-fun.com\u0022,\u0022a3.talk-fun.com\u0022],[\u0022s2.talk-fun.com\u0022,\u0022s3.talk-fun.com\u0022,\u0022s4.talk-fun.com\u0022,\u0022s1.talk-fun.com\u0022]]"
+        },
+        "timeDiffLimit": 10,
+        "hostGroup": [
+            [
+                "lp2-4.talk-fun.com",
+                "lp2-3.talk-fun.com",
+                "lp2.talk-fun.com"
+            ],
+            [
+                "lp3-4.talk-fun.com",
+                "lp3-3.talk-fun.com",
+                "lp3.talk-fun.com"
+            ],
+            [
+                "lp4-3.talk-fun.com",
+                "lp4.talk-fun.com"
+            ],
+            [
+                "lp5-3.talk-fun.com",
+                "lp5.talk-fun.com"
+            ],
+            [
+                "lp7-13.talk-fun.com",
+                "lp7-4.talk-fun.com"
+            ],
+            [
+                "lp8-4.talk-fun.com",
+                "lp8-13.talk-fun.com"
+            ],
+            [
+                "lp1-3.talk-fun.com",
+                "lp1.talk-fun.com"
+            ],
+            [
+                "log.talk-fun.com",
+                "log-1.talk-fun.com"
+            ],
+            [
+                "a2.talk-fun.com",
+                "a3.talk-fun.com"
+            ],
+            [
+                "s2.talk-fun.com",
+                "s3.talk-fun.com",
+                "s4.talk-fun.com",
+                "s1.talk-fun.com"
+            ]
+        ],
+        "views": 119,
+        "rid": 1435927,
+        "album": [],
+        "version": "2.0",
+        "pageConfig": "{\u0022global\u0022:{\u0022setting\u0022:{\u0022pptEnable\u0022:\u00221\u0022,\u0022pageViewMode\u0022:\u00221\u0022,\u0022liveScene\u0022:\u00221\u0022},\u0022switch\u0022:{\u0022focus\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022关注\u0022,\u0022data\u0022:{\u0022popUp\u0022:1,\u0022url\u0022:\u0022\u0022}},\u0022number\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022人数\u0022,\u0022accumulation\u0022:{\u0022name\u0022:\u0022累加人数\u0022,\u0022enable\u0022:0},\u0022popularity\u0022:{\u0022name\u0022:\u0022人气模式\u0022,\u0022enable\u0022:0,\u0022num\u0022:0}},\u0022invitationList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请榜单\u0022},\u0022countDown\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022直播倒计时\u0022},\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022商城入口\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:{\u0022url\u0022:\u0022\u0022,\u0022qrcode\u0022:\u0022\u0022,\u0022pushPosition\u0022:\u0022right\u0022,\u0022pushDisplayTime\u0022:60}},\u0022reward\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022打赏主播\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:[],\u0022dataV2\u0022:{\u0022chattingZone\u0022:\u00221\u0022,\u0022specialEffects\u0022:\u00221\u0022,\u0022hongbao\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022data\u0022:[{\u0022price\u0022:\u00222.2\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u00222.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002218.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002228.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002288\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u0022188\u0022,\u0022enable\u0022:\u00221\u0022}]},\u0022present\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[{\u0022id\u0022:\u00221\u0022,\u0022price\u0022:\u00222.22\u0022,\u0022title\u0022:\u0022荧光棒\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift1.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00222\u0022,\u0022price\u0022:\u00228.88\u0022,\u0022title\u0022:\u0022鲜花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift2.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00223\u0022,\u0022price\u0022:\u00226.66\u0022,\u0022title\u0022:\u0022666\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift3.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00224\u0022,\u0022price\u0022:\u002218.88\u0022,\u0022title\u0022:\u0022小星星\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift4.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00225\u0022,\u0022price\u0022:\u002228.88\u0022,\u0022title\u0022:\u0022烟花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift5.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00226\u0022,\u0022price\u0022:\u002258.88\u0022,\u0022title\u0022:\u0022跑车\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift6.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00227\u0022,\u0022price\u0022:\u002288.88\u0022,\u0022title\u0022:\u0022飞机\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift7.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00228\u0022,\u0022price\u0022:\u0022188.88\u0022,\u0022title\u0022:\u0022火箭\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift8.svg\u0022,\u0022enable\u0022:\u00221\u0022}]}}},\u0022inviteRanking\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请观看\u0022},\u0022redPack\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022发红包\u0022},\u0022like\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022点赞\u0022,\u0022data\u0022:{\u0022num\u0022:\u00220\u0022}},\u0022more\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022更多入口\u0022,\u0022data\u0022:{\u0022redPackRecord\u0022:\u00220\u0022,\u0022withdraw\u0022:\u00220\u0022,\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022info\u0022:1,\u0022liveLine\u0022:1,\u0022report\u0022:1}},\u0022menu\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022菜单入口\u0022},\u0022chatTime\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022聊天时间\u0022},\u0022entranceTips\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022入场提示\u0022},\u0022banner\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022广告条\u0022,\u0022data\u0022:[{\u0022type\u0022:\u00220\u0022,\u0022imgurl\u0022:\u0022\u0022,\u0022pcImgurl\u0022:\u0022\u0022,\u0022tel\u0022:\u0022\u0022,\u0022link\u0022:\u0022\u0022}]},\u0022intro\u0022:{\u0022name\u0022:\u0022直播引导图\u0022,\u0022url\u0022:\u0022\u0022,\u0022H5Url\u0022:\u0022\u0022},\u0022fixedLink\u0022:{\u0022name\u0022:\u0022固定链接\u0022,\u0022type\u0022:\u00221\u0022},\u0022ad\u0022:{\u0022name\u0022:\u0022浮动广告\u0022,\u0022enable\u0022:\u00220\u0022},\u0022robot\u0022:{\u0022name\u0022:\u0022助教虚拟用户设置\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022chat\u0022:\u00220\u0022}},\u0022service\u0022:{\u0022name\u0022:\u0022私聊客服\u0022,\u0022enable\u0022:0},\u0022document\u0022:{\u0022name\u0022:\u0022课件下载\u0022,\u0022enable\u0022:0},\u0022question\u0022:{\u0022name\u0022:\u0022提问\u0022,\u0022enable\u0022:\u00220\u0022},\u0022background\u0022:{\u0022name\u0022:\u0022直播背景图\u0022,\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022pptbackground\u0022:{\u0022name\u0022:\u0022文档背景图\u0022,\u0022enable\u0022:0,\u0022url\u0022:\u0022\u0022},\u0022warmup\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022暖场视频\u0022,\u0022videoId\u0022:0,\u0022fileName\u0022:\u0022\u0022},\u0022goodsPrompt\u0022:{\u0022name\u0022:\u0022商品点击提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022type\u0022:\u00221\u0022,\u0022goto\u0022:\u00220\u0022,\u0022style\u0022:\u00221\u0022,\u0022title\u0022:\u0022热卖\u0022,\u0022button\u0022:\u0022立即抢购\u0022,\u0022status\u0022:\u0022下单\u0022}},\u0022popUp\u0022:{\u0022name\u0022:\u0022宣传图入口\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022name\u0022:\u0022宣传图\u0022,\u0022title\u0022:\u0022宣传图列表\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/publicity\\/entry.png\u0022},\u0022playback\u0022:\u00220\u0022},\u0022userPopUp\u0022:{\u0022name\u0022:\u0022观众点击宣传图提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022title\u0022:\u0022\u0022,\u0022button\u0022:\u0022\u0022,\u0022joined\u0022:\u0022\u0022}},\u0022popUpToChat\u0022:{\u0022name\u0022:\u0022宣传图发送至聊天\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[]},\u0022templateLive\u0022:{\u0022name\u0022:\u0022直播间样式\u0022,\u0022type\u0022:\u00220\u0022},\u0022logoLive\u0022:{\u0022config\u0022:{\u0022logo\u0022:\u0022\u0022,\u0022logoLink\u0022:\u0022\u0022},\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端logo\u0022},\u0022visitorList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端观众列表\u0022,\u0022config\u0022:[]},\u0022mobileCameraStyle\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022手机端摄像头\u0022,\u0022config\u0022:{\u0022size\u0022:2,\u0022position\u0022:1}}},\u0022title\u0022:[],\u0022share\u0022:{\u0022title\u0022:{\u0022type\u0022:\u00221\u0022,\u0022value\u0022:\u0022\u0022},\u0022description\u0022:{\u0022value\u0022:\u0022好看的视频，都在这里，赶紧加入我们吧\u0022},\u0022img\u0022:{\u0022value\u0022:\u0022\u0022},\u0022qrcode\u0022:{\u0022value\u0022:\u0022\u0022},\u0022enable\u0022:\u00221\u0022,\u0022linkType\u0022:\u00221\u0022},\u0022playbackMode\u0022:{\u0022name\u0022:\u0022直播回放\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022expire\u0022:\u00220\u0022}},\u0022switcher\u0022:{\u0022focus\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022关注\u0022,\u0022data\u0022:{\u0022popUp\u0022:1,\u0022url\u0022:\u0022\u0022}},\u0022number\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022人数\u0022,\u0022accumulation\u0022:{\u0022name\u0022:\u0022累加人数\u0022,\u0022enable\u0022:0},\u0022popularity\u0022:{\u0022name\u0022:\u0022人气模式\u0022,\u0022enable\u0022:0,\u0022num\u0022:0}},\u0022invitationList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请榜单\u0022},\u0022countDown\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022直播倒计时\u0022},\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022商城入口\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:{\u0022url\u0022:\u0022\u0022,\u0022qrcode\u0022:\u0022\u0022,\u0022pushPosition\u0022:\u0022right\u0022,\u0022pushDisplayTime\u0022:60}},\u0022reward\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022打赏主播\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:[],\u0022dataV2\u0022:{\u0022chattingZone\u0022:\u00221\u0022,\u0022specialEffects\u0022:\u00221\u0022,\u0022hongbao\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022data\u0022:[{\u0022price\u0022:\u00222.2\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u00222.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002218.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002228.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002288\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u0022188\u0022,\u0022enable\u0022:\u00221\u0022}]},\u0022present\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[{\u0022id\u0022:\u00221\u0022,\u0022price\u0022:\u00222.22\u0022,\u0022title\u0022:\u0022荧光棒\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift1.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00222\u0022,\u0022price\u0022:\u00228.88\u0022,\u0022title\u0022:\u0022鲜花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift2.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00223\u0022,\u0022price\u0022:\u00226.66\u0022,\u0022title\u0022:\u0022666\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift3.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00224\u0022,\u0022price\u0022:\u002218.88\u0022,\u0022title\u0022:\u0022小星星\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift4.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00225\u0022,\u0022price\u0022:\u002228.88\u0022,\u0022title\u0022:\u0022烟花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift5.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00226\u0022,\u0022price\u0022:\u002258.88\u0022,\u0022title\u0022:\u0022跑车\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift6.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00227\u0022,\u0022price\u0022:\u002288.88\u0022,\u0022title\u0022:\u0022飞机\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift7.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00228\u0022,\u0022price\u0022:\u0022188.88\u0022,\u0022title\u0022:\u0022火箭\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift8.svg\u0022,\u0022enable\u0022:\u00221\u0022}]}}},\u0022inviteRanking\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请观看\u0022},\u0022redPack\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022发红包\u0022},\u0022like\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022点赞\u0022,\u0022data\u0022:{\u0022num\u0022:\u00220\u0022}},\u0022more\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022更多入口\u0022,\u0022data\u0022:{\u0022redPackRecord\u0022:\u00220\u0022,\u0022withdraw\u0022:\u00220\u0022,\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022info\u0022:1,\u0022liveLine\u0022:1,\u0022report\u0022:1}},\u0022menu\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022菜单入口\u0022},\u0022chatTime\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022聊天时间\u0022},\u0022entranceTips\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022入场提示\u0022},\u0022banner\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022广告条\u0022,\u0022data\u0022:[{\u0022type\u0022:\u00220\u0022,\u0022imgurl\u0022:\u0022\u0022,\u0022pcImgurl\u0022:\u0022\u0022,\u0022tel\u0022:\u0022\u0022,\u0022link\u0022:\u0022\u0022}]},\u0022intro\u0022:{\u0022name\u0022:\u0022直播引导图\u0022,\u0022url\u0022:\u0022\u0022,\u0022H5Url\u0022:\u0022\u0022},\u0022fixedLink\u0022:{\u0022name\u0022:\u0022固定链接\u0022,\u0022type\u0022:\u00221\u0022},\u0022ad\u0022:{\u0022name\u0022:\u0022浮动广告\u0022,\u0022enable\u0022:\u00220\u0022},\u0022robot\u0022:{\u0022name\u0022:\u0022助教虚拟用户设置\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022chat\u0022:\u00220\u0022}},\u0022service\u0022:{\u0022name\u0022:\u0022私聊客服\u0022,\u0022enable\u0022:0},\u0022document\u0022:{\u0022name\u0022:\u0022课件下载\u0022,\u0022enable\u0022:0},\u0022question\u0022:{\u0022name\u0022:\u0022提问\u0022,\u0022enable\u0022:\u00220\u0022},\u0022background\u0022:{\u0022name\u0022:\u0022直播背景图\u0022,\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022pptbackground\u0022:{\u0022name\u0022:\u0022文档背景图\u0022,\u0022enable\u0022:0,\u0022url\u0022:\u0022\u0022},\u0022warmup\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022暖场视频\u0022,\u0022videoId\u0022:0,\u0022fileName\u0022:\u0022\u0022},\u0022goodsPrompt\u0022:{\u0022name\u0022:\u0022商品点击提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022type\u0022:\u00221\u0022,\u0022goto\u0022:\u00220\u0022,\u0022style\u0022:\u00221\u0022,\u0022title\u0022:\u0022热卖\u0022,\u0022button\u0022:\u0022立即抢购\u0022,\u0022status\u0022:\u0022下单\u0022}},\u0022popUp\u0022:{\u0022name\u0022:\u0022宣传图入口\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022name\u0022:\u0022宣传图\u0022,\u0022title\u0022:\u0022宣传图列表\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/publicity\\/entry.png\u0022},\u0022playback\u0022:\u00220\u0022},\u0022userPopUp\u0022:{\u0022name\u0022:\u0022观众点击宣传图提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022title\u0022:\u0022\u0022,\u0022button\u0022:\u0022\u0022,\u0022joined\u0022:\u0022\u0022}},\u0022popUpToChat\u0022:{\u0022name\u0022:\u0022宣传图发送至聊天\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[]},\u0022templateLive\u0022:{\u0022name\u0022:\u0022直播间样式\u0022,\u0022type\u0022:\u00220\u0022},\u0022logoLive\u0022:{\u0022config\u0022:{\u0022logo\u0022:\u0022\u0022,\u0022logoLink\u0022:\u0022\u0022},\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端logo\u0022},\u0022visitorList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端观众列表\u0022,\u0022config\u0022:[]},\u0022mobileCameraStyle\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022手机端摄像头\u0022,\u0022config\u0022:{\u0022size\u0022:2,\u0022position\u0022:1}}}},\u0022content\u0022:{\u0022tabsData\u0022:[{\u0022title\u0022:\u0022聊天\u0022,\u0022name\u0022:\u0022\u0022,\u0022type\u0022:\u0022chat\u0022,\u0022content\u0022:\u0022\u0022,\u0022ext\u0022:[]}]},\u0022goods\u0022:[],\u0022popUp\u0022:[],\u0022adlist\u0022:[],\u0022questionnaire\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022icon\u0022:{\u0022title\u0022:\u0022留言\u0022,\u0022img\u0022:\u0022http:\\/\\/static-1.talk-fun.com\\/open\\/cooperation\\/common\\/css\\/img\\/bbs.png\u0022},\u0022title\u0022:{\u0022theme\u0022:\u0022留言区\u0022,\u0022content\u0022:\u0022\u0022},\u0022items\u0022:[]}}",
+        "course": {
+            "pageConfig": "{\u0022global\u0022:{\u0022setting\u0022:{\u0022pptEnable\u0022:\u00221\u0022,\u0022pageViewMode\u0022:\u00221\u0022,\u0022liveScene\u0022:\u00221\u0022},\u0022switch\u0022:{\u0022focus\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022关注\u0022,\u0022data\u0022:{\u0022popUp\u0022:1,\u0022url\u0022:\u0022\u0022}},\u0022number\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022人数\u0022,\u0022accumulation\u0022:{\u0022name\u0022:\u0022累加人数\u0022,\u0022enable\u0022:0},\u0022popularity\u0022:{\u0022name\u0022:\u0022人气模式\u0022,\u0022enable\u0022:0,\u0022num\u0022:0}},\u0022invitationList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请榜单\u0022},\u0022countDown\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022直播倒计时\u0022},\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022商城入口\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:{\u0022url\u0022:\u0022\u0022,\u0022qrcode\u0022:\u0022\u0022,\u0022pushPosition\u0022:\u0022right\u0022,\u0022pushDisplayTime\u0022:60}},\u0022reward\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022打赏主播\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:[],\u0022dataV2\u0022:{\u0022chattingZone\u0022:\u00221\u0022,\u0022specialEffects\u0022:\u00221\u0022,\u0022hongbao\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022data\u0022:[{\u0022price\u0022:\u00222.2\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u00222.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002218.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002228.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002288\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u0022188\u0022,\u0022enable\u0022:\u00221\u0022}]},\u0022present\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[{\u0022id\u0022:\u00221\u0022,\u0022price\u0022:\u00222.22\u0022,\u0022title\u0022:\u0022荧光棒\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift1.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00222\u0022,\u0022price\u0022:\u00228.88\u0022,\u0022title\u0022:\u0022鲜花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift2.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00223\u0022,\u0022price\u0022:\u00226.66\u0022,\u0022title\u0022:\u0022666\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift3.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00224\u0022,\u0022price\u0022:\u002218.88\u0022,\u0022title\u0022:\u0022小星星\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift4.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00225\u0022,\u0022price\u0022:\u002228.88\u0022,\u0022title\u0022:\u0022烟花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift5.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00226\u0022,\u0022price\u0022:\u002258.88\u0022,\u0022title\u0022:\u0022跑车\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift6.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00227\u0022,\u0022price\u0022:\u002288.88\u0022,\u0022title\u0022:\u0022飞机\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift7.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00228\u0022,\u0022price\u0022:\u0022188.88\u0022,\u0022title\u0022:\u0022火箭\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift8.svg\u0022,\u0022enable\u0022:\u00221\u0022}]}}},\u0022inviteRanking\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请观看\u0022},\u0022redPack\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022发红包\u0022},\u0022like\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022点赞\u0022,\u0022data\u0022:{\u0022num\u0022:\u00220\u0022}},\u0022more\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022更多入口\u0022,\u0022data\u0022:{\u0022redPackRecord\u0022:\u00220\u0022,\u0022withdraw\u0022:\u00220\u0022,\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022info\u0022:1,\u0022liveLine\u0022:1,\u0022report\u0022:1}},\u0022menu\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022菜单入口\u0022},\u0022chatTime\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022聊天时间\u0022},\u0022entranceTips\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022入场提示\u0022},\u0022banner\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022广告条\u0022,\u0022data\u0022:[{\u0022type\u0022:\u00220\u0022,\u0022imgurl\u0022:\u0022\u0022,\u0022pcImgurl\u0022:\u0022\u0022,\u0022tel\u0022:\u0022\u0022,\u0022link\u0022:\u0022\u0022}]},\u0022intro\u0022:{\u0022name\u0022:\u0022直播引导图\u0022,\u0022url\u0022:\u0022\u0022,\u0022H5Url\u0022:\u0022\u0022},\u0022fixedLink\u0022:{\u0022name\u0022:\u0022固定链接\u0022,\u0022type\u0022:\u00221\u0022},\u0022ad\u0022:{\u0022name\u0022:\u0022浮动广告\u0022,\u0022enable\u0022:\u00220\u0022},\u0022robot\u0022:{\u0022name\u0022:\u0022助教虚拟用户设置\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022chat\u0022:\u00220\u0022}},\u0022service\u0022:{\u0022name\u0022:\u0022私聊客服\u0022,\u0022enable\u0022:0},\u0022document\u0022:{\u0022name\u0022:\u0022课件下载\u0022,\u0022enable\u0022:0},\u0022question\u0022:{\u0022name\u0022:\u0022提问\u0022,\u0022enable\u0022:\u00220\u0022},\u0022background\u0022:{\u0022name\u0022:\u0022直播背景图\u0022,\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022pptbackground\u0022:{\u0022name\u0022:\u0022文档背景图\u0022,\u0022enable\u0022:0,\u0022url\u0022:\u0022\u0022},\u0022warmup\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022暖场视频\u0022,\u0022videoId\u0022:0,\u0022fileName\u0022:\u0022\u0022},\u0022goodsPrompt\u0022:{\u0022name\u0022:\u0022商品点击提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022type\u0022:\u00221\u0022,\u0022goto\u0022:\u00220\u0022,\u0022style\u0022:\u00221\u0022,\u0022title\u0022:\u0022热卖\u0022,\u0022button\u0022:\u0022立即抢购\u0022,\u0022status\u0022:\u0022下单\u0022}},\u0022popUp\u0022:{\u0022name\u0022:\u0022宣传图入口\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022name\u0022:\u0022宣传图\u0022,\u0022title\u0022:\u0022宣传图列表\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/publicity\\/entry.png\u0022},\u0022playback\u0022:\u00220\u0022},\u0022userPopUp\u0022:{\u0022name\u0022:\u0022观众点击宣传图提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022title\u0022:\u0022\u0022,\u0022button\u0022:\u0022\u0022,\u0022joined\u0022:\u0022\u0022}},\u0022popUpToChat\u0022:{\u0022name\u0022:\u0022宣传图发送至聊天\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[]},\u0022templateLive\u0022:{\u0022name\u0022:\u0022直播间样式\u0022,\u0022type\u0022:\u00220\u0022},\u0022logoLive\u0022:{\u0022config\u0022:{\u0022logo\u0022:\u0022\u0022,\u0022logoLink\u0022:\u0022\u0022},\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端logo\u0022},\u0022visitorList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端观众列表\u0022,\u0022config\u0022:[]},\u0022mobileCameraStyle\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022手机端摄像头\u0022,\u0022config\u0022:{\u0022size\u0022:2,\u0022position\u0022:1}}},\u0022title\u0022:[],\u0022share\u0022:{\u0022title\u0022:{\u0022type\u0022:\u00221\u0022,\u0022value\u0022:\u0022\u0022},\u0022description\u0022:{\u0022value\u0022:\u0022好看的视频，都在这里，赶紧加入我们吧\u0022},\u0022img\u0022:{\u0022value\u0022:\u0022\u0022},\u0022qrcode\u0022:{\u0022value\u0022:\u0022\u0022},\u0022enable\u0022:\u00221\u0022,\u0022linkType\u0022:\u00221\u0022},\u0022playbackMode\u0022:{\u0022name\u0022:\u0022直播回放\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022expire\u0022:\u00220\u0022}},\u0022switcher\u0022:{\u0022focus\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022关注\u0022,\u0022data\u0022:{\u0022popUp\u0022:1,\u0022url\u0022:\u0022\u0022}},\u0022number\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022人数\u0022,\u0022accumulation\u0022:{\u0022name\u0022:\u0022累加人数\u0022,\u0022enable\u0022:0},\u0022popularity\u0022:{\u0022name\u0022:\u0022人气模式\u0022,\u0022enable\u0022:0,\u0022num\u0022:0}},\u0022invitationList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请榜单\u0022},\u0022countDown\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022直播倒计时\u0022},\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022商城入口\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:{\u0022url\u0022:\u0022\u0022,\u0022qrcode\u0022:\u0022\u0022,\u0022pushPosition\u0022:\u0022right\u0022,\u0022pushDisplayTime\u0022:60}},\u0022reward\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022打赏主播\u0022,\u0022type\u0022:\u00221\u0022,\u0022data\u0022:[],\u0022dataV2\u0022:{\u0022chattingZone\u0022:\u00221\u0022,\u0022specialEffects\u0022:\u00221\u0022,\u0022hongbao\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022data\u0022:[{\u0022price\u0022:\u00222.2\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u00222.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002218.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002228.8\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u002288\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022price\u0022:\u0022188\u0022,\u0022enable\u0022:\u00221\u0022}]},\u0022present\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[{\u0022id\u0022:\u00221\u0022,\u0022price\u0022:\u00222.22\u0022,\u0022title\u0022:\u0022荧光棒\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift1.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00222\u0022,\u0022price\u0022:\u00228.88\u0022,\u0022title\u0022:\u0022鲜花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift2.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00223\u0022,\u0022price\u0022:\u00226.66\u0022,\u0022title\u0022:\u0022666\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift3.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00224\u0022,\u0022price\u0022:\u002218.88\u0022,\u0022title\u0022:\u0022小星星\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift4.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00225\u0022,\u0022price\u0022:\u002228.88\u0022,\u0022title\u0022:\u0022烟花\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift5.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00226\u0022,\u0022price\u0022:\u002258.88\u0022,\u0022title\u0022:\u0022跑车\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift6.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00227\u0022,\u0022price\u0022:\u002288.88\u0022,\u0022title\u0022:\u0022飞机\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift7.svg\u0022,\u0022enable\u0022:\u00221\u0022},{\u0022id\u0022:\u00228\u0022,\u0022price\u0022:\u0022188.88\u0022,\u0022title\u0022:\u0022火箭\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/gifts\\/gift8.svg\u0022,\u0022enable\u0022:\u00221\u0022}]}}},\u0022inviteRanking\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022邀请观看\u0022},\u0022redPack\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022发红包\u0022},\u0022like\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022点赞\u0022,\u0022data\u0022:{\u0022num\u0022:\u00220\u0022}},\u0022more\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022更多入口\u0022,\u0022data\u0022:{\u0022redPackRecord\u0022:\u00220\u0022,\u0022withdraw\u0022:\u00220\u0022,\u0022store\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022info\u0022:1,\u0022liveLine\u0022:1,\u0022report\u0022:1}},\u0022menu\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022菜单入口\u0022},\u0022chatTime\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022聊天时间\u0022},\u0022entranceTips\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022入场提示\u0022},\u0022banner\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022广告条\u0022,\u0022data\u0022:[{\u0022type\u0022:\u00220\u0022,\u0022imgurl\u0022:\u0022\u0022,\u0022pcImgurl\u0022:\u0022\u0022,\u0022tel\u0022:\u0022\u0022,\u0022link\u0022:\u0022\u0022}]},\u0022intro\u0022:{\u0022name\u0022:\u0022直播引导图\u0022,\u0022url\u0022:\u0022\u0022,\u0022H5Url\u0022:\u0022\u0022},\u0022fixedLink\u0022:{\u0022name\u0022:\u0022固定链接\u0022,\u0022type\u0022:\u00221\u0022},\u0022ad\u0022:{\u0022name\u0022:\u0022浮动广告\u0022,\u0022enable\u0022:\u00220\u0022},\u0022robot\u0022:{\u0022name\u0022:\u0022助教虚拟用户设置\u0022,\u0022enable\u0022:\u00221\u0022,\u0022config\u0022:{\u0022chat\u0022:\u00220\u0022}},\u0022service\u0022:{\u0022name\u0022:\u0022私聊客服\u0022,\u0022enable\u0022:0},\u0022document\u0022:{\u0022name\u0022:\u0022课件下载\u0022,\u0022enable\u0022:0},\u0022question\u0022:{\u0022name\u0022:\u0022提问\u0022,\u0022enable\u0022:\u00220\u0022},\u0022background\u0022:{\u0022name\u0022:\u0022直播背景图\u0022,\u0022enable\u0022:\u00220\u0022,\u0022url\u0022:\u0022\u0022},\u0022pptbackground\u0022:{\u0022name\u0022:\u0022文档背景图\u0022,\u0022enable\u0022:0,\u0022url\u0022:\u0022\u0022},\u0022warmup\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022暖场视频\u0022,\u0022videoId\u0022:0,\u0022fileName\u0022:\u0022\u0022},\u0022goodsPrompt\u0022:{\u0022name\u0022:\u0022商品点击提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022type\u0022:\u00221\u0022,\u0022goto\u0022:\u00220\u0022,\u0022style\u0022:\u00221\u0022,\u0022title\u0022:\u0022热卖\u0022,\u0022button\u0022:\u0022立即抢购\u0022,\u0022status\u0022:\u0022下单\u0022}},\u0022popUp\u0022:{\u0022name\u0022:\u0022宣传图入口\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022name\u0022:\u0022宣传图\u0022,\u0022title\u0022:\u0022宣传图列表\u0022,\u0022image\u0022:\u0022https:\\/\\/static-1.talk-fun.com\\/common\\/image\\/publicity\\/entry.png\u0022},\u0022playback\u0022:\u00220\u0022},\u0022userPopUp\u0022:{\u0022name\u0022:\u0022观众点击宣传图提示\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:{\u0022title\u0022:\u0022\u0022,\u0022button\u0022:\u0022\u0022,\u0022joined\u0022:\u0022\u0022}},\u0022popUpToChat\u0022:{\u0022name\u0022:\u0022宣传图发送至聊天\u0022,\u0022enable\u0022:\u00220\u0022,\u0022data\u0022:[]},\u0022templateLive\u0022:{\u0022name\u0022:\u0022直播间样式\u0022,\u0022type\u0022:\u00220\u0022},\u0022logoLive\u0022:{\u0022config\u0022:{\u0022logo\u0022:\u0022\u0022,\u0022logoLink\u0022:\u0022\u0022},\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端logo\u0022},\u0022visitorList\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022name\u0022:\u0022pc端观众列表\u0022,\u0022config\u0022:[]},\u0022mobileCameraStyle\u0022:{\u0022enable\u0022:\u00221\u0022,\u0022name\u0022:\u0022手机端摄像头\u0022,\u0022config\u0022:{\u0022size\u0022:2,\u0022position\u0022:1}}}},\u0022content\u0022:{\u0022tabsData\u0022:[{\u0022title\u0022:\u0022聊天\u0022,\u0022name\u0022:\u0022\u0022,\u0022type\u0022:\u0022chat\u0022,\u0022content\u0022:\u0022\u0022,\u0022ext\u0022:[]}]},\u0022goods\u0022:[],\u0022popUp\u0022:[],\u0022adlist\u0022:[],\u0022questionnaire\u0022:{\u0022enable\u0022:\u00220\u0022,\u0022icon\u0022:{\u0022title\u0022:\u0022留言\u0022,\u0022img\u0022:\u0022http:\\/\\/static-1.talk-fun.com\\/open\\/cooperation\\/common\\/css\\/img\\/bbs.png\u0022},\u0022title\u0022:{\u0022theme\u0022:\u0022留言区\u0022,\u0022content\u0022:\u0022\u0022},\u0022items\u0022:[]}}"
+        },
+        "commandsV3": "https://s2.talk-fun.com/7/course/951/50/3882935/commandsV3.json?v=1737702481",
+        "bid": "817537",
+        "partner_id": "62307",
+        "avatarHost": "https://a2.talk-fun.com",
+        "sid": "7",
+        "updateTime": "1737702481",
+        "modules": {
+            "mod_theftproof_playback": {
+                "name": "防盗录",
+                "enable": "1",
+                "config": {
+                    "value": 0,
+                    "type": "radioTitle",
+                    "title": "",
+                    "options": [
+                        {
+                            "name": "用户ID",
+                            "value": 0,
+                            "title": ""
+                        },
+                        {
+                            "name": "固定名称",
+                            "value": 1,
+                            "title": ""
+                        }
+                    ]
+                }
+            },
+            "mod_playbackinfo_playback": {
+                "name": "回放信息",
+                "enable": "1",
+                "config": {
+                    "chat": {
+                        "name": "聊天",
+                        "enable": 1
+                    },
+                    "qa": {
+                        "name": "问答",
+                        "enable": 1,
+                        "logic": 0,
+                        "interval": 3
+                    },
+                    "chapter": {
+                        "name": "章节",
+                        "enable": 1
+                    }
+                }
+            },
+            "mod_tip_video_playback": {
+                "name": "回放片头视频(App、PC端)",
+                "enable": "0",
+                "config": {
+                    "tipVideoSkip": {
+                        "name": "学员可跳过片头视频",
+                        "enable": 0
+                    },
+                    "videoIds": []
+                },
+                "videoList": []
+            },
+            "mod_logo_playback": {
+                "config": {
+                    "logo": "",
+                    "logoLink": ""
+                },
+                "enable": "0",
+                "name": "pc端logo"
+            },
+            "mod_text_live": {
+                "name": "文字互动",
+                "enable": 1,
+                "config": {
+                    "chat": {
+                        "name": "聊天",
+                        "enable": 1,
+                        "interval": 3
+                    },
+                    "qa": {
+                        "name": "问答",
+                        "enable": 1,
+                        "logic": 0,
+                        "interval": 180
+                    }
+                }
+            },
+            "mod_chat_group": {
+                "name": "消息隔离",
+                "enable": "0",
+                "config": {
+                    "type": 0,
+                    "enableList": []
+                }
+            },
+            "mod_report": {
+                "name": "举报",
+                "enable": 0
+            },
+            "badword": {
+                "mobile": 1,
+                "email": 1,
+                "letter": 1,
+                "badwords": [
+                    "无盈利",
+                    "没收益",
+                    "获利",
+                    "未赚钱",
+                    "无收入",
+                    "没进账",
+                    "不创收",
+                    "没利润",
+                    "告发",
+                    "举报",
+                    "申诉",
+                    "反映",
+                    "骗人的",
+                    "骗子",
+                    "根本不管用",
+                    "交的没用",
+                    "白白浪费钱",
+                    "没有看见明显效果",
+                    "承诺的没有做到",
+                    "付费就是骗人的",
+                    "这个课程没有效果",
+                    "假的糊弄人",
+                    "别的机构便宜",
+                    "学了一点用没有",
+                    "老师没人管我",
+                    "交钱不管我",
+                    "不回复消息",
+                    "不负责任",
+                    "垃圾课程",
+                    "微信",
+                    "毫无作用",
+                    "浪费时间",
+                    "弄虚作假",
+                    "报警",
+                    "工商局",
+                    "手机什么时候到",
+                    "退钱给我",
+                    "不想做了",
+                    "挣不到交钱的一半",
+                    "申请",
+                    "骗子公司",
+                    "一分没赚到",
+                    "我是贷款交的钱",
+                    "把钱还给我",
+                    "无良商家",
+                    "起诉",
+                    "割韭菜",
+                    "诈骗",
+                    "别上当"
+                ],
+                "enable": 1,
+                "showType": 1,
+                "adminValidate": 1
+            }
+        },
+        "h5play": 0,
+        "defaultAvatar": {
+            "user": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/user_1.png",
+            "admin": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/admin_1.png",
+            "spadmin": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/spadmin_1.png",
+            "jiabin": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/jiabin_1.png"
+        },
+        "whiteboard": "https://static-1.talk-fun.com/open/maituo_v2/dist/client-whiteboard/v3.1.1/dist/whiteboard.pack.js",
+        "partner": {
+            "mode": "2"
+        },
+        "zhubo": {
+            "avatar": "https://static-1.talk-fun.com/open/cms_v2/css/common/portraits/spadmin_1.png",
+            "nickname": "小艺老师",
+            "intro": "",
+            "flower": "0",
+            "scoreTotal": 0
+        },
+        "p2p": 0,
+        "whiteboard_url": "//static-1.talk-fun.com/open/maituo_v2/dist/client-whiteboard/v3.1.1/index.html",
+        "statsQuery": "ctag=0"
+    },
+    "cache": true,
+    "code": 0,
+    "id": 3882935,
+    "type": 9
+}

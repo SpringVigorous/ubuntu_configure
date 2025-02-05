@@ -47,7 +47,9 @@ def normal_path(path:str)->str:
 
 
 def windows_path(path:str)->str:
-    return normal_path(path).replace("/",r"\\")
+    normal=normal_path(path)
+
+    return normal.replace("/",r"\\")
 
 
 def get_all_files_pathlib(directory,include_suffix:list=None):

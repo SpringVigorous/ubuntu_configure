@@ -31,6 +31,8 @@ def merge_video(temp_paths,dest_path):
         return
 
     temp_file= windows_path(os.path.join(Path(temp_paths[0]).parent,'file_list.txt'))
+    print(temp_file)
+
     merge_logger= logger_helper("合并视频",f"{temp_file} -> {dest_path}")
     merge_logger.trace("开始")
     # 创建一个文件列表文件
@@ -41,6 +43,10 @@ def merge_video(temp_paths,dest_path):
     # 使用 FFmpeg 合并文件
 
     command = [ffmpeg_path(),'-y', '-f', 'concat', '-safe', '0', '-i', temp_file, '-c', 'copy', dest_path]
+    
+    merge_logger.update_target(detail=" ".join(command))
+    merge_logger.trace("参数")
+
     # subprocess.run(command, check=True)
     # 运行命令并获取返回值
     # result = subprocess.run(command, capture_output=True, text=True,encoding="utf-8",errors="ignore",check=True)
@@ -51,6 +57,10 @@ def merge_video(temp_paths,dest_path):
     # 获取标准输出和标准错误
     stdout = result.stdout
     stderr = result.stderr
+
+
+
+
     if stderr:
         merge_logger.error("失败",stderr,update_time_type=UpdateTimeType.ALL)
     if stdout:
