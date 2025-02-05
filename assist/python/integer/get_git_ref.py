@@ -125,7 +125,7 @@ def get_special_from_dir(dir_path,sub_dir_filter:list,filename_fileter:list, *fl
         #     dest_file_path=os.path.join(dest_dir_path, get_real_name(file))
 
         #     operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)
-
+    return results
 
 if __name__ == '__main__':
     rows=get_special_from_dir("f:/test",['.git'],["config"],"url = ")
