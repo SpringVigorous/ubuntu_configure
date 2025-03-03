@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
     url='https://v11.talk-fun.com/7/video/ba/ce/f6/5d97274454d630d7907984c396/3a148d10_video.mp4'
 
-    output_file = r"D:\Project\教程\21天课\04_账号定位与账号设置.mp4"
+    output_file = r"F:\教程\短视频教程\抖音\21天课\00004_账号定位与账号设置.mp4"
 
     url_info={
         "url":url,

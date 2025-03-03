@@ -1,6 +1,7 @@
 ﻿import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import messagebox
+from pathlib import Path
 
 class FileDropApp:
     def __init__(self, root):
@@ -53,8 +54,13 @@ class FileDropApp:
         # 获取选中的文件路径
         selected_paths = [self.listbox.get(index) for index in selected_indices]
 
+        
+        
+
         # 将选中的文件路径复制到剪贴板
         self.root.clipboard_clear()
+        #顺便提取文件名
+        # self.root.clipboard_append("\n".join([  f"{item}\t{Path(item).stem}"    for item in selected_paths]))
         self.root.clipboard_append("\n".join(selected_paths))
         self.root.update()  # 确保剪贴板更新
 

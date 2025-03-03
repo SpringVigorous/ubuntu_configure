@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from com_decorator import exception_decorator
 import hashlib
-
+import os
 #根据原始的大小写情况，替换成目标的大小写
 def replace_pattern(match, replacement):
     original = match.group(0)
@@ -172,11 +172,112 @@ def convert_seconds_to_datetime(seconds:int):
     
     return formatted_date
     
-    
+
+def replace_punctuation_with_newline(text):
+    # 使用正则表达式匹配一个或多个连续的标点符号
+    result = re.sub(r'[^\w\s]', '\n', text)
+    # 使用正则表达式将多个连续的换行符替换为一个换行符
+    result = re.sub(r'\n+', '\n', result)
+    return result
     
 
-if __name__ == '__main__':
+
+
+def rename_files_with_pattern(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            # 使用正则表达式匹配文件名中含有“~”后跟数字的情况
+            match = re.match(r'(.*)~(\d+)(.*)', file)
+            if match:
+                original_path = os.path.join(root, file)
+                new_name = f"{match.group(1)}{match.group(3)}"
+                new_path = os.path.join(root, new_name)
+                
+                # 如果新路径的文件存在，则先删除它
+                if os.path.exists(new_path):
+                    print(f'File {new_path} already exists. Deleting it...')
+                    # continue
+                    os.remove(new_path)
+                
+                # continue
+                # 将原始文件重命名为新路径
+                os.rename(original_path, new_path)
+                print(f'Renamed: {original_path} -> {new_path}')
+
+
+
+
+# 正则表达式匹配大写数字
+chinese_num = r'零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰兆'
+chinese_num_pattern = re.compile(f'[{chinese_num}]+')
+
+# 大写数字到阿拉伯数字的映射
+chinese_to_arabic = {
+    '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+    '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+    '十': 10, '百': 100, '千': 1000, '万': 10000, '亿': 100000000,
+    '壹':1,'贰':2,'叁':3,'肆':4,'伍':5,'陆':6,'柒':7,'捌':8,'玖':9,'拾':10,'佰':100,'仟':1000,'兆':1000000000
+}
+
+def extract_chinese_numbers(text):
+    """
+    提取字符串中的大写数字部分。
+
+    :param text: 输入字符串
+    :return: 包含所有大写数字部分的列表
+    """
+    matches = chinese_num_pattern.findall(text)
+    return matches
+
+
+def chinese_to_arabic_number(chinese_num):
+   
+    if not chinese_num_pattern.match(chinese_num):
+        raise ValueError("输入不是有效的中文数字")
     
+
+    unit = 1
+    num = 0
+    
+    for char in reversed(chinese_num):
+        if char in chinese_to_arabic:
+            cur_val=chinese_to_arabic[char]
+            
+            if cur_val >= 10:
+                unit = cur_val
+            else:
+                num += cur_val * unit
+        else:
+            raise ValueError(f"未知字符: {char}")
+    
+
+    return num
+
+def arabic_number(str_val):
+    org=extract_chinese_numbers(str_val)
+    vals=list(map(chinese_to_arabic_number,  org))
+
+    # 提取数字
+    num_org=re.findall(r'\d+',str_val)
+    if num_org:
+        org.extend(num_org)
+        vals.extend(map(int,num_org))
+    return list(zip(org,vals)) if vals else []
+
+
+
+
+if __name__ == '__main__':
+
+    # 测试
+    print(chinese_to_arabic_number("二百零三"))  # 输出: 203
+    
+
+    exit(0)
+    org_str="朋友们，今天带来北京旅游攻略！首先是天安门，宏伟壮观。一定要早起去看升旗仪式，热血沸腾。接着前往圆明园，在残垣断壁中感受历史的厚重。北京之行，这几个地方必去，快来感受京城的独特魅力！"
+    
+    print(replace_punctuation_with_newline(org_str))
+    exit(0)
     print(convert_seconds_to_datetime(1736778814092))
     exit(0)
     print(sanitize_filename('痤疮痘跟风喝了一个月的金银花水..'))

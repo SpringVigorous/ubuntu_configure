@@ -352,7 +352,7 @@ def get_url_data(url,url_json_path):
     
 @exception_decorator()
 def main(url,dest_name,dest_dir:str=None,force_merge=False):
-    root_path="D:/Project/worm_practice/player/"
+    root_path=r"F:\worm_practice/player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
@@ -394,7 +394,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     move_file(temp_path,dest_path)
     
     if lost_count==0 :
-        # delete_directory(temp_dir)
+        delete_directory(temp_dir)
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
         play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
@@ -431,18 +431,30 @@ def force_merge(dir_path,dest_path):
     delete_directory(dir_path)
 def shut_down(time:10):
     os.system(f"shutdown /s /t {time}")
+    
+#根据 hash_path.xlsx 中的hash_path(文件夹路径),合并视频文件,参考 hash_path.xlsx 中的name,合并到dest_path
 def force_merges():
-    raw_df=pd.read_excel(r"F:\worm_practice\player\urls\log_urls.xlsx",index_col=1)
+    raw_df=pd.read_excel(r"F:\worm_practice\player\urls\log_urls.xlsx",index_col=1,sheet_name="原始表")
     already_df=pd.read_excel(r"F:\worm_practice\player\urls\hash_path.xlsx")
     dest_dir=r"F:\worm_practice\player\video"
     
     already_df["hash"]=already_df["hash_path"].apply(lambda x:Path(x).name)
-    merge_df=pd.merge(already_df,raw_df,on="hash",how="inner")
-    for index,row in merge_df.iterrows():
-        force_merge(row["hash_path"],os.path.join(dest_dir,f"{row["name"]}.mp4")) 
+    merge_df=pd.merge(already_df,raw_df,on="hash",how="left")
+    print(merge_df)
     
-    shut_down(10)
-
+    for index,row in merge_df.iterrows():
+        hash_path=row["hash_path"]
+        name=row["name"]
+        loger=logger_helper(f"合并{row["hash"]}",f"{row["hash_path"]}->{name}")
+        loger.info("开始")
+        if name:
+            force_merge(hash_path,os.path.join(dest_dir,f"{row["name"]}.mp4")) 
+            loger.info("完成",update_time_type=UpdateTimeType.ALL)
+        else:
+            loger.info("失败",f"{hash_path} 没有找到name:{row['hash']}",update_time_type=UpdateTimeType.ALL)
+    
+    # shut_down(10)
+ 
 if __name__=="__main__":
     
     # force_merges()
@@ -456,7 +468,7 @@ if __name__=="__main__":
     # exit(0)
     # force_merge(temp_dir,r"F:\worm_practice\player\video\1.mp4")
     # exit(0)
-    
+
     
     # temp_dir=r"E:\FFOutput"
     # suffix=[".mp4"]
@@ -474,10 +486,9 @@ if __name__=="__main__":
     lst=[
 
 
-        ("https://video.gzfeice.cn/b7554d95vodtranscq1254019786/5296e01c1397757903358079695/voddrm.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9~eyJ0eXBlIjoiRHJtVG9rZW4iLCJhcHBJZCI6MTI1NDAxOTc4NiwiZmlsZUlkIjoiMTM5Nzc1NzkwMzM1ODA3OTY5NSIsImN1cnJlbnRUaW1lU3RhbXAiOjAsImV4cGlyZVRpbWVTdGFtcCI6MjE0NzQ4MzY0NywicmFuZG9tIjowLCJvdmVybGF5S2V5IjoiIiwib3ZlcmxheUl2IjoiIiwiY2lwaGVyZWRPdmVybGF5S2V5IjoiNmM1OGI3YThiMWRmODA5NWM2NThmNDUyNDYxMmZkZWEwOWRlMGZmMTVmZDU1MmZlNmJkYWFjYzBjMGE3M2ExNGVlZjk2ZWVjOThiNTNjYTg0Y2U3NmNkYzcyYjQwZWViYmQ5ODM4N2FkMjMxNzE1MjNiMTI4MmYxYThlY2Y3YTU4ZjY3MDJhZmY5YzIzNGE1ZDA4YjJiNGIzYjM2MmNlM2FkZmFkMTAwOWY2NzBkMzNmYWNhOWI3MGUzNzhlY2IxZGM1MDQyMzZmYzFlZjY4ZmU0OTk3ZjdiYzZkMWI0MmMzMjQzOGEyZmNmMzIxZWQzOTY5MGUzNzU1MjM0NGZiMCIsImNpcGhlcmVkT3ZlcmxheUl2IjoiMjZjYzdiZDg4ZmQ2NjRmYjVlNDQyZjIwN2E3YThhMTk2NDRlMmQ5MDVlZmVlNjZhMmZlNTlmNGRjZGQyYjdmYWQxNzI4MjBiZThiODlhOTc0MjU2OTNjZTE1YzA3MDU5NGM2ZWU3M2EzMDI3ODk3Y2RhMjE0YTkzZmQ5OWQ1N2I3NDFmY2VkMDc1MDk2N2JkMDhmMzVlYjBlODFmZjgxNjYwYjg5MmFkZjI4YmQ0ZDQwNjQxZjc1OTg5ZWRlYmNkYjM1NDU3MDA5MGM5NjQzNTcxOGJkZWM2Y2UzZjI4YWVkZGI2ZmM2OWFlMzhhOTVmYzdkMGRiNDA3NDY1MWU4ZiIsImtleUlkIjoxLCJzdHJpY3RNb2RlIjowLCJwZXJzaXN0ZW50IjoiIiwicmVudGFsRHVyYXRpb24iOjAsImZvcmNlTDFUcmFja1R5cGVzIjpudWxsfQ~Evr4YUvlcwsHH_1xkr7WbKdXbVPD-qvelazjBW1R9iM.video_1444917_2.m3u8?encdomain=cmv1","外包项目分享课",r"D:\Project\教程\Python全栈0基础入门",False),
-        ("https://video.gzfeice.cn/b7554d95vodtranscq1254019786/195f12ff1397757889910859613/voddrm.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9~eyJ0eXBlIjoiRHJtVG9rZW4iLCJhcHBJZCI6MTI1NDAxOTc4NiwiZmlsZUlkIjoiMTM5Nzc1Nzg4OTkxMDg1OTYxMyIsImN1cnJlbnRUaW1lU3RhbXAiOjAsImV4cGlyZVRpbWVTdGFtcCI6MjE0NzQ4MzY0NywicmFuZG9tIjowLCJvdmVybGF5S2V5IjoiIiwib3ZlcmxheUl2IjoiIiwiY2lwaGVyZWRPdmVybGF5S2V5IjoiMWQxYWY0ZGY5NjI1MDI0NDg4OGE4MmE1Mzc2Y2RkODY1Y2QxNDNhMTBiNGM2MDIxOGMxNmFlMzZjNDc5YWFiZmE4MzA4Y2ZlM2YyNmNmMDg2Y2U5ZTMyMjYxZTBhZGM2Yjc3OWZiMWU3YjY5NDdkOWQyOTQyM2Y4MGE5Y2JhNTg2NTJjZDI3MTk4NjllNmI4ODliYzNkMmM5MzNhM2ZlZDQxM2EyMzc1OGJlYWI2MTQyMDcwZGRkMzAwM2E3M2U1ZjI1YWQ3OTNkM2FkYzgwMzFkZDM2NDE1ODA3OTQ1ZmE2ODAwYmNkNjIzNjZmNzFlMjA5MDkwOTNjOTRiMWIwMCIsImNpcGhlcmVkT3ZlcmxheUl2IjoiYjAxOTA3ZDNlNmQwYzk4ZDJkNzAxYjdkMzJhZWU3NjYyNmY2OTQzOWNjYmNlMzg0Y2JjNzVlYWY4YzNiZDk4YmE1MDZlZDJkNjM2ZTI0ZjBkMmZjMDlhYzViMjJiZWQzZmQyNWM2YmUwNDY3NzJhNGM4NTVmOWI3NjAzMTU4MzVhOWJlNWZkMjI3NDY4NDRlYjEwMWNiMDc1NjMxNjI2ZWUxNzJlYWU4YzQxZjJkZWIzZGZlNDBjMDllYjY1MTMwYzk2MmVlZDc1MzQxMjQwNzk2M2E1M2YxMGM1NzQ5NzBhM2QzOGI1OWQ0ZWYzODBhNGNmNjZlN2M0ZWQ1ZTlmNiIsImtleUlkIjoxLCJzdHJpY3RNb2RlIjowLCJwZXJzaXN0ZW50IjoiIiwicmVudGFsRHVyYXRpb24iOjAsImZvcmNlTDFUcmFja1R5cGVzIjpudWxsfQ~6nWPenMjyukbOW00BsW8gytdTzf6tyburUc_209IoNQ.video_1444917_2.m3u8?encdomain=cmv1","群发连点器",r"D:\Project\教程\Python全栈0基础入门",False),
+# ("https://v1.tlkqc.com/wjv1/202308/19/aeKFrRw7bj2/video/1000k_720/hls/index.m3u8","哪吒之魔童降世"),
+("https://v1.fentvoss.com/sdv1/202308/19/aeKFrRw7bj2/video/2000k_0X1080_64k_25/hls/index.m3u8","哪吒之魔童降世_高清"),
 
-# ("https://vip.lz15uu.com/20221116/617_1d8cbf58/1200k/hls/mixed1.m3u8","123"),
 
 
         

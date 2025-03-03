@@ -240,11 +240,11 @@ def fetch_sync(url ,max_retries=5,timeout=300,**args):
                         return received_data
                     else:
                         raise requests.exceptions.ConnectionError(
-                            response.status,
+                            response.status_code,
                             "Not enough data for satisfy content length header."
                         )
                 else:
-                    raise Exception(f"HTTP error: {response.status}")
+                    raise Exception(f"HTTP error: {response.status_code}")
                 
                 
                 
@@ -253,6 +253,8 @@ def fetch_sync(url ,max_retries=5,timeout=300,**args):
             retries += 1
             time.sleep(5)  # 等待 5 秒后重试
             timeout+=30
+        except:
+            pass
             
     fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.ALL)
     return None

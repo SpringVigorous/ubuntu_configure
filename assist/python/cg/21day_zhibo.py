@@ -25,43 +25,57 @@ def get_21Day(url,headers,params,dest_path):
     logger.info("成功",update_time_type=UpdateTimeType.ALL)
 
 if __name__=="__main__":
-    root_path=r"D:\Project\教程\21天课"
+    root_path=r"F:\教程\短视频教程\抖音\21天课"
 
 
     import requests
 
     headers = {
-        'authority': 'v11.talk-fun.com',
+        'authority': 'log.talk-fun.com',
         'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 SE 2.X MetaSr 1.0',
-        'sec-ch-ua-platform': '"Windows"',
+        'sec-ch-ua-mobile': '?1',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Mobile Safari/537.36',
+        'sec-ch-ua-platform': '"Android"',
         'accept': '*/*',
+        'origin': 'https://e.qs6x.com',
         'sec-fetch-site': 'cross-site',
-        'sec-fetch-mode': 'no-cors',
-        'sec-fetch-dest': 'video',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
         'referer': 'https://e.qs6x.com/',
         'accept-language': 'zh-CN,zh;q=0.9',
-        'range': 'bytes=0-',
     }
 
     params = {
-        'sign': '1737900508-20250125220828-18212612955-e7225d7b8aeef09ff48a8537c6f0d296',
-        'auth_key': '1737900508-0-0-323ff2466179becc1dc045d0e4e21835',
+        'cid': '3882961',
+        'xid': '1244693471',
+        'rid': '1435927',
+        'uid': '60231625',
         'pid': '62307',
-        'limit': '125K',
-        'cdt': '1734605837',
-        'part': '1',
-        'from': 'tfvod',
+        'pf': 'html',
+        'type': 'waiting',
+        'pl': '1',
+        'pt': '2',
+        'bn': '0',
+        'ba': '0',
+        'pn': '1',
+        'ctype': '9',
+        'playRate': '1',
+        'curTime': '0',
+        'host': 'v11.talk-fun.com',
+        'srcUrl': 'https://v11.talk-fun.com/7/video/75/2e/a6/db516389f2b296d8766517572a/3f699c13_video.mp4?sign=1738837785-20250205182945-10193252107-ba15c8ed669364fef63d817d722d2ed6&auth_key=1738837785-0-0-5b3659eac8152abe8911e6c6b0d8952a&pid=62307&limit=145K&cdt=1735380355&part=1&from=tfvod',
+        'ht_tstamp': '1738751330167',
     }
 
-    # response = requests.get('https://v11.talk-fun.com/7/video/50/69/24/ae3e829a7bd367b1504d74fe79/93cfb7ce_video.mp4', params=params, headers=headers)
+
+
+
+    # response = requests.get('https://log.talk-fun.com/stats/play.html', params=params, headers=headers)
 
 
    
-    url='https://v11.talk-fun.com/7/video/50/69/24/ae3e829a7bd367b1504d74fe79/93cfb7ce_video.mp4'
+    url='https://log.talk-fun.com/stats/play.html'
 
 
-    file_name="03_二次剪辑实操技巧.mp4"
+    file_name="08_直播带货常见误区.mp4"
     get_21Day(url,headers,params,os.path.join(root_path,file_name))  
 

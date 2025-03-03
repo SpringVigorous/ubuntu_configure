@@ -100,8 +100,20 @@ def add_image_to_cell(cell:Cell, image_path,width=100,height=100):
     
     img = Image(image_path)
     # 调整图片大小（可选）
-    img.width = width
-    img.height = height
+
+    
+    src_width,src_height=img.width,img.height
+    
+    src_scale=float(src_width)/src_height
+    if src_scale>float(width)/height:
+        img.width = width
+        img.height = int(width/src_scale)
+    else:
+        img.height = height
+        img.width = int(height*src_scale)
+    
+    # img.width = width
+    # img.height = height
     ws.add_image(img, cell.coordinate)
 
     
