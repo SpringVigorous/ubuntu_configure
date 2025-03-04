@@ -15,7 +15,7 @@ import math
 from base import (
     get_homepage_url, is_http_or_https, logger_helper, fetch_sync, UpdateTimeType,
     arabic_number_tuples, sanitize_filename, chinese_num, exception_decorator,
-    except_stack, hash_text, MultiThreadCoroutine
+    except_stack, hash_text, MultiThreadCoroutine,ReturnState
 )
 
 cookies = {
@@ -394,6 +394,10 @@ class StoryScraper:
         logger.info("开始", "获取章节内容")
 
         dest_datas = self.mutithread_chapters_data(chapters, datas)
+        if isinstance(dest_datas,ReturnState) and not dest_datas.is_success():
+            logger.error("失败",update_time_type=UpdateTimeType.STAGE)
+            return
+        
         logger.info("完成", "获取章节内容", update_time_type=UpdateTimeType.STAGE)
         changed = len(dest_datas) > org_len or datas.keys() != dest_datas.keys()
         if changed:
@@ -426,7 +430,7 @@ class StoryScraper:
         with ThreadPoolExecutor() as executor:
             futures = []
             for index, row in df.iterrows():
-                if index<100:
+                if index<847:
                     continue
 
                 future = executor.submit(self.process_story, index, row)
