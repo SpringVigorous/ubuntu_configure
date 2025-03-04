@@ -135,8 +135,8 @@ class MultiThreadCoroutine:
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_count) as executor:
             futures = []
             # 创建一个事件循环
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # loop = asyncio.new_event_loop()
+            # asyncio.set_event_loop(loop)
 
             # 将任务分配到线程池
             try:
@@ -146,15 +146,18 @@ class MultiThreadCoroutine:
                     batch = self.args_list[i:last_index]
                     
                     
-                    future = loop.run_in_executor(executor, self.run_coroutines_in_thread, batch, self.semaphore_count, self.coroutine_func)
+                    # future = loop.run_in_executor(executor, self.run_coroutines_in_thread, batch, self.semaphore_count, self.coroutine_func)
+                    future =executor.submit( self.run_coroutines_in_thread, batch, self.semaphore_count, self.coroutine_func)
                     futures.append(future)
                 
                 # 等待所有任务完成
-                results = await asyncio.gather(*futures, return_exceptions=True)
+                # results = await asyncio.gather(*futures, return_exceptions=True)
+                results = [future.result() for future in concurrent.futures.as_completed(futures)]
             except Exception as e:
                 task_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
             finally:
-                loop.close()
+                # loop.close()
+                pass
         self.result=results
         return self.result
 

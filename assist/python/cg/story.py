@@ -20,7 +20,7 @@ import re
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
-from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,UpdateTimeType,arabic_number,sanitize_filename
+from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,UpdateTimeType,arabic_number,sanitize_filename,chinese_num
 import pandas as pd 
 import json
 
@@ -28,7 +28,7 @@ from base import as_normal,MultiThreadCoroutine,exception_decorator,except_stack
 import asyncio,aiohttp
 import concurrent.futures
 import random  
-
+import math
 cookies = {
     '___rl__test__cookies': '1740656330035',
     'Hm_lvt_a9251d29efa34bd37e0613ea0213c2bc': '1740653593',
@@ -58,6 +58,25 @@ headers = {
     'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Mobile Safari/537.36',
     'cache-control': 'no-cache',  # 添加或修改缓存控制头
 }
+
+
+
+
+proxies = {
+  'http': 'http://your_proxy_ip:your_proxy_port',
+  'https': 'https://your_proxy_ip:your_proxy_port'
+}
+
+def dict_first_item(val:dict):
+    if not dict:
+        return
+    
+    key= next(iter(val))
+    return key,val[key]
+
+# response = requests.get('http://example.com', proxies=proxies)
+# print(response.text)
+
 def classic_lst():
 
     #经典推荐
@@ -240,6 +259,24 @@ def extract_after_colon(text):
     else:
         return None
     
+# <div class="bookname">混沌龙帝</div>
+    
+# <h2 class="layout-tit xs-hidden">
+# 	<a href="/">纳兰小说</a>&gt;
+# 	<a href="/4/4436/">混沌龙帝</a> &gt; 第1章（第1页）
+# </h2>
+def title_form_detail(url):
+    response = requests.get(url, cookies=cookies, headers=headers)
+    if response.status_code != 200:
+        return
+
+    tree = html.fromstring(response.content)
+    title=tree.xpath('//div[@class="bookname"]/text()')
+    if title:
+        return title[0]
+    
+    titles = tree.xpath('//h2[@class="layout-tit xs-hidden"]/a/text()')
+    return titles[1] if titles and len(titles)>1 else ""
     
 # <div class="info">
 # 	<div class="top">
@@ -283,12 +320,7 @@ def extract_after_colon(text):
 # 	</p>
 # </div>
 
-
-
-
-
-
-def get_chapter_info(url):
+def info_from_lst(url):
     response = requests.get(url, cookies=cookies, headers=headers)
     if response.status_code != 200:
         return
@@ -305,7 +337,7 @@ def get_chapter_info(url):
     info=org_info.xpath('.//p')
     info_txt=org_info.xpath('.//p/text()')
     if len(info_txt)<3:
-        return 
+        return title,None
 
     author=extract_after_colon(info_txt[0])
     catelog=extract_after_colon(info_txt[1])
@@ -317,28 +349,47 @@ def get_chapter_info(url):
     
     return title,author,catelog,date,last
 
+def real_title(num,title):
+    num=int(num)
+    return f"{num:05}_{title}" if title else f"{num:04}"
 
 def get_chapter_list(base_url):
     chapters = {}
     page=0
     domain=get_homepage_url(base_url)
-    logger=logger_helper("章节")
+    book_info=info_from_lst(base_url)
+    
+    theme=book_info[0] if  book_info else ""
+    logger=logger_helper(theme,base_url)
+    logger.info("开始获取章节列表")
     # 正则表达式模式
-    chapter_pattern = re.compile(r'第(\d+)章\s+(.*)')
+    chapter_pattern = re.compile(r'\S([0-9'+ chinese_num + r']+)\S\s*(\S*)')
     
     indexes={}
-
     while True:
         
         cur_url=f"{base_url}{page}/" if page > 0 else base_url
         page+=1
-        response = requests.get(cur_url, cookies=cookies, headers=headers)
+        response=None
+        try:
+            response = requests.get(cur_url, cookies=cookies, headers=headers, timeout=10)
+        except:
+            logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
+            return 
         if response.status_code != 200:
             break
-        
+
         logger.update_target(detail=cur_url)
         tree = html.fromstring(response.content)
-
+        # if not theme:
+        #     theme=title_form_detail(cur_url)
+        #     try:
+        #         theme = tree.xpath('//h2[@class="layout-tit xs-hidden"]/a/text()')[1]
+        #         if theme:
+        #             logger.update_target(target=theme)
+        #     except:
+        #         pass
+            
         lis_all = tree.xpath('//ul[@class="chapter-list"]')
         if not lis_all:
             lis_all = tree.xpath('//ul[@class="fix section-list"]')
@@ -359,31 +410,38 @@ def get_chapter_list(base_url):
 
             
             title = a_tag.xpath('text()')[0].strip()
-            
+            org_title=title
             # 使用正则表达式提取章节编号和标题
             match = chapter_pattern.match(title)
             if match:
-                chapter_number = match.group(1)
+                chapter_number =arabic_number( match.group(1))[0][-1]
                 chapter_title = match.group(2) 
-                title=f"{int(chapter_number):03}_{chapter_title}"
-                logger.trace(f"匹配的标题: {title}",update_time_type=UpdateTimeType.ALL)  
+                
+                logger_fun=logger.trace if chapter_title else logger.warn
+
+                title=real_title(chapter_number,chapter_title)
+                logger_fun(f"匹配标题:{org_title}->{title}",update_time_type=UpdateTimeType.STEP)  
             else:
                 # 如果不匹配，可以选择记录日志或跳过
-                logger.warn(f"未匹配的标题: {title}",update_time_type=UpdateTimeType.ALL)  
+                logger.warn(f"未匹配标题: {org_title}",update_time_type=UpdateTimeType.STEP)  
             if chapters.get(title):  # 如果标题已经存在，则跳过
                 continue  
             chapters[title]=url
             
             indexes[len(chapters)-1]=bool(match)
             
+        logger.info("完成",update_time_type=UpdateTimeType.STAGE)
         if valid_count>=len(chapters):
             break   
             # chapters.append((url, title))
+    logger.update_target(detail=base_url)
+    logger.info("完成",update_time_type=UpdateTimeType.ALL)
+    
     if not all(indexes.values()):  # 如果所有章节标题都匹配成功，则跳出循环
         keys=list(chapters.keys())
-        chapters={(key if indexes[keys.index(key)] else f"{(keys.index(key)+1):04}_{key}" ):val for key,val in chapters.items()}
+        chapters={(key if indexes[keys.index(key)] else real_title(keys.index(key)+1,key) ):val for key,val in chapters.items()}
             
-    return chapters
+    return reset_dict_num(chapters)
 
 def process_chapters(chapters,base_temp_dir):
     
@@ -439,12 +497,12 @@ def process_chapters(chapters,base_temp_dir):
         if not content:
             continue
         try:
-            logger.info("保存成功",f"个数:{success_count}")
+            logger.trace("保存成功",f"个数:{success_count}")
             with open(save_path, 'w', encoding='utf-8-sig') as f:
                 f.write('\n'.join(content))
         except Exception as e:
             print(f"Error occurred while writing to file: {e}")
-
+@exception_decorator()
 async def get_chapters_data(semaphore,args:list|tuple):
         async with semaphore:
             title,url,keys=args
@@ -459,7 +517,7 @@ async def get_chapters_data(semaphore,args:list|tuple):
             page = 0
             success_count=0
             
-            asyncio.sleep( random.uniform(0.005, 0.8))
+            # await asyncio.sleep( random.uniform(0.005, 0.8))
             
             async with aiohttp.ClientSession() as session:
                 while True:
@@ -467,7 +525,7 @@ async def get_chapters_data(semaphore,args:list|tuple):
                     page += 1
                     
                     async with session.get(page_url, cookies=cookies, headers=headers) as response:
-                        if response.status != 200 and response.url != page_url:
+                        if response.status != 200 or str(response.url) != page_url:
                             # logger.warn(f"{page} is not found")
                             if page>1:
                                 break
@@ -493,8 +551,8 @@ async def get_chapters_data(semaphore,args:list|tuple):
                 if not content:
                     return
                 try:
-                    logger.info("保存成功",f"个数:{success_count}",update_time_type=UpdateTimeType.ALL)
-                    return title,'\n'.join(content)
+                    logger.trace("保存成功",f"个数:{success_count}",update_time_type=UpdateTimeType.ALL)
+                    return (title,'\n'.join(content))
                 except Exception as e:
                     print(f"Error occurred while writing to file: {e}")
 @exception_decorator()
@@ -503,11 +561,17 @@ def mutithread_chapters_data(chapters,datas:dict=None):
     keys=datas.keys() if datas else []
     if not datas:
         datas={}
-    playlist_logger=logger_helper()
+        
+    first_url= dict_first_item(chapters)[1] if chapters else None
+    theme=title_form_detail(first_url) if first_url else ""
+    playlist_logger=logger_helper(f"{theme}-下载",f"共{len(chapters)}章")
     
-    params=[(key,url,keys)  for key,url in chapters.items()]
+    params=[(key,url,keys)  for key,url in chapters.items() if key not in keys]
+    if not params:
+        playlist_logger.info("完成",f"已下载{len(datas)}章",update_time_type=UpdateTimeType.ALL)
+        return datas
     
-    multi_thread_coroutine = MultiThreadCoroutine(get_chapters_data,params,threads_count=5, concurrent_task_count=5,semaphore_count=10)
+    multi_thread_coroutine = MultiThreadCoroutine(get_chapters_data,params,threads_count=10, concurrent_task_count=10,semaphore_count=50)
     try:
         asyncio.run(multi_thread_coroutine.run_tasks()) 
         success=multi_thread_coroutine.success
@@ -515,14 +579,19 @@ def mutithread_chapters_data(chapters,datas:dict=None):
             info=[multi_thread_coroutine.fail_infos,except_stack()]
             info_str="\n".join(info)
             playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
-        for item in multi_thread_coroutine.result :
-            if item:
-                title,data=item
-                datas[title]=data
+        for items in multi_thread_coroutine.result :
+            if items:
+                for item in items:
+                    if item:
+                        title,data=item
+                        datas[title]=data
+                
+                
+        playlist_logger.info("完成",f"已下载{len(datas)}章",update_time_type=UpdateTimeType.ALL)
     except Exception as e:
-        playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
+        playlist_logger.error("下载异常",f"已下载{len(datas)}章\n{except_stack()}",update_time_type=UpdateTimeType.ALL)
     finally:
-        return dict(sorted(datas.items()))
+        return reset_dict_num(dict(sorted(datas.items())))
     
 def process_chapters_data(chapters,datas:dict=None):
 
@@ -578,7 +647,7 @@ def process_chapters_data(chapters,datas:dict=None):
         if not content:
             continue
         try:
-            logger.info("保存成功",f"个数:{success_count}",update_time_type=UpdateTimeType.ALL)
+            logger.info("提取内容成功",f"个数:{success_count}",update_time_type=UpdateTimeType.ALL)
             datas[title]='\n'.join(content)
         except Exception as e:
             print(f"Error occurred while writing to file: {e}")
@@ -634,12 +703,62 @@ def export_datas(datas:dict, target_file):
             outfile.write(data)
             # 写入分隔符
             outfile.write("\n\n")
+            
+
+def reset_dict_num(dict_data:dict)->dict:
+    if not dict_data:
+        return
+    
+    first_key=dict_first_item(dict_data)[0]
+    
+    num_len=len(first_key.split("_")[0])
+    count=len(dict_data)
+    if (count<pow(10,num_len)and count>=pow(10,num_len-1)):
+        return dict_data
+    num_len=math.ceil(math.log10(count))
+    logger=logger_helper(f"重置编号,eg:{first_key}",f"{count}->{num_len}")
+    dest_datas={}
+    for key,val in dict_data.items():
+        titles=key.split("_")
+        
+        new_key=key
+        if titles :
+            num=int(titles[0])
+            titles[0]=f"{num:0{num_len}}"
+            new_key="_".join(titles)
+
+        dest_datas[new_key]=val
+    # return dict_data 
+    logger.info("完成",update_time_type=UpdateTimeType.ALL)
+    # dest_datas={f"{int(key):0{num_len}}":val   for key,val in dict_data.items()}
+    return dict(sorted(dest_datas.items()))
+
+
+def reset_json_order(json_path):
+    if not os.path.exists(json_path):
+        return
+    logger=logger_helper("读取已有文件",json_path)
+    datas=json.load(open(json_path,'r',encoding='utf-8-sig'))
+    dest_datas=reset_dict_num(datas)
+    changed= datas.keys()!=dest_datas.keys()
+    if changed:
+        logger.info("重置顺序，并保存",update_time_type=UpdateTimeType.STEP)
+        json.dump(dest_datas, open(json_path,'w',encoding='utf-8-sig'),ensure_ascii=False,indent=4)
+    logger.info("读取完成",update_time_type=UpdateTimeType.ALL)
+    return dest_datas
+
 
 if __name__ == "__main__":
     
+    # response=requests.get("https://www.nlxs.org/51/51563/145/")
     
-    # for i in range(100):
-    #     print(random.uniform(0.03, 0.8))
+    # exit(0)
+    
+    # print(arabic_number("十一"))
+    # print(arabic_number("一百十一"))
+    
+    # # for i in range(100):
+    # #     print(random.uniform(0.03, 0.8))
     # exit(0)
     
 
@@ -662,65 +781,89 @@ if __name__ == "__main__":
         df.to_excel(base_url_xlsx, index=False)
     
     for index,row in df.iterrows():
+        if index<156:
+            continue
+        
         url=row["url"]
         title=row["title"]
         author=row["author"]
         date=row["date"]
         last=row["last"]
         
-        info=get_chapter_info(url)
-        if info:
+        info=info_from_lst(url)
+        if info and len(info)>2:
             detail_title,detail_author,detail_catelog,detail_date,detail_last=info
             #修正值
             title=detail_title if detail_title else title
             author=detail_author if detail_author else author
             date=detail_date if detail_date else date
             last=detail_last if detail_last else last
-        
+            
+        logger=logger_helper(f"第{index+1}个_{title}",url)
+
         file_title=sanitize_filename(title,limit_length=80)
         
-        temp_dir=os.path.join(temp_dir,file_title)
-        os.makedirs(temp_dir,exist_ok=True)
+        cur_temp_dir=os.path.join(temp_dir,file_title)
+        os.makedirs(cur_temp_dir,exist_ok=True)
+        logger.info("开始","获取章节URL",update_time_type=UpdateTimeType.STAGE)
         
         #各个章节的地址
-        base_url_json=os.path.join(temp_dir,f"{file_title}_url.json")
+        base_url_json=os.path.join(cur_temp_dir,f"{file_title}_url.json")
+        
         if os.path.exists(base_url_json):
-            chapters=json.load(open(base_url_json,'r',encoding='utf-8-sig'))
+            # chapters=json.load(open(base_url_json,'r',encoding='utf-8-sig'))
+            
+            #重新编号
+            chapters=reset_json_order(base_url_json)
+            
         else:
             chapters = get_chapter_list(url)
+            if not chapters:
+                logger.error("失败",update_time_type=UpdateTimeType.STAGE)
+                continue
+            
             json.dump(chapters, open(base_url_json,'w',encoding='utf-8-sig'),ensure_ascii=False,indent=4)
             
         #各个章节的内容
-        base_data_json=os.path.join(temp_dir,f"{file_title}_data.json")
+        base_data_json=os.path.join(cur_temp_dir,f"{file_title}_data.json")
         datas={}
         if os.path.exists(base_data_json):
-            datas=json.load(open(base_data_json,'r',encoding='utf-8-sig'))
+            # datas=json.load(open(base_data_json,'r',encoding='utf-8-sig'))
+            #重新编号
+            datas=reset_json_order(base_data_json)
         org_len=len(datas)
+        
+        logger.info("完成","获取章节URL",update_time_type=UpdateTimeType.STAGE)
+        logger.info("开始","获取章节内容")
+               
         dest_datas=mutithread_chapters_data(chapters,datas)
-        if len(dest_datas)>org_len:
-            json.dump(datas, open(base_data_json,'w',encoding='utf-8-sig'),ensure_ascii=False,indent=4)
+        logger.info("完成","获取章节内容",update_time_type=UpdateTimeType.STAGE)
+        changed=len(dest_datas)>org_len or datas.keys()!=dest_datas.keys()
+        if changed:
+            json.dump(dest_datas, open(base_data_json,'w',encoding='utf-8-sig'),ensure_ascii=False,indent=4)
             
         #最终文件
         target_file = os.path.join(dest_dir,f"{file_title}.txt")
-        if dest_datas:
+        if dest_datas and changed:
             export_datas(dest_datas, target_file)
-        
+        count=len(dest_datas)
 
         df.loc[index,"title"]=title
-        df.loc[index,"last"]=last if last else len(datas)
+        df.loc[index,"last"]= last if (last and last > count ) else count
         df.loc[index,"author"]=author
         df.loc[index,"date"]=date
-        break
+        
+        logger.info("完成",update_time_type=UpdateTimeType.ALL)
+        # if index>100:
+        #     break
     
     #重新保存
     df.to_excel(base_url_xlsx, index=False)
-    
+
+    os.system("shutdown /s /t 60")
     exit(0)
     
-    
-    print(f"合并完成，结果保存在 {target_file}")
 
-    base_url = 'https://www.nlxs.org/115/115666/'
     
 
     

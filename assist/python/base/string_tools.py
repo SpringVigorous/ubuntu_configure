@@ -216,7 +216,8 @@ chinese_to_arabic = {
     '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
     '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
     '十': 10, '百': 100, '千': 1000, '万': 10000, '亿': 100000000,
-    '壹':1,'贰':2,'叁':3,'肆':4,'伍':5,'陆':6,'柒':7,'捌':8,'玖':9,'拾':10,'佰':100,'仟':1000,'兆':1000000000
+    '壹':1,'贰':2,'叁':3,'肆':4,'伍':5,'陆':6,'柒':7,'捌':8,'玖':9,'拾':10,'佰':100,'仟':1000,'兆':1000000000,
+    "两":2,
 }
 
 def extract_chinese_numbers(text):
@@ -238,13 +239,15 @@ def chinese_to_arabic_number(chinese_num):
 
     unit = 1
     num = 0
-    
-    for char in reversed(chinese_num):
+    count=len(chinese_num)
+    for index,char in enumerate(reversed(chinese_num)):
         if char in chinese_to_arabic:
             cur_val=chinese_to_arabic[char]
             
             if cur_val >= 10:
                 unit = cur_val
+                if index+1==count:
+                     num += 1 * unit
             else:
                 num += cur_val * unit
         else:
