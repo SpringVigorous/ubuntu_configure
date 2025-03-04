@@ -9,7 +9,7 @@ import threading
 from time import time,sleep
 
 from custom_log import CustomLogger
-from rotate_file_handler import TimeAndSizeRotatingFileHandler
+
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
