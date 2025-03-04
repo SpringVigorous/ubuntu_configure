@@ -143,7 +143,7 @@ def html_table_to_str(html_table,row_split="\n",col_split="\t"):
 # sha3_512
 # shake_128
 # shake_256
-def hash_text(text, algorithm='sha256',max_length=8):
+def hash_text(text, algorithm='sha256',max_length=8,strict_no_num=False):
     """
     计算文本的哈希值并返回字符串形式的哈希值。
 
@@ -159,8 +159,15 @@ def hash_text(text, algorithm='sha256',max_length=8):
     
     # 获取哈希值的十六进制表示
     hex_dig = hash_object.hexdigest()
+    result=hex_dig[:max_length]
+    if strict_no_num :
+        for item in set(re.findall(r'\d',result)):
+            new_val=chr(ord('A')+ord(item)-ord('0')) 
+            result=result.replace(item,new_val)
+
     
-    return hex_dig[:max_length]
+    
+    return result
 
 # 秒时间戳
 def convert_seconds_to_datetime(seconds:int):

@@ -24,7 +24,7 @@ from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,Upda
 import pandas as pd 
 import json
 
-from base import as_normal,MultiThreadCoroutine,exception_decorator,except_stack
+from base import as_normal,MultiThreadCoroutine,exception_decorator,except_stack,hash_text
 import asyncio,aiohttp
 import concurrent.futures
 import random  
@@ -406,10 +406,12 @@ def get_chapter_list(base_url):
             url = a_tag.xpath('@href')[0]
             if not is_http_or_https(url):
                 url = domain + url
+            if not url:
+                continue
             
-
+            titles=a_tag.xpath('text()')
             
-            title = a_tag.xpath('text()')[0].strip()
+            title = titles[0].strip() if titles else hash_text(url,strict_no_num=True)
             org_title=title
             # 使用正则表达式提取章节编号和标题
             match = chapter_pattern.match(title)
@@ -424,23 +426,25 @@ def get_chapter_list(base_url):
             else:
                 # 如果不匹配，可以选择记录日志或跳过
                 logger.warn(f"未匹配标题: {org_title}",update_time_type=UpdateTimeType.STEP)  
-            if chapters.get(title):  # 如果标题已经存在，则跳过
+            if chapters.get(url):  # 如果url已经存在，则跳过
                 continue  
-            chapters[title]=url
+            chapters[url]=title
             
             indexes[len(chapters)-1]=bool(match)
             
-        logger.info("完成",update_time_type=UpdateTimeType.STAGE)
-        if valid_count>=len(chapters):
+        add_count=len(chapters)-valid_count
+        logger.info("完成",f"本次添加{add_count}个",update_time_type=UpdateTimeType.STAGE)
+        if add_count<1:
             break   
             # chapters.append((url, title))
     logger.update_target(detail=base_url)
-    logger.info("完成",update_time_type=UpdateTimeType.ALL)
+    logger.info("完成",f"共{len(chapters)}个",update_time_type=UpdateTimeType.ALL)
     
     if not all(indexes.values()):  # 如果所有章节标题都匹配成功，则跳出循环
         keys=list(chapters.keys())
-        chapters={(key if indexes[keys.index(key)] else real_title(keys.index(key)+1,key) ):val for key,val in chapters.items()}
-            
+        chapters={key:(val if indexes[keys.index(key)] else real_title(keys.index(key)+1,val) ) for key,val in chapters.items()}
+
+    chapters={val:key for key,val in chapters.items()} 
     return reset_dict_num(chapters)
 
 def process_chapters(chapters,base_temp_dir):
@@ -781,7 +785,7 @@ if __name__ == "__main__":
         df.to_excel(base_url_xlsx, index=False)
     
     for index,row in df.iterrows():
-        if index<156:
+        if index<377:
             continue
         
         url=row["url"]
