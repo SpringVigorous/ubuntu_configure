@@ -24,7 +24,7 @@ from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,Upda
 import pandas as pd 
 import json
 
-from base import as_normal,MultiThreadCoroutine,exception_decorator,except_stack,hash_text
+from base import as_normal,MultiThreadCoroutine,exception_decorator,except_stack,hash_text,ReturnState
 import asyncio,aiohttp
 import concurrent.futures
 import random  
@@ -785,7 +785,7 @@ if __name__ == "__main__":
         df.to_excel(base_url_xlsx, index=False)
     
     for index,row in df.iterrows():
-        if index<377:
+        if index<756:
             continue
         
         url=row["url"]
@@ -841,6 +841,9 @@ if __name__ == "__main__":
         logger.info("开始","获取章节内容")
                
         dest_datas=mutithread_chapters_data(chapters,datas)
+        if isinstance(dest_datas,ReturnState) and not dest_datas.is_success():
+            logger.error("失败",update_time_type=UpdateTimeType.STAGE)
+            continue
         logger.info("完成","获取章节内容",update_time_type=UpdateTimeType.STAGE)
         changed=len(dest_datas)>org_len or datas.keys()!=dest_datas.keys()
         if changed:
