@@ -20,7 +20,7 @@ import re
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
-from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,UpdateTimeType,arabic_number,sanitize_filename,chinese_num
+from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,UpdateTimeType,arabic_number_tuples,sanitize_filename,chinese_num
 import pandas as pd 
 import json
 
@@ -58,26 +58,19 @@ headers = {
     'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Mobile Safari/537.36',
     'cache-control': 'no-cache',  # 添加或修改缓存控制头
 }
-
-
-
-
-proxies = {
-  'http': 'http://your_proxy_ip:your_proxy_port',
-  'https': 'https://your_proxy_ip:your_proxy_port'
-}
-
 def dict_first_item(val:dict):
     if not dict:
         return
     
     key= next(iter(val))
     return key,val[key]
+proxies = {
+  'http': 'http://your_proxy_ip:your_proxy_port',
+  'https': 'https://your_proxy_ip:your_proxy_port'
+}
 
 # response = requests.get('http://example.com', proxies=proxies)
-# print(response.text)
-
-def classic_lst():
+# print(response.textdef classic_lst():
 
     #经典推荐
     
@@ -91,7 +84,7 @@ def classic_lst():
 	# 		<a href="/author/%E4%B9%A1%E9%87%8E%E9%A3%8E%E6%B5%81/">乡野风流</a>
 	# 	</span>
 	# </li>
-    pass
+
 
 
 def new_lst():
@@ -344,7 +337,7 @@ def info_from_lst(url):
     date=extract_after_colon(info_txt[-2])
     
     
-    last=arabic_number(info[-1].xpath('./a')[-1].xpath('text()')[0])[0][1]
+    last=arabic_number_tuples(info[-1].xpath('./a')[-1].xpath('text()')[0])[0][1]
     
     
     return title,author,catelog,date,last
@@ -416,7 +409,7 @@ def get_chapter_list(base_url):
             # 使用正则表达式提取章节编号和标题
             match = chapter_pattern.match(title)
             if match:
-                chapter_number =arabic_number( match.group(1))[0][-1]
+                chapter_number =arabic_number_tuples( match.group(1))[0][-1]
                 chapter_title = match.group(2) 
                 
                 logger_fun=logger.trace if chapter_title else logger.warn
@@ -752,19 +745,9 @@ def reset_json_order(json_path):
     return dest_datas
 
 
+
 if __name__ == "__main__":
-    
-    # response=requests.get("https://www.nlxs.org/51/51563/145/")
-    
-    # exit(0)
-    
-    # print(arabic_number("十一"))
-    # print(arabic_number("一百十一"))
-    
-    # # for i in range(100):
-    # #     print(random.uniform(0.03, 0.8))
-    # exit(0)
-    
+     
 
     root_dir = r'F:\worm_practice\storys'
     dest_dir=os.path.join(root_dir,'dest')

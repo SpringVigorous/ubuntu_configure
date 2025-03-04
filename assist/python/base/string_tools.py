@@ -263,7 +263,7 @@ def chinese_to_arabic_number(chinese_num):
 
     return num
 
-def arabic_number(str_val):
+def arabic_number_tuples(str_val):
     org=extract_chinese_numbers(str_val)
     vals=list(map(chinese_to_arabic_number,  org))
 
@@ -274,8 +274,9 @@ def arabic_number(str_val):
         vals.extend(map(int,num_org))
     return list(zip(org,vals)) if vals else []
 
-
-
+def arabic_numbers(str_val):
+    items=arabic_number_tuples(str_val)
+    return [item[-1] for item in items if item] if items else []
 
 if __name__ == '__main__':
 

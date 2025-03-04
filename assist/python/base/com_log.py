@@ -9,7 +9,7 @@ import threading
 from time import time,sleep
 
 from custom_log import CustomLogger
-
+from rotate_file_handler import TimeAndSizeRotatingFileHandler
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
@@ -96,6 +96,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             
             # 创建一个 TimedRotatingFileHandler，每天创建一个新的日志文件
             file_handler = TimedRotatingFileHandler(log_path, when="midnight", encoding='utf-8-sig', interval=1, backupCount=30)
+            # file_handler = TimeAndSizeRotatingFileHandler(log_path, when="midnight", encoding='utf-8-sig', interval=1, backupCount=30, maxBytes=20*1024*1024)
             file_handler.suffix = "%Y-%m-%d.log"
             
             # file_handler = logging.FileHandler(log_path, encoding='utf-8-sig')  # FileHandler将日志写入到指定的文件名中
