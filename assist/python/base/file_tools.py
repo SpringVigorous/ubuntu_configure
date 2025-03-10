@@ -294,6 +294,64 @@ def move_file(source_file,destination_file):
         move_logger.error("失败",except_stack())    
 
 
+def priority_read(file_path,readfunc,operator_func=None,writefunc=None):
+    data=None
+    if os.path.exists(file_path) and readfunc:
+        data=readfunc(file_path)
+        print(type(data))
+        if data is not None:
+            return data
+    data=operator_func()  if operator_func else None
+     
+    if writefunc :
+        writefunc(file_path,data)
+    return data
+
+def write_dataframe_excel(file_path,data,sheet_name=None):
+    import pandas as pd
+    
+    if not isinstance(data,pd.DataFrame):
+        data=pd.DataFrame(data)
+    if sheet_name:
+        return data.to_excel(file_path,sheet_name=sheet_name)
+        
+    return data.to_excel(file_path)
+
+def write_to_json(file_path,data,**file_kwargs):
+    import json
+
+    return json.dump(data,open(file_path,"w",**file_kwargs),indent=4,ensure_ascii=False)
+
+
+def write_to_txt(file_path,data,**file_kwargs):
+    return open(file_path,"w",**file_kwargs).write(data)
+
+
+def priority_read_excel_by_pandas(file_path,operator_func=None,sheet_name=None):
+    import pandas as pd
+    
+    readfunc=lambda file_path:pd.read_excel(file_path,sheet_name=sheet_name) if sheet_name else pd.read_excel(file_path)
+    writeFunc=lambda file_path,df : write_dataframe_excel(file_path,df,sheet_name=sheet_name)
+
+    return priority_read(file_path,readfunc,operator_func,writeFunc)
+
+
+
+def priority_read_json(file_path,operator_func=None,**file_kwargs):
+    import json
+    readfunc=lambda file_path:json.load(open(file_path,"r",**file_kwargs))
+    writefunc=lambda file_path,data :write_to_json(file_path,data,**file_kwargs)
+    return priority_read(file_path,readfunc,operator_func,writefunc)
+
+def priority_read_txt(file_path,operator_func=None,**file_kwargs):
+    readfunc=lambda file_path:open(file_path,"r",**file_kwargs).read()
+
+
+    writefunc=lambda file_path,data :write_to_txt(file_path,data,**file_kwargs)
+    return priority_read(file_path,readfunc,operator_func,writefunc)
+    
+    
+
 if __name__ == '__main__':
 
     replace_tuples=[

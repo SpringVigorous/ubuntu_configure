@@ -278,6 +278,19 @@ def arabic_numbers(str_val):
     items=arabic_number_tuples(str_val)
     return [item[-1] for item in items if item] if items else []
 
+def split_flag_to_dict(str_val, flag=","):
+    if not isinstance(str_val,(list, tuple)):
+        str_val=[str_val]
+    result={}
+    for item in str_val:
+        if not isinstance(item, str):
+            continue
+        lst=item.split(flag)
+        if len(lst)>1:
+            result[lst[0].strip()]=flag.join(lst[1:]).strip()
+    return result
+
+
 if __name__ == '__main__':
 
     # 测试

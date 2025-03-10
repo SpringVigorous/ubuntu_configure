@@ -410,10 +410,8 @@ def get_chapter_list(base_url):
             match = chapter_pattern.match(title)
             if match:
                 chapter_number =arabic_number_tuples( match.group(1))[0][-1]
-                chapter_title = match.group(2) 
-                
+                chapter_title = match.group(2)             
                 logger_fun=logger.trace if chapter_title else logger.warn
-
                 title=real_title(chapter_number,chapter_title)
                 logger_fun(f"匹配标题:{org_title}->{title}",update_time_type=UpdateTimeType.STEP)  
             else:
@@ -433,7 +431,11 @@ def get_chapter_list(base_url):
     logger.update_target(detail=base_url)
     logger.info("完成",f"共{len(chapters)}个",update_time_type=UpdateTimeType.ALL)
     
-    if not all(indexes.values()):  # 如果所有章节标题都匹配成功，则跳出循环
+    
+    
+    if not all( item[1]==index+1  for index,item in chapters.items() ):  # 如果所有章节标题都匹配成功，则跳出循环
+        
+        
         keys=list(chapters.keys())
         chapters={key:(val if indexes[keys.index(key)] else real_title(keys.index(key)+1,val) ) for key,val in chapters.items()}
 

@@ -202,11 +202,11 @@ class logger_helper:
     #若是为空，则不更新
     def update_target(self,target:str=None,detail:str=None):
         if target:
-            self._target=target
+            self._target=str(target)
         elif not hasattr(self,"_target"):
             self._target=None
         if detail:
-            self._detail=detail
+            self._detail=str(detail)
         elif not hasattr(self,"_detail"):
             self._detail=None
         
@@ -247,7 +247,9 @@ class logger_helper:
             pass
         
     def detail_content(self,detail_lat:str=None):
-        return f"{self._detail},{detail_lat}" if detail_lat else self._detail
+        lst=[str(self._detail),str(detail_lat)]
+        dest=[item for item in lst if item and item.strip()]
+        return ",".join(dest)
         
     #仅内容
     def content(self,status:str,detail_lat:str=None,update_time=None)->str:     

@@ -1,5 +1,6 @@
 ﻿from bs4 import BeautifulSoup
 from base import exception_decorator
+from lxml import html
 def set_count(lst, count,default=None):
     if not lst:
         return [default] * count
@@ -72,6 +73,11 @@ def get_nodes(html_str, tag_name, **kwargs):
     tag = soup.find_all(tag_name,**kwargs)
     return tag
 
+
+def pretty_tree(tree):
+    if tree is None:
+        return None
+    return html.tostring(tree, pretty_print=True, encoding='unicode')
 
 
 if __name__=="__main__":

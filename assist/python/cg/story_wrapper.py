@@ -20,7 +20,9 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import (
     get_homepage_url, is_http_or_https, logger_helper, fetch_sync, UpdateTimeType,
     arabic_number_tuples, sanitize_filename, chinese_num, exception_decorator,
-    except_stack, hash_text, MultiThreadCoroutine,ReturnState
+    except_stack, hash_text, MultiThreadCoroutine,ReturnState,content_tree,
+    remove_html_entity,get_node_text,split_flag_to_dict,dict_val,get_node_attr,fill_url,
+    pretty_tree, unique,priority_read_excel_by_pandas,priority_read_json,get_node_sub_hrefs,write_dataframe_excel
 )
 
 cookies = {
@@ -50,174 +52,314 @@ headers = {
     'cache-control': 'no-cache',
 }
 
+"""数据库信息
+小说信息：catelog,title,author,date,url,last
+章节url: index,title,url,update_time
+章节内容：index,title,content
+"""
+
+
+
+tab_catelog_pattern = re.compile(r'\[(.*)\]')
+
+
+
+
+
+#eg:https://www.nlxs.org/biquge/46608/1/
+#获取关联的所有相同的链接
+# <div class="desc xs-hidden">《神通不朽》的简介：神通不敌天数？那是神通不够多，不够强！当洪荒世界的先天灵宝、先天至宝成为种种大神通，张乾在羲皇世界掀起了神通狂潮！于羲皇成道，于大千登顶，于洪荒永生！本书书友群：137484968
+# 	<a href="/biquge/1106609.html">神通不朽百度百科女主&nbsp;&nbsp;</a>
+def refer_story_from_first_catalog(tree,domain,logger):
+    if tree is None:
+        return None
+    lis_all = tree.xpath('.//div[@class="desc xs-hidden"]/a')
+    ref_dict={}
+    for li in lis_all:
+        url = li.xpath('@href')[0]
+        if not url:
+            continue
+        if not is_http_or_https(url):
+            url = domain + url
+
+        title = remove_html_entity(li.xpath('text()')[0]).strip()
+        if not ref_dict.get(url):
+            continue
+        ref_dict[url]=title
+        logger.trace(f"找到关联小说信息:{title}<->{url}")
+    return ref_dict
+
+def extract_after_colon( text,pre_str):
+    match = re.search(f'{pre_str}(.*)', text)
+    return match.group(1).strip() if match else text
+
+
+#根据目录列表的第一个目录信息中获取小说信息
+def info_from_first_catalog(tree,domain,logger):
+    infos = tree.xpath('//div[@class="info"]')
+    if not infos:
+        infos = tree.xpath('//div[@class="book-info"]')
+    if not infos:
+        logger.warn("未找到小说信息",f"\n{pretty_tree(tree)}\n" ,update_time_type=UpdateTimeType.STEP)
+        return
+    
+    org_info = infos[0]
+    # logger.warn("未找到小说信息",f"\n{pretty_tree(org_info)}\n" ,update_time_type=UpdateTimeType.STEP)
+    
+    title = org_info.xpath('.//h1/text()')[0]
+    
+    org_text= get_node_text(org_info.xpath('.//p'))
+    info_dict =split_flag_to_dict(org_text,"：")
+    author = dict_val(info_dict,"作者") 
+    catelog =dict_val(info_dict,"类别")
+    
+    date =dict_val(info_dict,"最后更新")
+    if not date:
+        date =dict_val(info_dict,"更新时间")
+    
+    last_title =dict_val(info_dict,"最新章节")
+    if not last_title:
+        last_title = dict_val(info_dict,"最近更新")
+
+    if not all([author,catelog,date,last_title]):
+        logger.warn("未找到小说信息",f"\n{pretty_tree(org_info)}\n" ,update_time_type=UpdateTimeType.STEP)
+    
+    results={"title":title,"author":author,"catelog":catelog,"date":date,"last_title":last_title,"refers":refer_story_from_first_catalog(org_info,domain,logger)}
+
+    
+    return {key:val for key,val in results.items() if val}
+
+
+#从具体一页（html）中获取章节列表
+# 返回{"url": "title"}
+def handle_chapter_lst(tree,domain,logger)->bool:
+    chapters:dict={}
+    chapter_pattern = re.compile(r'\S([0-9' + chinese_num + r']+)\S\s*(\S*)')
+    lis_all = tree.xpath('//ul[@class="chapter-list"]')
+    if not lis_all:
+        lis_all = tree.xpath('//ul[@class="fix section-list"]')
+    if not lis_all:
+        lis_all = tree.xpath('//ul[@class="section-list fix ycxsid"]')
+    if not lis_all:
+        logger.warn("未找到章节列表",f"\n{pretty_tree(tree)}\n" ,update_time_type=UpdateTimeType.STEP)
+        
+        
+        return chapters
+    lis = lis_all[-1].xpath('./li')
+    if not lis:
+        return chapters
+    for li in lis:
+        a_tag = li.xpath('.//a')[0]
+        url = a_tag.xpath('@href')[0]
+        if not is_http_or_https(url):
+            url = domain + url
+        if not url:
+            continue
+        titles = a_tag.xpath('text()')
+        org_title = titles[0].strip() if titles else hash_text(url, strict_no_num=True)
+        
+        title = org_title
+
+        match = chapter_pattern.match(org_title)                    
+        if match:
+
+            title = match.group(2)
+            logger_fun = logger.trace if title else logger.warn
+            logger_fun(f"匹配标题:{org_title}->{title}", update_time_type=UpdateTimeType.STEP)
+        else:
+            logger.warn(f"未匹配标题: {org_title}", update_time_type=UpdateTimeType.STEP)
+        if not url in chapters:
+            chapters[url] = title
+        
+    logger.info("完成", f"本次获取{len(chapters)}个", update_time_type=UpdateTimeType.STAGE)
+    return chapters
+
+def info_from_from_tab(tree,domain,logger):
+
+    if  tree is None:
+        return
+    spans=tree.xpath('.//span')
+    try:
+        txt_lst=get_node_text(spans)
+        hrefs=list(map(lambda x: fill_url(x,domain), get_node_attr(spans,"href")))
+        catelog,title,last_title,author,date,url,last_url=(None,)*7
+        
+        if len(txt_lst)>4:
+            catelog,title,last_title,author,date,*others=txt_lst
+        elif len(txt_lst)==4:
+            catelog,title,author,date=txt_lst
+            
+            
+        if len(hrefs)>1:
+            url,last_url,*other_urls=hrefs
+        elif len(hrefs)==1:
+            url,*other_urls=hrefs
+            
+        match = tab_catelog_pattern.match(catelog)
+        if match:
+            catelog = match.group(1)
+            
+            
+        result={"catelog": catelog, "title": title, "author": author, "date": date, "url": url,"last_url":last_url,"last_title":last_title}
+        logger.trace("解析成功",f"\n{result}\n", update_time_type=UpdateTimeType.STEP)
+        return result
+    except:
+        # 使用 tostring 函数将 Element 对象转换为格式化的字符串
+        logger.error("解析失败",f"\n{pretty_tree(spans)}\n", update_time_type=UpdateTimeType.STEP)
+        return None
+
+
+def infos_from_tab(tree,domain,logger):
+    chapters=[]
+    lis_all = tree.xpath('//ul[@class="txt-list txt-list-row5"]')
+    if not lis_all:
+        lis_all = tree.xpath('//ul[@class="sort_list"]')
+        if not lis_all:
+            logger.error("解析失败",f"\n{pretty_tree(tree)}\n", update_time_type=UpdateTimeType.STEP)
+            return []
+            
+    lis = lis_all[0].xpath('./li')
+    if not lis:
+        logger.error("解析失败",f"\n{pretty_tree(lis_all[0])}\n", update_time_type=UpdateTimeType.STEP)
+        return []
+    for li in lis:
+        result=info_from_from_tab(li,domain,logger)
+        if not result:
+            continue
+        chapters.append(result)
+    return chapters
+
+# <div class="row sort_page_num">
+# 	<a class="prev_off" href="/list/0-1.html">首 页</a>
+# 	<a class="page_on" href="/list/0-1.html">&nbsp;1&nbsp;</a>
+# 	<a href="/list/0-2.html">&nbsp;2&nbsp;</a>
+def get_catelog_page_lst(tree,domain,logger):
+    return get_node_sub_hrefs(tree,'//div[@class="row sort_page_num"]','./a',"href",domain,"类别页数",logger)
+
+
+# <select onchange="self.location.href=options[selectedIndex].value">
+# 	<option value="/165/165849/">第1-100章</option>
+# 	<option value="/165/165849/1/">第101-200章</option>
+# 	<option selected="selected" value="/165/165849/2/">第201-212章</option>
+# </select>
+def get_chapter_page_lst(tree,domain,logger):
+    return get_node_sub_hrefs(tree,'//select[@onchange="self.location.href=options[selectedIndex].value"]','./option',"value",domain,"章节页数",logger)
+
+
 class StoryScraper:
     def __init__(self, root_dir=r'F:\worm_practice\storys'):
         self.root_dir = Path(root_dir)
         self.dest_dir = self.root_dir / 'dest'
         self.temp_dir = self.root_dir / 'temp'
-        self.base_url_xlsx = self.temp_dir / 'urls.xlsx'
+        self.base_url_xlsx = self.temp_dir / 'story_infos.xlsx'
         self.cookies = cookies
         self.headers = headers
         os.makedirs(self.dest_dir, exist_ok=True)
         os.makedirs(self.temp_dir, exist_ok=True)
 
-    def get_story_lst(self):
+    def get_story_infos(self):
         chapters = []
         base_url = 'https://www.nlxs.org/list/'
         domain = get_homepage_url(base_url)
-        chapter_pattern = re.compile(r'\[(.*)\]')
-        category_index = 1
-        logger = logger_helper(f"catelogy:{category_index}")
+        category_index = 0
+        
         try:
             while True:
+                logger = logger_helper(f"catelogy:{category_index}")
                 page = 1
-                valid_count = len(chapters)
-                while True:
-                    cur_url = f"{base_url}{category_index}-{page}.html"
-                    logger.update_target(cur_url)
+                chapter_count=len(chapters)
+                
+                first_url= f"{base_url}{category_index}-1.html"
+                logger.update_target(detail= first_url)
+                logger.update_time(UpdateTimeType.ALL)
+                tree= content_tree(first_url, logger=logger, cookies=self.cookies, headers=self.headers)
+                if tree is None:
+                    break
+                for cur_url in get_catelog_page_lst(tree, domain, logger):
+                    logger.update_target(detail= cur_url)
                     logger.update_time(UpdateTimeType.ALL)
                     page += 1
-                    response = requests.get(cur_url, cookies=self.cookies, headers=self.headers)
-                    if response.status_code != 200:
-                        logger.warn("失败")
-                        break
-                    tree = html.fromstring(response.content)
-                    lis_all = tree.xpath('//ul[@class="txt-list txt-list-row5"]')
-                    if not lis_all:
-                        lis_all = tree.xpath('//ul[@class="sort_list"]')
-                        if not lis_all:
-                            break
-                    lis = lis_all[0].xpath('./li')
-                    if not lis:
-                        break
-                    for li in lis:
-                        catelog = li.xpath('.//span[@class="s1"]')[0].xpath('text()')[0].strip()
-                        info = li.xpath('.//span[@class="s2"]/a')[0]
-                        url = info.xpath('@href')[0]
-                        title = info.xpath('text()')[0].strip()
-                        author = li.xpath('.//span[@class="s4"]')[0].xpath('text()')[0].strip()
-                        date = li.xpath('.//span[@class="s5"]')[0].xpath('text()')[0].strip()
-                        if not is_http_or_https(url):
-                            url = domain + url
-                        match = chapter_pattern.match(catelog)
-                        if match:
-                            catelog = match.group(1)
-                        chapters.append({"catelog": catelog, "title": title, "author": author, "date": date, "url": url})
-                    logger.info("成功", update_time_type=UpdateTimeType.ALL)
+                    if cur_url !=first_url:
+                        tree = content_tree(cur_url, logger=logger, cookies=self.cookies, headers=self.headers)
+                    if tree is None:
+                        continue
+
+                    cur_chapters =infos_from_tab(tree,domain,logger)
+                    chapters.extend(cur_chapters)
+
+                    logger.info("成功",f"添加{len(cur_chapters)}个", update_time_type=UpdateTimeType.ALL)
                 category_index += 1
-                if valid_count == len(chapters):
+                # break
+                if chapter_count==len(chapters):
                     break
         except Exception as e:
             logger.error(e)
         return chapters
 
-    def extract_after_colon(self, text):
-        match = re.search(r'：\s*(.*)', text)
-        return match.group(1).strip() if match else None
 
-    def title_form_detail(self, url):
-        response = requests.get(url, cookies=self.cookies, headers=self.headers)
-        if response.status_code != 200:
-            return
-        tree = html.fromstring(response.content)
-        title = tree.xpath('//div[@class="bookname"]/text()')
-        if title:
-            return title[0]
-        titles = tree.xpath('//h2[@class="layout-tit xs-hidden"]/a/text()')
-        return titles[1] if titles and len(titles) > 1 else ""
 
-    def info_from_lst(self, url):
-        response = requests.get(url, cookies=self.cookies, headers=self.headers)
-        if response.status_code != 200:
-            return
-        tree = html.fromstring(response.content)
-        infos = tree.xpath('//div[@class="info"]')
-        if not infos:
-            infos = tree.xpath('//div[@class="book-info"]')
-            if not infos:
-                return
-        org_info = infos[0]
-        title = org_info.xpath('.//h1/text()')[0]
-        info = org_info.xpath('.//p')
-        info_txt = org_info.xpath('.//p/text()')
-        if len(info_txt) < 3:
-            return title, None
-        author = self.extract_after_colon(info_txt[0])
-        catelog = self.extract_after_colon(info_txt[1])
-        date = self.extract_after_colon(info_txt[-2])
-        last = arabic_number_tuples(info[-1].xpath('./a')[-1].xpath('text()')[0])[0][1]
-        return title, author, catelog, date, last
+
+
 
     def real_title(self, num, title):
         num = int(num)
         return f"{num:05}_{title}" if title else f"{num:04}"
 
-    def get_chapter_list(self, base_url):
+    #从具体的小说(url)中获取所有的标题和url
+    #返回值list[dict]
+    def get_chapter_lst(self, base_url):
         chapters = {}
-        page = 0
+
+
         domain = get_homepage_url(base_url)
-        book_info = self.info_from_lst(base_url)
-        theme = book_info[0] if book_info else ""
-        logger = logger_helper(theme, base_url)
+        logger = logger_helper("", base_url)
+
         logger.info("开始获取章节列表")
-        chapter_pattern = re.compile(r'\S([0-9' + chinese_num + r']+)\S\s*(\S*)')
-        indexes = {}
-        while True:
-            cur_url = f"{base_url}{page}/" if page > 0 else base_url
-            page += 1
-            response = None
-            try:
-                response = requests.get(cur_url, cookies=self.cookies, headers=self.headers, timeout=10)
-            except:
-                logger.error("异常", except_stack(), update_time_type=UpdateTimeType.ALL)
-                return
-            if response.status_code != 200:
-                break
+        first_url=f"{base_url}1/"
+        logger.update_target(detail=first_url)
+        tree = content_tree(first_url, logger=logger, cookies=self.cookies, headers=self.headers)
+        if tree is None:
+            logger.error("异常", except_stack(), update_time_type=UpdateTimeType.ALL)
+            return {},[]
+        book_info=info_from_first_catalog(tree, domain, logger)
+               
+        theme=book_info["title"]
+        logger.update_target(target=theme)
+        
+
+        
+        page_urls=  get_chapter_page_lst(tree, domain, logger) 
+        page_urls.insert(0,first_url)
+        
+            
+        for cur_url in unique(page_urls):
             logger.update_target(detail=cur_url)
-            tree = html.fromstring(response.content)
-            lis_all = tree.xpath('//ul[@class="chapter-list"]')
-            if not lis_all:
-                lis_all = tree.xpath('//ul[@class="fix section-list"]')
-                if not lis_all:
-                    break
-            lis = lis_all[-1].xpath('./li')
-            if not lis:
-                break
-            valid_count = len(chapters)
-            for li in lis:
-                a_tag = li.xpath('.//a')[0]
-                url = a_tag.xpath('@href')[0]
-                if not is_http_or_https(url):
-                    url = domain + url
-                if not url:
+            if cur_url != first_url:
+                tree = content_tree(cur_url, logger=logger, cookies=self.cookies, headers=self.headers)
+                if tree is None:
+                    logger.error("异常", except_stack(), update_time_type=UpdateTimeType.ALL)
                     continue
-                titles = a_tag.xpath('text()')
-                title = titles[0].strip() if titles else hash_text(url, strict_no_num=True)
-                org_title = title
-                match = chapter_pattern.match(title)
-                if match:
-                    chapter_number = arabic_number_tuples(match.group(1))[0][-1]
-                    chapter_title = match.group(2)
-                    logger_fun = logger.trace if chapter_title else logger.warn
-                    title = self.real_title(chapter_number, chapter_title)
-                    logger_fun(f"匹配标题:{org_title}->{title}", update_time_type=UpdateTimeType.STEP)
-                else:
-                    logger.warn(f"未匹配标题: {org_title}", update_time_type=UpdateTimeType.STEP)
-                if chapters.get(url):
-                    continue
-                chapters[url] = title
-                indexes[len(chapters) - 1] = bool(match)
-            add_count = len(chapters) - valid_count
-            logger.info("完成", f"本次添加{add_count}个", update_time_type=UpdateTimeType.STAGE)
-            if add_count < 1:
-                break
+            cur_chapter= handle_chapter_lst(tree,domain, logger)
+            if not cur_chapter:
+                continue
+            cur_chapter = {k: v for k, v in cur_chapter.items() if k not in chapters}
+            if not cur_chapter:
+                continue
+            chapters.update(cur_chapter)
+            
+            
+            
         logger.update_target(detail=base_url)
         logger.info("完成", f"共{len(chapters)}个", update_time_type=UpdateTimeType.ALL)
-        if not all(indexes.values()):
-            keys = list(chapters.keys())
-            chapters = {key: (val if indexes[keys.index(key)] else self.real_title(keys.index(key) + 1, val)) for key, val in chapters.items()}
-        chapters = {val: key for key, val in chapters.items()}
-        return self.reset_dict_num(chapters)
+       
+       # 提取每个字典中的第一个键值对
+        # formatted_chapters = [{"index": index + 1, "url": url, "title": title} 
+        #                     for index, d in enumerate(chapters) 
+        #                     for url, title in [next(iter(d.items()))]]
+
+        result=[{"index":index+1,"url":url,"title":chapters[url]}   for index,url in  enumerate(chapters)]
+        
+        return book_info,result
 
     @exception_decorator()
     async def get_chapters_data(self, semaphore, args: list | tuple):
@@ -259,14 +401,19 @@ class StoryScraper:
                 except Exception as e:
                     print(f"Error occurred while writing to file: {e}")
 
-    def mutithread_chapters_data(self, chapters, datas: dict = None):
-        keys = datas.keys() if datas else []
+    def mutithread_chapters_data(self, chapters: list[dict] , datas: list[dict] = None):
+        if not chapters:
+            return datas
+        urls = [item["url"] for item in datas if item] if datas else []
         if not datas:
-            datas = {}
-        first_url = next(iter(chapters), None) if chapters else None
-        theme = self.title_form_detail(first_url) if first_url else ""
+            datas = []
+        first_item=chapters[0]
+        first_url=first_item["url"]
+        theme = first_item["title"]
+            
         playlist_logger = logger_helper(f"{theme}-下载", f"共{len(chapters)}章")
-        params = [(key, url, keys) for key, url in chapters.items() if key not in keys]
+        params = []
+        # params = [(key, url, urls) for item in chapters if item and item["url"] not in urls]
         if not params:
             playlist_logger.info("完成", f"已下载{len(datas)}章", update_time_type=UpdateTimeType.ALL)
             return datas
@@ -353,6 +500,9 @@ class StoryScraper:
 
 
 
+
+
+
     def process_story(self, index, row):
         url = row["url"]
         title = row["title"]
@@ -360,13 +510,7 @@ class StoryScraper:
         date = row["date"]
         last = row["last"]
 
-        info = self.info_from_lst(url)
-        if info and len(info) > 2:
-            detail_title, detail_author, detail_catelog, detail_date, detail_last = info
-            title = detail_title if detail_title else title
-            author = detail_author if detail_author else author
-            date = detail_date if detail_date else date
-            last = detail_last if detail_last else last
+
 
         logger = logger_helper(f"第{index + 1}个_{title}", url)
 
@@ -381,7 +525,7 @@ class StoryScraper:
         if os.path.exists(base_url_json):
             chapters = self.reset_json_order(base_url_json)
         else:
-            chapters = self.get_chapter_list(url)
+            chapters = self.get_chapter_lst(url)
             if not chapters:
                 logger.error("失败", update_time_type=UpdateTimeType.STAGE)
                 return
@@ -423,18 +567,45 @@ class StoryScraper:
         return index,row
 
     def run(self):
-        if not os.path.exists(self.base_url_xlsx):
-            lst = self.get_story_lst()
+        #表格中获取所有小说信息
+        def operator_func():
+            lst = self.get_story_infos()
             df = pd.DataFrame(lst)
             df["last"] = 0
             df.drop_duplicates(subset='url', inplace=True)
-            df.to_excel(self.base_url_xlsx, index=False)
-        else:
-            df = pd.read_excel(self.base_url_xlsx)
+            return df
 
-        with ThreadPoolExecutor() as executor:
+        infos_df = priority_read_excel_by_pandas(self.base_url_xlsx,operator_func=operator_func)
+        # print(infos_df)
+        #获取所有的小说详情信息
+        for index, row in infos_df.iterrows():
+            url=row["url"]
+            title=row["title"]
+            catelog=row["catelog"]
+            author=row["author"]
+            date=row["date"]
+            last_url=row["last_url"]
+            last_title=row["last_title"]
+            last=row["last"]
+            if not url:
+                continue
+
+            book_info,chapters=self.get_chapter_lst(url)
+            if book_info:
+                dest_info=row.to_dict()
+                dest_info.update(book_info)
+                infos_df.loc[index] = book_info
+            
+            
+            if index>2:
+                break
+        write_dataframe_excel(self.base_url_xlsx,infos_df)
+        
+        
+
+        with ThreadPoolExecutor(1) as executor:
             futures = []
-            for index, row in df.iterrows():
+            for index, row in infos_df.iterrows():
                 if index<847:
                     continue
 
@@ -447,10 +618,10 @@ class StoryScraper:
                     continue
                 index,dest_row=result
                 if dest_row and isinstance(dest_row, pd.Series):
-                    df.loc[index] = dest_row
+                    infos_df.loc[index] = dest_row
 
         # 重新保存
-        df.to_excel(self.base_url_xlsx, index=False)
+        infos_df.to_excel(self.base_url_xlsx, index=False)
         
 if __name__== "__main__":
     wrapper=StoryScraper(r'F:\worm_practice\storys')
