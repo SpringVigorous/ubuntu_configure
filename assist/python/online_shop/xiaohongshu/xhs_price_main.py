@@ -26,7 +26,7 @@ def cal_weight(product_wight, box_unit_count, deliver_unit_count,box_info,bill_i
     return deliver_cost/1000.0
 
 
-    
+pay_ratio_name="服务费率（佣金+支付渠道+...）"
 
 
 def product_df(config:TeaConfig,product_path):
@@ -51,6 +51,7 @@ def product_df(config:TeaConfig,product_path):
     # 检查是否有未命名的列，并重命名
     if 'Unnamed: 0' in result.columns:
         result.rename(columns={'Unnamed: 0': '产品规格'}, inplace=True)
+    result["定价"]=100
     result["利润"]=5
     result["优惠"]=config.get_normal_discount()
     result["满减折扣比率"]=config.normal_cut_radio
@@ -62,10 +63,17 @@ def product_df(config:TeaConfig,product_path):
     result["运费险"]=1.5
 
     # result["物料费"]=0
-    result["快递费"]=8
+    result["快递费"]=5.3
     result["平台券"]=0
     result["商家券"]=5
-    result["佣金比率"]=find_last_value_by_col_val(ratio_df,"名称",'佣金比率', '比率',.03)
+    
+    pay_radio_lst=[find_last_value_by_col_val(ratio_df,"名称",'佣金比率', '比率',.03),
+               find_last_value_by_col_val(ratio_df,"名称",'支付渠道费', '比率',.03),
+            #    find_last_value_by_col_val(ratio_df,"名称",'信用卡分期', '比率',.03),
+               ]
+
+    
+    result[pay_ratio_name]=sum(filter(lambda x: x is not None, pay_radio_lst))
     
     os.makedirs(os.path.dirname(product_path), exist_ok=True)
     result.to_excel(product_path,sheet_name="规格",index=False)
@@ -84,9 +92,9 @@ if __name__=="__main__":
     
     #清除所有中间结果，重新计算
     #单包产品药材费
-    clear_folder(config.sub_dir_path)
+    # clear_folder(config.sub_dir_path)
     #规格费用
-    clear_folder(result_dir)
+    # clear_folder(result_dir)
     
     config.init_data()
     # 获取 结果/小红书/产品规格.xlsx
@@ -98,7 +106,8 @@ if __name__=="__main__":
                                                       config.fix_box_info,config.fix_bill_info,), axis=1)
 
     recursive_dict=[]
-    show_recursive=False
+    show_recursive=True
+    flag:str=None
     def cal_fun(row):
         
         
@@ -110,16 +119,20 @@ if __name__=="__main__":
             row["提现费率"],
             row["运费险"],
             row["满减折扣比率"],
-            row["佣金比率"],)
+            row[pay_ratio_name],)
+        #利润率计算
         
-        calculator.calculate_by_profit_ratio(.4)
+        calculator.calculate_by_normal_price(28.8)
+        calculator.calculate_by_normal_price(row["定价"])
+        # calculator.calculate_by_profit_ratio(.4)
+        #利润率
+        # calculator.calculate_by_gross_profit_ratio(.6)
         # calculator.calculate_by_profit(row["利润"])
-        
-        normal_price=ceil_5(calculator.result("定价"))
+
 
         global recursive_dict
-        
-        
+        global flag
+        flag=calculator.flag_type
         key="产品规格"
         dic={key:row[key]}
         #查看递归过程
@@ -127,19 +140,19 @@ if __name__=="__main__":
             recursive_dict.extend(calculator.recursive_info(key,row[key]))  
         
         
-        
+        #取整后，重新定价
+        normal_price=ceil_5(calculator.result("定价"))
         dic.update(calculator.calculate_by_normal_price(normal_price))
-
         return pd.Series(dic)
     
     datas=result.apply(cal_fun, axis=1)
     result["总质量(kg)"]=result.apply(lambda x:cal_weight(x['单包总质量'],x['小包数'],x['盒数'],
                                                       config.fix_box_info,config.fix_bill_info), axis=1)
     
-    with pd.ExcelWriter(os.path.join(result_dir, "推荐定价.xlsx"),engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(os.path.join(result_dir, f"推荐定价_{flag}.xlsx"),engine="xlsxwriter") as writer:
         result.to_excel(writer,sheet_name="固定成本",index=False)
-        datas.to_excel(writer,sheet_name="推荐定价-详情",index=False)
-        datas.to_excel(writer,sheet_name="推荐定价",index=False)
+        datas.to_excel(writer,sheet_name=f"推荐定价-详情",index=False)
+        datas.to_excel(writer,sheet_name=f"推荐定价",index=False)
         
         
         if show_recursive:

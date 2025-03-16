@@ -30,6 +30,8 @@ symbols_dict={
 
     'x':"利润率",
     'y':"收款抵扣后",
+    "z":"毛利润率",
+    'ab':"毛利润",
 }
 class PriceCalculator(PriceCalculatorBase):
 
@@ -44,13 +46,15 @@ class PriceCalculator(PriceCalculatorBase):
         "y=e-m",
         "t=u+f*v",
         "r=t+s",
-        "x=b/f"
+        "x=b/f",
+        "z=1-i/f",
+        "ab=f-i"
     ]
     _profit_formulas=[
         "c=(m*q-b-i)/(o+(1-o)*q-1)-s",
         "f=(u+s+c)/(1-v)",
-
     ]
+
     #共有的
     _org_normal_formulas=[
         "c=f-r",
@@ -99,13 +103,17 @@ class PriceCalculator(PriceCalculatorBase):
         
         self.recursive_lst=[]
 
+        self.flag_type:str=""
     #利润作为已知条件
     def calculate_by_profit(self,profit:float=5):
+        self.flag_type=f"利润_{profit}"
         return self._calculate_impl("b",profit,PriceCalculator._profit_formulas)
 
 
     #定价作为已知条件
     def calculate_by_normal_price(self,normal_price:float):
+        self.flag_type=f"定价_{normal_price}"
+        
         return self._calculate_impl("f",normal_price,PriceCalculator._normal_formulas)
     
 
@@ -122,9 +130,27 @@ class PriceCalculator(PriceCalculatorBase):
             time+=1
             self.recursive_lst.append(self.result_info)
 
-            
+        self.flag_type=f"利润率_{profit_ratio}"
+
         return result
-    
+    #毛利润率作为已知条件
+    def calculate_by_gross_profit_ratio(self,profit_ratio:float):
+        # self._calculator.show_formulas()
+        result={}
+        if not self._calculator._result:
+            result=self.calculate_by_normal_price(1000)
+        # self._calculator.show_formulas()
+            
+        time=0
+
+        self.recursive_lst.append(self.result_info)
+        while abs(self.result_value("毛利润率")/profit_ratio-1)>.0005:
+            result=self.calculate_by_normal_price(self.result_value("固定成本")/(1-profit_ratio))
+            time+=1
+            self.recursive_lst.append(self.result_info)
+
+        self.flag_type=f"毛利润率_{profit_ratio}"
+        return result
 
     def recursive_info(self,flag_name,name):
         for item in self.recursive_lst:

@@ -18,11 +18,14 @@ def clear_folder(folder_path):
         return
     for file in os.listdir(folder_path):
         abs_path=os.path.join(folder_path, file)
-        
-        if os.path.isdir(abs_path):
-            delete_directory(abs_path)
-        else:
-            os.remove(abs_path)
+        try:
+            if os.path.isdir(abs_path):
+                delete_directory(abs_path)
+            else:
+                os.remove(abs_path)
+        except Exception as e:
+            print(f"删除失败:{abs_path}-{e}")
+            pass
 
 def delete_directory(directory_path):
     """
