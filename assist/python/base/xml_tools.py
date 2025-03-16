@@ -73,11 +73,16 @@ def get_nodes(html_str, tag_name, **kwargs):
     tag = soup.find_all(tag_name,**kwargs)
     return tag
 
+def tree_by_str(html_str):
+    return html.fromstring(html_str)
+
 
 def pretty_tree(tree):
     if tree is None:
         return None
-    return html.tostring(tree, pretty_print=True, encoding='unicode')
+
+    
+    return html.tostring(tree, pretty_print=True, encoding="unicode")
 
 
 if __name__=="__main__":

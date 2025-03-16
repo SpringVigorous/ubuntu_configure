@@ -9,7 +9,7 @@ from price_config import *
 # from calcluate_tools import *
 from base.math_tools import *
 from base.df_tools import find_last_value_by_col_val
-
+from base import clear_folder
 def cal_fix_cost(product_price, box_unit_count, deliver_unit_count,box_info,bill_info):
     # 进行第一次交叉连接
 
@@ -27,16 +27,14 @@ def cal_weight(product_wight, box_unit_count, deliver_unit_count,box_info,bill_i
 
 
     
-config=TeaConfig(r"E:\花茶\价格")
-result_dir=os.path.join(config.src_dir,"结果","小红书")
-os.makedirs(result_dir,exist_ok=True)
-product_path= os.path.join(result_dir, "产品规格.xlsx")
 
 
-def product_df():
+def product_df(config:TeaConfig,product_path):
+    
+    
     if os.path.exists(product_path):
         return pd.read_excel(product_path,sheet_name="规格")
-            
+
     product_price=config.product_prices_df.copy()
     box_unit_price=config.box_unit_df.copy()
     deliver_unit_price=config.deliver_unit_df.copy()
@@ -56,7 +54,6 @@ def product_df():
     result["利润"]=5
     result["优惠"]=config.get_normal_discount()
     result["满减折扣比率"]=config.normal_cut_radio
-
     result["产品规格"]=result.apply(lambda x: f"{x['产品']}-{x['小包数']}包-{x['盒数']}盒", axis=1)
     # result["快递费"]=result.apply(lambda x: x['单包总价']*config.express_ratio, axis=1)
     ratio_df=config.reduce_ratio_df
@@ -73,11 +70,6 @@ def product_df():
     os.makedirs(os.path.dirname(product_path), exist_ok=True)
     result.to_excel(product_path,sheet_name="规格",index=False)
     
-
-
-    
-    
-    
     return result
     
 
@@ -85,7 +77,20 @@ def product_df():
 
 
 if __name__=="__main__":
-    df=product_df()
+    config=TeaConfig(r"E:\花茶\价格","详情")
+    result_dir=os.path.join(config.src_dir,"结果","小红书")
+    os.makedirs(result_dir,exist_ok=True)
+    product_path= os.path.join(result_dir,"产品规格-计算.xlsx")
+    
+    #清除所有中间结果，重新计算
+    #单包产品药材费
+    clear_folder(config.sub_dir_path)
+    #规格费用
+    clear_folder(result_dir)
+    
+    config.init_data()
+    # 获取 结果/小红书/产品规格.xlsx
+    df=product_df(config,product_path)
 
     result=df.copy()
     
@@ -95,6 +100,9 @@ if __name__=="__main__":
     recursive_dict=[]
     show_recursive=False
     def cal_fun(row):
+        
+        
+        
         calculator= PriceCalculator(row["物料费"],
             row["快递费"],
             row["商家券"],
@@ -130,6 +138,7 @@ if __name__=="__main__":
     
     with pd.ExcelWriter(os.path.join(result_dir, "推荐定价.xlsx"),engine="xlsxwriter") as writer:
         result.to_excel(writer,sheet_name="固定成本",index=False)
+        datas.to_excel(writer,sheet_name="推荐定价-详情",index=False)
         datas.to_excel(writer,sheet_name="推荐定价",index=False)
         
         

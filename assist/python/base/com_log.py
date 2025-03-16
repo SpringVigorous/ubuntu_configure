@@ -9,6 +9,7 @@ import threading
 from time import time,sleep
 
 from custom_log import CustomLogger
+from collect_tools import Stack
 
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
@@ -197,19 +198,38 @@ class logger_helper:
        
     def __init__(self,target:str=None,detail:str=None):
         self.reset_time()
+        self._check_target()
         self.update_target(target,detail)
+        self.stack=Stack()
         
+    def _check_target(self):
+        if not hasattr(self,"_target"):
+            self._target=None
+        if not hasattr(self,"_detail"):
+            self._detail=None
     #若是为空，则不更新
     def update_target(self,target:str=None,detail:str=None):
         if target:
             self._target=str(target)
-        elif not hasattr(self,"_target"):
-            self._target=None
         if detail:
             self._detail=str(detail)
-        elif not hasattr(self,"_detail"):
-            self._detail=None
+
+    #为空时，仅仅是把之前的值压栈，不为空时，压栈+更新
+    def stack_target(self,targe:str=None,detail:str=None):
+        if self._target or self._detail:
+            self.stack.push((self._target,self._detail))
+        if targe and detail:
+            self.update_target(targe,detail)
+    
+    def pop_target(self,times=1):
+        if times<1:
+            times=1
+        while times>0 and not self.stack.is_empty():
+            self.update_target(*self.stack.pop())
+            times-=1
         
+        
+    
     #仅更新 原始初始值
     def update_start(self):
         self._start_time=time()
@@ -247,9 +267,8 @@ class logger_helper:
             pass
         
     def detail_content(self,detail_lat:str=None):
-        lst=[str(self._detail),str(detail_lat)]
-        dest=[item for item in lst if item and item.strip()]
-        return ",".join(dest)
+        lst=[self._detail,detail_lat]
+        return ",".join(filter(lambda x: x and x.strip() , map(str,filter(lambda x:x,lst))))
         
     #仅内容
     def content(self,status:str,detail_lat:str=None,update_time=None)->str:     

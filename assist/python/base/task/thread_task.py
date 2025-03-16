@@ -28,3 +28,21 @@ class ThreadTask(RoutineTask, threading.Thread,metaclass=abc.ABCMeta):
     def _final_run_after(self):
 
         pass
+    
+    
+class ResultThread(threading.Thread):
+    def __init__(self, target, args=()):
+        super().__init__(target=target, args=args)
+        self._return = None  # 初始化存储返回值的变量
+
+    def run(self):
+        if self._target:
+            self._return = self._target(*self._args)  # 执行目标函数并保存结果
+
+    def join(self, timeout=None):
+        super().join(timeout)  # 调用原生join方法等待线程结束
+        return self._return  # 返回结果
+
+    @property
+    def result(self):
+        return self._return  # 返回结果

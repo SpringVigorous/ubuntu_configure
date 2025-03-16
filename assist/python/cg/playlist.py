@@ -377,15 +377,15 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     #加载已有数据
     url_json_path=os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json")
     key,iv,info_list,total_len=get_url_data(url,url_json_path)
-    key=None
+    # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
-    play_logger.info(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.ALL)
+    play_logger.info(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
 
     
     temp_path_list=temp_video_paths(len(url_list),temp_dir,postfix(url_list[0]))
     
-    play_logger.info("开始","下载",update_time_type=UpdateTimeType.ALL)
+    play_logger.info("开始","下载",update_time_type=UpdateTimeType.STAGE)
 
     lost_count,success_paths=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
 
@@ -399,9 +399,9 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     
     # return True
     
-    play_logger.info("开始","合并",update_time_type=UpdateTimeType.ALL)
+    play_logger.info("开始","合并",update_time_type=UpdateTimeType.STAGE)
     merge_video(success_paths,temp_path)
-    play_logger.info("完成","合并",update_time_type=UpdateTimeType.ALL)
+    play_logger.info("完成","合并",update_time_type=UpdateTimeType.STAGE)
     
     move_file(temp_path,dest_path)
     
@@ -500,7 +500,10 @@ if __name__=="__main__":
 
 # ("https://v1.tlkqc.com/wjv1/202308/19/aeKFrRw7bj2/video/1000k_720/hls/index.m3u8","哪吒之魔童降世"),
 # ("https://vod.lesimao.net/2066d590cf5c71ef98785420848c0102/video/2610738a649346ee841eca77c7c727b2-6108cabe8ae2d87ff1bece0d92fd700f-video-od.m3u8?auth_key=1741528215-67cd9c97e4fdd-0-eacb02673cc082f2abc2f1439028a4d1","北艺学堂_02"),
-("https://video.gzfeice.cn/b7554d95vodtranscq1254019786/a7dc78961397757893283315727/voddrm.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9~eyJ0eXBlIjoiRHJtVG9rZW4iLCJhcHBJZCI6MTI1NDAxOTc4NiwiZmlsZUlkIjoiMTM5Nzc1Nzg5MzI4MzMxNTcyNyIsImN1cnJlbnRUaW1lU3RhbXAiOjAsImV4cGlyZVRpbWVTdGFtcCI6MjE0NzQ4MzY0NywicmFuZG9tIjowLCJvdmVybGF5S2V5IjoiIiwib3ZlcmxheUl2IjoiIiwiY2lwaGVyZWRPdmVybGF5S2V5IjoiOTMxYzY3MTA4NzlkNmVlZDEzNWM2NjI3NjgzYjJlOWY4MTI3MWZhOWQ2MTY1YzE4OTM0ZDQ1NWExN2E2ODY1NDkwNWQ4ZDAzZWViMjNlNDA3OTc4YTg0MmE2ZDA0YmRkY2I5ZjQ1Yjk2NGRiYzg5ZDM0ZGM2YTE3Y2I5NTUyZjBkOWRjNGJlYTA4NjY5ZWE1ZGNiZDc1MWE4OGQ3ZThiNWVmMGFmNWM5YTIzZmNjNDY4ZmRlYzNmYWQ4ZTdhNGMyZDE1OTJiZDQyODEzZmRkMGMxOTllNWNhMzY0MjJkZjA4ZTIxYjFhODViZmFjYWMzOTA0NjQ2YmI2MmM5N2I4NiIsImNpcGhlcmVkT3ZlcmxheUl2IjoiOGM5MzA1OWE5YTNiZGE3YTcwNmU2Y2I0NmRjYzRjMzJiYjk2YWJkYmNmNjI2NWM5NzUxNWM1NzJhNTk3YzhhOWI5MDQzMWNkMzkxY2IwNTY5OGRlZGE3ZjJhODY0NzcxOTlkYzQ4MjQyOWYxZjFlOWNhMmVlNTBmZjdjNDk5NWJlYzhlZmFmMjVlZmZhZGE3ZWNjZDVjNTBmZTljZDljZGRlMGJkMGU1MWM1NzRkYWEwZTllZTdhNGQyOWRkYjhlN2UxODA3MGNmMTg1YzlhOWFkNWMzMGUxMjAxZDRjZTViY2RkYTQ3ZDExYzQ2ZjA0OTM2ODBhMzllMzMxOGY0ZCIsImtleUlkIjoxLCJzdHJpY3RNb2RlIjowLCJwZXJzaXN0ZW50IjoiIiwicmVudGFsRHVyYXRpb24iOjAsImZvcmNlTDFUcmFja1R5cGVzIjpudWxsfQ~SNQqmV65EBsMRN2E9p8GLET_KxGMwqMLB9Q6iw8FwAs.video_1444917_2.m3u8?encdomain=cmv1","快手短剧采集"),
+# ("https://vv.jisuzyv.com/play/kazEynZe/index.m3u8","变形金刚_超能勇士崛起"),
+("https://vv.jisuzyv.com/play/9aA4059e/index.m3u8","变形金刚_起源"),
+("https://vv.jisuzyv.com/play/mbkMApXe/index.m3u8","大黄蜂"),
+
 
 
 

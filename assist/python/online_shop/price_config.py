@@ -7,21 +7,29 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from base.com_log import logger_helper
 from base.df_tools import *
 class TeaConfig:
-    def __init__(self,org_dir=r"E:\花茶\价格") -> None:
-        self.src_dir=org_dir
+    def __init__(self,org_dir=r"E:\花茶\价格",sub_dir="详情") -> None:
+        self.src_dir=org_dir  # 设置源目录
+
+        # 初始化配置类，设置初始目录和其他默认文件名
+        self.src_dir=org_dir  # 设置源目录
         self.purchase_name="采购价格"
         self.usage_name="产品用量.xlsx"
         self.consume_name="额外费用.xlsx"
         self.cut_ratio_name="扣费比率.xlsx"
         self.discount_name="优惠活动.xlsx"
-        self.sub_dir="详情"
+        self.sub_dir=sub_dir
         self.product_medical_name="产品药材价格"
         self.product_price_name="产品价格"
         self.medical_price_dict={}
-        self.init_data()
+        # self.init_data()
         
         pass
-    
+    @property
+    def sub_dir_path(self):
+        return os.path.join(self.src_dir,self.sub_dir)
+        
+        
+        
     def medical_price(self,name):
         if self.medical_price_dict.get(name,None):
             return self.medical_price_dict.get(name)
@@ -131,8 +139,8 @@ class TeaConfig:
             normal_rebate_df= reader.parse('满减折扣')
             self.normal_cut_radio=1-normal_rebate_df.loc[0]["折扣"]
 
-        unit_path=os.path.join(self.src_dir, "产品规格.xlsx")
-        with pd.ExcelFile(unit_path) as reader:
+
+        with pd.ExcelFile(os.path.join(self.src_dir, "产品规格.xlsx")) as reader:
             self.box_unit_df=reader.parse("盒规格")
             self.deliver_unit_df=reader.parse("快递规格")
         self.init_product()
@@ -157,8 +165,7 @@ class TeaConfig:
     @property
     def product_price_path(self):    
         return os.path.join(self.src_dir,self.sub_dir,f"{self.product_price_name}.xlsx")
-        
-    
+
     
 if __name__=="__main__":
     config=TeaConfig()

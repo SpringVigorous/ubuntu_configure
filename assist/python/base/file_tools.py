@@ -116,39 +116,65 @@ def read_content(source_path):
 
 #异步读、写文件
 async def read_write_async(data,dest_path,mode="w",encoding=None):
-    operator="写入" if mode.find("w")>=0 else "读取"
+    as_write= mode.find("w")>=0
+    operator="写入" if as_write else "读取"
 
-   
-    async_logger=logger_helper(f"异步{operator}->{dest_path}",f"mode:{mode},encoding:{encoding}")
+    encode_val=f",encoding:{encoding}" if encoding else ""
+    
+    async_logger=logger_helper(f"异步{operator}->{dest_path}",f"mode:{mode}{encode_val}")
 
     async_logger.trace("开始")
     
     try:
         async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
-            await f.write(data)
+            if as_write:
+                await f.write(data)
+            else:
+                data=await f.read()
             async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
-            return True
+            return True if as_write else data
     except:
         async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
 
 #同步读、写文件
-def read_write_sync(data,dest_path,mode="w",encoding=None):
-    operator="写入" if mode.find("w")>=0 else "读取"
+def read_write_sync(data, dest_path, mode="w", encoding=None):
+    # 检查模式是否包含写入操作
+    is_write = 'w' in mode
+    operation = "写入" if is_write else "读取"
 
-   
-    sync_logger=logger_helper(f"同步{operator}->{dest_path}","mode:{mode},encoding:{encoding}")
+    # 格式化日志信息
+    log_message = f"mode:{mode},encoding:{encoding}"
+    sync_logger = logger_helper(f"同步{operation}->{dest_path}", log_message)
 
     sync_logger.trace("开始")
-    
+
     try:
-        with  open(dest_path,mode,encoding=encoding) as f:
-            f.write(data)
-            sync_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
-            return True
-    except:
-        sync_logger.error("失败",update_time_type=UpdateTimeType.ALL)
+        with open(dest_path, mode, encoding=encoding) as f:
+            if is_write:
+                f.write(data)
+                result = True
+            else:
+                result = f.read()
+            sync_logger.trace("完成", update_time_type=UpdateTimeType.ALL)
+            return result
+    except Exception as e:
+        # 记录具体的错误信息
+        sync_logger.error(f"失败: {str(e)}", update_time_type=UpdateTimeType.ALL)
         return False
+
+
+async def read_async(dest_path,mode="r",encoding=None):
+    return await read_write_async(None,dest_path,mode,encoding)
+
+async def write_async(data,dest_path,mode="w",encoding=None):
+    return await read_write_async(data,dest_path,mode,encoding)
+
+def read_sync(dest_path,mode="r",encoding=None):
+    return read_write_sync(None,dest_path,mode,encoding)
+
+def write_sync(data,dest_path,mode="w",encoding=None):
+    return read_write_sync(data,dest_path,mode,encoding)
 
 
 
@@ -191,7 +217,6 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
     if not content:
         async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
-    if lat_fun:
         # count=len(content)
         content=lat_fun(content)
         # async_logger.trace(f"pre-{count},latter-{len(content)}" )

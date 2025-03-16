@@ -5,7 +5,7 @@
 
 
 
-from .task.thread_task import ThreadTask
+from .task.thread_task import ThreadTask,ResultThread
 from .task.process_task import ProcessTask
 from .task.coroutine_task import CoroutineTask
 from .com_decorator import *

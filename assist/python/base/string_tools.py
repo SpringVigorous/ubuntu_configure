@@ -3,7 +3,7 @@ import  re
 from datetime import datetime
 from bs4 import BeautifulSoup
 # asp.add_sys_path(__file__)
-
+from numbers import Number
 from com_decorator import exception_decorator
 import hashlib
 import os
@@ -275,6 +275,8 @@ def arabic_number_tuples(str_val):
     return list(zip(org,vals)) if vals else []
 
 def arabic_numbers(str_val):
+    if isinstance(str_val,Number):
+        return str_val
     items=arabic_number_tuples(str_val)
     return [item[-1] for item in items if item] if items else []
 

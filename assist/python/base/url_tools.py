@@ -46,6 +46,12 @@ def fill_url(url,domain):
         return f"{domain}{url}"
     return url
 
+def get_url(str_val:str):
+    pattern = r'https?://[^\s]+'
+    urls = re.findall(pattern, str_val)
+    return urls
+
+
 #读取url,返回文档树对象（None)
 def content_tree(url,logger=None,**kargs):
     content=""
