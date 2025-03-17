@@ -80,7 +80,7 @@ if __name__=="__main__":
 
     
 
-    result["总质量(kg)"]=result.apply(lambda x:cal_weight(x['单包总质量'],x['小包数'],x['盒数'],
+    result["总质量(kg)"]=result.apply(lambda x:cal_weight(x['单包总重'],x['小包数'],x['盒数'],
                                                       config.fix_box_info,config.fix_bill_info), axis=1)
 
     result.to_excel(os.path.join(result_dir, "推荐价格.xlsx"))

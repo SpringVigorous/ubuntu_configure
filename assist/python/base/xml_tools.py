@@ -68,8 +68,12 @@ def get_attributes(html_str, tag_name, attribute_names:list,default_vals:list=No
     return  get_node_attibutes(get_node(soup, tag_name,**kwargs),attribute_names, default_vals)
 
 
-def get_nodes(html_str, tag_name, **kwargs):
+def tree_root(html_str):
     soup = BeautifulSoup(html_str, 'lxml')
+    return soup
+
+def get_nodes(html_str:str|BeautifulSoup, tag_name, **kwargs):
+    soup = BeautifulSoup(html_str, 'lxml') if isinstance(html_str,str) else html_str
     tag = soup.find_all(tag_name,**kwargs)
     return tag
 
@@ -95,5 +99,5 @@ if __name__=="__main__":
     """
     
     html_text=set_attribute(html_text, 'div', 'count', 10 ,class_='comments-container' )
-    val=get_attribute(html_text, 'div', 'count' ,class_='comments-container')
-    print(val)
+    item=get_attribute(html_text, 'div', 'count' ,class_='comments-container')
+    print(item)

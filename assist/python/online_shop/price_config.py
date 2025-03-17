@@ -97,7 +97,7 @@ class TeaConfig:
         self.product_prices_df=self.product_medical_prices_df.copy()
         self.product_prices_df["单包耗材单价"],self.product_prices_df["单包耗材质量"]=self.fix_pack_info
         self.product_prices_df["单包总价"]=self.product_prices_df["单包药材总价"]+self.product_prices_df["单包耗材单价"]
-        self.product_prices_df["单包总质量"]=self.product_prices_df["单包药材质量"]+self.product_prices_df["单包耗材质量"]
+        self.product_prices_df["单包总重"]=self.product_prices_df["单包药材质量"]+self.product_prices_df["单包耗材质量"]
         
         # product_prices=product_usage_df.groupby(['产品'],sort=False).apply(cal_product_price,include_groups=False).reset_index(name="总价")
 

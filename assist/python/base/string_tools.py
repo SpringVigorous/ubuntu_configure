@@ -293,6 +293,27 @@ def split_flag_to_dict(str_val, flag=","):
     return result
 
 
+def bit_fuzzy_search(val,src_lst):
+    dest_name=val if val in src_lst else None
+    # if val=="广西":
+    #     pass
+    #优先从 官方名称中模糊查找
+    if not dest_name:
+        pattern=re.compile(val, re.IGNORECASE)
+        for name in src_lst:
+            if pattern.findall(name):
+                dest_name=name
+                break
+            
+    #其次 从指定名称中模糊查找
+    if not dest_name:
+        for name in src_lst:
+            if re.findall(name,val, re.IGNORECASE):
+                dest_name=name
+                break
+    return dest_name
+    
+    
 if __name__ == '__main__':
 
     # 测试
