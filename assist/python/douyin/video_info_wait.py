@@ -1,7 +1,7 @@
 ﻿from pathlib import Path
 import os
 import sys
-from DrissionPage import WebPage
+from DrissionPage import WebPage, ChromiumOptions
 import time
 import re
 import concurrent.futures
@@ -15,7 +15,7 @@ from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
 
-from base import set_attributes,get_attributes,hash_text,tree_by_str,pretty_tree,get_url,arabic_numbers,convert_seconds_to_datetime,remove_none,ResultThread
+from base import set_attributes,get_attributes,hash_text,tree_by_str,pretty_tree,get_url,arabic_numbers,convert_seconds_to_datetime,remove_none,unique
 import pandas as pd
 import json 
 
@@ -269,124 +269,52 @@ class VideoInfo:
         if not isinstance(listen_args,list):
             listen_args=[listen_args]
 
-        self.wp.listen.start(targets=listen_args, res_type=res_type)
-        
-        def get_body():
-
-            logger=logger_helper("监听消息体", "listen_wait")
-            
-            self.logger.info("开始",update_time_type=UpdateTimeType.STEP)
-
+        try:
+            logger=logger_helper("监听消息体", url)
+            logger.trace("开始",update_time_type=UpdateTimeType.STAGE)
+            self.wp.get(url)
+            # self.wp._wait_loaded()  # 等待页面开始加载（或使用其他等待条件）
             times=0
-
-            while times<retries:
-                logger.stack_target("监听", f"第{times}次")
-                
-                if (packet := self.wp.listen.wait(timeout=30)):
-                    self.logger.info("结束",update_time_type=UpdateTimeType.STEP)
+            result=None
+            retry_times=15
+            
+            self.wp.listen.start(targets=listen_args, res_type=res_type)
+            while times<retry_times:
+                logger.stack_target(f"第{times+1}次",f"监听消息体:{url}")
+                if (packet := self.wp.listen.wait(timeout=1.5)):
+                    logger.trace("wait结束",update_time_type=UpdateTimeType.STEP)
                     result=packet.response.body
-                    if result:
-                        return result
+                if result:
+                    logger.info("成功",update_time_type=UpdateTimeType.STAGE)
+                    return result
                 times+=1
-                logger.warn("失败",update_time_type=UpdateTimeType.STEP)
                 logger.pop_target()
                 
-            logger.error("异常",update_time_type=UpdateTimeType.STEP)
-
-
-        
-        thread= ResultThread(target=get_body)
-        thread.start()
-        time.sleep(2)
-        try:
-            logger=logger_helper("WebPage", "get")
-
-            logger.info("开始",update_time_type=UpdateTimeType.STEP)
-            self.wp.get(url)
-            logger.info("结束",update_time_type=UpdateTimeType.STEP)
-            logger.update_target("thread","join")
-            logger.info("开始",update_time_type=UpdateTimeType.STEP)
-            result=thread.join(5)
-            logger.info("结束",update_time_type=UpdateTimeType.STEP)
-            if result:
-                return result
-            logger.warn(f"请求{url}:未捕获数据包")
+            logger.error("失败",f"已重试{retry_times}次",update_time_type=UpdateTimeType.STEP)
+            
         except Exception as e:
-            self.logger.error(f"请求{url}:请求异常: {except_stack()}")
+            logger.error("异常",f"{except_stack()}")
+        finally:
+            self.wp.listen.stop()
+            logger.pop_target()
 
-
-        self.logger.error(f"请求失败: {url}")
+        logger.error("失败",update_time_type=UpdateTimeType.STAGE)
         return None     
-    def listen_wait_js(self, listen_args, url, res_type="XHR", retries=3):
-        if not isinstance(listen_args,list):
-            listen_args=[listen_args]
-
-        
-        
-        # 创建唯一按钮ID防止重复
-        btn_id = f"dynamic_btn_{hash_text(url)}"
-        
-        # 构建点击脚本
-        js_script = f"""
-        // 创建按钮元素
-        let btn = document.createElement('button');
-        btn.id = '{btn_id}';
-        btn.style.position = 'fixed';
-        btn.style.zIndex = '9999';
-        btn.style.top = '20px';
-        btn.style.right = '20px';
-        btn.style.padding = '10px';
-        btn.textContent = '加载内容';
-        
-        // 添加点击事件
-        btn.onclick = function() {{
-            window.location.href = '{url}';
-            this.remove();  // 点击后移除按钮
-        }};
-        
-        // 插入到页面
-        document.body.appendChild(btn);
-        """
-        # 点击按钮并等待跳转
-        click_script = f"""
-        document.getElementById('{btn_id}').click();
-        """
-        self.wp.listen.start(targets=listen_args, res_type=res_type)
-        for attempt in range(retries):
-            try:
-                self.wp.run_js(js_script)
-                self.wp.run_js(click_script)
-                if (packet := self.wp.listen.wait()):
-                    self.logger.trace("捕获到数据包",str(packet.response))
-                    return packet.response.body
-                
-                self.logger.warn(f"第{attempt+1}次请求未捕获数据包")
-            except Exception as e:
-                # self.wp.refresh()
-                self.logger.error(f"第{attempt+1}次请求失败: {except_stack()}")
-            finally:
-                # self.wp.listen.stop()
-                time.sleep(2)  # 重试间隔
-
-        self.logger.error(f"请求失败: {url}")
-        return None
 
     def _video_info(self,url,index):
         
-        self.logger.update_target(f"第{index+1}个",url)
-        self.logger.trace("开始")
-        
+        logger=logger_helper(f"第{index+1}个",url)
+        logger.trace("开始",update_time_type=UpdateTimeType.STEP)
         is_pure_url=video_pure_url(url)
-        
         # listen_args="/aweme/v1/web/aweme/detail/"
-        listen_args="/v1/web/aweme/detail"
+        listen_args="/aweme/v1/web/aweme/detail/"
 
         response_body=None
                 
         if not is_pure_url:
             response_body = self.listen_wait(listen_args,url)
             url=self.wp.url
-        self.logger.update_target(detail=url)
+        logger.update_target(detail=url)
         
         #查找是否存在
         author_info,dest_info=[None]*2
@@ -396,23 +324,20 @@ class VideoInfo:
             author_info=self._seek_author_info(video_info["uid"])
             dest_info=self._seek_dest_info(video_info["poi_id"])
             if author_info and dest_info:
-                self.logger.trace("完成","信息已存在",update_time_type=UpdateTimeType.STAGE)
+                logger.trace("完成","信息已存在",update_time_type=UpdateTimeType.STAGE)
                 return video_info,author_info,dest_info
-            
 
-        
-                
         if is_pure_url:    
             
             response_body = self.listen_wait(listen_args,url)
             
         if not response_body:
-            self.logger.error("失败","response_body为空",update_time_type=UpdateTimeType.STAGE)
+            logger.error("失败","response_body为空",update_time_type=UpdateTimeType.STAGE)
             
             return 
         result=self._handle_video_packet(response_body)
         if not result:
-            self.logger.error("失败","结果为空",update_time_type=UpdateTimeType.STAGE)
+            logger.error("失败","结果为空",update_time_type=UpdateTimeType.STAGE)
             return
         video_info,author_info,dest_info=result
  
@@ -423,12 +348,46 @@ class VideoInfo:
             self.author_infos.append(author_info)
         if dest_info:
             self.dest_infos.append(dest_info)
-        self.logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
-        # time.sleep(2)
+        logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
+
         return video_info,author_info,dest_info
-    def get_video_infos(self,urls):
-        results=[self._video_info(url,index) for index,url in enumerate(urls) ]
-        return results
+    
+    #返回是否爬取完成
+    def crawl_video_infos(self,urls):
+        if not urls:
+            return True
+        times=0
+        total_count=len(urls)
+        
+        
+        logger=logger_helper("获取视频信息",f"合计{total_count}个")
+
+        logger.info("开始")
+        while(times<10):
+            try:
+                times+=1
+                cur_count=len(urls)
+                logger.stack_target(f"第{times}次获取视频信息",f"本次{cur_count}个")
+                logger.trace("开始",update_time_type=UpdateTimeType.STEP)
+                result=[self._video_info(url,index) for index,url in enumerate(urls) ]
+                invalid_urls=[ urls[index] for index,item in enumerate(result) if not item]
+                if not invalid_urls:
+                    logger.info("成功",f"共{cur_count}个",update_time_type=UpdateTimeType.STEP)
+                    break
+                invalid_count=len(invalid_urls)
+                logger.info("完成",f"成功{cur_count-invalid_count}个,失败{invalid_count}个，重试一次",update_time_type=UpdateTimeType.STEP)
+                urls=invalid_urls               
+            except Exception as e:
+                logger.error("异常",f"{except_stack()}\n重试一次",update_time_type=UpdateTimeType.STEP)
+            finally:
+                logger.pop_target()
+                
+        success=not urls
+        log= logger.info if success else logger.error
+        log("成功" if success else "失败",update_time_type=UpdateTimeType.STAGE)
+        return success
+        
+
     
     def export(self):
         
@@ -484,19 +443,49 @@ if __name__=="__main__":
 
 劲竹韧石:
 7.43 去抖音看看【处处皆风景@美景悠然生的作品】苏州虎丘山｜一键穿越千年，古风天花板原地封神！ 🌸... https://v.douyin.com/i5GFe5np/ G@V.yG 04/21 nQ:/ 
+
+劲竹韧石:
+0.76 去抖音看看【大幂幂的作品】我的好朋友会请我吃漂亮餐 对吗？ # amigo ... https://v.douyin.com/i5WuEr8V/ y@G.VL 02/08 gB:/ 
+
+劲竹韧石:
+0.07 去抖音看看【香蕉不呐呐的作品】我的妈呀！！几十块钱就能吃这样一份苏式面，还有古法... https://v.douyin.com/RQJjM4qpqcc/ qE:/ 03/03 G@I.vs 
+
+劲竹韧石:
+6.48 去抖音看看【布鲁biu剪辑的作品】# 艾特你的饭搭子请你吃 # 吃好喝好开心就好 #... https://v.douyin.com/i5WuoBdD/ yG:/ y@G.ic 11/01 
+
+劲竹韧石:
+6.48 去抖音看看【布鲁biu剪辑的作品】# 艾特你的饭搭子请你吃 # 吃好喝好开心就好 #... https://v.douyin.com/i5WuTvRj/ yG:/ y@G.ic 11/01 
+
+劲竹韧石:
+2.87 去抖音看看【曼齐小媳妇的作品】开学季吃羊蝎子火锅啦# 上海美食 # 人气爆棚 #... https://v.douyin.com/Oz43nCwRdac/ y@G.Iv eO:/ 07/12 
+
+劲竹韧石:
+2.84 去抖音看看【醉山野景区的作品】春之晓，梦不觉，恰似你我那年# 治愈系风景 # 春... https://v.douyin.com/i5Wuw3j5/ y@g.bA 08/03 eo:/ 
+
+劲竹韧石:
+6.43 去抖音看看【大牌🏸静的作品】趣越野、来踏春# 亲子游玩好去处 # 亲近大自然的... https://v.douyin.com/i5WHeF7A/ yG:/ 05/27 K@W.mq 
+
+
 """)
     
+    urls=unique(urls)
 
-    wp=WebPage()
+
+
+    # 创建 Chromium 配置对象
+    co = ChromiumOptions()
+
+    # 添加禁用缓存的启动参数
+    # co.set_no_loading_images(False)  # 可选：允许加载图片
+    co.set_argument('--disk-cache-size=0')       # 禁用磁盘缓存
+    co.set_argument('--disable-application-cache')  # 禁用应用缓存
+
+    # 初始化 WebPage 并应用配置
+    wp = WebPage(chromium_options=co)
     root_dir=r"F:\worm_practice\douyin\videos"
     info_obj=VideoInfo(wp,root_dir,"景区")
-    result=info_obj.get_video_infos(urls)
-    invalid_urls=[]
-    for index,item in enumerate(result):
-        if not item:
-            invalid_urls.append(urls[index])
-    
+    info_obj.crawl_video_infos(urls)
     info_obj.export()
     
-    print("\n".join(invalid_urls))
+
     pass

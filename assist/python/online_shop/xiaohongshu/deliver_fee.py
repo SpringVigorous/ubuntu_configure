@@ -371,6 +371,7 @@ class DeliverPrice:
             return
         return info.cal(count)
     
+    #获取价格：参数按照公司-位置-数量-重量的顺序
     def price(self,company:str,pos:str,count:int,weight:int):
         info=self.count_info(company,pos,count)
         if not info:
@@ -379,6 +380,7 @@ class DeliverPrice:
         
         return val
         
+    #获取价格：按照公司-位置-数量-重量的顺序返回
     def prices(self,pos:str,count:int,weight:int):
         results={"pos":pos,"count":count,"weight":weight}
         
@@ -390,7 +392,7 @@ class DeliverPrice:
         results.update(dict(sorted(prices.items(), key=lambda x: x[1])))
         return results
 
-    #按照阶段显示
+    #纯粹是为了显示，作为核对依据
     def show_tab(self,root_dir=None):
         pos_lst=[]
         count_lst=[]
@@ -412,7 +414,7 @@ class DeliverPrice:
                     cur_wight=weight_info.val.keys.copy()
                     cur_wight[0]=100
                     if len(cur_wight)>1:
-                        cur_wight[-1]=cur_wight[-2]+1345
+                        cur_wight.append(cur_wight[-1]+1345)
                     
                     weight_lst.extend(cur_wight)
                     break
@@ -440,35 +442,14 @@ class DeliverPrice:
     
 if __name__=="__main__":
     root_dir=r"F:\worm_practice\red_book\deliver"
-    
-    pos_lst=["四川","上海","广东","广西"]
-    count_lst=[1]
-    weight_lst=[500,1000,2500,3000]
-    
-    posdict=[{"pos":item} for item in pos_lst]
-    count_dict=[{"count":item} for item in count_lst]
-    weight_dict=[{"weight":item} for item in weight_lst]
 
-    company_df=flat_df([posdict,count_dict,weight_dict])
-
-
-    
     manager= DeliverPrice(os.path.join(root_dir,"dest"))
     manager.show_tab(root_dir)
-    exit()
-    
-    result_lst=[]
-    for row in company_df.itertuples():
-        pos,count,weight=row.pos,row.count,row.weight
-        val=manager.prices(pos,count,weight)
-        if val:
-            result_lst.append(val)
-    result_df=pd.DataFrame(result_lst)
-  
-    
-    result_df.to_excel(os.path.join(root_dir,"快递费用.xlsx"),index=False)
 
+    #manager.prices(pos,count,weight)
     exit()
+    
+
 
 
 
