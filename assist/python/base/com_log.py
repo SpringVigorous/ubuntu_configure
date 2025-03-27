@@ -30,13 +30,15 @@ def record_detail(target:str,status:str,detail:str)->str:
         info+="详情：{}".format(detail)    
     return info
 
-def usage_time(start_time:time)->str:
+def usage_time(start_time:time):
+    return time()-start_time
+def usage_time_str(start_time:time)->str:
     return f"耗时：{time()-start_time:.3f}秒"
 
 
 def record_detail_usage(target:str,status:str,detail:str,start_time:time)->str:
     
-    lst=[detail,usage_time(start_time)]
+    lst=[detail,usage_time_str(start_time)]
     content=",".join(filter(lambda x:x,lst))
     return record_detail(target,status,content)
 
@@ -229,7 +231,9 @@ class logger_helper:
             times-=1
         
         
-    
+    def usage_time(self,time_state:UpdateTimeType=UpdateTimeType.STEP):
+        return usage_time(self.state_time(time_state))
+        
     #仅更新 原始初始值
     def update_start(self):
         self._start_time=time()

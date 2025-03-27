@@ -93,3 +93,12 @@ def flat_df(lst:list[list[dict]]):
         dest=pd.merge(dest,dfs[index],on="key")
     dest.drop("key",axis=1,inplace=True)
     return dest
+
+def columns_index(df,columns:list[str]):
+    return [df.columns.get_loc(col) for col in columns]
+    
+def move_columns_to_front(df, columns_to_move:list[str]):
+    # 获取要移动的列
+    cols = columns_to_move + [col for col in df.columns if col not in columns_to_move]
+    # 重新排列列顺序
+    return df[cols]

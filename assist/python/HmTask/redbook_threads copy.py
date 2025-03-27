@@ -14,7 +14,7 @@ from DrissionPage.common import Actions,Keys
 
 
 from __init__ import *
-from base.com_log import logger as logger,usage_time
+from base.com_log import logger as logger,usage_time_str
 from base import setting as setting
 from base.string_tools import sanitize_filename,datetime_flag
 
@@ -293,7 +293,7 @@ class Interact(ThreadTask):
                         continue
             
         except Exception as e:
-            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，{usage_time(start_time)}"))
+            logger.error(record_detail(target,f"异常【{e}】", f"共采集{i}个，{usage_time_str(start_time)}"))
             clear_queue(self.InputQueue)
             self.Stop() #关闭本身
             stop_parse_event.set()#依赖本任务的输出结果的事件，也要设置
@@ -302,7 +302,7 @@ class Interact(ThreadTask):
             return 
             
 
-        logger.info(record_detail(target,f"完成", f"共采集{i}个，{usage_time(start_time)}"))
+        logger.info(record_detail(target,f"完成", f"共采集{i}个，{usage_time_str(start_time)}"))
       
 #主要用于写入临时文件，队列信息为（file_path,content,mode,encoding）
 class WriteFile(ThreadTask):
@@ -365,7 +365,7 @@ class Parse(ThreadTask,NoteDir):
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
 
-        logger.trace( record_detail(target,"写入成功",usage_time(start_time)))
+        logger.trace( record_detail(target,"写入成功",usage_time_str(start_time)))
         pass
     
     def handle_theme(self):
@@ -547,7 +547,7 @@ class App:
 
         handle_theme.join()
         
-        logger.info(record_detail(target, f"完成",f"一共{usage_time(start_time)}"))
+        logger.info(record_detail(target, f"完成",f"一共{usage_time_str(start_time)}"))
 
 
 

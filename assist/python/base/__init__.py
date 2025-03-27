@@ -24,6 +24,7 @@ from .com_exe_path import *
 from .video_tools import *
 from .coroutine_tools import *
 from .xml_tools import *
+from .xls_tools import *
 from .replace_unit import *
 from .formula_calculator import *
 from .math_tools import *

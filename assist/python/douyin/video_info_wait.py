@@ -36,6 +36,8 @@ def short_url(url)->str:
 def real_counts(counts):
     return map(lambda x: arabic_numbers(x)[0], counts)
 
+
+
 class VideoInfo:
     def __init__(self,page:WebPage,root_dir,file_name="景区"):
         self.wp=page
@@ -46,15 +48,44 @@ class VideoInfo:
         self.root_dir=root_dir
         self.excel_path=os.path.join(root_dir,f"{file_name}.xlsx")
         self.video_name="视频"
-        self.autho_name="作者"
+        self.author_name="作者"
         self.dest_name="地点"
-        if os.path.exists(self.excel_path):
-            self.video_infos=pd.read_excel(self.excel_path,sheet_name=self.video_name).to_dict("records")
-            self.author_infos=pd.read_excel(self.excel_path,sheet_name=self.autho_name).to_dict("records")
-            self.dest_infos=pd.read_excel(self.excel_path,sheet_name=self.dest_name).to_dict("records")
+        self.video_path=os.path.join(root_dir,"video.json")
+        self.author_path=os.path.join(root_dir,"author.json")
+        self.dest_path=os.path.join(root_dir,"dest.json")
+        
+    
+        self.init()
         # 先访问基础页面
         # self.wp.get('https://www.douyin.com/')  # 抖音主页
-    
+    def export(self):
+        self.export_json()
+        self.export_excel()
+        
+    def export_json(self):
+        def save_json(file_path,data):
+            if not data:
+                return
+            with open(file_path,"w",encoding="utf-8") as f:
+                json.dump(data,f,indent=4,ensure_ascii=False)
+                
+        save_json(self.video_path,self.video_infos)
+        save_json(self.author_path,self.author_infos)
+        save_json(self.dest_path,self.dest_infos)
+        
+    def init(self):
+        
+        def load_json(file_path):
+            if not os.path.exists(self.video_path):
+                return
+            with open(file_path,"r",encoding="utf-8") as f:
+                return json.load(f)
+        video_info,author_info,dest_info=load_json(self.video_path),load_json(self.author_path),load_json(self.dest_path)
+        
+        self.video_infos=video_info if video_info else []
+        self.author_infos=author_info if author_info else []
+        self.dest_infos=dest_info if dest_info else []
+
     @property
     def author_ids(self):
         return [item["uid"]  for item in self.author_infos]
@@ -109,14 +140,17 @@ class VideoInfo:
             return
         
         anchor_info=detail["anchor_info"]
-        anchor_extra_data=json.loads(anchor_info["extra"]) 
-        ext_data=json.loads(anchor_extra_data["ext_json"])
+        anchor_extra_info=anchor_info.get("extra")
+        anchor_extra_data=json.loads(anchor_extra_info)  if anchor_extra_info else None
+        ext_data=json.loads(anchor_extra_data["ext_json"]) if anchor_extra_data.get("ext_json") else None
         anchor_extra_data["ext_json"]=ext_data
         anchor_info["extra"]=anchor_extra_data
         detail["anchor_info"]=anchor_info
         aweme_id=detail["aweme_id"]
+        html_dir=os.path.join(self.root_dir,"html")
+        os.makedirs(html_dir,exist_ok=True)
         #json展示
-        with open(os.path.join(root_dir,"html",f"{aweme_id}.json"),"w",encoding="utf-8") as f:
+        with open(os.path.join(html_dir,f"{aweme_id}.json"),"w",encoding="utf-8") as f:
             json.dump(detail,f,indent=4,ensure_ascii=False)
         
         author=detail["author"]
@@ -278,11 +312,10 @@ class VideoInfo:
             result=None
             retry_times=15
             
-            self.wp.listen.start(targets=listen_args, res_type=res_type)
             while times<retry_times:
+                self.wp.listen.start(targets=listen_args, res_type=res_type)
                 logger.stack_target(f"第{times+1}次",f"监听消息体:{url}")
                 if (packet := self.wp.listen.wait(timeout=1.5)):
-                    logger.trace("wait结束",update_time_type=UpdateTimeType.STEP)
                     result=packet.response.body
                 if result:
                     logger.info("成功",update_time_type=UpdateTimeType.STAGE)
@@ -310,7 +343,10 @@ class VideoInfo:
         listen_args="/aweme/v1/web/aweme/detail/"
 
         response_body=None
-                
+        
+        def url_result(success:bool):
+            return success,url
+        
         if not is_pure_url:
             response_body = self.listen_wait(listen_args,url)
             url=self.wp.url
@@ -325,7 +361,7 @@ class VideoInfo:
             dest_info=self._seek_dest_info(video_info["poi_id"])
             if author_info and dest_info:
                 logger.trace("完成","信息已存在",update_time_type=UpdateTimeType.STAGE)
-                return video_info,author_info,dest_info
+                return url_result(True)
 
         if is_pure_url:    
             
@@ -334,11 +370,11 @@ class VideoInfo:
         if not response_body:
             logger.error("失败","response_body为空",update_time_type=UpdateTimeType.STAGE)
             
-            return 
+            return url_result(False)
         result=self._handle_video_packet(response_body)
         if not result:
             logger.error("失败","结果为空",update_time_type=UpdateTimeType.STAGE)
-            return
+            return url_result(False)
         video_info,author_info,dest_info=result
  
         #缓存
@@ -350,27 +386,30 @@ class VideoInfo:
             self.dest_infos.append(dest_info)
         logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
 
-        return video_info,author_info,dest_info
+        return url_result(True)
     
     #返回是否爬取完成
     def crawl_video_infos(self,urls):
         if not urls:
-            return True
+            return False
         times=0
         total_count=len(urls)
-        
-        
-        logger=logger_helper("获取视频信息",f"合计{total_count}个")
-
+        logger=logger_helper(f"获取视频信息:{total_count}个",f"\n{'\n'.join(urls)}")
+        dest_urls=[]
         logger.info("开始")
-        while(times<10):
+        invalid_urls=None
+        while(times<3):
             try:
                 times+=1
                 cur_count=len(urls)
                 logger.stack_target(f"第{times}次获取视频信息",f"本次{cur_count}个")
                 logger.trace("开始",update_time_type=UpdateTimeType.STEP)
-                result=[self._video_info(url,index) for index,url in enumerate(urls) ]
-                invalid_urls=[ urls[index] for index,item in enumerate(result) if not item]
+                result=[self._video_info(url,index) for index,url in enumerate(urls) if url]
+                if not dest_urls:
+                    dest_urls=[ item[1] for item in result if  item]
+                
+                
+                invalid_urls=[ item[1] for item in result if not item[0]]
                 if not invalid_urls:
                     logger.info("成功",f"共{cur_count}个",update_time_type=UpdateTimeType.STEP)
                     break
@@ -381,15 +420,20 @@ class VideoInfo:
                 logger.error("异常",f"{except_stack()}\n重试一次",update_time_type=UpdateTimeType.STEP)
             finally:
                 logger.pop_target()
-                
-        success=not urls
+        if dest_urls:
+            logger.update_target(detail=f"\n{'\n'.join(dest_urls)}")
+        success=not invalid_urls
         log= logger.info if success else logger.error
-        log("成功" if success else "失败",update_time_type=UpdateTimeType.STAGE)
+        log_content=f"\n以下链接失败：\n{'\n'.join(invalid_urls)}\n" if not success else None
+        log_type="成功" if success else "失败"
+        log(log_type,log_content,update_time_type=UpdateTimeType.STAGE)
+
+            
         return success
         
 
     
-    def export(self):
+    def export_excel(self):
         
         with pd.ExcelWriter(self.excel_path,mode="w") as w:
             video_df=pd.DataFrame(self.video_infos)
@@ -398,7 +442,7 @@ class VideoInfo:
             
             author_df=pd.DataFrame(self.author_infos)
             author_df.drop_duplicates(subset=["uid"],keep="last",inplace=True)
-            author_df.to_excel(w, sheet_name=self.autho_name, index=False)
+            author_df.to_excel(w, sheet_name=self.author_name, index=False)
             
             dest_df=pd.DataFrame(self.dest_infos)
             dest_df.drop_duplicates(subset=["poi_id"],keep="last",inplace=True)
@@ -418,58 +462,47 @@ if __name__=="__main__":
     
     
     urls=get_url("""劲竹韧石:
-4.64 去抖音看看【橙子探江南的作品】我本无意入江南，奈何江南入我心！春暖花开，来无锡蠡... https://v.douyin.com/FFd9CStSuzs/ 12/08 i@C.HI mQ:/ 
 
-劲竹韧石:
-6.43 去抖音看看【娑影阑珊的作品】3月2日实拍花星球龙梅已经盛开啦！人间仙境，龙梅圣... https://v.douyin.com/5fhn-ttv6W0/ WM:/ 04/29 u@S.yt 
+清风细雨:
+8.46 j@p.QX 12/10 TLW:/ 顾村公园樱花节 第十五届上海樱花节将于2025年3月15日至4月15日在顾村公园举行，公园首次推出夜赏樱花活动，时间为18：00-21：30，樱花岛有5大赏樱区、5大打卡点、3大活动区。# 樱花 # 一起去春游 # 樱花节 # 顾村公园  https://v.douyin.com/-4Vm0zOGZDs/ 复制此链接，打开Dou音搜索，直接观看视频！
 
-劲竹韧石:
-4.66 去抖音看看【温岭风云旅游的作品】这么美的温州樱花园，你心动了吗？绝美赏樱胜地等你来... https://v.douyin.com/HtwS29iavOA/ yg:/ W@m.qE 04/13 
+清风细雨:
+4.15 12/08 o@Q.kC AgB:/ 顾村公园# 旅行推荐官 # 上海旅游攻略 # 上海游玩推荐 # 上海游玩景点推荐 # 赏花春游好去处  https://v.douyin.com/E7TFTNEljUI/ 复制此链接，打开Dou音搜索，直接观看视频！
 
-劲竹韧石:
-0.05 去抖音看看【家美丽的作品】鼋头渚早樱已入盛花期# 鼋头渚樱花 # 一年一度赏... https://v.douyin.com/i5GNf9LP/ q@e.Bg Sy:/ 08/08 
+清风细雨:
+樱花和我都想见你，樱花季赏花攻略来了，快来上海顾村公园赏樱花吧。#顾村公园赏樱护照 #赏樱护照薅羊毛 #满城尽是樱花粉 #春日遛娃好去处 #腔调上海 https://v.douyin.com/7aFqcXQOm8c/ 复制此链接，打开【抖音短视频】，直接观看视频！
 
-劲竹韧石:
-8.23 去抖音看看【晓文旅拍的作品】天台国清寺，风景秀丽空气清新，你来过了吗？古建筑之... https://v.douyin.com/nUs2XFpbbjs/ 02/13 aa:/ y@g.Ok 
+清风细雨:
+8.97 sEh:/ 09/04 y@g.BT # 带你看樱花 顾村公园的樱花，不另外收费。  https://v.douyin.com/L7HVDFLDk30/ 复制此链接，打开Dou音搜索，直接观看视频！
 
-劲竹韧石:
-8.23 去抖音看看【做棵🌻向日葵的作品】湖州森赫樱花园的樱花，有了春天的味道，三月带上心爱... https://v.douyin.com/i5GNw1hp/ 02/27 G@i.ca OK:/ 
+清风细雨:
+7.66 D@h.oq 03/26 ATY:/ 顾村公园樱花节反转封神！免费樱花岛+顾村夜场光影秀血赚！ 2025年顾村公园樱花节被全网骂的票中票争议大反转！现在樱花岛白天随便进！亲测不收费！顾村公园这波立正挨打+火速整改，格局拉满！ 早樱：已进入"樱吹雪"倒计时（翻译：秃头预警⚠️速来捡漏） 中樱：下周染井吉野大爆发！三公里粉白隧道即将霸屏！ 晚樱+双花海：4月王者登场！蝶之恋/醉美人叠buff，郁金香油画田+油菜花小清新，三花同框美到窒息！ 8:00准时开挂！16万㎡樱花岛变身魔幻宇宙—— ✓ 激光麋鹿踏雾来 ✓ 3D蝶恋樱全息暴击 # 顾村公园 # 顾村公园樱花 # 上海樱花 # 上海樱花节 # 顾村公园樱花节  https://v.douyin.com/CIq0dtSiahM/ 复制此链接，打开Dou音搜索，直接观看视频！
 
-劲竹韧石:
-4.61 去抖音看看【九华山旅拍摄影师东南山人的作品】# 治愈文案 人生最好的境界是丰富的安静让我们在静... https://v.douyin.com/i5GNojgy/ CH:/ R@K.Ji 06/27 
+清风细雨:
+樱花和我都想见你，樱花季赏花攻略来了，快来上海顾村公园赏樱花吧。#顾村公园赏樱护照 #赏樱护照薅羊毛 #满城尽是樱花粉 #春日遛娃好去处 #腔调上海 https://v.douyin.com/I_LPplokQwc/ 复制此链接，打开【抖音短视频】，直接观看视频！
 
-劲竹韧石:
-5.84 去抖音看看【南京九州的作品】春天的气息扑面而来，邂逅南京牛首山，见证佛顶宫的恢... https://v.douyin.com/i5GFetRy/ GV:/ 05/17 q@E.HV 
+清风细雨:
+8.41 pqR:/ b@a.Nw 08/10 顾村公园# 旅行推荐官 # 上海旅游攻略 # 上海游玩推荐 # 上海游玩景点推荐 # 赏花春游好去处  https://v.douyin.com/OaCAuNR1kCg/ 复制此链接，打开Dou音搜索，直接观看视频！
 
-劲竹韧石:
-7.43 去抖音看看【处处皆风景@美景悠然生的作品】苏州虎丘山｜一键穿越千年，古风天花板原地封神！ 🌸... https://v.douyin.com/i5GFe5np/ G@V.yG 04/21 nQ:/ 
-
-劲竹韧石:
-0.76 去抖音看看【大幂幂的作品】我的好朋友会请我吃漂亮餐 对吗？ # amigo ... https://v.douyin.com/i5WuEr8V/ y@G.VL 02/08 gB:/ 
-
-劲竹韧石:
-0.07 去抖音看看【香蕉不呐呐的作品】我的妈呀！！几十块钱就能吃这样一份苏式面，还有古法... https://v.douyin.com/RQJjM4qpqcc/ qE:/ 03/03 G@I.vs 
-
-劲竹韧石:
-6.48 去抖音看看【布鲁biu剪辑的作品】# 艾特你的饭搭子请你吃 # 吃好喝好开心就好 #... https://v.douyin.com/i5WuoBdD/ yG:/ y@G.ic 11/01 
-
-劲竹韧石:
-6.48 去抖音看看【布鲁biu剪辑的作品】# 艾特你的饭搭子请你吃 # 吃好喝好开心就好 #... https://v.douyin.com/i5WuTvRj/ yG:/ y@G.ic 11/01 
-
-劲竹韧石:
-2.87 去抖音看看【曼齐小媳妇的作品】开学季吃羊蝎子火锅啦# 上海美食 # 人气爆棚 #... https://v.douyin.com/Oz43nCwRdac/ y@G.Iv eO:/ 07/12 
-
-劲竹韧石:
-2.84 去抖音看看【醉山野景区的作品】春之晓，梦不觉，恰似你我那年# 治愈系风景 # 春... https://v.douyin.com/i5Wuw3j5/ y@g.bA 08/03 eo:/ 
-
-劲竹韧石:
-6.43 去抖音看看【大牌🏸静的作品】趣越野、来踏春# 亲子游玩好去处 # 亲近大自然的... https://v.douyin.com/i5WHeF7A/ yG:/ 05/27 K@W.mq 
+清风细雨:
+8.79 q@r.rr 01/01 Gic:/ 3月25日顾村公园樱花岛 开放进度约70%%，大部分树上还有绿芽没有完全开。# 顾村公园樱花 # 顾村公园樱花岛 # 春天  https://v.douyin.com/SSIiT_8yaww/ 复制此链接，打开Dou音搜索，直接观看视频！
 
 
 """)
     
     urls=unique(urls)
 
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    #使用本地浏览器用户数据
 
 
     # 创建 Chromium 配置对象
@@ -480,6 +513,17 @@ if __name__=="__main__":
     co.set_argument('--disk-cache-size=0')       # 禁用磁盘缓存
     co.set_argument('--disable-application-cache')  # 禁用应用缓存
 
+    # co.remove_argument('--enable-automation')
+
+    # #窗口最大化
+    # co.set_argument("--start-maximized")
+    # #无界面运行(无窗口)，也叫无头浏览器
+    # co.set_argument("--headless")
+    # #禁用GPU，防止无头模式出现莫名的bug
+    # co.set_argument("--disable-gpu")
+    # #禁用启用Blink运行时
+    # co.set_argument('--disable-blink-features=Automationcontrolled')
+    
     # 初始化 WebPage 并应用配置
     wp = WebPage(chromium_options=co)
     root_dir=r"F:\worm_practice\douyin\videos"

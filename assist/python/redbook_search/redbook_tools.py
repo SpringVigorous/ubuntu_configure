@@ -576,13 +576,16 @@ class SectionManager:
                 continue
             if contain_search_key(id):
                 continue
-            sec_item=Section(sec,sec.rect.midpoint[1],id,False,0)
-            org=self.get_by_id(id)
-            if org:
-                sec_item.already=org.already
-                sec_item.error_count=org.error_count
-            secs.append(sec_item)
-            ids.append(id)
+            try:
+                sec_item=Section(sec,sec.rect.midpoint[1],id,False,0)
+                org=self.get_by_id(id)
+                if org:
+                    sec_item.already=org.already
+                    sec_item.error_count=org.error_count
+                secs.append(sec_item)
+                ids.append(id)
+            except:
+                pass
 
         self.__set_secs(secs)
     def get_by_id(self ,id):

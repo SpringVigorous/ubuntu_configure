@@ -26,7 +26,7 @@ from base.path_tools import normal_path
 from __init__ import *
 
 from base.except_tools import except_stack
-from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType,record_detail
+from base.com_log import logger as logger,usage_time_str,logger_helper,UpdateTimeType,record_detail
 from base.com_decorator import exception_decorator
 
 
@@ -140,11 +140,11 @@ def wait_for_file_exist(file_path, timeout=5):
 
     while time.time() - start_time < timeout:
         if os.path.exists(cur_path):
-            logger.debug(record_detail(target,"成功",f"{usage_time(start_time)}"))
+            logger.debug(record_detail(target,"成功",f"{usage_time_str(start_time)}"))
             return True
         time.sleep(0.5)  # 每0.5秒检查一次
     
-    logger.error(record_detail(target,"失败",f"{usage_time(start_time)}"))
+    logger.error(record_detail(target,"失败",f"{usage_time_str(start_time)}"))
     return False
 
 def url_file_suffix(url:str)->str:

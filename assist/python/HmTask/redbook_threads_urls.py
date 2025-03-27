@@ -15,7 +15,7 @@ from DrissionPage._elements.chromium_element import ChromiumElement
 import concurrent.futures
 
 from __init__ import *
-from base.com_log import logger as logger,usage_time,logger_helper,UpdateTimeType
+from base.com_log import logger as logger,usage_time_str,logger_helper,UpdateTimeType
 
 from base.string_tools import sanitize_filename,datetime_flag
 

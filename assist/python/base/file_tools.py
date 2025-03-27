@@ -12,6 +12,7 @@ import time
 import os
 from state import ReturnState
 import shutil
+from collect_tools import unique
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
     detect_logger= logger_helper("检测文件编码",file_path)
@@ -123,7 +124,7 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
     
     async_logger=logger_helper(f"异步{operator}->{dest_path}",f"mode:{mode}{encode_val}")
 
-    async_logger.trace("开始")
+    # async_logger.trace("开始")
     
     try:
         async with  aiofiles.open(dest_path,mode,encoding=encoding) as f:
@@ -131,7 +132,7 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
                 await f.write(data)
             else:
                 data=await f.read()
-            async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+            # async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
             return True if as_write else data
     except:
         async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
@@ -147,7 +148,7 @@ def read_write_sync(data, dest_path, mode="w", encoding=None):
     log_message = f"mode:{mode},encoding:{encoding}"
     sync_logger = logger_helper(f"同步{operation}->{dest_path}", log_message)
 
-    sync_logger.trace("开始")
+    # sync_logger.trace("开始")
 
     try:
         with open(dest_path, mode, encoding=encoding) as f:
@@ -156,7 +157,7 @@ def read_write_sync(data, dest_path, mode="w", encoding=None):
                 result = True
             else:
                 result = f.read()
-            sync_logger.trace("完成", update_time_type=UpdateTimeType.ALL)
+            # sync_logger.trace("完成", update_time_type=UpdateTimeType.ALL)
             return result
     except Exception as e:
         # 记录具体的错误信息
@@ -210,7 +211,7 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
         return True
 
     async_logger=logger_helper("异步下载文件",f"{url} -> {dest_path}")
-    async_logger.trace("开始")
+    # async_logger.trace("开始")
     start_time=time.time()
     # content=await __fetch_async(url,session,3,timout=timout,**kwargs)
     content=await __fetch_async(url,session,3,**kwargs)
@@ -223,7 +224,7 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
         
     await read_write_async(content,dest_path,mode="wb")
         
-    async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+    # async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
     return True
         
 async def download_async(url,dest_path,lat_fun=None,covered=False,**kwargs):
@@ -317,6 +318,29 @@ def move_file(source_file,destination_file):
         move_logger.error("失败",f"{source_file} 权限不够")
     except Exception as e:
         move_logger.error("失败",except_stack())    
+
+def copy_file(source_file:str|list[str],destination_file:str|list[str]):
+    
+    if isinstance(source_file,str):
+        source_file=[source_file]
+        
+    if isinstance(destination_file,str):
+        destination_file=[destination_file]*len(source_file)
+    logger= logger_helper("拷贝参数",f"{"\n".join(unique(source_file))}\n -> \n{"\n".join(unique(destination_file))}\n")
+    logger.trace("开始")
+    for file,dest in zip(source_file,destination_file):
+        copy_logger= logger_helper("拷贝文件",f"{file} -> {dest}")
+        # 拷贝文件
+        try:
+            result= shutil.copy2(file, dest)
+            copy_logger.trace("成功")
+        except FileNotFoundError:
+            copy_logger.error("失败",f"{file} 不存在")
+        except PermissionError:
+            copy_logger.error("失败",f"{file} 权限不够")
+        except Exception as e:
+            copy_logger.error("失败",except_stack())    
+    logger.info("完成",update_time_type=UpdateTimeType.ALL)
 
 
 def priority_read(file_path,readfunc,operator_func=None,writefunc=None):

@@ -62,9 +62,9 @@ def merge_video(temp_paths,dest_path):
 
 
     if stderr:
-        merge_logger.error("失败",stderr,update_time_type=UpdateTimeType.ALL)
+        merge_logger.error("失败",f"\n{stderr}\n",update_time_type=UpdateTimeType.ALL)
     if stdout:
-        merge_logger.info("成功",stdout,update_time_type=UpdateTimeType.ALL)
+        merge_logger.info("成功",f"\n{stdout}\n",update_time_type=UpdateTimeType.ALL)
 
 #转换文件
 def convert_video_to_mp4(video_path,output_path=None):

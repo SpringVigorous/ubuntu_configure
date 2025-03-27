@@ -93,9 +93,10 @@ class MediaController:
     def pause_media(self):
         """暂停播放"""
         self.playing = False
-        current_time = round(self.player.get_time() / 1000, 2)
-        self.update_table(current_time)
-        self.i += 1
+
+        self.record()
+        
+        
         self.player.pause()
         self.player.set_time(int(self.progress.get() * 1000))  # 同步播放器位置
         self.play_pause_btn.config(text="播放")
@@ -284,6 +285,16 @@ class MediaController:
         # 修改控制按钮部分
         self.play_pause_btn = ttk.Button(control_frame, text="播放", command=self.toggle_play_pause)
         self.play_pause_btn.pack(side=tk.LEFT)
+                
+        # 在控制面板添加按钮
+        self.btn_rewind = ttk.Button(control_frame, text="<< 0.1s", command=self.rewind)
+        self.btn_rewind.pack(side=tk.LEFT, padx=5)  # 放在现有按钮左侧
+
+        self.btn_forward = ttk.Button(control_frame, text="0.1s >>", command=self.forward)
+        self.btn_forward.pack(side=tk.LEFT, padx=5)  # 放在现有按钮右侧
+        
+        self.btn_forward = ttk.Button(control_frame, text="记录", command=self.record)
+        self.btn_forward.pack(side=tk.LEFT, padx=5)  # 放在现有按钮右侧
 
         # 右侧面板
         right_frame = ttk.Frame(main_pane)
@@ -317,13 +328,37 @@ class MediaController:
         self.tree.heading('时间点', text='时间点(s)')
         self.tree.heading('字幕', text='字幕文本')
         self.tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    def update_playback(self, time_delta):
+        # 获取当前播放时间
+        current_time = self.player.get_time()/1000  # 假设有获取时间的接口
+        
+        # 计算新时间（需处理边界）
+        new_time = max(0, current_time + time_delta)
+        new_time = min(new_time, self.player.get_length())  # self.media_length为总时长
+        
+        # 更新播放器
+        self.player.set_time(int(new_time*1000))  # 假设有设置时间的接口
+        
+        # 更新进度条
+        self.update_progress()
+        
+    def rewind(self):
+        self.update_playback(-0.1)  # 后退0.1秒
 
+    def forward(self):
+        self.update_playback(0.1)   # 前进0.1秒
+        
+    def record(self):
+        current_time = round(self.player.get_time() / 1000, 2)
+        self.update_table(current_time)
+        self.i += 1
+        pass
     def update_progress(self):
         """更新进度显示时跳过初始化阶段"""
         # if self.initializing:
         #     return
         """更新进度显示"""
-        if self.player and self.playing:
+        if self.player:
             try:
                 current_time = self.player.get_time() / 1000  # 转换为秒
                 total_time = self.player.get_length() / 1000

@@ -151,7 +151,7 @@ class InteractBase():
 
         self.interact_logger.update_target("采集主题",theme)
         self.interact_logger.reset_time()
-        self.interact_logger.info("开始")
+        self.interact_logger.info("开始",update_time_type=UpdateTimeType.ALL)
 
         #搜索输入框
         if not self.webPage.wait.ele_displayed(web_path.search_input_path):
@@ -265,16 +265,24 @@ class InteractBase():
     def handle_theme_imp(self,theme,pfunc,search_count):
         if not self.click_seach_theme(theme):
             return False
+        
         hrefs=[]
+        
+        
+        #每条最多10s,超时后就退出
+        each_usage_time=10
+        
+        total_usage_time=search_count*each_usage_time
         try:
-
+ 
             time.sleep(.5)
-            self.webPage.listen.start(web_listen.listen_note) 
+            # self.webPage.listen.start(web_listen.listen_note) 
             #忽略 标题
             secManager=SectionManager(self.webPage,self.next_id_func,self.sec_sort_fun)
             secManager.update()
-
-            while len(hrefs)<search_count:
+            while len(hrefs)<search_count and self.interact_logger.usage_time(UpdateTimeType.ALL)<total_usage_time:
+                logger=logger_helper(theme,f"第{len(hrefs)+1}条")
+                logger.trace(f"开始",update_time_type=UpdateTimeType.STAGE)
                 sec_item=secManager.next(self.title)
                 sec=sec_item.sec if sec_item else None
                 if not sec :
@@ -288,12 +296,16 @@ class InteractBase():
                 try:
                     if(self.webPage.wait.ele_displayed(sec,timeout=5)):
                         sec.click()
+                        logger.trace(f"已点击",update_time_type=UpdateTimeType.STEP)
+                        
                     else:
                         secManager.resume_cur()
                         secManager.update()
                         continue
                     # sec.click()
                 except:
+                    logger.trace(f"未找到对应元素","再试一次",update_time_type=UpdateTimeType.STEP)
+                    
                     secManager.resume_cur()
                     secManager.update()
                     continue   
@@ -301,22 +313,36 @@ class InteractBase():
                 
                 
                 body=None
-                while True:
-                    item=self.webPage.listen.wait(timeout=5)
-                    body=item.response.body
-                    if not body:
+                times=0
+                #重试4次
+            
+                while times<4 or logger.usage_time(UpdateTimeType.STEP)<each_usage_time*3:
+                    times+=1
+                    self.webPage.listen.start(web_listen.listen_note) 
+                    item=self.webPage.listen.wait(timeout=10)
+                    if not (item and item.response and item.response.body):
                         continue
+                    body=item.response.body
+
                     if item.target==web_listen.listen_note:
                         break
+                if not body:
+                    continue
+                
+                
                 url=self.webPage.url
                 body["my_link"]=url
                 body["title"]=self.title
+                
+                logger.trace(f"第{len(hrefs)+1}条成功",self.title,update_time_type=UpdateTimeType.STAGE)
+                
                 body=JsonData(theme=self.theme,json_data=body)
                 hrefs.append(url)
                 
                 pfunc(body)
                 self.close_note()
                 time.sleep(.5)
+
                 
         
         except Exception as e:

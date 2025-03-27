@@ -4,7 +4,7 @@ from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 import pandas as pd
 from openpyxl.utils.dataframe import dataframe_to_rows
-
+from openpyxl import load_workbook
 
 def set_cell_center(cell:Cell):
     cell.alignment = Alignment(horizontal='center', vertical='center')
@@ -156,13 +156,24 @@ def unmerge_and_fill(target: Worksheet|Cell,filter_func:list[int,int,int,int]=No
         if filter_func and not filter_func(merged_cell.bounds):
             continue
         unmerge_cells(ws, merged_cell)
+    
 
-                
-        
+  
+def merge_all_identical_column_file(xlsx_path,sheet_name:str=None,col_index:list[int]=None):
+    wb = load_workbook(xlsx_path)
+
+    ws = wb.active if not sheet_name else wb[sheet_name]
+    if not col_index:
+        merge_all_identical_column_cells(ws)
+    else:
+        for col_idx in col_index:
+            merge_identical_column_cells(ws, col_idx)
+    # 保存工作簿
+    wb.save(xlsx_path)
+    
                 
 if __name__=="__main__":
     
-    from openpyxl import load_workbook
     # 示例使用
     file_path=r'E:\公司文件\库存\结果\merge_result.xlsx'
     wb = load_workbook(file_path)

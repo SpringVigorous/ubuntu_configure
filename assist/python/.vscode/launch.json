@@ -12,6 +12,7 @@
       // "args" : "-i F:/test/cmake_project/src  -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
       // "args" : "-i 'F:/test/cmake_project/3rd/vcpkg/installed/x64-windows/include/Eigen/src/Core/arch/Default/BFloat16.h' -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
       // "args" : "-i 'F:/temp/bill.txt'  -c ascii -f '.txt' ",
+      "python": "myenv/Scripts/python.exe",
       "args" : "-r  'F:/worm_practice/player/urls/'  -f '.log' -i 'lost' ",
       
     }

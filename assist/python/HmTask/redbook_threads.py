@@ -14,7 +14,7 @@ from DrissionPage.common import Actions,Keys
 
 
 from __init__ import *
-from base.com_log import logger as logger,usage_time,logger_helper
+from base.com_log import logger as logger,usage_time_str,logger_helper
 from base import setting as setting
 from base.string_tools import sanitize_filename,datetime_flag
 
@@ -403,7 +403,7 @@ class Parse(ThreadTask,NoteDir):
                 if not info.pd is None:
                     info.pd.to_excel(writer, sheet_name=info.theme)
 
-        logger.trace( record_detail(target,"写入成功",usage_time(start_time)))
+        logger.trace( record_detail(target,"写入成功",usage_time_str(start_time)))
         pass
     
     def handle_theme(self):
@@ -585,7 +585,7 @@ class App:
 
         handle_theme.join()
         
-        logger.info(record_detail(target, f"完成",f"一共{usage_time(start_time)}"))
+        logger.info(record_detail(target, f"完成",f"一共{usage_time_str(start_time)}"))
 
 
 

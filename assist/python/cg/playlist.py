@@ -40,35 +40,55 @@ def get_real_url(url:str,url_page):
 
 
 class video_info:
-    def __init__(self,url) -> None:
+    def __init__(self,url,m3u8_path) -> None:
         self.url=url
         self.method=None
         self.uri=None
         self.iv=None
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
-            'Connection': 'keep-alive',
-            'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
-            'sec-ch-ua-mobile': '?0',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 SE 2.X MetaSr 1.0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Accept': '*/*',
-            'Origin': 'https://haokeyouxuanedu.edu.gzfeice.com',
-            'Sec-Fetch-Site': 'cross-site',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': 'https://haokeyouxuanedu.edu.gzfeice.com/',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
+            # 'Connection': 'keep-alive',
+            # 'sec-ch-ua': '";Not A Brand";v="99", "Chromium";v="94"',
+            # 'sec-ch-ua-mobile': '?0',
+            # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 SE 2.X MetaSr 1.0',
+            # 'sec-ch-ua-platform': '"Windows"',
+            # 'Accept': '*/*',
+            # 'Origin': 'https://haokeyouxuanedu.edu.gzfeice.com',
+            # 'Sec-Fetch-Site': 'cross-site',
+            # 'Sec-Fetch-Mode': 'cors',
+            # 'Sec-Fetch-Dest': 'empty',
+            # 'Referer': 'https://haokeyouxuanedu.edu.gzfeice.com/',
+            # 'Accept-Language': 'zh-CN,zh;q=0.9',
+            
+            
+            
+            'Host':'live-ex-speed.xiaoeknow.com',
+            'Connection':'keep-alive',
+            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63090c33) XWEB/11581 Flue',
+            'Accept':'*/*',
+            'Origin':'https://appwie9kimk9715.xet.citv.cn',
+            'Sec-Fetch-Site':'cross-site',
+            'Sec-Fetch-Mode':'cors',
+            'Sec-Fetch-Dest':'empty',
+            'Referer':'https://appwie9kimk9715.xet.citv.cn/',
+            'Accept-Encoding':'gzip, deflate, br',
+            'Accept-Language':'zh-CN,zh;q=0.9',
+
         }
-
+        content=None
+        if os.path.exists(m3u8_path):
+            content=open(m3u8_path,"r",encoding="utf-8").read()
 
         
-        
-        response=requests.get(url, headers=headers)
-        
-        self.logger=logger_helper("解析m3u8",f"{self.url}")
-
-        content=response.text
+        if not content:
+            response=requests.get(url, headers=headers,verify=False)
+            self.logger=logger_helper("解析m3u8",f"{self.url}")
+            content=response.text
+            
+            #写入文件
+            open(m3u8_path,"w",encoding="utf-8").write(content)
+            
+            
         self.m3u8=content
         try:
             header=content.split('#EXTINF:')[0].replace(",","\n")
@@ -315,10 +335,10 @@ def save_m3u8_data(m3u8_path,data):
 
 
 @exception_decorator()
-def get_url_data(url,url_json_path):
+def get_url_data(url,url_json_path,m3u8_path):
     info=load_url_data(url_json_path)
     if not info:
-        video=video_info(url)
+        video=video_info(url,m3u8_path)
         
         
         
@@ -345,9 +365,9 @@ def get_url_data(url,url_json_path):
         
         #保存
         save_url_data(url_json_path,info)
-        org_path= Path(url_json_path).with_suffix(".m3u8")
-        dest_path= org_path.parent.parent / "m3u8" / org_path.name
-        save_m3u8_data(dest_path,video.m3u8)
+        # org_path= Path(url_json_path).with_suffix(".m3u8")
+        # dest_path= org_path.parent.parent / "m3u8" / org_path.name
+        # save_m3u8_data(dest_path,video.m3u8)
     try:    
         key=info.get("key","")
         iv=info.get("iv","")
@@ -375,8 +395,11 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     os.makedirs(temp_dir, exist_ok=True)
     
     #加载已有数据
-    url_json_path=os.path.join(root_path,"urls",f"{dest_name}-{dest_hash}.json")
-    key,iv,info_list,total_len=get_url_data(url,url_json_path)
+    cache_name=f"{dest_name}-{dest_hash}"
+    
+    url_json_path=os.path.join(root_path,"urls",f"{cache_name}.json")
+    m3u8_path=os.path.join(root_path,"m3u8",f"{cache_name}.m3u8")
+    key,iv,info_list,total_len=get_url_data(url,url_json_path,m3u8_path)
     # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
@@ -501,8 +524,8 @@ if __name__=="__main__":
 # ("https://v1.tlkqc.com/wjv1/202308/19/aeKFrRw7bj2/video/1000k_720/hls/index.m3u8","哪吒之魔童降世"),
 # ("https://vod.lesimao.net/2066d590cf5c71ef98785420848c0102/video/2610738a649346ee841eca77c7c727b2-6108cabe8ae2d87ff1bece0d92fd700f-video-od.m3u8?auth_key=1741528215-67cd9c97e4fdd-0-eacb02673cc082f2abc2f1439028a4d1","北艺学堂_02"),
 # ("https://vv.jisuzyv.com/play/kazEynZe/index.m3u8","变形金刚_超能勇士崛起"),
-("https://vv.jisuzyv.com/play/9aA4059e/index.m3u8","变形金刚_起源"),
-("https://vv.jisuzyv.com/play/mbkMApXe/index.m3u8","大黄蜂"),
+
+("https://encrypt-k-vod.xet.tech/522ff1e0vodcq1252524126/2ffdcd911397757907228305593/playlist_eof.m3u8?sign=131f241868497a354a7c068655359112&t=67e44e63&us=UHENOVcTVW&time=1742972297340&uuid=u_67e38dde130ea_39B10tab0v","1_桥梁BIM软件总体功能介绍"),
 
 
 
