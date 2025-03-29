@@ -160,19 +160,14 @@ def show_usage_xlsx():
     
     
 def main():
-
-    #以下操作3选一，按情况选择
-
     #第一次使用，基本上用不着
     # first_init()
 
-    #导出xlsx文件，同时修改json文件
+    #打开xlsx文件以及json文件，整合后 导出xlsx文件（单元格已合并），同时修改json文件
     show_usage_xlsx()
     
-    #excel打开编辑后，输出到json文件中
+    #根据json文件中，拷贝对应的文件
     HandleUsage.copy_by_json()
 
-    
-    
 if __name__=="__main__":
     main()
