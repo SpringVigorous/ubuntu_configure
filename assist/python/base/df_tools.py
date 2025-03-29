@@ -102,3 +102,44 @@ def move_columns_to_front(df, columns_to_move:list[str]):
     cols = columns_to_move + [col for col in df.columns if col not in columns_to_move]
     # 重新排列列顺序
     return df[cols]
+
+#按相邻行填充数据（针对 合并单元格的操作）
+def fill_adjacent_rows(df:pd.DataFrame, column_names:list[str]=None):
+    if not column_names:
+        column_names=df.columns.tolist()
+    elif isinstance(column_names,str):
+        column_names=[column_names]
+        
+    df[column_names] = df[column_names].ffill().bfill()
+    return df
+
+
+def merge_df(df1,df2,on,how="inner",keep_first=True):
+    if df1 is None:
+        return df2
+    if df2 is None:
+        return df1
+    
+    
+    if isinstance(on,str):
+        on=[on]
+
+    common_cols = df1.columns.intersection(df2.columns).difference(on).tolist()
+    if common_cols:
+        src_df=df1 if not keep_first else df2
+        src_df.drop(columns=common_cols, inplace=True)
+
+    df=pd.merge(df1,df2,on=on,how=how)
+    return df
+    
+#返回值：稀疏，完整
+def sparse_columns_name(df):
+    
+    # 计算每列的空值数量
+    null_counts = df.isna().sum()
+    # 总行数
+    total_rows = len(df)
+    # 筛选空值数量超过总行数一半的列名
+    sparse_columns = null_counts[null_counts > total_rows / 2].index.tolist()
+    whole_columns = null_counts[null_counts <= total_rows / 2].index.tolist()
+    return sparse_columns,whole_columns

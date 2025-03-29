@@ -13,6 +13,8 @@ import os
 from state import ReturnState
 import shutil
 from collect_tools import unique
+
+from pathlib import Path
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
     detect_logger= logger_helper("检测文件编码",file_path)
@@ -31,7 +33,7 @@ def detect_encoding(file_path)->str:
 
 
 #读入文件
-@cd.exception_decorator()
+@cd.exception_decorator(error_state=False)
 def read_content_by_encode(source_path,source_encoding):
     
         with open(source_path, 'r',encoding=source_encoding,errors="ignore") as file:
@@ -319,17 +321,24 @@ def move_file(source_file,destination_file):
     except Exception as e:
         move_logger.error("失败",except_stack())    
 
-def copy_file(source_file:str|list[str],destination_file:str|list[str]):
+def copy_file(source_file:str|list[str],destination_file:str|list[str],override=True):
     
     if isinstance(source_file,str):
         source_file=[source_file]
         
     if isinstance(destination_file,str):
         destination_file=[destination_file]*len(source_file)
-    logger= logger_helper("拷贝参数",f"{"\n".join(unique(source_file))}\n -> \n{"\n".join(unique(destination_file))}\n")
+    logger= logger_helper("拷贝参数",f"\n{"\n".join(unique(source_file))}\n -> \n{"\n".join(unique(destination_file))}\n")
     logger.trace("开始")
     for file,dest in zip(source_file,destination_file):
         copy_logger= logger_helper("拷贝文件",f"{file} -> {dest}")
+        if not override :
+            
+            dest_path=dest if  Path(dest).is_file() else os.path.join(dest,Path(file).name)
+            if pt.path_equal(file,dest_path):
+                copy_logger.trace("忽略","文件路径相同，跳过拷贝")
+                continue
+        
         # 拷贝文件
         try:
             result= shutil.copy2(file, dest)

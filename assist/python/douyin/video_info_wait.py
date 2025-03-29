@@ -20,7 +20,7 @@ import pandas as pd
 import json 
 
 
-
+from dy_unity import dy_root
 
 
 
@@ -39,12 +39,14 @@ def real_counts(counts):
 
 
 class VideoInfo:
-    def __init__(self,page:WebPage,root_dir,file_name="景区"):
+    def __init__(self,page:WebPage,file_name="景区"):
         self.wp=page
         self.logger=logger_helper()
         self.video_infos=[]
         self.author_infos=[]
         self.dest_infos=[]
+        root_dir=dy_root.crawl_root
+        
         self.root_dir=root_dir
         self.excel_path=os.path.join(root_dir,f"{file_name}.xlsx")
         self.video_name="视频"
@@ -492,19 +494,7 @@ if __name__=="__main__":
     
     urls=unique(urls)
 
-
-    
-    
-    
-    
-    
-    
-    
-    
-
     #使用本地浏览器用户数据
-
-
     # 创建 Chromium 配置对象
     co = ChromiumOptions()
 
@@ -526,8 +516,8 @@ if __name__=="__main__":
     
     # 初始化 WebPage 并应用配置
     wp = WebPage(chromium_options=co)
-    root_dir=r"F:\worm_practice\douyin\videos"
-    info_obj=VideoInfo(wp,root_dir,"景区")
+
+    info_obj=VideoInfo(wp,"景区")
     info_obj.crawl_video_infos(urls)
     info_obj.export()
     

@@ -12,6 +12,7 @@ assist/python/exe/
 dest/
 temp/
 zip/
+myenv/
 
 .vscode/
 

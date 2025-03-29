@@ -21,7 +21,8 @@ from  com_decorator import exception_decorator
 from file_tools import detect_encoding
 from string_tools import exe_dir
     
-
+from PIL import Image
+import os
 
 # 定义枚举变量，用于标识不同的邮箱服务提供商
 class EmailType(Enum):
@@ -38,8 +39,7 @@ class EmailType(Enum):
                 return member
         raise ValueError(f"无效的值: {value}")
 
-from PIL import Image
-import os
+
 
 def is_image(file_path):
     try:

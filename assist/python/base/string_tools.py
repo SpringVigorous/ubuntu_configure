@@ -7,6 +7,7 @@ from numbers import Number
 from com_decorator import exception_decorator
 import hashlib
 import os
+import uuid
 #根据原始的大小写情况，替换成目标的大小写
 def replace_pattern(match, replacement):
     original = match.group(0)
@@ -108,6 +109,12 @@ def convert_to_html_table(table_str,row_split="\n",col_split="\t"):
     
     return html_table
 
+def guid(num:int=32):
+    # 直接生成 32 位十六进制字符串（无连字符）
+    guid_compact = uuid.uuid4().hex
+    if num<1 or num>32:
+        return guid_compact
+    return guid_compact[:num]
 # html 表格 转换为 字符串，每行用换行符分割，每列用制表符分割
 def html_table_to_str(html_table,row_split="\n",col_split="\t"):
     # 使用 BeautifulSoup 解析 HTML 表格

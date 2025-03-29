@@ -56,7 +56,10 @@ def delete_files(root_dir, exclude_dirs, file_patterns=None):
             if file_patterns is None or any(file.endswith(pattern) for pattern in file_patterns):
                 print(f"删除文件: {file_path}")
                 os.remove(file_path)  # 取消注释以实际删除文件
-                
+def check_dir(dir_path):
+    if os.path.exists(dir_path):
+        return
+    os.makedirs(dir_path,exist_ok=True)        
                 
 if __name__ == '__main__':
     

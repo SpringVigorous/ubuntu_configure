@@ -2,7 +2,7 @@
 
 import functools
 
-import asyncio
+
 import concurrent.futures
 import threading
 from time import time
