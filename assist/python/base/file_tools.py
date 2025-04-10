@@ -136,8 +136,8 @@ async def read_write_async(data,dest_path,mode="w",encoding=None):
                 data=await f.read()
             # async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
             return True if as_write else data
-    except:
-        async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
+    except Exception as e:
+        async_logger.error("失败",str(e),update_time_type=UpdateTimeType.ALL)
         return False
 
 #同步读、写文件
@@ -187,6 +187,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
     while retries < max_retries:
         try:
             async with session.get(url,**args) as response:
+
                 if response.status == 200:
                     content_length = int(response.headers.get('Content-Length', 0))
                     received_data = await response.read()
@@ -209,7 +210,7 @@ async def __fetch_async(url ,session,max_retries=3,**args):
 
 
 async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=None,covered=False,**kwargs):
-    if os.path.exists(dest_path) and not covered:
+    if (os.path.exists(dest_path) and not covered ) or not url:
         return True
 
     async_logger=logger_helper("异步下载文件",f"{url} -> {dest_path}")
@@ -228,9 +229,13 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
         
     # async_logger.trace("完成",update_time_type=UpdateTimeType.ALL)
     return True
+
+async def _download_async_semaphore(semaphore,session:aiohttp.ClientSession,url,dest_path,lat_fun=None,covered=False,**kwargs):
+    async with semaphore:
+        return await _download_async(session,url,dest_path,lat_fun,covered,**kwargs)
+       
         
 async def download_async(url,dest_path,lat_fun=None,covered=False,**kwargs):
-    
     async with aiohttp.ClientSession() as session:
         result= await _download_async(session,url,dest_path,lat_fun,covered,**kwargs)
         return result
@@ -239,8 +244,11 @@ async def download_async(url,dest_path,lat_fun=None,covered=False,**kwargs):
 
 async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
     
+    semaphore = asyncio.Semaphore(50)
+    
     async with aiohttp.ClientSession() as session:
-        tasks = [_download_async(session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths)]
+        # tasks = [_download_async(session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths)]
+        tasks = [_download_async_semaphore(semaphore,session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths) if url and dest_path]
         await asyncio.gather(*tasks)
 
 def fetch_sync(url ,max_retries=5,timeout=300,**args):

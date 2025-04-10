@@ -29,6 +29,16 @@ class HandleUsage:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
     @staticmethod
+    def load_usage_json():
+        with open(dy_root.usage_src_path(HandleUsage.usage_json_name()), 'r', encoding='utf-8') as file:
+            return json.load(file)
+    @staticmethod
+    def save_usage_json(data):
+        with open(dy_root.usage_src_path(HandleUsage.usage_json_name()), 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+
+
+    @staticmethod
     #根据筛选的路径拷贝到一个目录中,用之前先调用save_usage
     def copy_by_json(json_name:str=None):
         if not json_name:
@@ -46,8 +56,38 @@ class HandleUsage:
             
         for name,files in results.items():
             copy_file(files,dy_root.usage_sub_dir(name),override=False)
-
         pass    
+    pass
+
+
+    @staticmethod
+    #根据筛选的路径拷贝到一个目录中,用之前先调用save_usage
+    def copy_by_txt(txt,name):
+        if not txt or not name:
+            return
+        
+
+        
+        
+        lst=[os.path.join(dy_root.dest_sub_dir(DestInfo(file).series_name),file)  for file in txt.split()]
+        if not lst:
+            return
+        results={name:lst}
+        for name,files in results.items():
+            copy_file(files,dy_root.usage_sub_dir(name),override=False)
+
+
+        data=HandleUsage.load_usage_json()
+        keys=[item["name"] for item in data]
+        if name in keys:
+            data[keys.index(name)]["videos"]=lst
+        else:
+            data.append({"name":name,"videos":lst})
+        HandleUsage.save_usage_json(data)
+
+            #输出保存
+        HandleUsage.save_usage_xlsx(pd.DataFrame(data))
+        
     pass
 
 
@@ -167,7 +207,18 @@ def main():
     show_usage_xlsx()
     
     #根据json文件中，拷贝对应的文件
-    HandleUsage.copy_by_json()
+    # HandleUsage.copy_by_json()
+    
+    txt="""
+鼋头渚夜樱_005-1920x1080_003.mp4
+鼋头渚夜樱_011-720x1280_002.mp4
+鼋头渚夜樱_003-720x1560_007.mp4
+鼋头渚夜樱_011-720x1280_003.mp4
+鼋头渚夜樱_011-720x1280_004.mp4
+鼋头渚夜樱_003-720x1560_006.mp4
+    """
+    
+    HandleUsage.copy_by_txt(txt,"2")
 
 if __name__=="__main__":
     main()

@@ -4,7 +4,7 @@ import argparse
 import send2trash
 import sys
 from com_log import logger as logger
-
+from collect_tools import unique
 #判断字符串是否在列表中,忽略大小写
 def check_str_in_list(str,str_list:list=None):
     if str_list == None or len(str_list) < 1:
@@ -21,7 +21,7 @@ def check_str_exclude_list(path,exclude_strs:list=None):
     
 
 def del_dir_file(cur_path,exclude_strs:list=None,include_str:list=[]):
-    if not os.path.exists(cur_path) or not check_str_exclude_list(cur_path,exclude_strs) or not check_str_in_list(cur_path,include_str):
+    if not os.path.exists(cur_path) or (exclude_strs and not check_str_exclude_list(cur_path,exclude_strs)) or (include_str and not check_str_in_list(cur_path,include_str)):
         return 
     
     expression_str="directory" if os.path.isdir(cur_path) else "file"

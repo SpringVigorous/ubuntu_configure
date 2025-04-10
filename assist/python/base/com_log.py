@@ -218,9 +218,18 @@ class logger_helper:
 
     #为空时，仅仅是把之前的值压栈，不为空时，压栈+更新
     def stack_target(self,targe:str=None,detail:str=None):
+        
+            
         if self._target or self._detail:
             self.stack.push((self._target,self._detail))
-        if targe and detail:
+            
+            
+        if not targe:
+            targe=self._target
+        if not detail:
+            detail=self._detail
+            
+        if targe or detail:
             self.update_target(targe,detail)
     
     def pop_target(self,times=1):

@@ -147,14 +147,15 @@ class SplitBase:
     def __init__(self) -> None:
         self.file_manager= DYFileUnity()
     
-    
+    @staticmethod
     def load_split_xlsx(self)->pd.DataFrame:
         xls_path,sheet_name=dy_root.split_info_xlsx_path
         df=pd.read_excel(xls_path,sheet_name=sheet_name)
         df=fill_adjacent_rows(df,['原始文件', '分辨率', '序列号','总时长'])
         return df
     
-    def save_split_xlsx(self,df:pd.DataFrame):
+    @staticmethod
+    def save_split_xlsx():
         dest_dir=dy_root.split_info_root
 
         file_path,sheet_name=dy_root.split_info_xlsx_path
@@ -213,7 +214,7 @@ class SplitBase:
 class AutoSplit(SplitBase):
     
     def __init__(self) -> None:
-        super().__init__(self)
+        super().__init__()
 
         
         pass
@@ -289,7 +290,7 @@ class ManerSplit(SplitBase):
     
     __base_time= datetime(1970, 1, 1)
     def __init__(self) -> None:
-        super().__init__(self)
+        super().__init__()
    
     @staticmethod
     def float_seconds_to_timedelta(seconds:int|float)->timedelta:
@@ -551,7 +552,7 @@ def main():
     auto_split.split_videos()
 
     logger.info("拆分信息输出",update_time_type=UpdateTimeType.STAGE)
-    maner_split.save_split_xlsx()
+    SplitBase.save_split_xlsx()
     logger.info("成功",update_time_type=UpdateTimeType.ALL)
     
     

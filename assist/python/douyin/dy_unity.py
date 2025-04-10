@@ -4,26 +4,30 @@ import re
 from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from base import check_dir
+from typing import Callable
 #苏州水乡_001.mp4
 def info_from_org(org_name:str):
-    dest_name=Path(org_name).stem
+    cur_path=Path(org_name)
+    
+    dest_name=cur_path.stem
     series_name,series_number=dest_name.split("_")
-    return series_name,series_number
+    return series_name,series_number,cur_path.suffix
 
 
 #顾村公园樱花_001-1080x1920_001.mp4
 def info_from_dest(dest_path:str):
+    cur_path=Path(dest_path)
     
-    dest_name=Path(dest_path).stem
+    dest_name=cur_path.stem
     
     org_name,latter=dest_name.split("-")
-    series_name,series_number=info_from_org(org_name)
+    series_name,series_number,*args=info_from_org(org_name)
     pixel,scene_number=latter.split("_")
-    return series_name,series_number,pixel,scene_number
+    return series_name,series_number,pixel,scene_number,cur_path.suffix
 
 class OrgInfo:
     def __init__(self,org_name:str) -> None:
-        self.series_name,self.series_number=info_from_org(org_name)
+        self.series_name,self.series_number,self.suffix=info_from_org(org_name)
         pass
     def __str__(self) -> str:
         return f"OrgInfo({self.series_name},{self.series_number})"
@@ -34,7 +38,7 @@ class OrgInfo:
 
 class DestInfo(OrgInfo):
     def __init__(self,dest_path:str) -> None:
-        self.series_name,self.series_number,self.pixel,self.scene_number=info_from_dest(dest_path)
+        self.series_name,self.series_number,self.pixel,self.scene_number,self.suffix=info_from_dest(dest_path)
         pass
     def __str__(self) -> str:
         return f"DestInfo({self.series_name},{self.series_number},{self.pixel},{self.scene_number})"
@@ -94,6 +98,13 @@ class DYRootDir:
         return os.path.join(self.message_root,"wechat_messages.txt")
     
     @property
+    def message_json_file(self)->str:
+        return os.path.join(self.message_root,"微信消息.json")
+    @property
+    def message_xls_file(self)->str:
+        return os.path.join(self.message_root,"微信消息.xlsx")
+    
+    @property
     def org_root(self)->str:
         return os.path.join(self.root_path,"org")
     
@@ -139,6 +150,19 @@ class DYRootDir:
     @property
     def usage_info_xlsx_path(self)->str:
         return os.path.join(dy_root.usage_src_root,"视频使用信息.xlsx"),"视频信息"
+
+    
+    @property
+    def temp_dir(self)->str:  # 定义一个名为temp_dir的方法，该方法属于某个类，返回类型为字符串
+        return os.path.join(self._root_path,"temp")  # 使用os.path.join方法将类的私有属性_root_path与字符串"temp"拼接，返回拼接后的路径字符串
+
+    @property
+    def similarity_dir(self)->str:  # 定义一个名为temp_dir的方法，该方法属于某个类，返回类型为字符串
+        return os.path.join(self.root_path,"similarity")  # 使用os.path.join方法将类的私有属性_root_path与字符串"temp"拼接，返回拼接后的路径字符串
+
+    @staticmethod
+    def video_filename(name):
+        return f"{name}.mp4"
     
 dy_root=DYRootDir(r"F:\worm_practice\douyin")
 

@@ -320,7 +320,16 @@ def bit_fuzzy_search(val,src_lst):
                 break
     return dest_name
     
-    
+import time
+
+def cur_date_str():
+    # 直接生成格式化字符串
+    current_date = time.strftime("%Y%m%d")
+    return current_date
+
+def str2time(str_val:str,format_str:str="%Y-%m-%d %H:%M:%S")->datetime:
+    return datetime.strptime(str_val, format_str)
+
 if __name__ == '__main__':
 
     # 测试

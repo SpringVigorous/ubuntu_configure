@@ -2,7 +2,7 @@
 from pathlib import Path
 import os
 import system_tools as st
-
+from collect_tools import unique
 #track_index:0表示当前文件目录，1表示当前文件的父目录，以此类推
 def get_folder_path(dir_path:str,track_index:int=0)->str:
     org_path= Path(dir_path)
@@ -66,6 +66,35 @@ def get_all_files_pathlib(directory,include_suffix:list=None):
         if file.is_file():
             file_paths.append(str(file.resolve()))
     return file_paths
+
+
+from typing import Callable 
+
+def special_files(dest_dir,func:Callable[[str],bool]=None)->list[str]:
+    results=[]
+    for root, dirs, files in os.walk(dest_dir):
+        for file in files:
+            if func and not func(file):
+                continue
+            results.append(os.path.join(file))
+    return results
+
+def spceial_suffix_files(dest_dir,suffixs:list[str]|str)->list[str]:
+    if isinstance(suffixs,str):
+        suffixs=[suffixs]
+    return special_files(dest_dir,lambda x:Path(x).suffix in unique(suffixs))
+
+def mp4_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".mp4")
+
+def json_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".json")
+
+def xlsx_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".xlsx")
+
+def txt_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".txt")
 
 
 if __name__ == '__main__':

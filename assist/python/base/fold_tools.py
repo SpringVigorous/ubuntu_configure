@@ -45,7 +45,7 @@ def delete_directory(directory_path):
         print(f"Error: {e.strerror}")
 
 
-def delete_files(root_dir, exclude_dirs, file_patterns=None):
+def delete_files(root_dir, exclude_dirs=None, file_patterns=None):
     for root, dirs, files in os.walk(root_dir, topdown=True):
         # 排除指定目录
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
