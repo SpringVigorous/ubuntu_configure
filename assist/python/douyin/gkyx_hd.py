@@ -19,15 +19,17 @@ from datetime import datetime
 
 import asyncio
 
+import requests
+
 headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyODAzNTQ0NjAiLCJuYmYiOjE3NDQxOTIxOTYsImV4cCI6MTc0NDIzNTQyNiwiaWF0IjoxNzQ0MTkyMjI2LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.eczdnvTJtlxK-I_tP3vpU8taEUcIzxaHs8otJ9dMczQ',
-    'buid': 'FD6DC4BB34922ADF4F7877F8DFC97C4D',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ3MjcyOTgiLCJuYmYiOjE3NDQzNjIwMDUsImV4cCI6MTc0NDQwNTIzNSwiaWF0IjoxNzQ0MzYyMDM1LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.A4e1m7oAHHkAOUWWlMM02cy1TLhcNGb6SHw_szBRjuw',
+    'buid': '6AB2FE55A277AF20BAA2800816867733',
     'content-type': 'application/json;charset=UTF-8',
     'origin': 'https://cyrypuvzb.lnlc2.net',
-    'pageurl': 'https://cyrypuvzb.lnlc2.net/live/page/27104746?v=1744192170000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'pageurl': 'https://cyrypuvzb.lnlc2.net/live/page/1118584535?v=1744361974000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
     'referer': 'https://cyrypuvzb.lnlc2.net/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
@@ -37,16 +39,23 @@ headers = {
     'sec-fetch-site': 'cross-site',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
     'x-requested-with': 'XMLHttpRequest',
-    'zbvz-userid': 'FD6DC4BB34922ADF4F7877F8DFC97C4D',
+    'zbvz-userid': '6AB2FE55A277AF20BAA2800816867733',
 }
 
 params = {
-    'tpid': '6595810D598A18BAE00E785C4D623B3E',
+    'tpid': '5DE821E79759B47D538A8ACFFEBBEF01',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
     'loadNewCache': '1',
 }
+
+# response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+
+
+
+
+
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
 
@@ -62,7 +71,7 @@ class MessageInfo:
         self.set_data(data.get("time"), data.get("speaktime")) 
     def set_data(self,time,speaktime:str):
         self.time = int(time)  # 话题ID
-        self.speaktime = str2time(speaktime)  # 消息时间
+        self.speaktime = str2time(speaktime) if speaktime else None  # 消息时间
 
     @property
     def time_valid(self):
@@ -378,15 +387,15 @@ def main():
     # asyncio.run(download_images()) 
     # exit()
     
-    init_param(time_val=133726522)
-    # init_param()
-    
-    
+    # init_param(time_val=171765138)
+    init_param()
+
     last_message:MessageInfo=None
     #2025-04-08 16:11:58
-    # last_message:MessageInfo=MessageInfo({"time":116117954,"speaktime":"2025-04-08 14:59:33"})
+
+    last_message:MessageInfo=MessageInfo({"time":171765138,"speaktime":"2025-04-11 16:59:13"})
     logger.info(f"获取开始",update_time_type=UpdateTimeType.STAGE)
-    loop_get_data(file_name,1000,10,last_message)
+    loop_get_data(file_name,1000,1,last_message)
     logger.info(f"获取结束",update_time_type=UpdateTimeType.STAGE)
 
     merge_json_to_xlsx(file_name)

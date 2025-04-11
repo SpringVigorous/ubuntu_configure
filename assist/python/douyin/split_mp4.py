@@ -33,9 +33,11 @@ class DYFileUnity:
     
     def __init__(self) -> None:
         self.dir_dict={}
+        self.video_dict={}
         pass
-    def update_dir(self,dest_dir):
+    def update_dir(self,dest_dir):        
         self.dir_dict[dest_dir]=DYFileUnity.dir_file_names(dest_dir)
+
     def get_video_names(self,dest_dir):
         if dest_dir not in self.dir_dict:
             self.update_dir(dest_dir)
@@ -44,7 +46,15 @@ class DYFileUnity:
         name=OrgInfo(video_path).org_name
         return name in self.get_video_names(dir_path)
 
-
+    #包含usage目录下的文件名
+    def all_exists(self,vieo_path):
+        logger=logger_helper("检查视频是否存在",vieo_path)
+        for fold in [dy_root.usage_root,dy_root.dest_root]:
+            if self.exists(fold,vieo_path):
+                logger.info("已存在",f"当前目录{fold}")
+                return True
+            
+        return False
     #仅仅获取目标文件夹的 文件名eg:  顾村公园樱花_001-1080x1920_001.mp4  -> 顾村公园樱花_001
     @staticmethod
     def dir_file_names(dir_path):
@@ -226,13 +236,22 @@ class AutoSplit(SplitBase):
         for root, dirs, files in os.walk(dir_path):
             # 构建输出文件路径
             for file in files:
+                if Path(file).suffix.lower()!=".mp4":
+                    continue
+                series_name=None
+                try:
+                    series_name=OrgInfo(file).series_name
+                except:
+                    continue
+                
                 #放到对应的系列目录下，方便管理
-                cur_dest_dir=os.path.join(dest_dir,OrgInfo(file).series_name)
+                cur_dest_dir=os.path.join(dest_dir,series_name)
                 os.makedirs(cur_dest_dir,exist_ok=True)
                 org_file_path =DYFileUnity.check_src_file(os.path.join(root, file))
                 logger=logger_helper("检测场景切换",f"{org_file_path}->{dest_dir}")
                 
-                if self.file_manager.exists(cur_dest_dir,org_file_path):
+                # if self.file_manager.exists(cur_dest_dir,org_file_path):
+                if self.file_manager.all_exists(org_file_path):
                     logger.info("跳过","已存在")
                     continue
                  
@@ -400,7 +419,9 @@ class ManerSplit(SplitBase):
     def precise_cut(self,input_video, split_times, dest_dir="output"):
         logger=logger_helper("分割视频",f"{input_video}->{dest_dir}")
         logger.trace("开始",f"{split_times}")
-        if self.file_manager.exists(dest_dir,input_video):
+        # if self.file_manager.exists(dest_dir,input_video):
+        if self.file_manager.all_exists(input_video):
+            
             logger.info("跳过","已存在")
             return
         
@@ -428,7 +449,7 @@ class ManerSplit(SplitBase):
         
         failure_lst=[]
         
-        split_lst=self.maner_split_times(split_times,duration,0.1)
+        split_lst=self.maner_split_times(split_times,duration,0.5)
         
         # 循环处理每个时间段
         for idx, seg in enumerate(split_lst, start=1):
@@ -452,9 +473,13 @@ class ManerSplit(SplitBase):
         for item in lst:
             input_video, splits=item
             results[self.check_path(input_video,dy_root.org_root)]=splits
+        logger=logger_helper("分割视频")
 
         for input_video,splits in results.items():
-
+            logger.update_target(detail=f"{input_video}:{splits}")
+            if not os.path.exists(input_video):
+                logger.warn(f"{input_video}不存在")
+                continue
             self.precise_cut(input_video, splits, self.check_path(dest_dir,dy_root.dest_root))
 
         #dict_data:
@@ -530,7 +555,7 @@ class ManerSplit(SplitBase):
         self._precise_cuts_from_dict(dict_info)
         logger.info("成功",update_time_type=UpdateTimeType.ALL)
 
-
+    
     
 
 

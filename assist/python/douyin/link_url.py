@@ -17,7 +17,8 @@ from base import write_to_txt,read_content_by_encode,path_equal,unique
 
 from dy_unity import dy_root,OrgInfo
 
-
+def now_pd_str():
+    return f"{pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
 class MessageManager:
     # 创建一个Scraper对象/Initialize a Scraper object
     api = Scraper()
@@ -180,7 +181,7 @@ class MessageManager:
                 "keys":",".join(unique(keys)),
                 "link":link,
                 "tag":tag,
-                "craw_time":f"{pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "craw_time":now_pd_str,
                 "sec":int(sec)
                 }
         
@@ -208,16 +209,22 @@ class MessageManager:
     def remove_duplicates(df):
         # 根据 url 列是否为空进行分组
         df_with_url = df[df['url'].notna()]
-        df_without_url = df[df['url'].isna()]
+        no_url_has_link_mask=df["url"].isna()& df["link"].notna()
+        no_url_no_link_mask=df["url"].isna()& df["link"].isna()
+        
+        df_without_url_has_link = df[no_url_has_link_mask]
+        df_without_url_no_link = df[no_url_no_link_mask]
 
         # 对 url 列有值的数据根据 url 列去重
         df_with_url = df_with_url.drop_duplicates(subset='url',keep="first",)
 
         # 对 url 列为空的数据根据 link 列去重
-        df_without_url = df_without_url.drop_duplicates(subset='link',keep="first",)
+        df_without_url_has_link = df_without_url_has_link.drop_duplicates(subset='link',keep="first",)
+        
+        df_without_url_no_link = df_without_url_no_link.drop_duplicates(subset='name',keep="first",)
 
         # 过滤掉空的 DataFrame
-        non_empty_dfs =[item for item in  [df_with_url,df_without_url] if not item.empty]
+        non_empty_dfs =[item for item in  [df_with_url,df_without_url_has_link,df_without_url_no_link] if not item.empty]
         # 合并两部分数据
         if non_empty_dfs:
             result = pd.concat(non_empty_dfs)
@@ -436,10 +443,42 @@ class MessageManager:
         wechat_message=MessageManager.get_message_txts()
         MessageManager.from_chat_message(wechat_message) 
     
+    @staticmethod
+    def update_from_files():
+        
+        df=MessageManager.load_json()
+        names=df["name"].to_list()
+        
+        datas=[]
+        
+        for file in mp4_files(dy_root.org_root):
+            info=OrgInfo(file)
+            org_name=info.org_name
+            
+            if org_name in names:
+                continue
+            datas.append({
+                "name":org_name,
+                "tag":info.series_name,
+                "craw_time":now_pd_str(),
+                "downloaded":1,
+                "sec":-1,
+                "video_num":info.series_number
+            })
+        
+        if datas:
+            df1=pd.DataFrame(datas)
+            df=pd.concat([df,df1],ignore_index=True)
+            df=MessageManager.remove_duplicates(df)
+            
+            MessageManager.save_json(df)
+            MessageManager.save_xlsx(df)
+
     
 def main():
-    MessageManager.update_messages()
+    # MessageManager.update_messages()
     # MessageManager.update_json()
+    MessageManager.update_from_files()
 
 if __name__=="__main__":
     main()

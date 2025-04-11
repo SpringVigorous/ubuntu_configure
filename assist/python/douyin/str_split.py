@@ -9,7 +9,7 @@ def replace_punctuation_with_newline(text):
     return result
 
 # 示例用法
-input_text = """宝子们，来鼋头渚赴一场夜樱之约！夜幕降临，华灯初上，粉色樱花在灯光映衬下如梦如幻，仿佛踏入童话世界，浪漫到极致，千万别错过这限定美景。"""
+input_text = """家人们，最近打算出游赏樱的，一定别错过鼋头渚的晚樱！早樱、中樱虽美，但已悄然退场，好在晚樱接力绚烂。当下，正是观赏晚樱的黄金时期。踏入鼋头渚，大片粉樱如梦幻云霞，微风轻拂，花瓣飘然而下，浪漫至极。要是前面的花期没赶上，这次晚樱可千万别错过，赶紧安排上，赴一场春日之约！"""
 output_text = replace_punctuation_with_newline(input_text)
 print(output_text)
 

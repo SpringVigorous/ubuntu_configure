@@ -76,13 +76,13 @@ def special_files(dest_dir,func:Callable[[str],bool]=None)->list[str]:
         for file in files:
             if func and not func(file):
                 continue
-            results.append(os.path.join(file))
+            results.append(os.path.join(root,file))
     return results
 
 def spceial_suffix_files(dest_dir,suffixs:list[str]|str)->list[str]:
     if isinstance(suffixs,str):
-        suffixs=[suffixs]
-    return special_files(dest_dir,lambda x:Path(x).suffix in unique(suffixs))
+        suffixs=unique([suffixs])
+    return special_files(dest_dir,lambda x:Path(x).suffix in suffixs)
 
 def mp4_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".mp4")

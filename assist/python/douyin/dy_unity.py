@@ -3,14 +3,14 @@ import sys
 import re
 from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from base import check_dir
+from base import check_dir,special_files,mp4_files
 from typing import Callable
 #苏州水乡_001.mp4
 def info_from_org(org_name:str):
     cur_path=Path(org_name)
     
     dest_name=cur_path.stem
-    series_name,series_number=dest_name.split("_")
+    series_name,series_number,*args=dest_name.split("_")
     return series_name,series_number,cur_path.suffix
 
 
@@ -163,6 +163,28 @@ class DYRootDir:
     @staticmethod
     def video_filename(name):
         return f"{name}.mp4"
+    
+    
+
+    def org_mp4_paths(self):
+        return mp4_files(self.org_root)
+        
+
+    def dest_mp4_paths(self,name:str):
+        cur_dir=self.dest_sub_dir(name)
+        has_series= "_" in name
+        
+        if has_series:
+            info=OrgInfo(name)
+            cur_dir=self.dest_sub_dir(info.series_name)
+        files=mp4_files(cur_dir)
+        if not has_series:
+            return files
+        return [file for file in files if DestInfo(file).org_name == name]
+
+    
+
+    
     
 dy_root=DYRootDir(r"F:\worm_practice\douyin")
 

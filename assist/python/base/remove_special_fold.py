@@ -18,12 +18,10 @@ def check_str_exclude_list(path,exclude_strs:list=None):
         return True
     return not check_str_in_list(path,exclude_strs)
     
-    
 
-def del_dir_file(cur_path,exclude_strs:list=None,include_str:list=[]):
-    if not os.path.exists(cur_path) or (exclude_strs and not check_str_exclude_list(cur_path,exclude_strs)) or (include_str and not check_str_in_list(cur_path,include_str)):
-        return 
-    
+def recycle_bin(cur_path):
+    if not cur_path or not os.path.exists(cur_path):
+        return
     expression_str="directory" if os.path.isdir(cur_path) else "file"
     
     try:
@@ -37,6 +35,13 @@ def del_dir_file(cur_path,exclude_strs:list=None,include_str:list=[]):
         logger.error(f"Error: Permission denied when trying to move '{cur_path}' to the recycle bin.")
     except Exception as e:
         logger.error(f"Error removing {cur_path}: {e}")
+    
+def del_dir_file(cur_path,exclude_strs:list=None,include_str:list=[]):
+    if  (exclude_strs and not check_str_exclude_list(cur_path,exclude_strs)) or (include_str and not check_str_in_list(cur_path,include_str)):
+        return 
+    
+    recycle_bin(cur_path)
+
     
 
 #在 root_dir中查找，子目录名包含在 del_folder中，并且路径名 不包含在 exclude_strs中，删除这些文件和文件夹
