@@ -17,7 +17,8 @@ from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_dire
 import requests
 from datetime import datetime
 
-import asyncio
+dest_dir=r"F:\worm_practice\gkyx\hd"
+
 
 import requests
 
@@ -25,12 +26,12 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ3MjcyOTgiLCJuYmYiOjE3NDQzNjIwMDUsImV4cCI6MTc0NDQwNTIzNSwiaWF0IjoxNzQ0MzYyMDM1LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.A4e1m7oAHHkAOUWWlMM02cy1TLhcNGb6SHw_szBRjuw',
-    'buid': '6AB2FE55A277AF20BAA2800816867733',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDQ4ODA2MTcsImV4cCI6MTc0NDkyMzg0NywiaWF0IjoxNzQ0ODgwNjQ3LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.xwQWNRvkymnfLp9qnuySdUdjbPZrh3TkZFIPI5a8YBw',
+    'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
-    'origin': 'https://cyrypuvzb.lnlc2.net',
-    'pageurl': 'https://cyrypuvzb.lnlc2.net/live/page/1118584535?v=1744361974000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
-    'referer': 'https://cyrypuvzb.lnlc2.net/',
+    'origin': 'https://bxxxsevzb.xwcx6.com',
+    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1687997266?v=1744880573000&jumpitd=1&shauid=pO9pzAo1fs-bV89QDT3gVw**',
+    'referer': 'https://bxxxsevzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
@@ -39,11 +40,11 @@ headers = {
     'sec-fetch-site': 'cross-site',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
     'x-requested-with': 'XMLHttpRequest',
-    'zbvz-userid': '6AB2FE55A277AF20BAA2800816867733',
+    'zbvz-userid': '9E53C6E18A15FC5272C157351AE20631',
 }
 
 params = {
-    'tpid': '5DE821E79759B47D538A8ACFFEBBEF01',
+    'tpid': '838E270DA3D490A47B90C000472FF37D',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
@@ -55,9 +56,6 @@ params = {
 
 
 
-
-
-# response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
 
 class MessageInfo:
     def __init__(self, data=None):
@@ -112,7 +110,6 @@ class MessageInfo:
 
 
 
-dest_dir=r"F:\worm_practice\gkyx\hd"
 
 def get_data(cur_time:None,last_info:MessageInfo=None):
     if cur_time:
@@ -157,7 +154,7 @@ def get_data(cur_time:None,last_info:MessageInfo=None):
             params["time"]=str(cur_info.time)
             i+=1
             logger.info(f"成功",update_time_type=UpdateTimeType.STEP)
-            time.sleep(1)
+            # time.sleep(1)
         except:
             logger.info(f"失败",update_time_type=UpdateTimeType.STAGE)
             break
@@ -393,7 +390,7 @@ def main():
     last_message:MessageInfo=None
     #2025-04-08 16:11:58
 
-    last_message:MessageInfo=MessageInfo({"time":171765138,"speaktime":"2025-04-11 16:59:13"})
+    # last_message:MessageInfo=MessageInfo({"time":171765138,"speaktime":"2025-04-11 16:59:13"})
     logger.info(f"获取开始",update_time_type=UpdateTimeType.STAGE)
     loop_get_data(file_name,1000,1,last_message)
     logger.info(f"获取结束",update_time_type=UpdateTimeType.STAGE)
