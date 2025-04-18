@@ -19,18 +19,17 @@ from datetime import datetime
 
 dest_dir=r"F:\worm_practice\gkyx\hd"
 
-
 import requests
 
 headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDQ4ODA2MTcsImV4cCI6MTc0NDkyMzg0NywiaWF0IjoxNzQ0ODgwNjQ3LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.xwQWNRvkymnfLp9qnuySdUdjbPZrh3TkZFIPI5a8YBw',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDQ5NjczMjgsImV4cCI6MTc0NTAxMDU1OCwiaWF0IjoxNzQ0OTY3MzU4LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.IMiil01gxXXNf4FC6ORidEf6755_NXI7fGoMCFjxsHE',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
     'origin': 'https://bxxxsevzb.xwcx6.com',
-    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1687997266?v=1744880573000&jumpitd=1&shauid=pO9pzAo1fs-bV89QDT3gVw**',
+    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1369953201?v=1744967283000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
     'referer': 'https://bxxxsevzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
@@ -44,7 +43,7 @@ headers = {
 }
 
 params = {
-    'tpid': '838E270DA3D490A47B90C000472FF37D',
+    'tpid': '8BFCF66E923AA7C3D0D200FE193735C4',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
@@ -52,7 +51,6 @@ params = {
 }
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
-
 
 
 
@@ -271,7 +269,7 @@ def loop_get_data(file_name,count:int,start_index:int=1,last_message:MessageInfo
     for i in range(start_index,count):
         cur_name=f"{file_name}_{i:04}"
         logger.update_target(detail=cur_name)
-        logger.trace("开始",cur_time,update_time_type=UpdateTimeType.STEP)
+        logger.info("开始",cur_time,update_time_type=UpdateTimeType.STEP)
         cur_info=handle_message(cur_name,cur_time,last_message)
         if not cur_info:
             logger.info("结束",f"累计{i-1}次",update_time_type=UpdateTimeType.STAGE)
