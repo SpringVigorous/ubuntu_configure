@@ -13,7 +13,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_directories_and_files,merge_df,str2time,downloads_async
+from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_directories_and_files,merge_df,str2time,downloads_async,parallel_json_normalize,optimized_to_excel
 import requests
 from datetime import datetime
 
@@ -233,10 +233,20 @@ def load_data(file_name):
     # 返回加载的JSON数据
     return data
 def export_to_xlsx(data:list,file_name):
-    df=pd.json_normalize(data, max_level=10,errors="ignore")
+    logger=logger_helper("数据导出","转换为DataFrame")
+    
+    logger.trace("开始",update_time_type=UpdateTimeType.STEP)
+    df=parallel_json_normalize(data, max_level=10,errors="ignore")
+    logger.info("完成",update_time_type=UpdateTimeType.STEP)
+    
     df.drop_duplicates(subset=["time"], inplace=True)
     df.sort_values(by="time",ascending=True, inplace=True)
-    df.to_excel(os.path.join(dest_dir, f"{file_name}.xlsx"))
+    
+    logger.update_target(detail="导出xlsx")
+    logger.trace("开始",update_time_type=UpdateTimeType.STEP)
+    
+    optimized_to_excel(df,os.path.join(dest_dir, f"{file_name}.xlsx"))
+    logger.info("完成",update_time_type=UpdateTimeType.STEP)
 
 
 

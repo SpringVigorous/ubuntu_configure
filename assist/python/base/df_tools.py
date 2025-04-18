@@ -1,7 +1,8 @@
 ﻿import pandas as pd
 from com_log import logger_helper
 import os
-
+import concurrent.futures
+import gc
 def find_values_by_col_val(df, col_name,val,dest_name,default_val=pd.Series()):
 
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")
@@ -143,3 +144,48 @@ def sparse_columns_name(df):
     sparse_columns = null_counts[null_counts > total_rows / 2].index.tolist()
     whole_columns = null_counts[null_counts <= total_rows / 2].index.tolist()
     return sparse_columns,whole_columns
+
+
+
+#多线程读入
+def parallel_json_normalize(data, batch_size=20000,**kwargs)->pd.DataFrame:
+
+    
+    def process_batch(batch):
+        return pd.json_normalize(batch, **kwargs)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        batches = [data[i:min(len(data),i + batch_size)] for i in range(0, len(data), batch_size)]
+        results = list(executor.map(process_batch, batches))
+
+    final_df = pd.concat(results, ignore_index=True)
+    
+    # 当不再使用时，删除 DataFrame
+    
+    for result in results:
+        del result
+   
+    # 显式调用垃圾回收器
+
+    gc.collect()
+    
+    return final_df
+
+#优化输出
+def optimized_to_excel(df:pd.DataFrame, file_path, batch_size=None):
+    """
+    优化的 DataFrame 写入 Excel 文件的函数。
+
+    :param df: 要写入的 DataFrame
+    :param file_path: 输出 Excel 文件的路径
+    :param batch_size: 分批次写入时每批的行数，如果为 None 则不分批
+    """
+    options = {'check_formulas': False, 'strings_to_urls': False}
+    with pd.ExcelWriter(file_path, engine='xlsxwriter', engine_kwargs={'options':options}) as writer:
+        if batch_size is None:
+            df.to_excel(writer, index=False, merge_cells=False)
+        else:
+            for i in range(0, len(df), batch_size):
+                batch = df.iloc[i:i + batch_size]
+                sheet_name = f'Sheet_{i // batch_size}'
+                batch.to_excel(writer, sheet_name=sheet_name, index=False, merge_cells=False)
