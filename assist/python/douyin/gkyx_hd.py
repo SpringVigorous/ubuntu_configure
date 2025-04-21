@@ -13,10 +13,10 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_directories_and_files,merge_df,str2time,downloads_async,parallel_json_normalize,optimized_to_excel
+from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_directories_and_files,merge_df,str2time,downloads_async,parallel_json_normalize,optimized_to_excel,optimized_read_excel,get_next_filename
 import requests
 from datetime import datetime
-
+from collections.abc import Callable
 dest_dir=r"F:\worm_practice\gkyx\hd"
 
 import requests
@@ -25,11 +25,11 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDQ5NjczMjgsImV4cCI6MTc0NTAxMDU1OCwiaWF0IjoxNzQ0OTY3MzU4LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.IMiil01gxXXNf4FC6ORidEf6755_NXI7fGoMCFjxsHE',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDUyMjYzMDMsImV4cCI6MTc0NTI2OTUzMywiaWF0IjoxNzQ1MjI2MzMzLCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.5_MeJX-Uk5VnvAO5jwWawAo6JYY_6_FGN7CuA6kKpsE',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
     'origin': 'https://bxxxsevzb.xwcx6.com',
-    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1369953201?v=1744967283000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1729893128?v=1745226537000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
     'referer': 'https://bxxxsevzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
@@ -43,7 +43,7 @@ headers = {
 }
 
 params = {
-    'tpid': '8BFCF66E923AA7C3D0D200FE193735C4',
+    'tpid': '5359B6AE0626ABEC748FE51002DC0D14',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
@@ -51,7 +51,6 @@ params = {
 }
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
-
 
 
 
@@ -153,8 +152,8 @@ def get_data(cur_time:None,last_info:MessageInfo=None):
             i+=1
             logger.info(f"成功",update_time_type=UpdateTimeType.STEP)
             # time.sleep(1)
-        except:
-            logger.info(f"失败",update_time_type=UpdateTimeType.STAGE)
+        except Exception as e:
+            logger.info(f"失败",f"原因{e}",update_time_type=UpdateTimeType.STAGE)
             break
 
     data=[]
@@ -220,12 +219,12 @@ def merge_json_to_xlsx(file_name,each_count:int=None):
     
     return True
 
-def save_data(data,file_name):
+def save_json_data(data,file_name):
 
     with open(os.path.join(dest_dir, f"{file_name}.json"), "w", encoding="utf-8") as f:
         json.dump(data,f)
     
-def load_data(file_name):
+def load_json_data(file_name):
     # 使用with语句打开名为"response.json"的文件，以读取模式("r")和UTF-8编码
     with open(os.path.join(dest_dir, f"{file_name}.json"), "r", encoding="utf-8") as f:
         # 使用json模块的load函数从文件中加载JSON数据
@@ -239,6 +238,9 @@ def export_to_xlsx(data:list,file_name):
     df=parallel_json_normalize(data, max_level=10,errors="ignore")
     logger.info("完成",update_time_type=UpdateTimeType.STEP)
     
+    #替换掉换行符
+    df["content"]=df["content"].apply(lambda x: x.replace("\n",";"))
+    
     df.drop_duplicates(subset=["time"], inplace=True)
     df.sort_values(by="time",ascending=True, inplace=True)
     
@@ -249,12 +251,14 @@ def export_to_xlsx(data:list,file_name):
     logger.info("完成",update_time_type=UpdateTimeType.STEP)
 
 
+    #输出到上一层的 json中
+    df.to_json(os.path.abspath(os.path.join(dest_dir, f"../json/{file_name}.json")),orient="records")
 
 def handle_message(file_name,cur_time=None,last_message:MessageInfo=None):
     data,cur_info=get_data(cur_time,last_message)
     if not data:
         return None
-    save_data(data,file_name)
+    save_json_data(data,file_name)
     
     
     # data=merge_data()
@@ -382,17 +386,47 @@ async def download_images():
 
     logger.info(f"完成",update_time_type=UpdateTimeType.ALL)
     
+
+def read_xlsx():
+    file_path=Path(os.path.join(dest_dir,"20250420_1.xlsx"))
+    df=optimized_read_excel(os.path.join(dest_dir,"20250420_1.xlsx"),usecols=["content"])
+    return df
+
+
     
+def find_result(df:pd.DataFrame):
+    
+    result = df[df['content'].str.contains('肾', na=False)]['content'].tolist()
+    with open(os.path.join(dest_dir,"20250420_1.txt"),"w",encoding="utf-8") as f:
+        f.write("\n".join(filter(lambda x: bool(x),result)))
+
+
+def convert_xlsx_to_json():
+    
+    for  file in os.listdir(dest_dir):
+        if not file.endswith(".xlsx"):
+            continue
+        cur_file=os.path.join(dest_dir,file)
+        json_path=os.path.abspath(os.path.join(dest_dir,f"../json/{Path(cur_file).stem}.json"))
+        df=pd.read_excel(cur_file)
+        
+        df.to_json(json_path)
+
 def main():
         
-    file_name=cur_date_str()
+    file_name=get_next_filename(dest_dir,cur_date_str(),"xlsx")
+    if not file_name:
+        return
+    
+    file_name=Path(file_name).stem
+    
     logger=logger_helper("获取评论信息",file_name)
     logger.info("开始")
     
     # asyncio.run(download_images()) 
     # exit()
     
-    # init_param(time_val=171765138)
+    # init_param(time_val=339865996)
     init_param()
 
     last_message:MessageInfo=None
@@ -411,3 +445,9 @@ def main():
     # merge_xlsx()
 if __name__=="__main__":
     main()
+    
+    
+    # df=read_xlsx()
+    # find_result(df)
+    # convert_xlsx_to_json()
+    # os.system(f"shutdown /s /t 1")

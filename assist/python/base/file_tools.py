@@ -416,7 +416,15 @@ def priority_read_txt(file_path,operator_func=None,**file_kwargs):
     writefunc=lambda file_path,data :write_to_txt(file_path,data,**file_kwargs)
     return priority_read(file_path,readfunc,operator_func,writefunc)
     
-    
+def get_next_filename(folder_path, base_name, file_extension:str):
+    index = 1
+    file_extension = file_extension.strip().lstrip('.').strip()
+    while True:
+        filename = f"{base_name}-{index}.{file_extension}"
+        file_path = os.path.join(folder_path, filename)
+        if not os.path.exists(file_path):
+            return filename
+        index += 1
 
 if __name__ == '__main__':
 

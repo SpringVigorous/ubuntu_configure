@@ -39,6 +39,10 @@ class TeaConfig:
             self.medical_price_dict[name]=val
             return val
             
+    def remove_cache(self):
+        detail_path= self.product_price_path
+        if os.path.exists(detail_path):   
+            os.remove(detail_path)  
             
 
     def init_product(self):

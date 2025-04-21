@@ -132,9 +132,9 @@ if __name__=="__main__":
     
     #清除所有中间结果，重新计算
     #单包产品药材费
-    # clear_folder(config.sub_dir_path)
+    clear_folder(config.sub_dir_path)
     #规格费用
-    # clear_folder(result_dir)
+    clear_folder(result_dir)
     
     config.init_data()
     # 获取 结果/小红书/产品规格.xlsx

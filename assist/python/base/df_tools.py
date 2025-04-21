@@ -189,3 +189,21 @@ def optimized_to_excel(df:pd.DataFrame, file_path, batch_size=None):
                 batch = df.iloc[i:i + batch_size]
                 sheet_name = f'Sheet_{i // batch_size}'
                 batch.to_excel(writer, sheet_name=sheet_name, index=False, merge_cells=False)
+
+
+
+
+def optimized_read_excel(file_path,sheet_name=None, engine='openpyxl', usecols=None):
+    """
+    优化读取 Excel 文件的函数。
+
+    :param file_path: 要读取的 Excel 文件的路径
+    :param engine: 读取 Excel 文件使用的引擎，默认为 'openpyxl'
+    :param usecols: 要读取的列，默认为 None 即读取所有列
+    :return: 读取得到的 DataFrame
+    """
+    if not sheet_name:
+        sheet_name="Sheet1"
+    
+    df = pd.read_excel(file_path,sheet_name=sheet_name, engine=engine,  usecols=usecols)
+    return df 
