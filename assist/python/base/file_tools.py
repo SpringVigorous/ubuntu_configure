@@ -420,7 +420,7 @@ def get_next_filename(folder_path, base_name, file_extension:str):
     index = 1
     file_extension = file_extension.strip().lstrip('.').strip()
     while True:
-        filename = f"{base_name}-{index}.{file_extension}"
+        filename = f"{base_name}_{index}.{file_extension}"
         file_path = os.path.join(folder_path, filename)
         if not os.path.exists(file_path):
             return filename

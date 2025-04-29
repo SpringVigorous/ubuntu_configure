@@ -25,7 +25,7 @@ class RoutineTask(TaskBase,metaclass=abc.ABCMeta):
         super().__init__(input_queue, output_queue, stop_event,out_stop_event=out_stop_event)
         #记录已从队列中获取了多少个
         self.input_count=0
-    
+
     @abc.abstractmethod
     def _handle_data(self, data):
         raise NotImplementedError("Subclasses must implement this method")

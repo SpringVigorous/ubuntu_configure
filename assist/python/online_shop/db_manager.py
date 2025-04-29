@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import threading
 from threading import Lock
+import random
 
 
 
@@ -307,7 +308,6 @@ if __name__ == "__main__":
     product_count=len(product_names)
     supplier_count=len(supplier_names)
     
-    import random
     # 批量入库操作
     for i in range(1,100):
         product_index=random.randint(0, product_count-1)

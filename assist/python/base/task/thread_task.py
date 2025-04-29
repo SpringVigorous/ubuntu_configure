@@ -10,6 +10,7 @@ class ThreadTask(RoutineTask, threading.Thread,metaclass=abc.ABCMeta):
         super().__init__(input_queue, output_queue, stop_event,out_stop_event=out_stop_event)
         threading.Thread.__init__(self)
         
+    
     @abc.abstractmethod
     def _handle_data(self, data):
         # 示例同步处理逻辑

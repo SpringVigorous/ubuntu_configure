@@ -17,6 +17,11 @@ from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_dire
 import requests
 from datetime import datetime
 from collections.abc import Callable
+from queue import Queue
+from base  import ThreadTask
+import threading
+
+
 dest_dir=r"F:\worm_practice\gkyx\hd"
 
 import requests
@@ -25,11 +30,11 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDUyMjYzMDMsImV4cCI6MTc0NTI2OTUzMywiaWF0IjoxNzQ1MjI2MzMzLCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.5_MeJX-Uk5VnvAO5jwWawAo6JYY_6_FGN7CuA6kKpsE',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDU4MzY0MDUsImV4cCI6MTc0NTg3OTYzNSwiaWF0IjoxNzQ1ODM2NDM1LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.HyCRNriqj_nF7gq7E8OLQOjjv9ebdSsJCIqxVv-H12c',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
     'origin': 'https://bxxxsevzb.xwcx6.com',
-    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1729893128?v=1745226537000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/827129716?v=1745836338000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
     'referer': 'https://bxxxsevzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
@@ -43,14 +48,38 @@ headers = {
 }
 
 params = {
-    'tpid': '5359B6AE0626ABEC748FE51002DC0D14',
+    'tpid': '350616207EE723DAB71BD499E612C065',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
     'loadNewCache': '1',
 }
 
-# response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+# # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+
+
+
+
+org_json_queque=Queue()
+org_json_stop_event=threading.Event()
+class SaveJsonTask(ThreadTask):
+    def __init__(self, input_queue, output_queue=None, stop_event=None,out_stop_event=None):
+        
+        ThreadTask.__init__(self, input_queue, output_queue, stop_event,out_stop_event)
+
+
+        
+    def set_handle_func(self,func:callable):
+        self.handle_func=func
+    
+    def _handle_data(self, item) -> None:
+        data,file_name=item
+        self._logger.update_target("输出文件",file_name)
+        self._logger.update_time(state=UpdateTimeType.STAGE)
+        self._logger.trace(f"开始",update_time_type=UpdateTimeType.STAGE)
+        if self.handle_func:
+            self.handle_func(data,file_name)
+        self._logger.info("完成",update_time_type=UpdateTimeType.STAGE)
 
 
 
@@ -124,11 +153,17 @@ def get_data(cur_time:None,last_info:MessageInfo=None):
         try:
             logger.update_target(cur_info or params["time"],detail=f"第{i}次")
             logger.trace("开始",update_time_type=UpdateTimeType.STAGE)
-            response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+            response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers,timeout=15)
             if response.status_code!=200:
                 logger.info(f"失败",update_time_type=UpdateTimeType.STAGE)
                 break
-            data=response.json()["dataObj"]
+            org_data=response.json()
+            
+            data=org_data["dataObj"]
+            if not data:
+                logger.info(f"失败",f"接收到内容：{org_data}",update_time_type=UpdateTimeType.STAGE)
+                break
+            
             data=sorted(data,key=lambda x: x['time'])
             data_lst.append(data)
             if not data:
@@ -144,10 +179,6 @@ def get_data(cur_time:None,last_info:MessageInfo=None):
                 if cur_info.is_speaktime_less(last_info.speaktime):
                     logger.info(f"成功",f"{last_info.speaktime_str}<={last_info.speaktime_str}",update_time_type=UpdateTimeType.STAGE)
                     break
-            
-            
-            
-            
             params["time"]=str(cur_info.time)
             i+=1
             logger.info(f"成功",update_time_type=UpdateTimeType.STEP)
@@ -252,14 +283,26 @@ def export_to_xlsx(data:list,file_name):
 
 
     #输出到上一层的 json中
-    df.to_json(os.path.abspath(os.path.join(dest_dir, f"../json/{file_name}.json")),orient="records")
+    
+    
+    with open(os.path.abspath(os.path.join(dest_dir, f"../json/{file_name}.json")),"w",encoding="utf-8") as f:
+        df.to_json(f,orient="records",force_ascii=False)
 
+
+
+save_json_thread=SaveJsonTask(org_json_queque,stop_event=org_json_stop_event)
+save_json_thread.set_handle_func(save_json_data)
+save_json_thread.start()
 def handle_message(file_name,cur_time=None,last_message:MessageInfo=None):
     data,cur_info=get_data(cur_time,last_message)
     if not data:
         return None
-    save_json_data(data,file_name)
+    logger=logger_helper("加入json输出队列",file_name)
     
+    org_json_queque.put((data,file_name))
+    
+    # save_json_data(data,file_name)
+    logger.info(f"成功",update_time_type=UpdateTimeType.STAGE)
     
     # data=merge_data()
     
@@ -272,7 +315,7 @@ def handle_message(file_name,cur_time=None,last_message:MessageInfo=None):
 
 def loop_get_data(file_name,count:int,start_index:int=1,last_message:MessageInfo=None):
     cur_time=params["time"]
-    logger=logger_helper(f"{file_name}:{count}次")
+    logger=logger_helper(file_name)
     infos=[]
     def half_pagesize():
         count=int(int(params["pagesize"])/2)
@@ -409,8 +452,8 @@ def convert_xlsx_to_json():
         cur_file=os.path.join(dest_dir,file)
         json_path=os.path.abspath(os.path.join(dest_dir,f"../json/{Path(cur_file).stem}.json"))
         df=pd.read_excel(cur_file)
-        
-        df.to_json(json_path)
+        with open(json_path,"w",encoding="utf-8") as f:
+            df.to_json(f,orient="records",force_ascii=False)
 
 def main():
         
@@ -420,21 +463,28 @@ def main():
     
     file_name=Path(file_name).stem
     
-    logger=logger_helper("获取评论信息",file_name)
-    logger.info("开始")
+    
     
     # asyncio.run(download_images()) 
     # exit()
     
-    # init_param(time_val=339865996)
+    # init_param(time_val=440961149)
     init_param()
 
+    logger=logger_helper("获取评论信息",file_name)
+    
+    input_params={"params":params,"headers":headers}
+    logger.info("开始",f"参数：\n{json.dumps(input_params,ensure_ascii=False,indent=4 )}\n")
     last_message:MessageInfo=None
     #2025-04-08 16:11:58
 
-    # last_message:MessageInfo=MessageInfo({"time":171765138,"speaktime":"2025-04-11 16:59:13"})
+    # last_message:MessageInfo=MessageInfo({"time":455781213,"speaktime":"2025-04-26 18:08:27"})
     logger.info(f"获取开始",update_time_type=UpdateTimeType.STAGE)
     loop_get_data(file_name,1000,1,last_message)
+    org_json_stop_event.set()
+    save_json_thread.join()
+    
+    
     logger.info(f"获取结束",update_time_type=UpdateTimeType.STAGE)
 
     merge_json_to_xlsx(file_name)
@@ -445,6 +495,9 @@ def main():
     # merge_xlsx()
 if __name__=="__main__":
     main()
+    
+
+    
     
     
     # df=read_xlsx()
