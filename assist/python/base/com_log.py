@@ -114,7 +114,10 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
         # create_file_log(log_level,detail_formatter)
         if log_less_warn:
             create_file_log("warn",detail_formatter)
-        
+            
+        #添加info日志
+        if str_to_level(log_level)!=str_to_level("info"):
+            create_file_log("info",detail_formatter)
 
         # 开始使用日志器记录信息
         logger.info(f'log file path: {log_dir}')

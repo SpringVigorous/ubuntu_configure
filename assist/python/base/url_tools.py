@@ -1,5 +1,5 @@
 ﻿
-from urllib.parse import urlparse, parse_qs, urlencode
+from urllib.parse import urlparse, parse_qs, urlencode,urljoin
 import re
 import requests
 from lxml import html
@@ -8,6 +8,12 @@ from pathlib import Path
 from itertools import chain
 from xml_tools import pretty_tree
 from collect_tools import unique
+
+def fix_url(url: str, base_scheme: str = "https:") -> str:
+    """将不完整的URL（如 //example.com）转换为完整URL（如 https://example.com）"""
+    if url.startswith(("http://", "https://")):
+        return url  # 已经是合法URL，直接返回
+    return urljoin(base_scheme, url)  # 拼接协议
 
 def get_homepage_url(url):
     """

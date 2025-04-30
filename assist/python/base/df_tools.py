@@ -114,7 +114,7 @@ def fill_adjacent_rows(df:pd.DataFrame, column_names:list[str]=None):
     df[column_names] = df[column_names].ffill().bfill()
     return df
 
-
+#保留前者的所有列，差异化添加后者列
 def merge_df(df1,df2,on,how="inner",keep_first=True):
     if df1 is None:
         return df2
@@ -145,7 +145,75 @@ def sparse_columns_name(df):
     whole_columns = null_counts[null_counts <= total_rows / 2].index.tolist()
     return sparse_columns,whole_columns
 
+#根据keys进行唯一化，若是存在重复行，则只保留第一行已有值的项
+def unique_df(df:pd.DataFrame,keys:list[str]):
+    if df.empty or df is None:
+        return df
+    result_df = df.groupby(keys,sort=False).first().reset_index()
+    return result_df
 
+def concat_dfs(dfs:list[pd.DataFrame])->pd.DataFrame:
+    
+    
+    dfs=list(filter(lambda x:not(x is None or x.empty),dfs)) if dfs else []
+    if not dfs:
+        return pd.DataFrame()
+    
+    if len(dfs)==1:
+        return dfs[0]
+    df=pd.concat(dfs,ignore_index=True)
+    return df
+
+
+def assign_col_numbers(df,col_num_name:str):
+    existing_numbers = set(df[df[col_num_name] > 0][col_num_name])
+    mask = df[col_num_name] <= 0 | df[col_num_name].isna()
+
+    # print(type(mask))
+    # print(mask)
+    current_num = 1
+    available_nums:list[int] = []
+    
+    for _ in range(sum(mask)):
+        while current_num in existing_numbers:
+            current_num += 1
+        available_nums.append(current_num)
+        current_num += 1
+    
+    # 更新num列
+    df.loc[mask, col_num_name] = available_nums if available_nums else None
+    return df
+
+
+def update_col_nums(df:pd.DataFrame,group_key:str|list[str],col_num_name:str)->pd.DataFrame:
+
+    def _assign_numbers(group):
+        
+        group=assign_col_numbers(group,col_num_name)
+        # print(mask)
+        
+        vals=group.name
+        col_names=group_key
+        if isinstance(vals,str):
+            vals=[vals]
+        if isinstance(col_names,str):
+            col_names=[col_names]
+        
+        for col,val in zip(col_names,vals):
+            group[col] = val
+        
+
+        return group
+    
+    # 分组处理
+    df = df.groupby(group_key, group_keys=False).apply(_assign_numbers, include_groups=False)
+    
+    print(df)
+    
+    df[col_num_name]=df[col_num_name].astype(int)
+
+
+    return df
 
 #多线程读入
 def parallel_json_normalize(data, batch_size=20000,**kwargs)->pd.DataFrame:

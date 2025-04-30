@@ -42,11 +42,12 @@ class ThreadPool:
         self._thread_index+=1
 
     def submit(self, func, *args,callback: Callable[[Any, Exception], None] = None, **kwargs):
-        """ 提交任务到队列 """
-        if not self.stop_event.is_set():
-            self.task_queue.put((func, args, kwargs,callback))
-        else:
-            raise RuntimeError("Cannot submit tasks after shutdown")
+        self.task_queue.put((func, args, kwargs,callback))
+        # """ 提交任务到队列 """
+        # if not self.stop_event.is_set():
+        #     self.task_queue.put((func, args, kwargs,callback))
+        # else:
+        #     raise RuntimeError("Cannot submit tasks after shutdown")
 
     def _pop_data(self):
         try:
@@ -95,13 +96,13 @@ class ThreadPool:
                     logger.trace("回调开始",update_time_type=UpdateTimeType.STEP)
                     try:
                         callback(result, error)
-                        logger.trace("回调完成",update_time_type=UpdateTimeType.STEP)
+                        logger.info("回调完成",update_time_type=UpdateTimeType.STEP)
                     except Exception as e:
                         logger.error("回调异常",f"Callback failed: {e}")
                         
                 self.task_queue.task_done()  # 标记任务完成
 
-        logger.trace("线程结束",update_time_type=UpdateTimeType.ALL)
+        logger.info("线程结束",update_time_type=UpdateTimeType.ALL)
 
     def shutdown(self, wait=True):
         """ 关闭线程池 """

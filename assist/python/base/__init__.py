@@ -8,6 +8,7 @@
 from .task.thread_task import ThreadTask,ResultThread
 from .task.process_task import ProcessTask
 from .task.coroutine_task import CoroutineTask
+from .task.threadpool import *
 from .com_decorator import *
 from .com_log import logger_helper,UpdateTimeType,record_detail,record_detail_usage
 from .except_tools import except_stack
@@ -34,4 +35,6 @@ from .url_tools import *
 from .reg_tools import *
 from .collect_tools import *
 from .remove_special_fold import *
+from .ocr_tools import *
+
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]

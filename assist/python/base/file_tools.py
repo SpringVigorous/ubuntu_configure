@@ -364,7 +364,7 @@ def priority_read(file_path,readfunc,operator_func=None,writefunc=None):
     data=None
     if os.path.exists(file_path) and readfunc:
         data=readfunc(file_path)
-        print(type(data))
+        # print(type(data))
         if data is not None:
             return data
     data=operator_func()  if operator_func else None
