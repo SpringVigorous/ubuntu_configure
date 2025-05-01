@@ -207,3 +207,12 @@ def get_node_sub_hrefs(tree,cur_xpath,sub_xpath,href_flag="href",domain=None,fla
     if not hrefs and  logger:
         logger.warn(log_info,f"\n{pretty_tree(div)}\n")
     return hrefs 
+
+def get_param_from_url(url,key):
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+    return query_params.get('id', [None])[0]
+
+
+
+
