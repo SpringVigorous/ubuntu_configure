@@ -167,10 +167,8 @@ def concat_dfs(dfs:list[pd.DataFrame])->pd.DataFrame:
 
 def assign_col_numbers(df,col_num_name:str):
     existing_numbers = set(df[df[col_num_name] > 0][col_num_name])
-    mask = df[col_num_name] <= 0 | df[col_num_name].isna()
+    mask =df[col_num_name] < 0 | df[col_num_name].isna()
 
-    # print(type(mask))
-    # print(mask)
     current_num = 1
     available_nums:list[int] = []
     
@@ -208,7 +206,7 @@ def update_col_nums(df:pd.DataFrame,group_key:str|list[str],col_num_name:str)->p
     # 分组处理
     df = df.groupby(group_key, group_keys=False).apply(_assign_numbers, include_groups=False)
     
-    print(df)
+    # print(df)
     
     df[col_num_name]=df[col_num_name].astype(int)
 
@@ -275,3 +273,51 @@ def optimized_read_excel(file_path,sheet_name=None, engine='openpyxl', usecols=N
     
     df = pd.read_excel(file_path,sheet_name=sheet_name, engine=engine,  usecols=usecols)
     return df 
+
+
+#根据keys进行唯一化，每列数据 保留第一个有效值
+def concat_unique(dfs:list[pd.DataFrame],keys)->pd.DataFrame:
+
+    return unique_df(concat_dfs(dfs),keys=keys)
+
+
+
+def content_same(df1:pd.DataFrame,df2:pd.DataFrame):
+    
+    
+    
+    df1_reset = df1.reset_index(drop=True)
+    df2_reset = df2.reset_index(drop=True)
+
+    return df1_reset.equals(df2_reset)
+
+
+#交集
+def intersect_df(df1:pd.DataFrame,df2:pd.DataFrame,keys:list|str)->pd.DataFrame:
+    intersection = pd.merge(df1, df2, on=keys, how='inner')
+    return intersection
+    
+#差集
+def sub_df(df1:pd.DataFrame,df2:pd.DataFrame,keys:list|str)->pd.DataFrame:
+    if df1.empty or  df2.empty:
+        return  df1
+    # 统一转换为list处理
+    keys = [keys] if isinstance(keys, str) else keys
+    
+    mask=df1[keys].isin(df2[keys]).all(axis=1)
+    
+    diff_result = df1[~mask]
+    return diff_result.copy()
+
+
+#添加属性名
+def set_attr(df:pd.DataFrame,attr_name:str,attr_value:str)->pd.DataFrame:
+    if df is None:
+        return df
+    df.attrs[attr_name]=attr_value
+    return df
+
+def get_attr(df:pd.DataFrame,attr_name:str)->str:
+    if df is None:
+        return None
+    return df.attrs.get(attr_name)

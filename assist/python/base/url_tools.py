@@ -9,7 +9,11 @@ from itertools import chain
 from xml_tools import pretty_tree
 from collect_tools import unique
 
+
 def fix_url(url: str, base_scheme: str = "https:") -> str:
+    if not url or not isinstance(url,str):  # 如果url为空，则返回None
+        return url
+    
     """将不完整的URL（如 //example.com）转换为完整URL（如 https://example.com）"""
     if url.startswith(("http://", "https://")):
         return url  # 已经是合法URL，直接返回
@@ -208,10 +212,14 @@ def get_node_sub_hrefs(tree,cur_xpath,sub_xpath,href_flag="href",domain=None,fla
         logger.warn(log_info,f"\n{pretty_tree(div)}\n")
     return hrefs 
 
-def get_param_from_url(url,key):
+def get_param_from_url(url:str,key:str):
+    if not url or not key:
+        return None
+    
+    
     parsed_url = urlparse(url)
     query_params = parse_qs(parsed_url.query)
-    return query_params.get('id', [None])[0]
+    return query_params.get(key, [None])[0]
 
 
 

@@ -38,6 +38,14 @@ class TaskBase():
     def Stop(self):
         if self._stop_event:
             self._stop_event.set()
+            
+    def ReStart(self):
+        if self._stop_event:
+            self._stop_event.clear()
+    
+    @property
+    def logger(self)->logger_helper:
+        return self._logger
     
     @property
     def Valid(self)->bool:

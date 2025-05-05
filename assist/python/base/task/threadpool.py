@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from com_log import logger_helper,UpdateTimeType
 
 class ThreadPool:
-    def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5):
+    def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5,thread_name:str=""):
         self.num_threads = num_threads  # 线程数量
         self.task_queue = queue.Queue()  # 任务队列
         self.stop_event = threading.Event()  # 停止事件
@@ -20,10 +20,11 @@ class ThreadPool:
         self.logger=logger_helper("ThreadPool","ThreadPool")
         self.lock = threading.Lock()  # 保护线程列表的锁
         self._thread_index:int=1
-        
+        self._thread_name:str=thread_name
       
     def thread_name(self):
-        return f"线程_{self._thread_index:02}"
+        name=self._thread_name if self._thread_name else "线程"
+        return f"{name}_{self._thread_index:02}"
     
 
     

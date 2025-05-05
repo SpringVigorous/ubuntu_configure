@@ -13,7 +13,7 @@ import os
 from state import ReturnState
 import shutil
 from collect_tools import unique
-
+import json
 from pathlib import Path
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
@@ -384,9 +384,21 @@ def write_dataframe_excel(file_path,data,sheet_name=None):
     return data.to_excel(file_path)
 
 def write_to_json(file_path,data,**file_kwargs):
-    import json
+    if not data:
+        return
+    
 
     return json.dump(data,open(file_path,"w",**file_kwargs),indent=4,ensure_ascii=False)
+
+
+def read_from_json(file_path,**file_kwargs):
+    return json.load(open(file_path,"r",**file_kwargs))
+
+def write_to_json_utf8_sig(file_path,data:dict):
+    return write_to_json(file_path,data,encoding="utf-8-sig")
+    
+def read_from_json_utf8_sig(file_path)->dict:
+    return read_from_json(file_path,encoding="utf-8-sig")
 
 
 def write_to_txt(file_path,data,**file_kwargs):
@@ -425,7 +437,8 @@ def get_next_filename(folder_path, base_name, file_extension:str):
         if not os.path.exists(file_path):
             return filename
         index += 1
-
+def get_next_filepath(folder_path, base_name, file_extension:str):
+    return os.path.join(folder_path, get_next_filename(folder_path, base_name, file_extension))
 if __name__ == '__main__':
 
     replace_tuples=[
