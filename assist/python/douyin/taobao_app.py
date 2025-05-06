@@ -19,6 +19,9 @@ class TbApp():
     
     def __init__(self) -> None:
         
+        
+        
+        
         self.shop_url_queue=Queue()
         self.products_json_queue=Queue()
         self.product_url_queue=Queue()
@@ -48,6 +51,9 @@ class TbApp():
         self.download_pics=DownloadPics(self.download_pic_queue,stop_downnload_pics_event,output_queue=self.ocr_pic_queue,out_stop_event=stop_ocr_pics_event)
         self.ocr_pics=OcrPics(self.ocr_pic_queue,stop_ocr_pics_event,output_queue=None,out_stop_event=None)
         
+        
+        self.queue_lst:list=[]
+        self.thread_lst:list=[]
         
         self.manager=tb_manager()
         self.logger=logger_helper(class_name)
@@ -97,14 +103,20 @@ class TbApp():
         
         
         #队列join()
+        self.shop_url_queue.join()
+        self.products_json_queue.join()
+        self.product_url_queue.join()
+        self.pics_json_queue.join()
+        self.download_pic_queue.join()
+        self.ocr_pic_queue.join()
+        
+        #现成join()
         self.interact_shop.join()
         self.handle_goods.join()
         self.interact_goods.join()
         self.handle_pics.join()
-        self.download_pic_queue.join()
-        self.ocr_pic_queue.join()
-        
-
+        self.download_pics.join()
+        self.ocr_pics.join()
 
     @exception_decorator(error_state=False)
     def done(self):

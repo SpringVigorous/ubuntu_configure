@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>茶包库存管理系统</title>
+    <!-- 引入 Vue 3 和 Axios -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .alert-error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>茶包库存管理系统</h1>
+            
+            <!-- 药材管理 -->
+            <div class="card">
+                <h2>药材管理</h2>
+                
+                <!-- 添加新药材表单 -->
+                <div class="form-group">
+                    <label for="herb-name">药材名称</label>
+                    <input id="herb-name" v-model="newHerb.name" placeholder="例如: 菊花">
+                </div>
+                
+                <div class="form-group">
+                    <label for="herb-spec">规格</label>
+                    <input id="herb-spec" v-model="newHerb.specification" placeholder="例如: 特级">
+                </div>
+                
+                <button @click="addHerb">添加药材</button>
+                
+                <!-- 药材列表 -->
+                <h3>现有药材</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>名称</th>
+                            <th>规格</th>
+                            <th>单位</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            <tr v-for="herb in herbs" :key="herb.herb_id">
+                            <td>{{ herb.herb_id }}</td>
+                            <td>{{ herb.herb_name }}</td>
+                            <td>{{ herb.specification }}</td>
+                            <td>{{ herb.unit }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 药材入库 -->
+            <div class="card">
+                <h2>药材入库</h2>
+                
+                <div class="form-group">
+                    <label for="stock-herb">选择药材</label>
+                    <select id="stock-herb" v-model="stockIn.herb_id">
+                        <option value="">-- 请选择药材 --</option>
+                        <option v-for="herb in herbs" :value="herb.herb_id">
+                            {{ herb.herb_name }} ({{ herb.specification }})
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="stock-quantity">入库数量</label>
+                    <input id="stock-quantity" type="number" v-model.number="stockIn.quantity" placeholder="例如: 1000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stock-batch">批次号</label>
+                    <input id="stock-batch" v-model="stockIn.batch_number" placeholder="例如: JH2023001">
+                </div>
+                
+                <button @click="stockInHerb">提交入库</button>
+            </div>
+            
+            <!-- 操作历史 -->
+            <div class="card">
+                <h2>操作管理</h2>
+                <button @click="undoLastOperation">撤销上一步操作</button>
+            </div>
+            
+            <!-- 消息提示 -->
+            <div v-if="message.text" :class="['alert', message.type === 'success' ? 'alert-success' : 'alert-error']">
+                {{ message.text }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 响应式数据
+                const herbs = ref([]);
+                const newHerb = ref({
+                    name: '',
+                    specification: '',
+                    unit: '克'
+                });
+                const stockIn = ref({
+                    herb_id: null,
+                    quantity: 0,
+                    batch_number: ''
+                });
+                const message = ref({
+                    text: '',
+                    type: ''
+                });
+                
+                // 显示消息
+                const showMessage = (text, type = 'success') => {
+                    message.value = { text, type };
+                    setTimeout(() => {
+                        message.value.text = '';
+                    }, 3000);
+                };
+                
+                // 加载药材列表
+                const loadHerbs = async () => {
+                    try {
+                        const response = await axios.get('/api/herbs');
+                        herbs.value = response.data.data;
+                    } catch (error) {
+                        showMessage(`加载药材失败: ${error.response?.data?.message || error.message}`, 'error');
+                    }
+                };
+                
+                // 添加新药材
+                const addHerb = async () => {
+                    if (!newHerb.value.name) {
+                        showMessage('请输入药材名称', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await axios.post('/api/herbs', newHerb.value);
+                        showMessage(`成功添加药材，ID: ${response.data.herb_id}`);
+                        newHerb.value = { name: '', specification: '', unit: '克' };
+                        loadHerbs();
+                    } catch (error) {
+                        showMessage(`添加药材失败: ${error.response?.data?.message || error.message}`, 'error');
+                    }
+                };
+                
+                // 药材入库
+                const stockInHerb = async () => {
+                    if (!stockIn.value.herb_id) {
+                        showMessage('请选择药材', 'error');
+                        return;
+                    }
+                    
+                    if (stockIn.value.quantity <= 0) {
+                        showMessage('请输入有效的入库数量', 'error');
+                        return;
+                    }
+                    
+                    if (!stockIn.value.batch_number) {
+                        showMessage('请输入批次号', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const payload = {
+                            ...stockIn.value,
+                            operator: '当前用户',
+                            production_date: new Date().toISOString().split('T')[0],
+                            expiry_date: '2024-12-31'
+                        };
+                        
+                        await axios.post('/api/inventory/herbs', payload);
+                        showMessage('药材入库成功');
+                        stockIn.value = { herb_id: null, quantity: 0, batch_number: '' };
+                    } catch (error) {
+                        showMessage(`入库失败: ${error.response?.data?.message || error.message}`, 'error');
+                    }
+                };
+                
+                // 撤销操作
+                const undoLastOperation = async () => {
+                    try {
+                        const response = await axios.post('/api/undo');
+                        if (response.data.success) {
+                            showMessage('成功撤销上一步操作');
+                            loadHerbs(); // 刷新数据
+                        } else {
+                            showMessage('没有可撤销的操作', 'error');
+                        }
+                    } catch (error) {
+                        showMessage(`撤销操作失败: ${error.response?.data?.message || error.message}`, 'error');
+                    }
+                };
+                
+                // 初始化加载数据
+                onMounted(() => {
+                    loadHerbs();
+                });
+                
+                return {
+                    herbs,
+                    newHerb,
+                    stockIn,
+                    message,
+                    addHerb,
+                    stockInHerb,
+                    undoLastOperation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -18,17 +18,43 @@ class InventoryManager:
         self._initialize_database()
         self._start_flush_timer()
 
+    def _initialize_database(self):
+        """初始化数据库和表结构"""
+        try:
+            # 连接到MySQL服务器（不指定数据库）
+            self.connection = mysql.connector.connect(
+                host='localhost',
+                port= 3306,
+                user='SpringFlourish',
+                password='137098',
+            )
+            cursor = self.connection.cursor()
+            
+            # 创建数据库
+            cursor.execute("CREATE DATABASE IF NOT EXISTS medical_product")
+            self.connection.database = 'medical_product'
+            
+            # 从文件创建表
+            self._create_tables_from_sql_file()
+            print("数据库初始化完成")
+            
+        except Error as e:
+            print(f"数据库初始化失败: {e}")
+            raise
+        finally:
+            if cursor:
+                cursor.close()
 
     def _create_tables_from_sql_file(self):
         """从SQL文件创建表结构"""
         sql_file_path = os.path.join(
             os.path.dirname(__file__), 
             'schema', 
-            'medical_tab.sql'
+            'tables.sql'
         )
         
         try:
-            with open(sql_file_path, 'r', encoding='utf-8-sig') as file:
+            with open(sql_file_path, 'r', encoding='utf-8') as file:
                 sql_script = file.read()
             
             # 分割并过滤SQL命令
@@ -266,38 +292,38 @@ if __name__ == "__main__":
     # 初始化（自动建表）
     manager = InventoryManager()
     
-    # # 添加测试数据
-    # manager.add_product("笔记本电脑", "高性能游戏本", "台", 5)
-    # manager.add_product("无线鼠标", "蓝牙5.0", "个", 10)
+    # 添加测试数据
+    manager.add_product("笔记本电脑", "高性能游戏本", "台", 5)
+    manager.add_product("无线鼠标", "蓝牙5.0", "个", 10)
     
     
-    # manager.add_supplier("华为", "中国","86","上海")
-    # manager.add_supplier("小米", "中国","86","上海")
-    # manager.add_supplier("oppo", "中国","86","上海")
-    # manager.add_supplier("vivo", "中国","86","上海")
+    manager.add_supplier("华为", "中国","86","上海")
+    manager.add_supplier("小米", "中国","86","上海")
+    manager.add_supplier("oppo", "中国","86","上海")
+    manager.add_supplier("vivo", "中国","86","上海")
     
-    # product_names=manager.all_product_names()
-    # supplier_names=manager.all_supplier_names()
+    product_names=manager.all_product_names()
+    supplier_names=manager.all_supplier_names()
     
-    # product_count=len(product_names)
-    # supplier_count=len(supplier_names)
+    product_count=len(product_names)
+    supplier_count=len(supplier_names)
     
-    # # 批量入库操作
-    # for i in range(1,100):
-    #     product_index=random.randint(0, product_count-1)
-    #     suppler_index=random.randint(0, supplier_count-1)
+    # 批量入库操作
+    for i in range(1,100):
+        product_index=random.randint(0, product_count-1)
+        suppler_index=random.randint(0, supplier_count-1)
         
-    #     manager.stock_in(product_name=product_names[product_index],supplier_name=supplier_names[suppler_index] , quantity=2,unit_price=5000.0, use_cache=True)
+        manager.stock_in(product_name=product_names[product_index],supplier_name=supplier_names[suppler_index] , quantity=2,unit_price=5000.0, use_cache=True)
     
-    # # 实时出库操作
-    # for i in range(1,100):
-    #     product_index=random.randint(0, product_count-1)
-    #     manager.stock_out(product_names[product_index], 2, "销售部", "客户订单")
+    # 实时出库操作
+    for i in range(1,100):
+        product_index=random.randint(0, product_count-1)
+        manager.stock_out(product_names[product_index], 2, "销售部", "客户订单")
     
-    # # 手动触发缓存刷新
-    # manager.flush_cache()
+    # 手动触发缓存刷新
+    manager.flush_cache()
     
-    # # 查看库存
-    # print("当前库存:")
-    # for product in manager.get_inventory_status():
-    #     print(f"{product['name']}: {product['current_quantity']}{product['unit']}")
+    # 查看库存
+    print("当前库存:")
+    for product in manager.get_inventory_status():
+        print(f"{product['name']}: {product['current_quantity']}{product['unit']}")

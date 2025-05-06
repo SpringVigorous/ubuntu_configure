@@ -222,7 +222,7 @@ class HandleProducts(ThreadTask):
             for index,item in new_df.iterrows():
                 
                 #测试流程用
-                if index>3:break
+                if index>1:break
                 self.output_queue.put((item[item_url_id],item[item_id]))
 class HandlePics(ThreadTask):
     def __init__(self,input_queue,stop_event,output_queue,out_stop_event):

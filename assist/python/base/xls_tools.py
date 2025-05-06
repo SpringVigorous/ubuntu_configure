@@ -5,6 +5,7 @@ from openpyxl.drawing.image import Image
 import pandas as pd
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl import load_workbook
+from collect_tools import unique
 
 def set_cell_center(cell:Cell):
     cell.alignment = Alignment(horizontal='center', vertical='center')
@@ -118,31 +119,30 @@ def add_image_to_cell(cell:Cell, image_path,width=100,height=100):
 
     
     
+def unmerge_cells(ws:Worksheet, merged_range):
+    # 获取合并单元格的左上角单元格的值
+    min_col, min_row, max_col, max_row = merged_range.bounds
+    top_left_cell = ws.cell(row=min_row, column=min_col)
+    top_left_value = top_left_cell.value
     
+    if top_left_value and isinstance(top_left_value,str):
+        top_left_value= top_left_value.strip()
+        top_left_cell.value=top_left_value
+    # 取消合并单元格
+    ws.unmerge_cells(str(merged_range))
+    
+    # 填充合并单元格内的所有单元格为左上角单元格的值
+    for row in range(min_row, max_row + 1):
+        for col in range(min_col, max_col + 1):
+            cell = ws.cell(row=row, column=col)
+            cell.value = top_left_value
+            cell.alignment = Alignment(horizontal='left', vertical='center')
     
 def unmerge_and_fill(target: Worksheet|Cell,filter_func:list[int,int,int,int]=None):
     if not target:
         return
-       
     ws:Worksheet= target if isinstance(target, Worksheet) else target.parent
     target_cell:Cell=target if isinstance(target, Cell) else None
-    
-    def unmerge_cells(ws:Worksheet, merged_range):
-        # 获取合并单元格的左上角单元格的值
-        min_col, min_row, max_col, max_row = merged_range.bounds
-        top_left_cell = ws.cell(row=min_row, column=min_col)
-        top_left_value = top_left_cell.value
-        
-        # 取消合并单元格
-        ws.unmerge_cells(str(merged_range))
-        
-        # 填充合并单元格内的所有单元格为左上角单元格的值
-        for row in range(min_row, max_row + 1):
-            for col in range(min_col, max_col + 1):
-                cell = ws.cell(row=row, column=col)
-                cell.value = top_left_value
-                cell.alignment = Alignment(horizontal='left', vertical='center')
-        
     #针对参数是 单元格类型的
     if target_cell:
         info=merge_cells_info(target_cell)
@@ -156,7 +156,56 @@ def unmerge_and_fill(target: Worksheet|Cell,filter_func:list[int,int,int,int]=No
         if filter_func and not filter_func(merged_cell.bounds):
             continue
         unmerge_cells(ws, merged_cell)
+
+#针对首行值唯一的情况（及列名唯一）
+def get_first_row_non_empty_cells(worksheet)->dict:
+    """
+    获取工作表首行中的非空单元格及其列号
     
+    参数:
+        worksheet: openpyxl.worksheet.worksheet.Worksheet 对象
+    
+    返回:
+        list: 包含元组的列表，每个元组格式为 (列号, 单元格值)
+    """
+    first_row = worksheet[1]  # 获取第一行（索引从1开始）
+    result = {}
+    
+    for cell in first_row:
+        if cell.value is not None and str(cell.value).strip() != "":
+            # 获取列字母（如'A'）和列号（如1）
+            # column_letter = cell.column_letter
+            column_number = cell.column
+            result[cell.value]=column_number
+    
+    return result
+
+def get_col_index(ws: Worksheet,col_name) -> int:
+    col_dict=get_first_row_non_empty_cells(ws)
+
+    col_index=col_dict.get(col_name,None)
+    return col_index
+    
+    
+#按指定列名取消 合并单元格
+def unmerge_sheet_cols(ws: Worksheet,col_names:list|str=None):
+    if not ws:
+        return
+    if not col_names:
+        return unmerge_and_fill(ws,None)
+       
+    col_dict=get_first_row_non_empty_cells(ws)
+    if isinstance(col_names,str):
+        col_names=[col_names]
+        
+    cols_index=[col_dict.get(col_name,None) for col_name in unique(col_names)]
+    cols_index=list(filter(lambda x:x,cols_index))
+    
+    for merged_cell in list(ws.merged_cells.ranges):
+        min_col, min_row, max_col, max_row = merged_cell.bounds
+        for i in cols_index:
+            if i>=min_col and i<=max_col:
+                unmerge_cells(ws, merged_cell)
 
   
 def merge_all_identical_column_file(xlsx_path,sheet_name:str=None,col_index:list[int]=None):
@@ -170,7 +219,37 @@ def merge_all_identical_column_file(xlsx_path,sheet_name:str=None,col_index:list
             merge_identical_column_cells(ws, col_idx)
     # 保存工作簿
     wb.save(xlsx_path)
+ 
+
+def read_xlsx(xlsx_path,sheet_name:str=None):
+    wb=load_workbook(xlsx_path)
+    if sheet_name and sheet_name in wb.sheetnames:
+        ws=wb[sheet_name]
+    else:
+        ws=wb.active
     
+    return ws
+
+def delete_sheets_except(wb, sheet_name_to_keep):
+    """
+    删除工作簿中除指定名称表单外的所有其他表单
+    
+    参数:
+        wb: openpyxl Workbook 对象
+        sheet_name_to_keep: 要保留的表单名称
+    """
+    # 获取所有表单名称
+    sheet_names = [sheet.title for sheet in wb.worksheets]
+    
+    # 检查要保留的表单是否存在
+    if sheet_name_to_keep not in sheet_names:
+        raise ValueError(f"表单 '{sheet_name_to_keep}' 不存在于工作簿中")
+    
+    # 遍历所有表单进行删除
+    for sheet_name in sheet_names:
+        if sheet_name != sheet_name_to_keep:
+            # 删除表单
+            del wb[sheet_name]
                 
 if __name__=="__main__":
     
@@ -178,6 +257,7 @@ if __name__=="__main__":
     file_path=r'E:\公司文件\库存\结果\merge_result.xlsx'
     wb = load_workbook(file_path)
     ws = wb.active
+
     
     for col_idx in range(1, 6):
         merge_identical_column_cells(ws, col_idx)

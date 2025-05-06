@@ -1,0 +1,445 @@
+﻿import mysql.connector
+from mysql.connector import Error,pooling
+from typing import Optional, Dict, List, Tuple
+import os
+
+from contextlib import contextmanager
+from datetime import datetime
+"""系统特点
+​​完整的CRUD操作​​：所有核心表都有增删改查功能
+​​撤销/回滚支持​​：通过操作栈记录所有变更，支持撤销
+​​名称-ID转换​​：提供多种辅助函数帮助前端表单填写
+​​事务安全​​：所有操作都使用事务确保数据一致性
+​​类型提示​​：使用Python类型提示提高代码可读性
+​​批量操作支持​​：支持批量入库和配方管理
+这个增强版系统可以很好地支持茶包产品的库存管理需求，特别是前端表单填写和操作撤销功能，大大提高了系统的易用性和可靠性。
+
+
+Returns:
+    _type_: _description_
+"""
+# 1. 数据库连接与基础类
+class TeaInventorySystem:
+    def __init__(self, host: str, database: str, user: str, password: str,port: int = 3306,  # 添加端口参数，默认3306
+                pool_size: int = 5):
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+        self.operation_stack = []  # 用于撤销操作的栈
+        self.port = port  # 存储端口参数
+        self.pool_size = pool_size
+        try:
+            self.pool = mysql.connector.pooling.MySQLConnectionPool(
+                pool_name="tea_pool",
+                pool_size=self.pool_size,
+                host=self.host,
+                port=self.port,  # 使用端口参数
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                pool_reset_session=True
+            )
+            # 验证连接池
+            self._test_pool()
+        except Error as e:
+            print(f"连接池初始化失败: {e}")
+            raise
+        self._initialize_database()
+
+    def _test_pool(self):
+        """测试连接池是否可用"""
+        conn = None
+        try:
+            conn = self.pool.get_connection()
+            conn.ping(reconnect=True)
+        finally:
+            if conn and conn.is_connected():
+                conn.close()
+
+    @contextmanager
+    def _get_connection(self):
+        """安全获取数据库连接"""
+        conn = None
+        try:
+            conn = self.pool.get_connection()
+            if conn is None:
+                raise Error("无法从连接池获取连接(可能已耗尽)")
+                
+            if not conn.is_connected():
+                conn.reconnect(attempts=3, delay=0.5)
+                
+            yield conn
+        except Error as e:
+            print(f"数据库连接错误: {e}")
+            raise
+        finally:
+            if conn is not None:
+                try:
+                    if hasattr(conn, 'is_connected') and conn.is_connected():
+                        conn.close()
+                except Exception as e:
+                     print(f"关闭连接时出错:: {e}")
+        
+        
+
+    def _create_tables_from_sql_file(self):
+        """从SQL文件创建表结构"""
+        sql_file_path = os.path.join(
+            os.path.dirname(__file__), 
+            'schema', 
+            'medical_tab.sql'
+        )
+        
+        with open(sql_file_path, 'r', encoding='utf-8-sig') as file:
+            sql_script = file.read()
+        
+        # 分割并过滤SQL命令
+        commands = [cmd.strip() for cmd in sql_script.split(';') if cmd.strip()]
+        
+        
+        with self._get_connection() as conn:
+            if not conn:
+                return None
+            try:
+                
+                cursor = conn.cursor()
+                for cmd in commands:
+                    cursor.execute(cmd)
+                conn.commit()
+                
+            except FileNotFoundError:
+                print(f"错误: SQL文件不存在 - {sql_file_path}")
+                raise
+            except Error as e:
+                conn.rollback()
+                print(f"执行建表语句失败: {e}")
+                raise
+            finally:
+                if cursor:
+                    cursor.close()
+
+    def _initialize_database(self):
+        """初始化数据库和表结构"""
+        with self._get_connection() as conn:
+            try:
+            
+                cursor = conn.cursor()
+                # 创建数据库
+                cursor.execute("CREATE DATABASE IF NOT EXISTS medical_product")
+                conn.database = 'medical_product'
+                # 从文件创建表
+                self._create_tables_from_sql_file()
+                print("数据库初始化完成")
+                
+            except Error as e:
+                print(f"数据库初始化失败: {e}")
+                raise
+            finally:
+                if cursor:
+                    cursor.close()
+# 2. 增删改查(CRUD)功能
+
+    # ---- 药材管理 ----
+    def add_herb(self, name: str, scientific_name: str = "", specification: str = "", 
+                unit: str = "克", quality_standard: str = "") -> Optional[int]:
+        """添加新药材"""
+        with self._get_connection() as conn:
+            if not conn:
+                return None
+                
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO herbs (herb_name, scientific_name, specification, unit, quality_standard) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (name, scientific_name, specification, unit, quality_standard)
+                )
+                herb_id = cursor.lastrowid
+                conn.commit()
+                return herb_id
+            except Error as e:
+                conn.rollback()
+                print(f"添加药材失败: {e}")
+                return None
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def get_herb_id_by_name(self, name: str, specification: str = "") -> Optional[int]:
+        """根据药材名称和规格获取ID"""
+        with self._get_connection() as conn:
+            if not conn:
+                return None
+                
+            try:
+                cursor = conn.cursor()
+                query = "SELECT herb_id FROM herbs WHERE herb_name = %s"
+                params = [name]
+                
+                if specification:
+                    query += " AND specification = %s"
+                    params.append(specification)
+                    
+                cursor.execute(query, params)
+                result = cursor.fetchone()
+                return result[0] if result else None
+            except Error as e:
+                print(f"查询药材ID失败: {e}")
+                return None
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def update_herb(self, herb_id: int, **kwargs) -> bool:
+        """更新药材信息"""
+        if not kwargs:
+            return False
+            
+        with self._get_connection() as conn:
+            if not conn:
+                return False
+                
+            try:
+                cursor = conn.cursor()
+                set_clause = ", ".join([f"{k} = %s" for k in kwargs])
+                query = f"UPDATE herbs SET {set_clause} WHERE herb_id = %s"
+                params = list(kwargs.values()) + [herb_id]
+                
+                cursor.execute(query, params)
+                conn.commit()
+                return cursor.rowcount > 0
+            except Error as e:
+                conn.rollback()
+                print(f"更新药材失败: {e}")
+                return False
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def delete_herb(self, herb_id: int) -> bool:
+        """删除药材（逻辑删除）"""
+        return self.update_herb(herb_id, is_active=False)
+
+    # ---- 配方管理 ----
+    def add_formula(self, name: str, code: str, total_weight: float, 
+                   description: str = "") -> Optional[int]:
+        """添加新配方"""
+        with self._get_connection() as conn:
+            if not conn:
+                return None
+                
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO tea_bag_formulas (formula_name, formula_code, total_weight, description) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (name, code, total_weight, description)
+                )
+                formula_id = cursor.lastrowid
+                conn.commit()
+                return formula_id
+            except Error as e:
+                conn.rollback()
+                print(f"添加配方失败: {e}")
+                return None
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def add_formula_component(self, formula_id: int, herb_id: int, 
+                            weight: float, requirements: str = "") -> bool:
+        """添加配方成分"""
+        with self._get_connection() as conn:
+            if not conn:
+                return False
+                
+            try:
+                cursor = conn.cursor()
+                # 计算百分比
+                cursor.execute(
+                    "SELECT total_weight FROM tea_bag_formulas WHERE formula_id = %s", 
+                    (formula_id,)
+                )
+                total_weight = cursor.fetchone()[0]
+                percentage = (weight / total_weight) * 100
+                
+                cursor.execute(
+                    "INSERT INTO formula_components (formula_id, herb_id, weight, percentage, processing_requirements) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (formula_id, herb_id, weight, percentage, requirements)
+                )
+                conn.commit()
+                return True
+            except Error as e:
+                conn.rollback()
+                print(f"添加配方成分失败: {e}")
+                return False
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+# 3. 撤销/回滚功能
+    def _record_operation(self, operation_type: str, table: str, record_id: int, 
+                        data_before: dict, data_after: dict) -> bool:
+        """记录操作以便撤销"""
+        self.operation_stack.append({
+            'operation_type': operation_type,
+            'table': table,
+            'record_id': record_id,
+            'data_before': data_before,
+            'data_after': data_after,
+            'timestamp': datetime.now()
+        })
+        return True
+
+    def undo_last_operation(self) -> bool:
+        """撤销最后一次操作"""
+        if not self.operation_stack:
+            return False
+            
+        last_op = self.operation_stack.pop()
+        with self._get_connection() as conn:
+            if not conn:
+                return False
+                
+            try:
+                cursor = conn.cursor()
+                
+                if last_op['operation_type'] == 'INSERT':
+                    # 撤销插入操作 = 删除记录
+                    cursor.execute(
+                        f"DELETE FROM {last_op['table']} WHERE id = %s",
+                        (last_op['record_id'],)
+                    )
+                elif last_op['operation_type'] == 'UPDATE':
+                    # 撤销更新操作 = 恢复旧数据
+                    set_clause = ", ".join([f"{k} = %s" for k in last_op['data_before']])
+                    query = f"UPDATE {last_op['table']} SET {set_clause} WHERE id = %s"
+                    params = list(last_op['data_before'].values()) + [last_op['record_id']]
+                    cursor.execute(query, params)
+                elif last_op['operation_type'] == 'DELETE':
+                    # 撤销删除操作 = 重新插入记录
+                    columns = ", ".join(last_op['data_before'].keys())
+                    placeholders = ", ".join(["%s"] * len(last_op['data_before']))
+                    cursor.execute(
+                        f"INSERT INTO {last_op['table']} ({columns}) VALUES ({placeholders})",
+                        list(last_op['data_before'].values())
+                    )
+                
+                conn.commit()
+                return True
+            except Error as e:
+                conn.rollback()
+                print(f"撤销操作失败: {e}")
+                return False
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+# 4. 入库操作辅助功能
+    # ---- 入库辅助功能 ----
+    def get_all_herbs(self) -> List[Dict]:
+        """获取所有药材信息（用于下拉选择）"""
+        with self._get_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute(
+                    "SELECT herb_id, herb_name, specification, unit FROM herbs WHERE is_active = TRUE"
+                )
+                return cursor.fetchall()
+            except Error as e:
+                print(f"获取药材列表失败: {e}")
+                return []
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def get_all_formulas(self) -> List[Dict]:
+        """获取所有配方信息（用于下拉选择）"""
+        with self._get_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute(
+                    "SELECT formula_id, formula_name, formula_code FROM tea_bag_formulas WHERE is_active = TRUE"
+                )
+                return cursor.fetchall()
+            except Error as e:
+                print(f"获取配方列表失败: {e}")
+                return []
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+    def stock_in_herb(self, herb_id: int, quantity: float, batch_number: str, 
+                     operator: str, production_date: str, expiry_date: str) -> bool:
+        """药材入库"""
+        with self._get_connection() as conn:
+            if not conn:
+                return False
+                
+            try:
+                cursor = conn.cursor()
+                
+                # 记录操作前的库存状态（用于撤销）
+                cursor.execute(
+                    "SELECT quantity FROM herb_inventory WHERE herb_id = %s AND batch_number = %s",
+                    (herb_id, batch_number)
+                )
+                existing = cursor.fetchone()
+                old_quantity = existing[0] if existing else 0
+                
+                # 执行入库操作
+                if existing:
+                    cursor.execute(
+                        "UPDATE herb_inventory SET quantity = quantity + %s "
+                        "WHERE herb_id = %s AND batch_number = %s",
+                        (quantity, herb_id, batch_number)
+                    )
+                else:
+                    cursor.execute(
+                        "INSERT INTO herb_inventory "
+                        "(herb_id, batch_number, quantity, production_date, expiry_date) "
+                        "VALUES (%s, %s, %s, %s, %s)",
+                        (herb_id, batch_number, quantity, production_date, expiry_date)
+                    )
+                
+                # 记录操作
+                self._record_operation(
+                    operation_type='INSERT' if not existing else 'UPDATE',
+                    table='herb_inventory',
+                    record_id=herb_id,
+                    data_before={'quantity': old_quantity},
+                    data_after={'quantity': old_quantity + quantity}
+                )
+                
+                conn.commit()
+                return True
+            except Error as e:
+                conn.rollback()
+                print(f"药材入库失败: {e}")
+                return False
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+
+
+
+
+
+

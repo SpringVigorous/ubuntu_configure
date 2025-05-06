@@ -3,6 +3,17 @@ CREATE DATABASE IF NOT EXISTS medical_product;
 USE medical_product;
 
 -- 产品表
+CREATE TABLE IF NOT EXISTS medical (
+    medical_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL  UNIQUE,
+    description TEXT,
+    unit VARCHAR(20) NOT NULL,
+    current_quantity DECIMAL(10,2) DEFAULT 0,
+    min_quantity DECIMAL(10,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 产品表
 CREATE TABLE IF NOT EXISTS products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL  UNIQUE,

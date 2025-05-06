@@ -41,6 +41,8 @@ class ThreadPool:
         thread.start()
         self.threads.append(thread)
         self._thread_index+=1
+        self.logger.trace("成功添加线程",thread.name)
+        
 
     def submit(self, func, *args,callback: Callable[[Any, Exception], None] = None, **kwargs):
         self.task_queue.put((func, args, kwargs,callback))
@@ -124,7 +126,6 @@ class ThreadPool:
             self.stop_event.clear()
             # 清理已退出的线程对象
             self.threads = [t for t in self.threads if t.is_alive()]
-
             # 补充缺失的线程
             current_threads = len(self.threads)
             if current_threads < self.num_threads:
