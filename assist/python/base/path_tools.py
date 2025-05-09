@@ -95,7 +95,11 @@ def xlsx_files(dest_dir)->list[str]:
 
 def txt_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".txt")
+def jpg_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".jpg")
 
+def json_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".json")
 
 if __name__ == '__main__':
     print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

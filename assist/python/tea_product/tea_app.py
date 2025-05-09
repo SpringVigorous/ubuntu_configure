@@ -2,6 +2,18 @@
 from flask_cors import CORS 
 from tea_manager import TeaInventorySystem
 import os
+import json
+def get_json_data():
+    if request.is_json:
+        return request.get_json()
+    else:
+        try:
+            return json.loads(request.data)
+        except:
+            return None
+    
+    
+    
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
@@ -32,17 +44,13 @@ def get_all_herbs():
     return jsonify({'success': True, 'data': herbs})
 
 
-def get_json_data():
-    if request.is_json:
-        return request.get_json()
-    else:
-        import json
-        return json.loads(request.data)
 
 @app.route('/api/herbs', methods=['POST'])
 def add_herb():
     """添加新药材"""
     data = get_json_data()
+    if not data:
+        return jsonify({'success': False, 'message': '无效的请求数据'}), 400
     herb_id = inventory.add_herb(
         name=data['name'],
         scientific_name=data.get('scientific_name', ''),
@@ -57,6 +65,8 @@ def add_herb():
 def stock_in_herb():
     """药材入库"""
     data = get_json_data()
+    if not data:
+        return jsonify({'success': False, 'message': '无效的请求数据'}), 400
     success = inventory.stock_in_herb(
         herb_id=data['herb_id'],
         quantity=data['quantity'],

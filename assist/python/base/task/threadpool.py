@@ -26,7 +26,9 @@ class ThreadPool:
         name=self._thread_name if self._thread_name else "线程"
         return f"{name}_{self._thread_index:02}"
     
-
+    @property
+    def has_init_thread(self)->bool:
+        return self._thread_index>=self.num_threads
     
     def start(self):
         """ 启动初始线程 """
@@ -116,7 +118,7 @@ class ThreadPool:
             for thread in self.threads:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
-    def reset(self):
+    def restart(self):
         """ 补充缺失的线程至目标数量 """
         self.logger.info("恢复线程池",update_time_type=UpdateTimeType.STAGE)
         
@@ -171,7 +173,7 @@ if __name__ == "__main__":
 
     time.sleep(2)
     print("Resetting pool...")
-    pool.reset()  # 重置后线程池恢复可用
+    pool.restart()  # 重置后线程池恢复可用
 
     # 提交新任务
     for i in range(10, 13):

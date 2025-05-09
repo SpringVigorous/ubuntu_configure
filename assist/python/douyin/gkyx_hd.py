@@ -503,7 +503,7 @@ def main():
     # save_json_thread.join()
     thread_cache.shutdown()
     
-    thread_cache.reset()
+    thread_cache.restart()
     
     logger.info(f"获取结束",update_time_type=UpdateTimeType.STAGE)
 

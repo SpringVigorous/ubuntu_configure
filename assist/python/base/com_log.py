@@ -109,11 +109,15 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             logger.addHandler(file_handler)
         
         log_less_warn= str_to_level(log_level)<str_to_level("warn")
+        log_less_error= str_to_level(log_level)<str_to_level("error")
         
         create_file_log(log_level,base_formatter if log_less_warn else detail_formatter)
         # create_file_log(log_level,detail_formatter)
         if log_less_warn:
             create_file_log("warn",detail_formatter)
+            
+        if log_less_error:
+            create_file_log("error",detail_formatter)
             
         #添加info日志
         if str_to_level(log_level)!=str_to_level("info"):

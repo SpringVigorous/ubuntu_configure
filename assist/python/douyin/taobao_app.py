@@ -14,14 +14,18 @@ from queue import Queue
 import threading
 from taobao_setting import *
 from taobao_config import *
-
+from taobao_tools import dest_file_path
+import pandas as pd
 class TbApp():
     
     def __init__(self) -> None:
+        self.manager=tb_manager()
+        class_name=self.__class__.__name__
+        self.logger=logger_helper(class_name)
         
         
         
-        
+
         self.shop_url_queue=Queue()
         self.products_json_queue=Queue()
         self.product_url_queue=Queue()
@@ -29,7 +33,6 @@ class TbApp():
         self.download_pic_queue=Queue()
         self.ocr_pic_queue=Queue()
         
-        class_name=self.__class__.__name__
         
         self.cache_pool=ThreadPool(thread_name=class_name)
         
@@ -55,8 +58,6 @@ class TbApp():
         self.queue_lst:list=[]
         self.thread_lst:list=[]
         
-        self.manager=tb_manager()
-        self.logger=logger_helper(class_name)
         
         #开启缓冲池
         self.cache_pool.start()
@@ -69,6 +70,33 @@ class TbApp():
         }
         return result
         
+    @exception_decorator(error_state=False)
+    def handle_nodone_task(self):
+        results=self.manager.get_undone_df()
+        if not results:return
+        nodetail_df,undownload_df,unocr_df=results
+
+        
+        #未识别图片
+        for _,row in unocr_df.iterrows():
+            name=f"{row[name_id]}.jpg"
+            org_pic=dest_file_path(org_pic_dir,name)
+            orc_pic=dest_file_path(ocr_pic_dir,name)
+            self.ocr_pic_queue.put((org_pic,orc_pic))
+        pass
+        
+        #未下载图片
+        if not undownload_df.empty:
+            self.download_pic_queue.put((True,undownload_df))
+            
+            
+        #未获取详情
+        if not nodetail_df.empty:
+            urls=nodetail_df[item_url_id].tolist()
+            self.send_msg(goods_type,urls)
+        # for  index,row in nodetail_df.iterrows():
+            # if index >2:
+            #     break
     def msg_queue(self,type):
         result=self._msg_queque_dict
         return result.get(type,None)
@@ -76,15 +104,16 @@ class TbApp():
         if isinstance(urls,str):
             urls=[urls]
         logger=self.logger
-        logger.update_target("收到消息",f"msg_type:{msg_type},url:{urls}") 
+        logger.update_target(f"收到消息共{len(urls)}个",f"msg_type:{msg_type},url:{urls}") 
         logger.trace("开始处理",update_time_type=UpdateTimeType.STAGE) 
         cur_queue=self.msg_queue(msg_type)
         if not cur_queue:
             logger.error("查找不到指定类型的输入队列",update_time_type=UpdateTimeType.STAGE)
             return
-        for url in urls:
+        for index,url in enumerate(urls):
+            logger.update_target(f"第{index}个消息入队",f"{url}") 
             cur_queue.put(url)
-            logger.trace(f"消息入队",url,update_time_type=UpdateTimeType.STEP) 
+            logger.trace("开始",update_time_type=UpdateTimeType.STEP) 
             
     
     pass
@@ -125,20 +154,46 @@ class TbApp():
     def stop_cache_pool(self):
         self.cache_pool.shutdown()
 def main():
+    # tb=tb_manager()
+    
+    #结果分别存储到各自文件夹中，可选
+    # tb.separate_ocr_results()
+    
+    
+    #图片按照num新建文件夹存放，后续不需要
+    # tb.classify_pics()
+    
+    #图片名长度过短,临时补救措施，后续不需要
+    # # if tb.rename_pic_name(3):
+    # #     tb._save_xlsx_df()
+    
+    #汇总信息，统计各个产品有多少主图、详图、sku图
+    # df=tb.summary_df()
+    # if not  df.empty:
+    #     df.to_excel(os.path.join(db_dir,"summary.xlsx"),index=False)
+    
+    
+    
+    # return
+    
     
     goods_urls=[
         'https://item.taobao.com/item.htm?id=742960815434',
                 ]
-    # shop_urls=["https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",
-    #            'https://shop60537259.taobao.com/?spm=tbpc.mytb_followshop.item.shop']
-    shop_urls=["https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",]
+    shop_urls=['https://shop60537259.taobao.com/?spm=tbpc.mytb_followshop.item.shop',
+    "https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",
+               ]
+    # shop_urls=["https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",]
 
     app=TbApp()
+    # app.handle_nodone_task()
     try:
         # for url in goods_urls:
         #     manager.put((goods_type,url))
-        for url in shop_urls:
-            app.send_msg(shop_type,url)
+        # for url in shop_urls:
+        #     app.send_msg(shop_type,url)
+            
+            
         app.start()
         # app.done()
         tb_manager()._save_xlsx_df()
@@ -148,7 +203,8 @@ def main():
     finally:
         pass
     
-    
+    # os.system(f"shutdown /s /t 1")
     
 if __name__=="__main__":
     main()
+    

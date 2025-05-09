@@ -8,16 +8,22 @@ from pathlib import Path
 from itertools import chain
 from xml_tools import pretty_tree
 from collect_tools import unique
+from urllib.parse import urlparse
 
-
+def url_valid(url:str):
+    parsed_url = urlparse(url)
+    return parsed_url.netloc
 def fix_url(url: str, base_scheme: str = "https:") -> str:
     if not url or not isinstance(url,str):  # 如果url为空，则返回None
         return url
-    
-    """将不完整的URL（如 //example.com）转换为完整URL（如 https://example.com）"""
-    if url.startswith(("http://", "https://")):
-        return url  # 已经是合法URL，直接返回
-    return urljoin(base_scheme, url)  # 拼接协议
+    parsed_url = urlparse(url)
+    if not parsed_url.scheme in ["http", "https"]:
+        return urljoin(base_scheme, url)
+    return url
+    # """将不完整的URL（如 //example.com）转换为完整URL（如 https://example.com）"""
+    # if url.startswith(("http://", "https://")):
+    #     return url  # 已经是合法URL，直接返回
+    # return urljoin(base_scheme, url)  # 拼接协议
 
 def get_homepage_url(url):
     """

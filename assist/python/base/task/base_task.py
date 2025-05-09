@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from com_log import logger_helper,UpdateTimeType
 from com_decorator import exception_decorator
 from except_tools import except_stack
-
+import queue 
 
 #生产者-消费者模型(一个输入队列，一个输出队列)
 class TaskBase():
@@ -32,14 +32,14 @@ class TaskBase():
         return self._logger
         
     @property
-    def Stopped(self)->bool:
+    def stopped(self)->bool:
         return  not self._stop_event or self._stop_event.is_set()
     
-    def Stop(self):
+    def stop(self):
         if self._stop_event:
             self._stop_event.set()
             
-    def ReStart(self):
+    def reStart(self):
         if self._stop_event:
             self._stop_event.clear()
     
@@ -49,7 +49,7 @@ class TaskBase():
     
     @property
     def Valid(self)->bool:
-        return not(self.Stopped and self.InputValid and self._input_queue.empty())
+        return not(self.stopped and self.InputValid and self._input_queue.empty())
 
     @property
     def InputValid(self)->bool:
@@ -76,7 +76,12 @@ class TaskBase():
     @property
     def is_output_mutiprocess(self):
         return self.check_output_type(multiprocessing.Queue)
-
+    @property
+    def is_input_threading(self):
+        return self.check_input_type(queue.Queue)
+    @property
+    def is_output_threading(self):
+        return self.check_output_type(queue.Queue)
     @property
     def input_queue(self):
         return self._input_queue
@@ -107,7 +112,16 @@ class TaskBase():
         self._out_stop_event=event
     
 
-    
+    # def put_out(self,data):
+    #     if self.OutputValid:
+    #         if self.is_output_coroutine:
+    #             self._output_queue.put_nowait(data)
+    #         elif self.is_output_mutiprocess or self.is_output_threading:
+    #             self._output_queue.put(data)
+    #         else:
+    #             self._logger.error("输出队列类型错误",update_time_type=UpdateTimeType.ALL)
+    #     else:
+    #         self._logger.error()
     
 
 

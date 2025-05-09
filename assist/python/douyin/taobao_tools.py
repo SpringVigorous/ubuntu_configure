@@ -26,6 +26,7 @@ from base import (
     concat_unique,
     get_param_from_url,
     write_to_json,
+    except_stack,
     
 )
 import pandas as pd
@@ -46,7 +47,19 @@ shop_id,
 "vagueSold365",
 ])
 
+dest_file_patern=re.compile(r'^(\d+).*$',re.DOTALL)
+def dest_file_path(dir_name:str,file_name:str):
+    org_name=Path(file_name).stem
+    match= dest_file_patern.search(org_name)
+    dest_dir=dir_name
+    if match:
+        sub_dir_name=match.group(1)
+        dest_dir=os.path.join(dir_name,sub_dir_name)
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir, exist_ok=True)
+        
 
+    return os.path.join(dest_dir,file_name)
 
 def random_sleep(min_time=3,max_time=15,logger:logger_helper=None):
     sleep_time=random.uniform(min_time, max_time)
@@ -197,7 +210,7 @@ def org_main_lst(org_data:dict)->list:
     id=item[item_id]
     urls=[fix_url(url) for url in pic_url]
 
-    return [{item_id:id,"pic_url":url,"type":0,num_id:-1} for url in urls]
+    return [{item_id:id,pic_url_id:url,type_id:0,num_id:-1,pic_name_id:""} for url in urls]
 def json_main_df():
     results=[]
     
@@ -264,7 +277,7 @@ def org_desc_lst(json_data:dict,userid:str=None)->list[dict]:
             #制式图片，
             continue
         
-        result_item={item_id:itemId,"pic_url":url,"type":1,num_id:-1} 
+        result_item={item_id:itemId,pic_url_id:url,type_id:1,num_id:-1} 
         
         
         result.append(result_item )
@@ -290,7 +303,7 @@ def org_desc_dict_lst(html_content,id)->list:
 
     # 提取 src 属性
     img_srcs = [img['data-src'] if   'data-src' in img.attrs else img["src"] for img in img_tags if 'src' in img.attrs or 'data-src' in img.attrs]
-    return [{item_id:id,"pic_url":url,"type":1,num_id:-1} for url in img_srcs]
+    return [{item_id:id,pic_url_id:url,type_id:1,num_id:-1,pic_name_id:""} for url in img_srcs]
 
 def xml_desc_df():
     results=[]
@@ -335,12 +348,18 @@ def arrage_product(df:pd.DataFrame,id):
     return df
 
 
+def get_pic_name(product_num:int,type:int,index:int,fix_count:int=3)->str:
+    return f"{product_num:0{fix_count}}_{type}_{index:03}"
 
-def arrange_pic(df:pd.DataFrame,id_dict):
-    df=update_col_nums(df,[item_id,"type"],num_id)
-    df[name_id]=df.apply(lambda x:f"{id_dict.get(x[item_id])}_{x['type']}_{int(x[num_id]):03}",axis=1)
 
+def arrange_pic(df:pd.DataFrame,id_dict:dict,fix_num:int=3):
+    df=update_col_nums(df,[item_id,type_id],num_id)
+    # df[name_id]=df.apply(lambda x:f"{id_dict.get(x[item_id]):0{good_num}}_{x['type']}_{int(x[num_id]):03}",axis=1)
+    df[name_id]=df.apply(lambda x:get_pic_name(id_dict.get(x[item_id],-1),int(x['type']),int(x[num_id]),fix_num),axis=1)
     return df
+
+
+
 
 
 def download_pics(df:pd.DataFrame,cache_thread:ThreadPool,ocr_lst,headers):
@@ -363,7 +382,7 @@ def download_pics(df:pd.DataFrame,cache_thread:ThreadPool,ocr_lst,headers):
         try:
             if download_sync(url,dest_path,headers=headers):
                 
-                ocr_path= os.path.join(ocr_pic_dir, Path(dest_path).name)
+                ocr_path= dest_file_path(ocr_pic_dir, Path(dest_path).name)
                 if os.path.exists(ocr_path):
                     return
 
@@ -375,14 +394,57 @@ def download_pics(df:pd.DataFrame,cache_thread:ThreadPool,ocr_lst,headers):
         
     
     for index,row in df.iterrows():
-        url=row["pic_url"]
+        url=row[pic_url_id]
         if not url:
             continue
         name=row[name_id]
         if not url or not name:
             continue
-        file_path=os.path.join(org_pic_dir,f"{name}.jpg")
+        file_path=dest_file_path(org_pic_dir,f"{name}.jpg")
         cache_thread.submit(_download,url,file_path)
     
 
-
+#从主图信息中提取sku信息
+def sku_infos_from_main(json_data: dict) -> list:
+    """
+    从 JSON 数据中安全提取 image 和 name 字段
+    :param json_data: 输入的 JSON 字典
+    :return: 包含有效数据的 DataFrame
+    """
+    if not json_data:
+        return
+    data=json_data.get("data", {})
+    if not data:
+        return
+    itemId=json_data[item_id]
+    
+    extracted_data = []
+    
+    # 安全层级检查
+    sku_base = data.get("skuBase", {})
+    props = sku_base.get("props", [])
+    
+    for prop in props:
+        # 检查 values 是否存在且为列表
+        values = prop.get("values", [])
+        if not isinstance(values, list):
+            continue
+            
+        for value in values:
+            # 安全提取字段
+            image = value.get("image", "")
+            name = value.get("name", "")
+            
+            # 输入过滤：跳过空值
+            if not image or not name:
+                continue
+            
+            extracted_data.append({
+                item_id:itemId,
+                pic_url_id: image,
+                pic_name_id: name.strip(),  # 去除前后空格
+                type_id:3,
+                num_id:-1,
+            })
+    
+    return extracted_data

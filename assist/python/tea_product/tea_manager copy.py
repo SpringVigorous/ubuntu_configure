@@ -5,6 +5,22 @@ import os
 
 from contextlib import contextmanager
 from datetime import datetime
+
+
+
+import sys
+
+from pathlib import Path
+
+
+
+root_path=Path(__file__).parent.parent.resolve()
+sys.path.append(str(root_path ))
+sys.path.append( os.path.join(root_path,'base') )
+
+
+from base import logger_helper,UpdateTimeType,except_stack
+
 """系统特点
 ​​完整的CRUD操作​​：所有核心表都有增删改查功能
 ​​撤销/回滚支持​​：通过操作栈记录所有变更，支持撤销
@@ -29,6 +45,9 @@ class TeaInventorySystem:
         self.operation_stack = []  # 用于撤销操作的栈
         self.port = port  # 存储端口参数
         self.pool_size = pool_size
+        
+        self.logger=logger_helper("数据中心","茶饮数据库")
+        
         try:
             self.pool = mysql.connector.pooling.MySQLConnectionPool(
                 pool_name="tea_pool",
@@ -43,7 +62,7 @@ class TeaInventorySystem:
             # 验证连接池
             self._test_pool()
         except Error as e:
-            print(f"连接池初始化失败: {e}")
+            self.logger.error("异常",f"连接池初始化失败: {except_stack()}")
             raise
         self._initialize_database()
 
@@ -71,7 +90,7 @@ class TeaInventorySystem:
                 
             yield conn
         except Error as e:
-            print(f"数据库连接错误: {e}")
+            self.logger.error("异常",f"数据库连接错误:  {except_stack()}")
             raise
         finally:
             if conn is not None:
@@ -79,8 +98,28 @@ class TeaInventorySystem:
                     if hasattr(conn, 'is_connected') and conn.is_connected():
                         conn.close()
                 except Exception as e:
-                     print(f"关闭连接时出错:: {e}")
+                     self.logger.error("异常",f"关闭连接时出错::  {except_stack()}")
         
+    #数据库操作模版函数
+    def def_operate_func(self, body_fun,error_content:str):
+        """添加新药材"""
+        with self._get_connection() as conn:
+            if not conn:
+                return None
+                
+            try:
+                cursor = conn.cursor()
+                val=body_fun(cursor)
+                conn.commit()
+                return val
+            except Error as e:
+                conn.rollback()
+                self.logger.warn("失败",f"{error_content}失败:  {except_stack()}")
+                return None
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
         
 
     def _create_tables_from_sql_file(self):
@@ -109,11 +148,11 @@ class TeaInventorySystem:
                 conn.commit()
                 
             except FileNotFoundError:
-                print(f"错误: SQL文件不存在 - {sql_file_path}")
+                self.logger.error("异常",f"错误: SQL文件不存在 - {sql_file_path}")
                 raise
             except Error as e:
                 conn.rollback()
-                print(f"执行建表语句失败: {e}")
+                self.logger.error("异常",f"执行建表语句失败:  {except_stack()}")
                 raise
             finally:
                 if cursor:
@@ -130,10 +169,10 @@ class TeaInventorySystem:
                 conn.database = 'medical_product'
                 # 从文件创建表
                 self._create_tables_from_sql_file()
-                print("数据库初始化完成")
+                self.logger.info("成功","数据库初始化完成")
                 
             except Error as e:
-                print(f"数据库初始化失败: {e}")
+                self.logger.error("异常",f"数据库初始化失败:  {except_stack()}")
                 raise
             finally:
                 if cursor:
@@ -141,8 +180,25 @@ class TeaInventorySystem:
 # 2. 增删改查(CRUD)功能
 
     # ---- 药材管理 ----
-    def add_herb(self, name: str, scientific_name: str = "", specification: str = "", 
-                unit: str = "克", quality_standard: str = "") -> Optional[int]:
+    def add_herb_func(self, name: str , specification: str = "",scientific_name: str = "", 
+                unit: str = "g", quality_standard: str = "高级",is_active:int=1,is_default:int =0,shelf_life:int=365) -> Optional[int]:
+        """添加新药材"""
+        
+        def body_fun(cursor):
+            if not scientific_name:
+                scientific_name = name
+                self.logger.warn("警告",f"未输入学名，使用通用名({name})作为学名")
+            cursor.execute(
+                "INSERT INTO herbs (herb_name, scientific_name, specification, unit, quality_standard ,is_active,is_default,shelf_life) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (name, scientific_name, specification, unit, quality_standard,is_active,is_default,shelf_life)
+            )
+            return  cursor.lastrowid
+        return self.def_operate_func(body_fun,"添加药材")
+
+    # ---- 药材管理 ----
+    def add_herb(self, name: str , specification: str = "",scientific_name: str = "", 
+                unit: str = "g", quality_standard: str = "高级",is_active:int=1,is_default:int =0,shelf_life:int=365) -> Optional[int]:
         """添加新药材"""
         with self._get_connection() as conn:
             if not conn:
@@ -150,23 +206,97 @@ class TeaInventorySystem:
                 
             try:
                 cursor = conn.cursor()
+                if not scientific_name:
+                    scientific_name = name
+                    self.logger.warn("警告",f"未输入学名，使用通用名({name})作为学名")
                 cursor.execute(
-                    "INSERT INTO herbs (herb_name, scientific_name, specification, unit, quality_standard) "
+                    "INSERT INTO herbs (herb_name, scientific_name, specification, unit, quality_standard ,is_active,is_default,shelf_life) "
                     "VALUES (%s, %s, %s, %s, %s)",
-                    (name, scientific_name, specification, unit, quality_standard)
+                    (name, scientific_name, specification, unit, quality_standard,is_active,is_default,shelf_life)
                 )
                 herb_id = cursor.lastrowid
                 conn.commit()
                 return herb_id
             except Error as e:
                 conn.rollback()
-                print(f"添加药材失败: {e}")
+                self.logger.warn("失败",f"添加药材失败:  {except_stack()}")
                 return None
             finally:
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
 
+            # ---- 药材管理 ----
+    def add_herbs_batch(self, herbs: List[dict]) -> int:
+        """批量添加药材"""
+        with self._get_connection() as conn:
+            if not conn:
+                return 0
+            cursor = None
+            try:
+                cursor = conn.cursor()
+                params = []
+                missing_sci_names = set()  # 记录未提供学名的药材名
+                
+                # 处理每条药材数据
+                for herb in herbs:
+                    # 校验必要字段
+                    name = herb.get("name")
+                    if not name:
+                        continue  # 跳过无药材名的记录
+                    
+                    # 处理学名默认值
+                    sci_name = herb.get("scientific_name", "")
+                    if not sci_name:
+                        sci_name = name
+                        missing_sci_names.add(name)
+                    
+                    # 填充其他字段的默认值
+                    spec = herb.get("specification", "")
+                    unit = herb.get("unit", "g")
+                    quality = herb.get("quality_standard", "高级")
+                    is_active = herb.get("is_active", 1)
+                    is_default = herb.get("is_default", 0)
+                    shelf_life = herb.get("shelf_life", 365)
+                    
+                    # 添加参数列表
+                    params.append((
+                        name, sci_name, spec, unit, quality, 
+                        is_active, is_default, shelf_life
+                    ))
+                
+                # 无有效数据时直接返回
+                if not params:
+                    return 0
+                
+                # 统一提示未提供学名的记录
+                if missing_sci_names:
+                    names = "、".join(missing_sci_names)
+                    self.logger.warn("警告", f"以下药材未输入学名，已自动填充通用名: {names}")
+                
+                # 执行批量插入
+                cursor.executemany(
+                    """
+                    INSERT INTO herbs (
+                        herb_name, scientific_name, specification, 
+                        unit, quality_standard, is_active, is_default, shelf_life
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    params
+                )
+                conn.commit()
+                return cursor.rowcount  # 返回成功插入的行数
+            
+            except Error as e:
+                conn.rollback()
+                self.logger.error("失败", f"批量插入药材失败: {e}\n{except_stack()}")
+                return 0
+            
+            finally:
+                if cursor and conn.is_connected():
+                    cursor.close()
+                    conn.close()
+        
     def get_herb_id_by_name(self, name: str, specification: str = "") -> Optional[int]:
         """根据药材名称和规格获取ID"""
         with self._get_connection() as conn:
@@ -186,7 +316,7 @@ class TeaInventorySystem:
                 result = cursor.fetchone()
                 return result[0] if result else None
             except Error as e:
-                print(f"查询药材ID失败: {e}")
+                self.logger.warn("失败",f"查询药材ID失败:  {except_stack()}")
                 return None
             finally:
                 if conn.is_connected():
@@ -213,7 +343,7 @@ class TeaInventorySystem:
                 return cursor.rowcount > 0
             except Error as e:
                 conn.rollback()
-                print(f"更新药材失败: {e}")
+                self.logger.warn("失败",f"更新药材失败:  {except_stack()}")
                 return False
             finally:
                 if conn.is_connected():
@@ -244,7 +374,7 @@ class TeaInventorySystem:
                 return formula_id
             except Error as e:
                 conn.rollback()
-                print(f"添加配方失败: {e}")
+                self.logger.warn("失败",f"添加配方失败:  {except_stack()}")
                 return None
             finally:
                 if conn.is_connected():
@@ -277,7 +407,7 @@ class TeaInventorySystem:
                 return True
             except Error as e:
                 conn.rollback()
-                print(f"添加配方成分失败: {e}")
+                self.logger.warn("失败",f"添加配方成分失败:  {except_stack()}")
                 return False
             finally:
                 if conn.is_connected():
@@ -336,7 +466,7 @@ class TeaInventorySystem:
                 return True
             except Error as e:
                 conn.rollback()
-                print(f"撤销操作失败: {e}")
+                self.logger.warn("失败",f"撤销操作失败:  {except_stack()}")
                 return False
             finally:
                 if conn.is_connected():
@@ -357,7 +487,7 @@ class TeaInventorySystem:
                 )
                 return cursor.fetchall()
             except Error as e:
-                print(f"获取药材列表失败: {e}")
+                self.logger.warn("失败",f"获取药材列表失败:  {except_stack()}")
                 return []
             finally:
                 if conn.is_connected():
@@ -377,7 +507,7 @@ class TeaInventorySystem:
                 )
                 return cursor.fetchall()
             except Error as e:
-                print(f"获取配方列表失败: {e}")
+                self.logger.warn("失败",f"获取配方列表失败:  {except_stack()}")
                 return []
             finally:
                 if conn.is_connected():
@@ -430,7 +560,7 @@ class TeaInventorySystem:
                 return True
             except Error as e:
                 conn.rollback()
-                print(f"药材入库失败: {e}")
+                self.logger.warn("失败",f"药材入库失败:  {except_stack()}")
                 return False
             finally:
                 if conn.is_connected():

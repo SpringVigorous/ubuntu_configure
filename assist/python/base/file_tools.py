@@ -304,7 +304,7 @@ def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
     download_logger.trace("开始")
 
     start_time=time.time()
-    content=fetch_sync(url,2,timeout=300,**kwargs)
+    content=fetch_sync(url,2,timeout=20,**kwargs)
     if not content:
         download_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
@@ -439,6 +439,24 @@ def get_next_filename(folder_path, base_name, file_extension:str):
         index += 1
 def get_next_filepath(folder_path, base_name, file_extension:str):
     return os.path.join(folder_path, get_next_filename(folder_path, base_name, file_extension))
+
+
+#针对json文件包含Unicode 字符，需要进行解码然后再输出到源文件中，便于后续查看
+def prettey_json_file(json_file_path, encoding='utf-8'):
+
+    json_data = None
+
+    with open(json_file_path, 'r', encoding=encoding) as file:
+        json_data = json.load(file)
+
+    if not json_data:
+        return
+    
+    with open(json_file_path, 'w', encoding=encoding) as file:
+        json.dump(json_data, ensure_ascii=False,indent=4)
+        
+        
+
 if __name__ == '__main__':
 
     replace_tuples=[

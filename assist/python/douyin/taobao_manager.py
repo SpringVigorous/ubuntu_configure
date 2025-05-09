@@ -3,7 +3,7 @@
 from pathlib import Path
 import os
 from typing import Callable
-
+import numpy as np  # 用于条件判断
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
@@ -30,7 +30,11 @@ from base import (
     get_attr,
     except_stack,
     exception_decorator,
-    
+    jpg_files,
+    unique,
+    path_equal,
+    json_files,
+    read_from_json_utf8_sig
 )
 import pandas as pd
 from taobao_config import *
@@ -204,8 +208,12 @@ class tb_manager():
             
             # print(self._pic_df)
                 
-            self._pic_df,pic_df=self._update_df(self.pic_df,pic_df,keys=[pic_url_id],arrage_fun=_arrage_pic,
+            result=self._update_df(self.pic_df,pic_df,keys=[pic_url_id],arrage_fun=_arrage_pic,
                                                 new_data_func=None)
+            if not result:
+                return pd.DataFrame()
+            
+            self._pic_df,pic_df=result
             return pic_df
     #返回  【更新后数据，新增的数据】：pd.DataFrame
     def update_ocr_df(self,ocr_df:pd.DataFrame):
@@ -213,9 +221,12 @@ class tb_manager():
             
             # print(self.ocr_df)
             # print(ocr_df)
+            def sort_ocr_df(df:pd.DataFrame)->pd.DataFrame:
+                return df.sort_values(by=[name_id],ascending=True)
+            
             
             self._ocr_df,ocr_df=self._update_df(self.ocr_df,ocr_df,keys=[ocr_text_id],
-                                                arrage_fun=None,
+                                                arrage_fun=sort_ocr_df,
                                                 new_data_func=None)
             return ocr_df
     
@@ -263,7 +274,180 @@ class tb_manager():
             
         return [result_df,cut_df]
 
+    def summary_df(self)->pd.DataFrame:
+        with self._lock:
+            pic_df=self.pic_df.groupby([item_id, type_id]).size()
+            summary_df = pic_df.reset_index(name='counts')
+            # 将 type 的 0 和 1 转换为两列
+            result_df = (summary_df.pivot(index="itemId", columns="type", values="counts")
+                        .fillna(0)  # 填充缺失值为0（处理没有对应type的情况）
+                        .rename(columns=lambda x: f"{x}-count")  # 动态生成列名（例如 0-count, 1-count, 2-count）
+                        .reset_index()  # 将 itemId 从索引恢复为普通列
+                        )
 
+            # 添加 lost 列
+            result_df["lost"] = np.where(
+                (result_df["0-count"] > 2) & (result_df["1-count"] > 3),  # 同时满足两个条件
+                0,  # 条件为真时返回 0
+                1   # 条件为假时返回 1
+            )
+            result_df=pd.merge(self.product_df,result_df,on=item_id,how="outer")
+            
+            
+            if title_except_flags:
+                # 使用正则表达式过滤不包含指定关键词的行
+                mask=result_df['title'].str.contains('|'.join(title_except_flags), regex=True, case=False, na=False)
+                result_df = result_df[~mask]
+            
+            return result_df.sort_values(by=[num_id],ascending=True)
+            pass
+            # return self.product_df[self.product_df[item_id]==item_id]
+        
+        
+        pass
+    def update_sku_pic_from_cache_json(self)->pd.DataFrame:
+        
+        result_df=pd.DataFrame()
+        
+        sku_lst=[]
+        for file in json_files(main_dir):
+            data=read_from_json_utf8_sig(file)
+            if not data:
+                continue
+            lst=sku_infos_from_main(data)
+            if lst:
+                sku_lst.extend(lst)
+        if not sku_lst:
+            return result_df
+        
+        product_df=pd.DataFrame(sku_lst)
+        product_df[item_id]=product_df[item_id].astype(str)
+        result_df=self.update_pic_df(product_df)
+        return result_df
+
+
+    @exception_decorator(error_state=False)
+    def get_undone_df(self)->list[pd.DataFrame] :
+        
+        """获取所有产品列表"""
+        download_pic_nums=[Path(file_path).stem for file_path in jpg_files(org_pic_dir)]
+        #爬取不完全的，即图片信息仅有个别几张的
+        summary_df=self.summary_df()
+        #skuinfo
+        sku_df=self.update_sku_pic_from_cache_json() if fetch_sku_from_cache else pd.DataFrame()
+        
+        
+        with self._lock:
+            #未下载的
+            pic_df=self.pic_df
+            mask=pic_df[name_id].isin( filter(lambda x:x,download_pic_nums))
+            undownload_df=pic_df[~mask].copy()
+            if not sku_df.empty:
+                if not undownload_df.empty:
+                    undownload_df=pd.concat([undownload_df,sku_df])
+                else:
+                    undownload_df=sku_df
+            
+            #未识别的
+            downloaded_df=pic_df[mask]
+            unocr_df=sub_df(downloaded_df,self.ocr_df,keys=name_id)
+            
+            #没有爬取详情的
+            hasDetail_df=pic_df.drop_duplicates(subset=[item_id],ignore_index=True)
+            nodetail_df=sub_df(self.product_df,hasDetail_df,keys=item_id)
+            
+
+            if not summary_df.empty and force_update:
+                summary_df=summary_df[summary_df['lost']>0]
+                if nodetail_df.empty:
+                    nodetail_df=summary_df
+                else:
+                    summary_df=summary_df[nodetail_df.columns.to_list()] 
+                    odetail_df=concat_dfs(nodetail_df,summary_df)
+            
+            return [nodetail_df,undownload_df,unocr_df]
+        
+
+    @exception_decorator(error_state=False)
+    def rename_pic_name(self,fix_count:int=3)->bool:
+        
+        logger=self.logger
+        logger.update_target("重命名图片",f"产品编号固定位:{fix_count}个字符")
+        
+        logger.trace("开始")
+        def get_new_name(name:str):
+            if not name:return name
+            cur_path=Path(name)
+            nums=[int(num) for num in cur_path.stem.split("_")]
+            new_name=get_pic_name(*nums[:3],fix_count)
+            return str(cur_path.with_stem(new_name))
+        
+        def rename_df(df:pd.DataFrame):
+            if df.empty:return True
+           
+            logger.trace(f"正在处理:{get_attr(df,"name")}",update_time_type=UpdateTimeType.STAGE)
+            dest_df=df[name_id].apply(lambda x:get_new_name(x))
+            if dest_df.empty:return 
+            df[name_id]=dest_df
+            
+            return True
+
+        
+        with self._lock:
+            if (rename_df(self.pic_df) and rename_df(self.ocr_df)):
+                #重新排序
+                self.ocr_df.sort_values(by=[name_id],ascending=True,inplace=True)
+            else:
+                return False
+
+        pic_files= jpg_files(org_pic_dir)
+        pic_files.extend(jpg_files(ocr_pic_dir))
+        for file_path in pic_files:
+            new_path=get_new_name(file_path)
+            if path_equal(new_path,file_path):
+                continue
+            
+            logger.trace(f"{file_path}->{new_path}")
+            os.rename(file_path,new_path)
+    
+        return True
+    
+    def classify_pics(self)->None:
+        logger=self.logger
+        logger.update_target("图片归类",f"以商品num进行分类")
+        logger.trace("开始")
+        def move_imp(pic_path:str,sub_dir_name:str):
+            cur_path=Path(pic_path)
+            if cur_path.parent.stem!=sub_dir_name:
+                return
+            new_path=dest_file_path(cur_path.parent,cur_path.name)
+            os.rename(pic_path,new_path)
+        def classify_pic_imp(pic_dir:str):
+            logger.update_target(detail=f"处理:{pic_dir}")
+            logger.update_time(UpdateTimeType.STAGE)
+            logger.trace("开始")
+            for pic_path in jpg_files(pic_dir):
+                move_imp(pic_path,Path(pic_dir).stem)
+            logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
+            
+        #移动图片
+        classify_pic_imp(org_pic_dir)
+        classify_pic_imp(ocr_pic_dir)
+
+    def separate_ocr_results(self):
+        with self._lock:
+            ocr_df=pd.merge(self.ocr_df,self.pic_df,on=[name_id],how="inner")
+            groups=ocr_df.groupby(item_id)
+            for name,group in groups:
+                if group.empty:
+                    continue
+                name=group[name_id].iloc[0].split("_")[0]
+                # group_df.to_excel(f"{group[0]}.xlsx",index=False)
+                
+                group.to_excel(dest_file_path(org_pic_dir,f"{name}-识别结果.xlsx"),index=False)
+                
+                
+                
 if __name__=="__main__":
     manager=tb_manager()
     from base import read_from_json_utf8_sig

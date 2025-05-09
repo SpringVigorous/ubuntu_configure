@@ -31,7 +31,11 @@ item_id="itemId"
 item_url_id="itemUrl"
 num_id="num"
 name_id="name"
+
+type_id="type"
+
 pic_url_id="pic_url"
+pic_name_id="pic_name"
 shop_name_id="shop_name"
 user_id="user_id"
 seller_id="seller_id"
@@ -46,3 +50,11 @@ sleep_time=5
 goods_type=1
 shop_type=2
 detail_type=3
+
+fetch_detail_count=10
+fetch_detail_sleep_time=30
+
+title_except_flags=["链接","边角","积分兑换"]
+
+force_update=False
+fetch_sku_from_cache=False
