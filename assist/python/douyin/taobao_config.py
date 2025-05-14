@@ -41,6 +41,7 @@ user_id="user_id"
 seller_id="seller_id"
 home_url_id="home_url"
 goods_name_id="goods_name"
+title_id="title"
 ocr_text_id="text"
 org_pic_path_id="org_pic_path"
 ocr_pic_path_id="ocr_pic_path"
@@ -57,4 +58,4 @@ fetch_detail_sleep_time=30
 title_except_flags=["链接","边角","积分兑换"]
 
 force_update=False
-fetch_sku_from_cache=False
+fetch_sku_from_cache=True

@@ -465,7 +465,7 @@ class DownloadPics(ThreadTask):
 
         class_name=self.__class__.__name__
         
-        self.cache_thread=ThreadPool(thread_name=class_name)
+        self.cache_thread=ThreadPool(root_thread_name=class_name)
         self.set_name(class_name)
     @exception_decorator()
     def _handle_data(self, data):
@@ -474,7 +474,7 @@ class DownloadPics(ThreadTask):
     
 
     def _final_run_after(self):
-        self.cache_thread.shutdown()
+        self.cache_thread.join()
         
     def _download_by_df(self,data)->list[str]:
         df:pd.DataFrame=data[1]
@@ -512,7 +512,7 @@ class OcrPics(ThreadTask):
         super().__init__(input_queue,stop_event=stop_event,output_queue=output_queue,out_stop_event=out_stop_event)
         self.manager=tb_manager()
         class_name=self.__class__.__name__
-        self.cache_thread=ThreadPool(thread_name=class_name)
+        self.cache_thread=ThreadPool(root_thread_name=class_name)
         self.set_name(class_name)
         self._lock=threading.Lock()
         self._ocr_lst:list[str]=[]
@@ -525,7 +525,7 @@ class OcrPics(ThreadTask):
         return self._ocr_pic(data)
         
     def _final_run_after(self):
-        self.cache_thread.shutdown()
+        self.cache_thread.join()
         with self._lock:
             if not self._ocr_lst:
                 return

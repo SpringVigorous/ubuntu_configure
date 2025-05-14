@@ -59,24 +59,100 @@ def delete_files(root_dir, exclude_dirs=None, file_patterns=None):
 def check_dir(dir_path):
     if os.path.exists(dir_path):
         return
-    os.makedirs(dir_path,exist_ok=True)        
-                
+    os.makedirs(dir_path,exist_ok=True)     
+       
+# 获取文件夹大小
+def get_folder_size(folder_path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            try:
+                # 获取文件大小并累加到总大小
+                total_size += os.path.getsize(file_path)
+            except (OSError, PermissionError) as e:
+                print(f"无法访问 {file_path}: {e}")
+    return total_size
+
+# 格式化字节大小
+def format_size(size_bytes):
+    """将字节数转换为更易读的格式"""
+    units = ['B', 'KB', 'MB', 'GB', 'TB']
+    unit_index = 0
+    while size_bytes >= 1024 and unit_index < len(units) - 1:
+        size_bytes /= 1024
+        unit_index += 1
+    return f"{size_bytes:.2f} {units[unit_index]}"
+
+
+
+
+#获取文件夹及各个子目录的 大小
+def get_directory_sizes(start_path):
+    """
+    递归获取目录及其子文件/子目录的大小，结果存储为字典：
+    - 键：文件或目录的绝对路径
+    - 值：对应文件/目录的大小（单位：字节）
+    """
+    size_dict = {}
+    
+    def calculate_size(path):
+        total_size = 0
+        try:
+            for entry in os.scandir(path):
+                entry_path = entry.path  # 获取绝对路径
+                try:
+                    if entry.is_file(follow_symlinks=False):
+                        # 记录文件大小
+                        file_size = entry.stat(follow_symlinks=False).st_size
+                        size_dict[entry_path] = file_size
+                        total_size += file_size
+                    elif entry.is_dir(follow_symlinks=False):
+                        # 递归计算子目录大小
+                        dir_size = calculate_size(entry_path)
+                        size_dict[entry_path] = dir_size
+                        total_size += dir_size
+                except (PermissionError, FileNotFoundError) as e:
+                    print(f"跳过无权限条目: {entry_path} ({e})")
+                    continue
+        except (PermissionError, FileNotFoundError) as e:
+            print(f"无法访问目录: {path} ({e})")
+            return 0
+        
+        # 记录当前目录总大小
+        size_dict[path] = total_size
+        return total_size
+    
+    # 从起始路径开始计算
+    calculate_size(os.path.abspath(start_path))
+    return size_dict 
+
+
+
 if __name__ == '__main__':
     
     
+
+    results=get_directory_sizes(r"C:\Users\Administrator\AppData")
     
-    # 遍历删除debug.release文件夹
-    # 设置根目录和排除目录
-    root_directory = os.path.dirname(os.path.abspath(__file__))
-    exclude_directories = ['.git']
+    import pandas as pd
+    df=pd.DataFrame([{"cur_path":key,"size":val} for key,val in  results.items() if os.path.isdir(key)])
+    df.to_excel("result.xlsx",index=False)
+    
+    
+    
+    # # 遍历删除debug.release文件夹
+    # # 设置根目录和排除目录
+    # root_directory = os.path.dirname(os.path.abspath(__file__))
+    # exclude_directories = ['.git']
 
-    # 删除 Debug 文件夹中的所有文件
-    delete_files(os.path.join(root_directory, 'Debug'), exclude_directories)
+    # # 删除 Debug 文件夹中的所有文件
+    # delete_files(os.path.join(root_directory, 'Debug'), exclude_directories)
 
-    # 删除 Release 文件夹中的所有文件
-    delete_files(os.path.join(root_directory, 'Release'), exclude_directories)
+    # # 删除 Release 文件夹中的所有文件
+    # delete_files(os.path.join(root_directory, 'Release'), exclude_directories)
 
-    # 删除 .ich 文件
-    delete_files(root_directory, exclude_directories, file_patterns=['.ich'])
+    # # 删除 .ich 文件
+    # delete_files(root_directory, exclude_directories, file_patterns=['.ich'])
 
-    input("按任意键继续...")
+    # input("按任意键继续...")

@@ -11,43 +11,45 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from com_log import logger_helper,UpdateTimeType
 
 class ThreadPool:
-    def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5,thread_name:str=""):
-        self.num_threads = num_threads  # 线程数量
-        self.task_queue = queue.Queue()  # 任务队列
-        self.stop_event = threading.Event()  # 停止事件
-        self.threads:list[threading.Thread] = []  # 线程列表
-        self.ideal_time=ideal_time
-        self.logger=logger_helper("ThreadPool","ThreadPool")
-        self.lock = threading.Lock()  # 保护线程列表的锁
+    def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5,root_thread_name:str=""):
+        self._num_threads = num_threads  # 线程数量
+        self._task_queue = queue.Queue()  # 任务队列
+        self._stop_event = threading.Event()  # 停止事件
+        self._threads:list[threading.Thread] = []  # 线程列表
+        self._ideal_time=ideal_time
+        self._logger=logger_helper("ThreadPool","ThreadPool")
+        self._lock = threading.Lock()  # 保护线程列表的锁
+        
         self._thread_index:int=1
-        self._thread_name:str=thread_name
+        self._thread_name:str=root_thread_name
       
+    @property
     def thread_name(self):
         name=self._thread_name if self._thread_name else "线程"
         return f"{name}_{self._thread_index:02}"
     
     @property
     def has_init_thread(self)->bool:
-        return self._thread_index>=self.num_threads
+        return self._thread_index>=self._num_threads
     
     def start(self):
         """ 启动初始线程 """
-        with self.lock:
-            for _ in range(self.num_threads):
+        with self._lock:
+            for _ in range(self._num_threads):
                 self._start_thread()
                 
 
     def _start_thread(self):
         """ 启动单个线程并加入列表 """
-        thread = threading.Thread(target=self._worker_loop,name=self.thread_name())
+        thread = threading.Thread(target=self._worker_loop,name=self.thread_name)
         thread.start()
-        self.threads.append(thread)
+        self._threads.append(thread)
         self._thread_index+=1
-        self.logger.trace("成功添加线程",thread.name)
+        self._logger.trace("成功添加线程",thread.name)
         
 
     def submit(self, func, *args,callback: Callable[[Any, Exception], None] = None, **kwargs):
-        self.task_queue.put((func, args, kwargs,callback))
+        self._task_queue.put((func, args, kwargs,callback))
         # """ 提交任务到队列 """
         # if not self.stop_event.is_set():
         #     self.task_queue.put((func, args, kwargs,callback))
@@ -55,11 +57,14 @@ class ThreadPool:
         #     raise RuntimeError("Cannot submit tasks after shutdown")
 
     def _pop_data(self):
+        if not self.has_init_thread:
+            self.start()
+        
         try:
             # 非阻塞获取任务，最多等待1秒
-            return self.task_queue.get(block=True, timeout=1)
+            return self._task_queue.get(block=True, timeout=1)
         except queue.Empty:
-            time.sleep(self.ideal_time)
+            time.sleep(self._ideal_time)
               # 队列为空时继续循环
             return 
 
@@ -71,7 +76,7 @@ class ThreadPool:
         logger.trace("线程开始",update_time_type=UpdateTimeType.ALL)
         while True:
             # 退出条件：停止事件被触发且队列为空
-            if self.stop_event.is_set() and self.task_queue.empty():
+            if self._stop_event.is_set() and self._task_queue.empty():
                 break
 
             data=self._pop_data()
@@ -104,36 +109,43 @@ class ThreadPool:
                         logger.info("回调完成",update_time_type=UpdateTimeType.STEP)
                     except Exception as e:
                         logger.error("回调异常",f"Callback failed: {e}")
-                        
-                self.task_queue.task_done()  # 标记任务完成
+                
+                #必须要标记下状态
+                self._task_queue.task_done()  # 标记任务完成
 
         logger.info("线程结束",update_time_type=UpdateTimeType.ALL)
 
-    def shutdown(self, wait=True):
+    def join(self, wait=True):
         """ 关闭线程池 """
-        self.stop_event.set()  # 触发停止事件
-        self.logger.info("触发停止事件",update_time_type=UpdateTimeType.STAGE)
+        self._stop_event.set()  # 触发停止事件
+        self._logger.info("触发停止事件",update_time_type=UpdateTimeType.STAGE)
         if wait:
-            self.task_queue.join()  # 等待所有任务完成
-            for thread in self.threads:
+            self._task_queue.join()  # 等待所有任务完成
+            for thread in self._threads:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
     def restart(self):
         """ 补充缺失的线程至目标数量 """
-        self.logger.info("恢复线程池",update_time_type=UpdateTimeType.STAGE)
+        self._logger.info("恢复线程池",update_time_type=UpdateTimeType.STAGE)
         
-        with self.lock:
+        with self._lock:
             
             # 1. 清除停止事件（关键改动）
-            self.stop_event.clear()
+            self._stop_event.clear()
             # 清理已退出的线程对象
-            self.threads = [t for t in self.threads if t.is_alive()]
+            self._threads = [t for t in self._threads if t.is_alive()]
             # 补充缺失的线程
-            current_threads = len(self.threads)
-            if current_threads < self.num_threads:
-                for _ in range(self.num_threads - current_threads):
+            current_threads = len(self._threads)
+            if current_threads < self._num_threads:
+                for _ in range(self._num_threads - current_threads):
                     self._start_thread()
-
+    def force_stop(self):
+        self._stop_event.set()  # 触发停止事件
+        with self._lock:
+            self._logger.info("强制退出，清空队列",f"剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
+            self._task_queue.clear()
+            self._task_queue.task_done()
+        
                 
 import random
 # 使用示例
@@ -169,7 +181,7 @@ if __name__ == "__main__":
     # 关闭后重置
     time.sleep(0.5)
     print("\nShutting down pool...")
-    pool.shutdown(wait=False)  # 非阻塞关闭
+    pool.join(wait=False)  # 非阻塞关闭
 
     time.sleep(2)
     print("Resetting pool...")
@@ -181,5 +193,5 @@ if __name__ == "__main__":
 
     # 再次关闭
     time.sleep(2)
-    pool.shutdown()
+    pool.join()
     print("All tasks completed")

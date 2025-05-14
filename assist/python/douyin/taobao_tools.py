@@ -61,6 +61,39 @@ def dest_file_path(dir_name:str,file_name:str):
 
     return os.path.join(dest_dir,file_name)
 
+
+
+def get_product_name_from_title(title:str)->str:
+    """
+    从文本中提取第一个中文中括号【】之间的内容
+    :param text: 输入文本（字符串）
+    :return: 第一个中括号内的内容（若无匹配则返回None）
+    """
+    quote_pattern = r'【(.*?)】'  # 匹配中文中括号并捕获中间内容
+    match = re.search(quote_pattern, title)
+    if match:
+        return match.group(1)
+    
+    title = re.sub(r'阿四出品|木槿茶坊', '', title)
+    title = re.sub(r'^\s*\|+\s*', '', title)
+    
+    # 正则表达式：匹配从开头到第一个空格或标点的部分
+    split_pattern = r'[^\s，。！？、；：“”‘’—《》….,!?;:\'"\-]+'
+    secs = re.findall(split_pattern, title)
+    
+    # 正则表达式：匹配从开头到第一个关键词的文本
+    flag_pattern = r'^.*?[茶粉干块糕水汤仁粥羹膏]'
+    
+    for sec in secs:
+        match = re.search(flag_pattern, sec)
+        if match:
+            return match.group(0)
+        
+    return 
+        
+    
+    
+
 def random_sleep(min_time=3,max_time=15,logger:logger_helper=None):
     sleep_time=random.uniform(min_time, max_time)
     time.sleep(sleep_time)

@@ -34,7 +34,8 @@ from base import (
     unique,
     path_equal,
     json_files,
-    read_from_json_utf8_sig
+    read_from_json_utf8_sig,
+    df_empty
 )
 import pandas as pd
 from taobao_config import *
@@ -171,14 +172,27 @@ class tb_manager():
         logger.info("完成",update_time_type=UpdateTimeType.STAGE)
             
             
+    @exception_decorator(error_state=False)
     def _save_xlsx_df(self):
+        logger=self.logger
+        logger.update_target("保存数据",xlsx_file)
+        logger.update_time(UpdateTimeType.STAGE)
+        logger.trace("开始")
+        pic_summary_df=self.summary_pic_df()
+        ocr_summary_df=self.summary_ocr_df()
+        
         with self._lock:
             with pd.ExcelWriter(xlsx_file,mode="w") as w:
                 self._shop_df.to_excel(w, sheet_name=shop_name, index=False)
                 self._product_df.to_excel(w, sheet_name=product_name, index=False)
                 self._pic_df.to_excel(w, sheet_name=pic_name, index=False)
                 self._ocr_df.to_excel(w, sheet_name=ocr_name, index=False)
+                if not pic_summary_df.empty:
+                    pic_summary_df.to_excel(w, sheet_name=f"{pic_name}_汇总", index=False)
+                if not ocr_summary_df.empty:
+                    ocr_summary_df.to_excel(w, sheet_name=f"{ocr_name}_汇总", index=False)
 
+        logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
 
     #更新：返回 更新后的数据，和新增的数据
     def update_shop_df(self,shop_df:pd.DataFrame)->pd.DataFrame:
@@ -225,7 +239,7 @@ class tb_manager():
                 return df.sort_values(by=[name_id],ascending=True)
             
             
-            self._ocr_df,ocr_df=self._update_df(self.ocr_df,ocr_df,keys=[ocr_text_id],
+            self._ocr_df,ocr_df=self._update_df(self.ocr_df,ocr_df,keys=[name_id],
                                                 arrage_fun=sort_ocr_df,
                                                 new_data_func=None)
             return ocr_df
@@ -274,37 +288,76 @@ class tb_manager():
             
         return [result_df,cut_df]
 
-    def summary_df(self)->pd.DataFrame:
+    def summary_pic_df(self)->pd.DataFrame:
         with self._lock:
             pic_df=self.pic_df.groupby([item_id, type_id]).size()
             summary_df = pic_df.reset_index(name='counts')
             # 将 type 的 0 和 1 转换为两列
-            result_df = (summary_df.pivot(index="itemId", columns="type", values="counts")
+            pic_summary_df = (summary_df.pivot(index="itemId", columns="type", values="counts")
                         .fillna(0)  # 填充缺失值为0（处理没有对应type的情况）
                         .rename(columns=lambda x: f"{x}-count")  # 动态生成列名（例如 0-count, 1-count, 2-count）
                         .reset_index()  # 将 itemId 从索引恢复为普通列
                         )
 
             # 添加 lost 列
-            result_df["lost"] = np.where(
-                (result_df["0-count"] > 2) & (result_df["1-count"] > 3),  # 同时满足两个条件
+            pic_summary_df["lost"] = np.where(
+                (pic_summary_df["0-count"] > 2) & (pic_summary_df["1-count"] > 3),  # 同时满足两个条件
                 0,  # 条件为真时返回 0
                 1   # 条件为假时返回 1
             )
-            result_df=pd.merge(self.product_df,result_df,on=item_id,how="outer")
+            pic_summary_df=pd.merge(self.product_df,pic_summary_df,on=item_id,how="outer")
             
             
             if title_except_flags:
                 # 使用正则表达式过滤不包含指定关键词的行
-                mask=result_df['title'].str.contains('|'.join(title_except_flags), regex=True, case=False, na=False)
-                result_df = result_df[~mask]
+                mask=pic_summary_df['title'].str.contains('|'.join(title_except_flags), regex=True, case=False, na=False)
+                pic_summary_df = pic_summary_df[~mask]
             
-            return result_df.sort_values(by=[num_id],ascending=True)
-            pass
-            # return self.product_df[self.product_df[item_id]==item_id]
+            return pic_summary_df.sort_values(by=[num_id],ascending=True)
+
+    def summary_ocr_df(self)->pd.DataFrame:
         
+        ocr_df=None
+        with self._lock:
+            if not self.ocr_df.empty:
+                ocr_df=self.ocr_df.copy()
+        if df_empty(ocr_df):
+            return pd.DataFrame()
         
-        pass
+
+        
+        # ocr_df["col_num"]=ocr_df.groupby(ocr_text_id).cumcount()
+
+        # # 使用 pivot 将 name 平铺到多列
+        # result = ocr_df.pivot_table(
+        #     index=ocr_text_id, 
+        #     columns="col_num", 
+        #     values=name_id, 
+        #     aggfunc="first"  # 保留第一个值，忽略重复
+        #     ).reset_index()
+
+        # # 重命名列（例如 name_0, name_1）
+        # result.columns = [ocr_text_id] + [f"{name_id}_{i}" for i in range(len(result.columns)-1)]
+        
+        # 生成唯一索引（text + 动态列号）
+        
+        mask=ocr_df[ocr_text_id].isna()
+        none_df=ocr_df[mask]
+        ocr_df=ocr_df[~mask]
+        ocr_df["col_num"] = ocr_df.groupby(ocr_text_id).cumcount()
+
+        # 设置多级索引并转换
+        result = (
+            ocr_df.set_index([ocr_text_id, "col_num"])[name_id]
+            .unstack()
+            .reset_index()
+            .rename_axis(columns=None)
+        )
+
+        # 重命名列
+        result.columns = [ocr_text_id] + [f"{name_id}_{i}" for i in range(result.shape[1]-1)]
+        return result.sort_values(by=f"{name_id}_0",ascending=True)
+    
     def update_sku_pic_from_cache_json(self)->pd.DataFrame:
         
         result_df=pd.DataFrame()
@@ -332,7 +385,7 @@ class tb_manager():
         """获取所有产品列表"""
         download_pic_nums=[Path(file_path).stem for file_path in jpg_files(org_pic_dir)]
         #爬取不完全的，即图片信息仅有个别几张的
-        summary_df=self.summary_df()
+        summary_df=self.summary_pic_df()
         #skuinfo
         sku_df=self.update_sku_pic_from_cache_json() if fetch_sku_from_cache else pd.DataFrame()
         
@@ -340,8 +393,10 @@ class tb_manager():
         with self._lock:
             #未下载的
             pic_df=self.pic_df
-            mask=pic_df[name_id].isin( filter(lambda x:x,download_pic_nums))
+            mask=pic_df[name_id].isin(filter(lambda x:x,download_pic_nums))
             undownload_df=pic_df[~mask].copy()
+            downloaded_df=pic_df[mask]
+            
             if not sku_df.empty:
                 if not undownload_df.empty:
                     undownload_df=pd.concat([undownload_df,sku_df])
@@ -349,7 +404,6 @@ class tb_manager():
                     undownload_df=sku_df
             
             #未识别的
-            downloaded_df=pic_df[mask]
             unocr_df=sub_df(downloaded_df,self.ocr_df,keys=name_id)
             
             #没有爬取详情的
@@ -446,7 +500,15 @@ class tb_manager():
                 
                 group.to_excel(dest_file_path(org_pic_dir,f"{name}-识别结果.xlsx"),index=False)
                 
-                
+    def init_product_df_product_name(self)->pd.DataFrame:   
+        with self._lock:
+            product_df=self.product_df
+            mask=product_df[goods_name_id].isna() 
+            dest_df=product_df[mask]
+            
+            product_df.loc[mask,goods_name_id]=dest_df[title_id].apply(lambda x:get_product_name_from_title(x))
+
+            return product_df
                 
 if __name__=="__main__":
     manager=tb_manager()
@@ -464,14 +526,14 @@ if __name__=="__main__":
     if shop_dict:
         shop_df=pd.DataFrame([shop_dict])
     
-    df=manager.update_shop_df(shop_df)
-    print(df)
+    ocr_df=manager.update_shop_df(shop_df)
+    print(ocr_df)
     print(pic_df)
     print(pic_df1)
     
     
-    df=manager.update_pic_df(pic_df)
-    print(df)
-    df=manager.update_pic_df(pic_df1)
-    print(df)
+    ocr_df=manager.update_pic_df(pic_df)
+    print(ocr_df)
+    ocr_df=manager.update_pic_df(pic_df1)
+    print(ocr_df)
     

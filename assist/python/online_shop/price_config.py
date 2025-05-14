@@ -20,7 +20,8 @@ class TeaConfig:
         self.sub_dir=sub_dir
         self.product_medical_name="产品药材价格"
         self.product_price_name="产品价格"
-        self.medical_price_dict={}
+        #产品中的药材：购置的药材
+        self.medical_price_df_dict={}
         # self.init_data()
         
         pass
@@ -28,16 +29,32 @@ class TeaConfig:
     def sub_dir_path(self):
         return os.path.join(self.src_dir,self.sub_dir)
         
-        
-        
-    def medical_price(self,name):
-        if self.medical_price_dict.get(name,None):
-            return self.medical_price_dict.get(name)
+    #用最新的采购价格（即最后一个）
+    def medical_price_df(self,name)->pd.DataFrame:
+        df= self.medical_price_df_dict.get(name,None)
+        if not df_empty(df):
+            return self.medical_price_df_dict.get(name)
         else:
-            rows=find_values_by_col_val_contains(self.purchase_price_df,'产品',name,'单价').tolist()
-            val= rows[0] if len(rows)>0 else 0.0
-            self.medical_price_dict[name]=val
-            return val
+            df=find_by_col_val_contains(self.purchase_price_df,'产品',name)
+            self.medical_price_df_dict[name]=df
+            return df
+        
+    def medical_price_series(self,name)->pd.Series:
+        df=self.medical_price_df(name)
+        if df_empty(df):
+            return pd.Series()
+        else:
+            return df.iloc[-1]
+    #用最新的采购价格（即最后一个）
+    def medical_price(self,name):
+        
+        df=self.medical_price_series(name)
+        if df_empty(df):
+            return 0.0
+        else:
+            return df["单价"]
+        
+
             
     def remove_cache(self):
         detail_path= self.product_price_path

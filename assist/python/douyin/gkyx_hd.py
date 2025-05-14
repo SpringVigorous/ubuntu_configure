@@ -501,14 +501,14 @@ def main():
     loop_get_data(file_name,1000,1,last_message)
     org_json_stop_event.set()
     # save_json_thread.join()
-    thread_cache.shutdown()
+    thread_cache.join()
     
     thread_cache.restart()
     
     logger.info(f"获取结束",update_time_type=UpdateTimeType.STAGE)
 
     merge_json_to_xlsx(file_name)
-    thread_cache.shutdown()
+    thread_cache.join()
     
     logger.info(f"整理到excel",update_time_type=UpdateTimeType.STAGE)
     

@@ -34,26 +34,38 @@ def matches_by_col_val_contains(df, col_name,val,default_val=pd.Series()):
         log.error("异常",f"没有找到匹配的值，返回默认值{default_val}")
         # 返回默认值
         return default_val
-def find_values_by_col_val_contains(df, col_name,val,dest_name,default_val=pd.Series()):
+def find_by_col_val_contains(df, col_name,val,default_val=pd.DataFrame()):
 
 
-    log=logger_helper(f"模糊查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")
+    log=logger_helper(f"模糊查找:{val}",f"【{col_name}】列中查找")
     try:
         matches=matches_by_col_val_contains(df,col_name,val)
         if (matches==False).all():
-            log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
+            log.error("失败",f"没有找到匹配的值，返回默认值{default_val}")
             return default_val
         
         results= df.loc[matches, :]
         log.trace("成功",f"共【{results.shape[0]}】条：\n{results.to_string(index=False)}")
         # print(type(results))
-        return results[dest_name]
+        return results
     except:
         log.error("异常",f"没有找到匹配的值，返回默认值{default_val}")
         return default_val 
     
     
+def find_values_by_col_val_contains(df, col_name,val,dest_name,default_val=pd.Series()):
+    results= find_by_col_val_contains(df,col_name,val,default_val)
     
+    log=logger_helper(f"模糊查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列")
+    if df_empty(results):
+        return default_val
+    try:
+        return results[dest_name]
+    except:
+        log.error("异常",f"没有找到匹配的值，返回默认值{default_val}")
+        return default_val
+    
+
     
     
         
@@ -327,3 +339,5 @@ def get_attr(df:pd.DataFrame,attr_name:str)->str:
     if df is None:
         return None
     return df.attrs.get(attr_name)
+def df_empty(df:pd.DataFrame)->bool:
+    return df is None or df.empty

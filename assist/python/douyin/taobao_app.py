@@ -34,7 +34,7 @@ class TbApp():
         self.ocr_pic_queue=Queue()
         
         
-        self.cache_pool=ThreadPool(thread_name=class_name)
+        self.cache_pool=ThreadPool(root_thread_name=class_name)
         
         self.stop_shop_interact_event=threading.Event()
         stop_goods_interact_event=threading.Event()
@@ -59,8 +59,9 @@ class TbApp():
         self.thread_lst:list=[]
         
         
+        
         #开启缓冲池
-        self.cache_pool.start()
+        # self.cache_pool.start()
         
     @property
     def _msg_queque_dict(self):
@@ -78,12 +79,19 @@ class TbApp():
 
         
         #未识别图片
-        for _,row in unocr_df.iterrows():
-            name=f"{row[name_id]}.jpg"
-            org_pic=dest_file_path(org_pic_dir,name)
-            orc_pic=dest_file_path(ocr_pic_dir,name)
-            self.ocr_pic_queue.put((org_pic,orc_pic))
-        pass
+        if not unocr_df.empty:
+            
+            self.logger.trace(f"开始处理未识别图片",f"共{len(unocr_df)}个")
+            # index=0
+            for _,row in unocr_df.iterrows():
+                # if index>8:
+                #     break
+                # index+=1
+                name=f"{row[name_id]}.jpg"
+                org_pic=dest_file_path(org_pic_dir,name)
+                # orc_pic=dest_file_path(ocr_pic_dir,name)
+                self.ocr_pic_queue.put(org_pic)
+            pass
         
         #未下载图片
         if not undownload_df.empty:
@@ -94,9 +102,7 @@ class TbApp():
         if not nodetail_df.empty:
             urls=nodetail_df[item_url_id].tolist()
             self.send_msg(goods_type,urls)
-        # for  index,row in nodetail_df.iterrows():
-            # if index >2:
-            #     break
+
     def msg_queue(self,type):
         result=self._msg_queque_dict
         return result.get(type,None)
@@ -116,16 +122,21 @@ class TbApp():
             logger.trace("开始",update_time_type=UpdateTimeType.STEP) 
             
     
+
     pass
 
     @exception_decorator(error_state=False)
     def start(self):
+        
+        
+        
         self.interact_shop.start()
         self.interact_goods.start()
         self.handle_goods.start()
         self.handle_pics.start()
         self.download_pics.start()
         self.ocr_pics.start()
+        
         
         #停止标志
         self.stop_shop_interact_event.set()
@@ -152,9 +163,14 @@ class TbApp():
         tb_manager.destroy_instance()
     
     def stop_cache_pool(self):
-        self.cache_pool.shutdown()
+        self.cache_pool.join()
+        
+
+    
 def main():
     # tb=tb_manager()
+    # # tb.init_product_df_product_name()
+    # # tb._save_xlsx_df()
     
     #结果分别存储到各自文件夹中，可选
     # tb.separate_ocr_results()
@@ -167,13 +183,7 @@ def main():
     # # if tb.rename_pic_name(3):
     # #     tb._save_xlsx_df()
     
-    #汇总信息，统计各个产品有多少主图、详图、sku图
-    # df=tb.summary_df()
-    # if not  df.empty:
-    #     df.to_excel(os.path.join(db_dir,"summary.xlsx"),index=False)
-    
-    
-    
+
     # return
     
     
@@ -186,7 +196,7 @@ def main():
     # shop_urls=["https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",]
 
     app=TbApp()
-    # app.handle_nodone_task()
+    app.handle_nodone_task()
     try:
         # for url in goods_urls:
         #     manager.put((goods_type,url))
@@ -197,6 +207,7 @@ def main():
         app.start()
         # app.done()
         tb_manager()._save_xlsx_df()
+
         app.stop_cache_pool()
     except:
         pass

@@ -137,6 +137,9 @@ if __name__=="__main__":
     clear_folder(result_dir)
     
     config.init_data()
+    
+    #若是想知道单包药材价格多少，则这里直接退出即可
+    exit()
     # 获取 结果/小红书/产品规格.xlsx
     df=product_df(config,product_path)
 
