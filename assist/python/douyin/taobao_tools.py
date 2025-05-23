@@ -163,7 +163,7 @@ def org_shop_dict_from_product(org_data:dict)->dict:
    
     result={shop_name_id:name,home_url_id:home_url,user_id:userId,shop_id:shopId}
     return result
-def org_procduct(org_data:dict)->list[dict]:
+def org_product(org_data:dict)->list[dict]:
     if not org_data or "data" not in org_data:
         return 
     #店铺id
@@ -183,7 +183,7 @@ def org_procduct(org_data:dict)->list[dict]:
     return data
 
 def org_procduct_to_df(org_data:dict):
-    data=org_procduct(org_data)
+    data=org_product(org_data)
     if not data:
         return pd.DataFrame()
     df=pd.DataFrame(data)
@@ -396,7 +396,7 @@ def arrange_pic(df:pd.DataFrame,id_dict:dict,fix_num:int=3):
 
 
 def download_pics(df:pd.DataFrame,cache_thread:ThreadPool,ocr_lst,headers):
-    cache_thread.start()
+    # cache_thread._start()
     logger=logger_helper("下载图片")
     def _download(url,dest_path):
         

@@ -8,6 +8,7 @@ org_pic_dir=os.path.join(root_dir,"org_pic")
 ocr_pic_dir=os.path.join(root_dir,"ocr_pic")
 db_dir=os.path.join(root_dir,"数据")
 shop_dir=os.path.join(root_dir,"店铺")
+result_dir=os.path.join(root_dir,"结果")
 
 os.makedirs(desc_dir,exist_ok=True)
 os.makedirs(main_dir,exist_ok=True)
@@ -15,6 +16,7 @@ os.makedirs(org_pic_dir,exist_ok=True)
 os.makedirs(ocr_pic_dir,exist_ok=True)
 os.makedirs(shop_dir,exist_ok=True)
 os.makedirs(db_dir,exist_ok=True)
+os.makedirs(result_dir,exist_ok=True)
 
 
 xlsx_file=os.path.join(db_dir,"taobao.xlsx")
@@ -45,7 +47,7 @@ title_id="title"
 ocr_text_id="text"
 org_pic_path_id="org_pic_path"
 ocr_pic_path_id="ocr_pic_path"
-
+sales_vol_id="vagueSold365"
 
 sleep_time=5
 goods_type=1
@@ -59,3 +61,5 @@ title_except_flags=["链接","边角","积分兑换"]
 
 force_update=False
 fetch_sku_from_cache=True
+
+not_fetch_id="not_fetch"

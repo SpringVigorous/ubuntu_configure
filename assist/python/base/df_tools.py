@@ -3,6 +3,23 @@ from com_log import logger_helper
 import os
 import concurrent.futures
 import gc
+
+
+def find_rows_by_col_val(df, col_name,val,default_val=pd.DataFrame()):
+
+    log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找【{val}】")
+    try:
+        matches=df[col_name] == val
+        results= df[matches]
+
+        if results.empty:
+            log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
+            return default_val
+        return results
+    except:
+        log.error("异常",f"没有找到匹配的值，返回默认值{default_val}")
+        return default_val
+
 def find_values_by_col_val(df, col_name,val,dest_name,default_val=pd.Series()):
 
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")

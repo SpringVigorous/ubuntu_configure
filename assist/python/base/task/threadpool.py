@@ -17,7 +17,7 @@ class ThreadPool:
         self._stop_event = threading.Event()  # 停止事件
         self._threads:list[threading.Thread] = []  # 线程列表
         self._ideal_time=ideal_time
-        self._logger=logger_helper("ThreadPool","ThreadPool")
+        self._logger=logger_helper(self.__class__.__name__)
         self._lock = threading.Lock()  # 保护线程列表的锁
         
         self._thread_index:int=1
@@ -32,24 +32,47 @@ class ThreadPool:
     def has_init_thread(self)->bool:
         return self._thread_index>=self._num_threads
     
-    def start(self):
+    def _start(self):
+        
+        if self.has_init_thread:
+            return
+        logger=self._logger
+        logger.update_target(detail="创建线程池")
+        logger.update_time(UpdateTimeType.STAGE)
         """ 启动初始线程 """
         with self._lock:
             for _ in range(self._num_threads):
                 self._start_thread()
                 
+        logger.info("成功",f"共{len(self._threads)}个",update_time_type=UpdateTimeType.STAGE)
 
     def _start_thread(self):
+        logger=self._logger
+        logger.update_time(UpdateTimeType.STEP)
         """ 启动单个线程并加入列表 """
-        thread = threading.Thread(target=self._worker_loop,name=self.thread_name)
-        thread.start()
-        self._threads.append(thread)
-        self._thread_index+=1
-        self._logger.trace("成功添加线程",thread.name)
+        try:
+            thread = threading.Thread(target=self._worker_loop,name=self.thread_name)
+            logger.stack_target(detail=f"添加线程:{thread.name}")
+            
+            thread.start()
+            self._threads.append(thread)
+            self._thread_index+=1
+            
+            logger.trace("成功",update_time_type=UpdateTimeType.STEP)
+        except:
+            pass
+        finally:
+            logger.pop_target()
+            
         
 
     def submit(self, func, *args,callback: Callable[[Any, Exception], None] = None, **kwargs):
+        #开启线程池
+        if not self.has_init_thread:
+            self._start()
+        
         self._task_queue.put((func, args, kwargs,callback))
+        
         # """ 提交任务到队列 """
         # if not self.stop_event.is_set():
         #     self.task_queue.put((func, args, kwargs,callback))
@@ -57,9 +80,6 @@ class ThreadPool:
         #     raise RuntimeError("Cannot submit tasks after shutdown")
 
     def _pop_data(self):
-        if not self.has_init_thread:
-            self.start()
-        
         try:
             # 非阻塞获取任务，最多等待1秒
             return self._task_queue.get(block=True, timeout=1)
@@ -73,7 +93,7 @@ class ThreadPool:
         
         logger=logger_helper(threading.current_thread().name)
 
-        logger.trace("线程开始",update_time_type=UpdateTimeType.ALL)
+        logger.trace("线程开始")
         while True:
             # 退出条件：停止事件被触发且队列为空
             if self._stop_event.is_set() and self._task_queue.empty():
@@ -82,11 +102,25 @@ class ThreadPool:
             data=self._pop_data()
             if not data:
                 continue
-
+            #必须要标记下状态
+            self._task_queue.task_done()  # 标记任务完成
                 
             # 非阻塞获取任务，最多等待1秒
             func, args, kwargs, callback = data
-            logger.update_target(detail=f"func:{func.__name__},args:*{args},kwargs:**{kwargs}")
+            
+            def only_keywords(org_str:str):
+                char_count=50
+                
+                
+                if not org_str or len(org_str)<2*char_count+1:
+                    return org_str
+                
+                return f"{org_str[:char_count]}...{org_str[-char_count:]}"
+            
+            args_str=f"{args}"
+            kwargs_str=f"{kwargs}"
+            
+            logger.update_target(detail=f"func:{func.__name__},args:*{only_keywords(args_str)},kwargs:**{only_keywords(kwargs_str)}")
             logger.update_time(UpdateTimeType.STAGE)
 
             logger.trace("收到消息",update_time_type=UpdateTimeType.STAGE)
@@ -110,15 +144,16 @@ class ThreadPool:
                     except Exception as e:
                         logger.error("回调异常",f"Callback failed: {e}")
                 
-                #必须要标记下状态
-                self._task_queue.task_done()  # 标记任务完成
+
 
         logger.info("线程结束",update_time_type=UpdateTimeType.ALL)
 
     def join(self, wait=True):
         """ 关闭线程池 """
         self._stop_event.set()  # 触发停止事件
-        self._logger.info("触发停止事件",update_time_type=UpdateTimeType.STAGE)
+        self._logger.update_target(detail="触发停止事件")
+        
+        self._logger.info("进行中",update_time_type=UpdateTimeType.STAGE)
         if wait:
             self._task_queue.join()  # 等待所有任务完成
             for thread in self._threads:
@@ -126,8 +161,11 @@ class ThreadPool:
                     thread.join()  # 等待所有线程退出
     def restart(self):
         """ 补充缺失的线程至目标数量 """
-        self._logger.info("恢复线程池",update_time_type=UpdateTimeType.STAGE)
         
+        
+        logger=self._logger
+        logger.update_target(detail="恢复线程池")
+        logger.update_time(UpdateTimeType.STAGE)
         with self._lock:
             
             # 1. 清除停止事件（关键改动）
@@ -139,10 +177,13 @@ class ThreadPool:
             if current_threads < self._num_threads:
                 for _ in range(self._num_threads - current_threads):
                     self._start_thread()
+            logger.info("成功",f"补充{len(self._threads)-len(current_threads)}个",update_time_type=UpdateTimeType.STAGE)
+        
     def force_stop(self):
         self._stop_event.set()  # 触发停止事件
         with self._lock:
-            self._logger.info("强制退出，清空队列",f"剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
+            self._logger.update_target(detail="强制退出，清空队列")
+            self._logger.info("开始",f"任务列表剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
             self._task_queue.clear()
             self._task_queue.task_done()
         
@@ -172,7 +213,7 @@ if __name__ == "__main__":
             
     # 创建包含3个线程的线程池
     pool = ThreadPool()
-    pool.start()
+    pool._start()
 
     # 提交10个任务
     for i in range(20):

@@ -60,8 +60,7 @@ class TbApp():
         
         
         
-        #开启缓冲池
-        # self.cache_pool.start()
+
         
     @property
     def _msg_queque_dict(self):
@@ -111,7 +110,7 @@ class TbApp():
             urls=[urls]
         logger=self.logger
         logger.update_target(f"收到消息共{len(urls)}个",f"msg_type:{msg_type},url:{urls}") 
-        logger.trace("开始处理",update_time_type=UpdateTimeType.STAGE) 
+        logger.info("开始处理",update_time_type=UpdateTimeType.STAGE) 
         cur_queue=self.msg_queue(msg_type)
         if not cur_queue:
             logger.error("查找不到指定类型的输入队列",update_time_type=UpdateTimeType.STAGE)
@@ -150,10 +149,13 @@ class TbApp():
         self.download_pic_queue.join()
         self.ocr_pic_queue.join()
         
+        #开启缓冲池
+        # self.cache_pool._start()
+        
         #现成join()
         self.interact_shop.join()
-        self.handle_goods.join()
         self.interact_goods.join()
+        self.handle_goods.join()
         self.handle_pics.join()
         self.download_pics.join()
         self.ocr_pics.join()
@@ -177,7 +179,7 @@ def main():
     
     
     #图片按照num新建文件夹存放，后续不需要
-    # tb.classify_pics()
+    # c
     
     #图片名长度过短,临时补救措施，后续不需要
     # # if tb.rename_pic_name(3):
@@ -190,10 +192,10 @@ def main():
     goods_urls=[
         'https://item.taobao.com/item.htm?id=742960815434',
                 ]
-    shop_urls=['https://shop60537259.taobao.com/?spm=tbpc.mytb_followshop.item.shop',
-    "https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",
-               ]
-    # shop_urls=["https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",]
+    # shop_urls=['https://shop60537259.taobao.com/?spm=tbpc.mytb_followshop.item.shop',
+    # "https://shop293825603.taobao.com/?spm=tbpc.mytb_followshop.item.shop",
+            #    ]
+    shop_urls=["https://shop380595428.taobao.com/?spm=tbpc.mytb_followshop.item.shop",]
 
     app=TbApp()
     app.handle_nodone_task()
@@ -201,18 +203,17 @@ def main():
         # for url in goods_urls:
         #     manager.put((goods_type,url))
         # for url in shop_urls:
-        #     app.send_msg(shop_type,url)
-            
-            
+        #     app.send_msg(shop_type,url) 
         app.start()
         # app.done()
-        tb_manager()._save_xlsx_df()
-
-        app.stop_cache_pool()
     except:
         pass
     finally:
-        pass
+        app.stop_cache_pool()
+        tb_manager()._save_xlsx_df()
+        #拆分看结果
+        tb_manager().separate_ocr_results()
+
     
     # os.system(f"shutdown /s /t 1")
     

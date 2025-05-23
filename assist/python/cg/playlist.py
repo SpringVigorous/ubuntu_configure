@@ -406,7 +406,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     
     move_file(temp_path,dest_path)
     
-    if lost_count==0 :
+    if lost_count==0 and False:
         delete_directory(temp_dir)
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
@@ -501,17 +501,16 @@ if __name__=="__main__":
 
 
 
-("https://vod6.bdzybf11.com/20240105/XAAIgk54/1500kb/hls/index.m3u8","常乐镇诡事"),
+
+# ("https://vip1.slbfsl.com/20221115/3YpMEY51/1000kb/hls/index.m3u8","12"),
+
 
 
 
 
         
     ]
-    
-    # names=[print(name[2],hash_text(name[2]))  for name in lst]
-    
-    
+
     
     result=[main(*item) for item in lst]
     

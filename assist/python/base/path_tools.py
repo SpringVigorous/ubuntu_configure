@@ -101,5 +101,9 @@ def jpg_files(dest_dir)->list[str]:
 def json_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".json")
 
+
+def m3u8_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".m3u8")
+
 if __name__ == '__main__':
     print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

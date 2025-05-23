@@ -34,38 +34,47 @@ def shopName_from_title(title):
 class InteractImp():
     def __init__(self,cache_thread:ThreadPool):
         self._lock=threading.Lock()
-        self.wp:WebPage=WebPage()
-        url='https://www.taobao.com/'
-        self.wp.get(url)
-        self.logger=logger_helper("InteractImp")
-        self.manager=tb_manager()
-        self.cache_thread:ThreadPool=cache_thread
-        self._msg_count:int=0
-        #登录
-        pass
-        self.fetch_count:int=0
         
-        self.retry_operater=RetryOperater(3)
+        self._wp:WebPage=None
+        self._logger=logger_helper("InteractImp")
+        self._manager=tb_manager()
+        self._cache_thread:ThreadPool=cache_thread
+        self._msg_count:int=0
+        self._retry_operater=RetryOperater(3)
+        
+    @property
+    def wp(self):
+        if not self._wp:
+            self._wp=WebPage()
+            url='https://www.taobao.com/'
+            self._wp.get(url)
+            #登录
+            pass
+        return self._wp
     @property
     def msg_count(self)->int:
         self._msg_count+=1
         return self._msg_count
     @property
     def fatal_error(self)->bool:
-        return self.retry_operater.fatal_error or fatal_link_error()
+        return self._retry_operater.fatal_error or fatal_link_error()
     
     @exception_decorator(error_state=False)
     def close(self):
-        self.wp.close()
+        with self._lock:
+            if not self._wp:
+                return
+            self._wp.close()
+            self._wp=None
 
     @exception_decorator(error_state=False)
     def handle_goods(self,url):
         itemId=get_param_from_url(url,"id")
-        logger=self.logger
+        logger=self._logger
         logger.update_target(f"收到第{self.msg_count}个消息:{url}",f"当前id:{itemId}")
         logger.trace("开始",update_time_type=UpdateTimeType.STAGE)
         random_sleep(8,20,logger)
-        if not force_update and  self.manager.has_id_val(self.manager.pic_df,item_id,itemId):
+        if not force_update and  self._manager.has_id_val(self._manager.pic_df,item_id,itemId):
             logger.info(f"数据已存在，忽略此消息",update_time_type=UpdateTimeType.STAGE)
             return
         main_pic_result:dict=None
@@ -89,9 +98,9 @@ class InteractImp():
             try:
                 self.wp.listen.start(listen_apis) 
                 self.wp.get(url)
-                self.retry_operater.reset(2,do_fun,faliure_fun)
+                self._retry_operater.reset(2,do_fun,faliure_fun)
                 self.wp.wait.eles_loaded(goods_loaded_path,timeout=10)
-                packets=self.retry_operater.success()
+                packets=self._retry_operater.success()
                 if not packets:
                     return
                 for packet in packets:
@@ -120,9 +129,9 @@ class InteractImp():
         
         #写入
         if main_pic_result:
-            self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(main_dir,f"main_{itemId}",".json"),main_pic_result)  
+            self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(main_dir,f"main_{itemId}",".json"),main_pic_result)  
         if desc_pic_result:
-            self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(desc_dir,f"desc_{itemId}",".json"),desc_pic_result)  
+            self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(desc_dir,f"desc_{itemId}",".json"),desc_pic_result)  
             
         if  main_pic_result or desc_pic_result:
             return main_pic_result,desc_pic_result
@@ -130,9 +139,9 @@ class InteractImp():
     @exception_decorator(error_state=False)
     def handle_shop(self, url)->tuple[type,list]:
         shopId=shop_id_by_shop_goods_url(url)
-        logger=self.logger
+        logger=self._logger
         logger.update_target(f"收到第{self.msg_count}个消息:{url}",f"当前id:{shopId}")
-        if  not force_update and  not shopId or self.manager.has_shop_id(shopId):
+        if  not force_update and  not shopId or self._manager.has_shop_id(shopId):
             logger.info(f"数据已存在，忽略此消息",update_time_type=UpdateTimeType.STAGE)
             return
         json_results=[]
@@ -151,7 +160,7 @@ class InteractImp():
             
         with self._lock:
             # 初始化监听
-            self.retry_operater.reset(2, normal_func=do_func, failure_func=failure_func)
+            self._retry_operater.reset(2, normal_func=do_func, failure_func=failure_func)
             
             self.wp.listen.start(listent_shop_api)
             self.wp.get(url)
@@ -166,14 +175,14 @@ class InteractImp():
                     if index==1 and not self.wp.wait.eles_loaded(shop_loaded_path, timeout=10):
                         logger.warn("未检测到加载元素，可能已到达最后一页",update_time_type=UpdateTimeType.STAGE)
                         break
-                    packet=self.retry_operater.success()
+                    packet=self._retry_operater.success()
                     if not packet:
                         break
                     json_data = packet.response.body
                     json_data[shop_id]=shopId
                     
                     #写入
-                    self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(shop_dir,f"shop_{shopId}",".json"),json_data)  
+                    self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(shop_dir,f"shop_{shopId}",".json"),json_data)  
                    
                     #加入
                     json_results.append(json_data)
@@ -210,11 +219,11 @@ class InteractImp():
     @exception_decorator(error_state=False)
     def handle_goods_old(self,url):
         itemId=get_param_from_url(url,"id")
-        logger=self.logger
+        logger=self._logger
         logger.update_target(f"收到第{self.msg_count}个消息:{url}",f"当前id:{itemId}")
         logger.trace("开始",update_time_type=UpdateTimeType.STAGE)
         random_sleep(8,20,logger)
-        if self.manager.has_id_val(self.manager.pic_df,item_id,itemId):
+        if self._manager.has_id_val(self._manager.pic_df,item_id,itemId):
             logger.info(f"数据已存在，忽略此消息",update_time_type=UpdateTimeType.STAGE)
             return
         main_pic_result:dict=None
@@ -262,16 +271,16 @@ class InteractImp():
         pass
         
         #写入
-        self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(main_dir,f"main_{itemId}",".json"),main_pic_result)  
-        self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(desc_dir,f"desc_{itemId}",".json"),desc_pic_result)  
+        self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(main_dir,f"main_{itemId}",".json"),main_pic_result)  
+        self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(desc_dir,f"desc_{itemId}",".json"),desc_pic_result)  
         if  main_pic_result or desc_pic_result:
             return main_pic_result,desc_pic_result
     @exception_decorator(error_state=False)
     def handle_shop_old(self, url)->tuple[type,list]:
         shopId=shop_id_by_shop_goods_url(url)
-        logger=self.logger
+        logger=self._logger
         logger.update_target(f"收到第{self.msg_count}个消息:{url}",f"当前id:{shopId}")
-        if not shopId or self.manager.has_shop_id(shopId):
+        if not shopId or self._manager.has_shop_id(shopId):
             logger.info(f"数据已存在，忽略此消息",update_time_type=UpdateTimeType.STAGE)
             return
         json_results=[]
@@ -303,7 +312,7 @@ class InteractImp():
                     json_data[shop_id]=shopId
                     
                     #写入
-                    self.cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(shop_dir,f"shop_{shopId}",".json"),json_data)  
+                    self._cache_thread.submit(write_to_json_utf8_sig,get_next_filepath(shop_dir,f"shop_{shopId}",".json"),json_data)  
                    
                     #加入
                     json_results.append(json_data)
@@ -346,6 +355,7 @@ class InteractShop(ThreadTask):
     def _handle_data(self, data):
         #致命错误，退出
         if self.interact.fatal_error:
+            self.logger.error("收到致命错误","退出交互")
             self.clear_input()
             self.stop()
             return
@@ -368,6 +378,8 @@ class InteractProduct(ThreadTask):
     def _handle_data(self, data):
         #致命错误，退出
         if self.interact.fatal_error:
+            self.logger.error("收到致命错误","退出交互")
+            
             self.clear_input()
             self.stop()
             return
@@ -402,6 +414,10 @@ class HandleProducts(ThreadTask):
             goods_dfs.append(org_procduct_to_df(json_data))
         goods_df=pd.concat(goods_dfs)
         goods_df[shop_id]=shopId
+        #默认是需要爬取的
+        goods_dfs[not_fetch_id]=0
+        goods_df[not_fetch_id]=0
+    
         self.manager.update_shop_df(shop_df)
         new_df:pd.DataFrame=self.manager.update_product_df(goods_df)
         if new_df.empty:
@@ -411,8 +427,9 @@ class HandleProducts(ThreadTask):
             # print(new_df)
             for index,item in new_df.iterrows():
                 url=item[item_url_id]
-                itemId=item[item_id]
-                logger.update_target(f"处理第{index}个商品",f"{url}:{itemId}")
+                # itemId=item[item_id]
+                # logger.update_target(f"处理第{index}个商品",f"{url}:{itemId}")
+                logger.update_target(f"处理第{index}个商品",f"{url}")
                 self.logger.trace("开始")
                 #测试流程用
                 # if index>1:break
@@ -429,6 +446,7 @@ class HandlePics(ThreadTask):
            return
         return self._handle_detail_data(data)
     def _handle_detail_data(self,data):
+
         main_data, desc_data=data
         main_pic=org_main_lst(main_data)
         sku_pic=sku_infos_from_main(main_data)
@@ -480,8 +498,8 @@ class DownloadPics(ThreadTask):
         df:pd.DataFrame=data[1]
         if df.empty:
             return
-        if not self.cache_thread.has_init_thread:
-            self.cache_thread.restart()
+        # if not self.cache_thread.has_init_thread:
+        #     self.cache_thread.restart()
         logger=self.logger
 
 
@@ -535,29 +553,32 @@ class OcrPics(ThreadTask):
  
 
     def _ocr_pic(self,pic_path):
-        if not self.cache_thread.has_init_thread:
-            self.cache_thread.restart()
+        # if not self.cache_thread.has_init_thread:
+        #     self.cache_thread.restart()
         logger=self.logger
 
-        def _ocr_pics(org_path,ocr_path):
-            orc_logger=logger_helper("文字识别",f"{org_path}->{ocr_path}")
+        def _ocr_pics(org_path):
+            orc_logger=logger_helper("文字识别",f"{org_path}")
 
             texts=None
             try:
                 ocr_pic=OCRProcessor()
-                _,texts=ocr_pic.process_image(org_path,output_path=ocr_path)
-                orc_logger.trace("成功",f"{ocr_path}",update_time_type=UpdateTimeType.STAGE)
+                boxes, texts, scores = ocr_pic.recognize_text(org_path)
+                
+                
+                # _,texts=ocr_pic.process_image(org_path,output_path=ocr_path)
+                orc_logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
             except  Exception as e:
                 orc_logger.error("异常",f"原因：{e}",update_time_type=UpdateTimeType.STAGE)
             finally:
                 # if texts:
                 with self._lock:
-                    self._ocr_lst.append({name_id:Path(ocr_path).stem,ocr_text_id:";".join(texts)})
+                    self._ocr_lst.append({name_id:Path(org_path).stem,ocr_text_id:";".join(texts)})
         try:
             logger.stack_target("收到消息",f"{pic_path}")
             logger.trace("提交处理",update_time_type=UpdateTimeType.STAGE)
-            ocr_path=dest_file_path(ocr_pic_dir, Path(pic_path).name)
-            self.cache_thread.submit(_ocr_pics,pic_path,ocr_path)
+
+            self.cache_thread.submit(_ocr_pics,pic_path)
         except  Exception as e:
             logger.error("异常",f"原因：{e}",update_time_type=UpdateTimeType.STAGE)
         finally:

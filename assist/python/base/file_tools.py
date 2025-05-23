@@ -428,6 +428,8 @@ def priority_read_txt(file_path,operator_func=None,**file_kwargs):
     writefunc=lambda file_path,data :write_to_txt(file_path,data,**file_kwargs)
     return priority_read(file_path,readfunc,operator_func,writefunc)
     
+
+    
 def get_next_filename(folder_path, base_name, file_extension:str):
     index = 1
     file_extension = file_extension.strip().lstrip('.').strip()
@@ -440,7 +442,9 @@ def get_next_filename(folder_path, base_name, file_extension:str):
 def get_next_filepath(folder_path, base_name, file_extension:str):
     return os.path.join(folder_path, get_next_filename(folder_path, base_name, file_extension))
 
-
+def sequence_num_file_path(file_path:str):
+    org_path=Path(file_path)
+    return get_next_filepath(str(org_path.parent),org_path.stem,org_path.suffix  )
 #针对json文件包含Unicode 字符，需要进行解码然后再输出到源文件中，便于后续查看
 def prettey_json_file(json_file_path, encoding='utf-8'):
 

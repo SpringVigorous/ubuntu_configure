@@ -30,11 +30,11 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDYwMDcyNjksImV4cCI6MTc0NjA1MDQ5OSwiaWF0IjoxNzQ2MDA3Mjk5LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.YmyMWWGC0xtJj_bGzNwn4gQ47ZCQalciBw_x387mMcw',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDc5OTYxMTgsImV4cCI6MTc0ODAzOTM0OCwiaWF0IjoxNzQ3OTk2MTQ4LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.q6w8ZPkLsH9jpYesKdyma9r9e_FcN59XH3otriEOYns',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
     'origin': 'https://bxxxsevzb.xwcx6.com',
-    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/1478925452?v=1746007199000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/835199786?v=1747996014000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
     'referer': 'https://bxxxsevzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
@@ -48,14 +48,16 @@ headers = {
 }
 
 params = {
-    'tpid': 'C7CEBE60EC8C7EE279211A8D34049F71',
-    'time': '2147483647',
+    'tpid': '5F80C5F24927634CF54E8DE418F9D34F',
+    'time': '358730361',
     'pagesize': '12',
     'mode': 'desc',
     'loadNewCache': '1',
 }
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+
+
 
 
 org_json_queque=Queue()
@@ -85,7 +87,7 @@ class SaveJsonTask(ThreadTask):
         self._logger.info("完成",update_time_type=UpdateTimeType.STAGE)
 
 thread_cache=ThreadPool()
-thread_cache.start()
+# thread_cache.start()
 
 class MessageInfo:
     def __init__(self, data=None):
@@ -190,7 +192,7 @@ def get_data(cur_time:None,last_info:MessageInfo=None):
         except Exception as e:
             logger.info(f"失败",f"原因{e}",update_time_type=UpdateTimeType.STAGE)
             break
-
+            
     data=[]
     for item in reversed(data_lst) :
         data.extend(item)
@@ -260,7 +262,7 @@ def save_json_data(data,file_name):
         file_path=file_path.with_stem(f"{file_name}_{guid()}")
     
     with open(str(file_path), "w", encoding="utf-8") as f:
-        json.dump(data,f)
+        json.dump(data,f,ensure_ascii=False,indent=4)
     
 def load_json_data(file_name):
     # 使用with语句打开名为"response.json"的文件，以读取模式("r")和UTF-8编码
@@ -284,6 +286,7 @@ def export_to_xlsx(data:list,file_name):
     
     logger.update_target(detail="导出xlsx")
     logger.trace("开始",update_time_type=UpdateTimeType.STEP)
+
     
     thread_cache.submit(optimized_to_excel,df,os.path.join(dest_dir, f"{file_name}.xlsx"))
     
@@ -481,12 +484,16 @@ def main():
     
     file_name=Path(file_name).stem
     
+    # merge_json_to_xlsx(file_name)
+    # return
+
+    # thread_cache._start()
     
     
     # asyncio.run(download_images()) 
     # exit()
     
-    # init_param(time_val=504808846)
+    # init_param(time_val=193756838)
     init_param()
 
     logger=logger_helper("获取评论信息",file_name)
@@ -496,7 +503,7 @@ def main():
     last_message:MessageInfo=None
     #2025-04-08 16:11:58
 
-    last_message:MessageInfo=MessageInfo({"time":455781213,"speaktime":"2025-04-26 18:08:27"})
+    # last_message:MessageInfo=MessageInfo({"time":199318254,"speaktime":"2025-05-14 19:29:00"})
     logger.info(f"获取开始",update_time_type=UpdateTimeType.STAGE)
     loop_get_data(file_name,1000,1,last_message)
     org_json_stop_event.set()

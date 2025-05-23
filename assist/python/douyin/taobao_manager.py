@@ -35,12 +35,17 @@ from base import (
     path_equal,
     json_files,
     read_from_json_utf8_sig,
-    df_empty
+    df_empty,
+    find_rows_by_col_val,
+    sequence_num_file_path
 )
 import pandas as pd
 from taobao_config import *
 from taobao_tools  import *
 import threading
+
+pic_type_map={0:"主图",1:"详图",3:"Sku"}
+
 class tb_manager():
     _instance = None
     _lock = threading.Lock()    
@@ -140,6 +145,15 @@ class tb_manager():
         logger=self.logger
         logger.update_target("读取数据",xlsx_file)
         logger.update_time(UpdateTimeType.STAGE)
+        def init_fetch_id(df:pd.DataFrame):
+            if df_empty(df):
+                return df
+            if not_fetch_id in df.columns.tolist():
+                df[not_fetch_id].fillna(0, inplace=True)
+            else:
+                df[not_fetch_id]=0
+            df[not_fetch_id]=df[not_fetch_id].astype(int)
+            return df
         
         if os.path.exists(xlsx_file):
             with pd.ExcelFile(xlsx_file) as reader:
@@ -157,8 +171,8 @@ class tb_manager():
                                 df[col_id]=df[col_id].astype(str)
                     return df
                 with self._lock:
-                    self._shop_df = get_df(shop_name,[shop_id,user_id,seller_id])
-                    self._product_df = get_df(product_name,[shop_id,item_id])
+                    self._shop_df = init_fetch_id(get_df(shop_name,[shop_id,user_id,seller_id]))
+                    self._product_df = init_fetch_id(get_df(product_name,[shop_id,item_id]))
                     self._pic_df =  get_df(pic_name,[item_id])
                     self._ocr_df=get_df(ocr_name,[item_id])
         else:
@@ -169,28 +183,39 @@ class tb_manager():
                 self._pic_df=pd.DataFrame()
                 self._ocr_df=pd.DataFrame()
         
+
+        
         logger.info("完成",update_time_type=UpdateTimeType.STAGE)
             
             
     @exception_decorator(error_state=False)
     def _save_xlsx_df(self):
         logger=self.logger
-        logger.update_target("保存数据",xlsx_file)
         logger.update_time(UpdateTimeType.STAGE)
         logger.trace("开始")
         pic_summary_df=self.summary_pic_df()
         ocr_summary_df=self.summary_ocr_df()
         
-        with self._lock:
-            with pd.ExcelWriter(xlsx_file,mode="w") as w:
-                self._shop_df.to_excel(w, sheet_name=shop_name, index=False)
-                self._product_df.to_excel(w, sheet_name=product_name, index=False)
-                self._pic_df.to_excel(w, sheet_name=pic_name, index=False)
-                self._ocr_df.to_excel(w, sheet_name=ocr_name, index=False)
-                if not pic_summary_df.empty:
-                    pic_summary_df.to_excel(w, sheet_name=f"{pic_name}_汇总", index=False)
-                if not ocr_summary_df.empty:
-                    ocr_summary_df.to_excel(w, sheet_name=f"{ocr_name}_汇总", index=False)
+        def _save_imp(xlsx_path:str):
+            logger.update_target("保存数据",xlsx_path)
+            with self._lock:
+                with pd.ExcelWriter(xlsx_path,mode="w") as w:
+                    self._shop_df.to_excel(w, sheet_name=shop_name, index=False)
+                    self._product_df.to_excel(w, sheet_name=product_name, index=False)
+                    self._pic_df.to_excel(w, sheet_name=pic_name, index=False)
+                    self._ocr_df.to_excel(w, sheet_name=ocr_name, index=False)
+                    if not pic_summary_df.empty:
+                        pic_summary_df.to_excel(w, sheet_name=f"{pic_name}_汇总", index=False)
+                    if not ocr_summary_df.empty:
+                        ocr_summary_df.to_excel(w, sheet_name=f"{ocr_name}_汇总", index=False)
+        
+        try:
+            _save_imp(xlsx_file)
+        except:
+            xlsx_path=sequence_num_file_path(xlsx_file)
+            logger.error("失败",f"备份到{xlsx_path},具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
+            logger.update_time(UpdateTimeType.STAGE)
+            _save_imp(xlsx_path)
 
         logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
 
@@ -255,7 +280,7 @@ class tb_manager():
         org_df=org_df.copy()
         
         logger=self.logger
-        logger.update_target("更取数据",df_name)
+        logger.update_target("更新数据",df_name)
         logger.update_time(UpdateTimeType.STAGE)
         
         result_df=concat_unique([org_df,new_df],keys=keys)
@@ -378,6 +403,35 @@ class tb_manager():
         result_df=self.update_pic_df(product_df)
         return result_df
 
+    @exception_decorator(error_state=False)
+    def clear_cache(self):
+        from base import txt_files,xlsx_files,remove_directories_and_files,recycle_bin
+        
+        remove_directories_and_files(org_pic_dir,posix_filter=[".txt",".xlsx"])
+
+        @exception_decorator(error_state=False)
+        def _clear_dir(root_dir):
+            results=[{"path":file }for file in json_files(root_dir)]
+            if not results:
+                results
+            df=pd.DataFrame(results)
+            # 定义分割函数，直接返回 name 和 num
+            def split_path(path_str):
+                parts = Path(path_str).stem.split("_")
+                name = parts[1] if len(parts) > 1 else "unknown"  # 默认值
+                num = parts[2] if len(parts) > 2 else "0"         # 默认值
+                return pd.Series({"name": name, "num": int(num),"size":os.path.getsize(path_str)})
+            
+            df[["name", "num","size"]]=df["path"].apply(split_path)
+            for key,group_df in df.groupby("name"):
+                if group_df.shape[0]==1:
+                    continue
+                sort_df=group_df.sort_values("size",ascending=False)
+                for file in sort_df["path"].values[1:]:
+                    recycle_bin(file)
+
+        _clear_dir(main_dir)
+        _clear_dir(desc_dir)
 
     @exception_decorator(error_state=False)
     def get_undone_df(self)->list[pd.DataFrame] :
@@ -408,7 +462,13 @@ class tb_manager():
             
             #没有爬取详情的
             hasDetail_df=pic_df.drop_duplicates(subset=[item_id],ignore_index=True)
-            nodetail_df=sub_df(self.product_df,hasDetail_df,keys=item_id)
+            
+
+            
+            # product_df=self.product_df.dropna(subset=[not_fetch_id]).query(f"{not_fetch_id} > 0")
+            # product_df=self.product_df.query(f"{not_fetch_id}.notna() | {not_fetch_id} < 1")
+            product_df=self.product_df.query(f"{not_fetch_id} < 1")
+            nodetail_df=sub_df(product_df,hasDetail_df,keys=item_id)
             
 
             if not summary_df.empty and force_update:
@@ -417,7 +477,7 @@ class tb_manager():
                     nodetail_df=summary_df
                 else:
                     summary_df=summary_df[nodetail_df.columns.to_list()] 
-                    odetail_df=concat_dfs(nodetail_df,summary_df)
+                    nodetail_df=concat_dfs(nodetail_df,summary_df)
             
             return [nodetail_df,undownload_df,unocr_df]
         
@@ -488,17 +548,74 @@ class tb_manager():
         classify_pic_imp(org_pic_dir)
         classify_pic_imp(ocr_pic_dir)
 
+    @exception_decorator(error_state=False)
     def separate_ocr_results(self):
+        logger=self.logger
         with self._lock:
             ocr_df=pd.merge(self.ocr_df,self.pic_df,on=[name_id],how="inner")
+            shop_good_df=pd.merge(self.product_df,self.shop_df,on=[shop_id],how="outer")
             groups=ocr_df.groupby(item_id)
-            for name,group in groups:
-                if group.empty:
+            for name,df in groups:
+                if df.empty:
                     continue
-                name=group[name_id].iloc[0].split("_")[0]
+                name=df[name_id].iloc[0].split("_")[0]
                 # group_df.to_excel(f"{group[0]}.xlsx",index=False)
                 
-                group.to_excel(dest_file_path(org_pic_dir,f"{name}-识别结果.xlsx"),index=False)
+
+                logger.update_target("拆分识别信息",os.path.join(org_pic_dir,name))
+
+                txt_path=os.path.join(result_dir,f"{name}-识别结果.txt")
+
+                last_type=None
+                with open(txt_path,"w",encoding="utf-8-sig") as f:
+                    
+                    def format_len(str_val:str,len:int=50,set_newline=False):
+                        return f"{str_val.center(len, '-')}" + ("\n" if set_newline else "")
+                        
+                    
+                    for _,row in df.iterrows():
+                        val=row[ocr_text_id]
+                        if not val or not isinstance(val,str):
+                            continue
+                        pic_type=int(row[name_id].split("_")[1])
+                        if last_type != pic_type:
+                            type_str=pic_type_map.get(pic_type,None)
+                            if not type_str:
+                                continue
+                            if last_type==None:
+                                #查找店铺信息
+                                rows:pd.DataFrame=find_rows_by_col_val(shop_good_df,item_id,row[item_id])
+                                if not df_empty(rows):
+                                    vals:pd.Series=rows.loc[0:]
+                                    
+        
+                                    
+                                    f.write(format_len("店铺信息",set_newline=True))
+                                                    
+                                    @exception_decorator(error_state=False)
+                                    def write_good_info(title_str:str, val_id:str):
+                                        val=vals.get(val_id,None)
+                                        if df_empty(val):
+                                            return
+                                        f.write(f"{format_len(title_str,len=5)}{val.values[0]}\n")
+                                        
+                                    write_good_info("店铺名:",shop_name_id)
+                                    write_good_info("店铺链接:",home_url_id)
+                                    write_good_info("产品标题:",title_id)
+                                    write_good_info("产品链接:",item_url_id)
+                                    write_good_info("产品销量:",sales_vol_id)
+
+                                                   
+                                                   
+
+                            f.write(format_len(type_str,set_newline=True))
+                            last_type=pic_type
+                        
+                        f.write(f"{val.replace(";","\n")}\n\n\n")
+                logger.trace("成功",txt_path,update_time_type=UpdateTimeType.STEP)
+                
+                # df.to_excel(dest_file_path(org_pic_dir,f"{name}-识别结果.xlsx"),index=False)
+
                 
     def init_product_df_product_name(self)->pd.DataFrame:   
         with self._lock:
@@ -512,7 +629,13 @@ class tb_manager():
                 
 if __name__=="__main__":
     manager=tb_manager()
+    
+    manager.clear_cache()
+    exit()
+    
     from base import read_from_json_utf8_sig
+    
+
     dir_temp=r"C:\Users\Administrator\Desktop\备份"
     
     pic_df=pd.read_excel(f"{dir_temp}/pic_df.xlsx")

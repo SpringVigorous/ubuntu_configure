@@ -72,7 +72,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
             return logger
         logger.setLevel(str_to_level(level))# 设置日志级别，这里设置为DEBUG，可以根据需要修改
         # 创建一个处理器并设置其输出格式
-        base_formatter = CustomFormatter('%(asctime)s-%(levelname)s-Thread ID: %(thread_id)s-%(threadName)s-%(message)s')
+        base_formatter = CustomFormatter('%(asctime)s-%(levelname)s-Thread ID: %(thread_id)s-NAME: %(threadName)s-%(message)s')
 
 
         # 再创建一个handler，用于输出到控制台
@@ -91,7 +91,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
         log_dir=os.path.join(root_dir, 'logs',logger_name)
         os.makedirs(log_dir,exist_ok=True)
         
-        detail_formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-Thread ID: %(thread_id)s-%(threadName)s-%(message)s')
+        detail_formatter = CustomFormatter('%(asctime)s-%(name)s-%(levelname)s- %(filename)s:%(lineno)d -%(funcName)s()-Thread ID: %(thread_id)s-NAME:%(threadName)s-%(message)s')
         def create_file_log(level_str:str,log_format:str):
             level_str=level_str.lower()
             
