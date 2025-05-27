@@ -11,6 +11,10 @@ def fatal_link_error():
     global _link_error
     return _link_error
 
+def set_link_error(has_error:bool=True):
+    global _link_error
+    _link_error=has_error
+
 
 def except_stack()->str:
     # 这个except块会处理上述try块中的任何异常

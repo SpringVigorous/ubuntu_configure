@@ -28,7 +28,7 @@ def recycle_bin(cur_path):
         cur_path = cur_path.replace("/","\\") #send2trash 需要目录中 使用\\而不是 /
         # shutil.rmtree(dir_path)
         send2trash.send2trash(cur_path)
-        logger.info(f"Removed {expression_str} {cur_path}") 
+        logger.debug(f"Removed {expression_str} {cur_path}") 
     except FileNotFoundError:
         logger.error(f"Error: The {expression_str} '{cur_path}' does not exist.")
     except PermissionError:

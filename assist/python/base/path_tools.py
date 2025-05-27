@@ -101,7 +101,8 @@ def jpg_files(dest_dir)->list[str]:
 def json_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".json")
 
-
+def ts_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,".ts")
 def m3u8_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".m3u8")
 

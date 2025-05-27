@@ -312,7 +312,7 @@ def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
         content=lat_fun(content)
     read_write_sync(content,dest_path,mode="wb")
         
-    download_logger.info("完成",update_time_type=UpdateTimeType.ALL)
+    download_logger.debug("完成",update_time_type=UpdateTimeType.ALL)
     return True
 
 
@@ -321,7 +321,7 @@ def move_file(source_file,destination_file):
     # 移动文件
     try:
         result= shutil.move(source_file, destination_file)
-        move_logger.info("成功")
+        move_logger.debug("成功")
     except FileNotFoundError:
         move_logger.error("失败",f"{source_file} 不存在")
     except PermissionError:
@@ -357,7 +357,7 @@ def copy_file(source_file:str|list[str],destination_file:str|list[str],override=
             copy_logger.error("失败",f"{file} 权限不够")
         except Exception as e:
             copy_logger.error("失败",except_stack())    
-    logger.info("完成",update_time_type=UpdateTimeType.ALL)
+    logger.debug("完成",update_time_type=UpdateTimeType.ALL)
 
 
 def priority_read(file_path,readfunc,operator_func=None,writefunc=None):
@@ -392,7 +392,10 @@ def write_to_json(file_path,data,**file_kwargs):
 
 
 def read_from_json(file_path,**file_kwargs):
-    return json.load(open(file_path,"r",**file_kwargs))
+    if not os.path.exists(file_path):
+        return None
+    with open(file_path,"r",**file_kwargs) as f:
+        return json.load(f)
 
 def write_to_json_utf8_sig(file_path,data:dict):
     return write_to_json(file_path,data,encoding="utf-8-sig")
@@ -404,6 +407,16 @@ def read_from_json_utf8_sig(file_path)->dict:
 def write_to_txt(file_path,data,**file_kwargs):
     return open(file_path,"w",**file_kwargs).write(data)
 
+def read_from_txt(file_path,**file_kwargs):
+    if not os.path.exists(file_path):
+        return None
+    with open(file_path,"r",**file_kwargs) as f:
+        return f.read()
+def write_to_txt_utf8_sig(file_path,data):
+    return write_to_txt(file_path,data,encoding="utf-8-sig")
+    
+def read_from_txt_utf8_sig(file_path):
+    return read_from_txt(file_path,encoding="utf-8-sig")
 
 def priority_read_excel_by_pandas(file_path,operator_func=None,sheet_name=None):
     import pandas as pd
@@ -416,7 +429,7 @@ def priority_read_excel_by_pandas(file_path,operator_func=None,sheet_name=None):
 
 
 def priority_read_json(file_path,operator_func=None,**file_kwargs):
-    import json
+    import txt
     readfunc=lambda file_path:json.load(open(file_path,"r",**file_kwargs))
     writefunc=lambda file_path,data :write_to_json(file_path,data,**file_kwargs)
     return priority_read(file_path,readfunc,operator_func,writefunc)

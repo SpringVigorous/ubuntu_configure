@@ -12,6 +12,8 @@ from com_log import logger_helper,UpdateTimeType
 from com_decorator import exception_decorator
 from except_tools import except_stack
 import queue 
+import random
+import time 
 
 #生产者-消费者模型(一个输入队列，一个输出队列)
 class TaskBase():
@@ -125,6 +127,11 @@ class TaskBase():
     
 
 
-
+def random_sleep(min_time=3,max_time=15,logger:logger_helper=None):
+    sleep_time=random.uniform(min_time, max_time)
+    time.sleep(sleep_time)
+    if logger:
+        logger.trace(f"随机休眠{sleep_time:.2f}秒")
+    return sleep_time
 
 

@@ -6,7 +6,7 @@ import time
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
-from base import ThreadTask,get_param_from_url,find_last_value_by_col_val,ThreadPool,get_next_filepath,write_to_json_utf8_sig,RetryOperater,fatal_link_error
+from base import ThreadTask,get_param_from_url,find_last_value_by_col_val,ThreadPool,get_next_filepath,write_to_json_utf8_sig,RetryOperater,fatal_link_error,random_sleep
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from taobao_config import *
@@ -350,7 +350,7 @@ class InteractShop(ThreadTask):
     def __init__(self,input_queue,output_queue,stop_event,out_stop_event,interact:InteractImp):
         super().__init__(input_queue,output_queue=output_queue,stop_event=stop_event,out_stop_event=out_stop_event)
         self.interact:InteractImp=interact
-        self.set_name(self.__class__.__name__)
+        self.set_thread_name(self.__class__.__name__)
     @exception_decorator()
     def _handle_data(self, data):
         #致命错误，退出
@@ -368,7 +368,7 @@ class InteractProduct(ThreadTask):
     def __init__(self,input_queue,output_queue,stop_event,out_stop_event,interact:InteractImp):
         super().__init__(input_queue,output_queue=output_queue,stop_event=stop_event,out_stop_event=out_stop_event)
         self.interact:InteractImp=interact
-        self.set_name(self.__class__.__name__)
+        self.set_thread_name(self.__class__.__name__)
         
         
     def _final_run_after(self):
@@ -396,7 +396,7 @@ class HandleProducts(ThreadTask):
         
         
         self.logger.update_target(class_name)
-        self.set_name(class_name)
+        self.set_thread_name(class_name)
     @exception_decorator(error_state=False)
     def _handle_data(self, data):
         if not data:
@@ -438,7 +438,7 @@ class HandlePics(ThreadTask):
     def __init__(self,input_queue,stop_event,output_queue,out_stop_event):
         super().__init__(input_queue,stop_event=stop_event,output_queue=output_queue,out_stop_event=out_stop_event)
         self.manager=tb_manager()
-        self.set_name(self.__class__.__name__)
+        self.set_thread_name(self.__class__.__name__)
     @exception_decorator()
     def _handle_data(self, data):
 
@@ -484,7 +484,7 @@ class DownloadPics(ThreadTask):
         class_name=self.__class__.__name__
         
         self.cache_thread=ThreadPool(root_thread_name=class_name)
-        self.set_name(class_name)
+        self.set_thread_name(class_name)
     @exception_decorator()
     def _handle_data(self, data):
         self._download_by_df(data)
@@ -531,7 +531,7 @@ class OcrPics(ThreadTask):
         self.manager=tb_manager()
         class_name=self.__class__.__name__
         self.cache_thread=ThreadPool(root_thread_name=class_name)
-        self.set_name(class_name)
+        self.set_thread_name(class_name)
         self._lock=threading.Lock()
         self._ocr_lst:list[str]=[]
         self.logger.update_target("文字识别")

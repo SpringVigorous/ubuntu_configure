@@ -94,12 +94,7 @@ def get_product_name_from_title(title:str)->str:
     
     
 
-def random_sleep(min_time=3,max_time=15,logger:logger_helper=None):
-    sleep_time=random.uniform(min_time, max_time)
-    time.sleep(sleep_time)
-    if logger:
-        logger.trace(f"随机休眠{sleep_time:.2f}秒")
-    return sleep_time
+
     
 #店铺首页url
 def shop_home_url(user_id:str|int):

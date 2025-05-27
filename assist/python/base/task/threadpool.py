@@ -44,7 +44,7 @@ class ThreadPool:
             for _ in range(self._num_threads):
                 self._start_thread()
                 
-        logger.info("成功",f"共{len(self._threads)}个",update_time_type=UpdateTimeType.STAGE)
+        logger.debug("成功",f"共{len(self._threads)}个",update_time_type=UpdateTimeType.STAGE)
 
     def _start_thread(self):
         logger=self._logger
@@ -128,7 +128,7 @@ class ThreadPool:
             error = None
             try:
                 result=func(*args, **kwargs)  # 执行任务
-                logger.info("完成",f"结果是：{result}",update_time_type=UpdateTimeType.STEP)
+                logger.debug("完成",f"结果是：{result}",update_time_type=UpdateTimeType.STEP)
             except Exception as e:
                 logger.error("异常",f"Task execution failed: {e}",update_time_type=UpdateTimeType.STEP)
                 error=e
@@ -140,20 +140,20 @@ class ThreadPool:
                     logger.trace("回调开始",update_time_type=UpdateTimeType.STEP)
                     try:
                         callback(result, error)
-                        logger.info("回调完成",update_time_type=UpdateTimeType.STEP)
+                        logger.debug("回调完成",update_time_type=UpdateTimeType.STEP)
                     except Exception as e:
                         logger.error("回调异常",f"Callback failed: {e}")
                 
 
 
-        logger.info("线程结束",update_time_type=UpdateTimeType.ALL)
+        logger.debug("线程结束",update_time_type=UpdateTimeType.ALL)
 
     def join(self, wait=True):
         """ 关闭线程池 """
         self._stop_event.set()  # 触发停止事件
         self._logger.update_target(detail="触发停止事件")
         
-        self._logger.info("进行中",update_time_type=UpdateTimeType.STAGE)
+        self._logger.debug("进行中",update_time_type=UpdateTimeType.STAGE)
         if wait:
             self._task_queue.join()  # 等待所有任务完成
             for thread in self._threads:
@@ -177,13 +177,13 @@ class ThreadPool:
             if current_threads < self._num_threads:
                 for _ in range(self._num_threads - current_threads):
                     self._start_thread()
-            logger.info("成功",f"补充{len(self._threads)-len(current_threads)}个",update_time_type=UpdateTimeType.STAGE)
+            logger.debug("成功",f"补充{len(self._threads)-len(current_threads)}个",update_time_type=UpdateTimeType.STAGE)
         
     def force_stop(self):
         self._stop_event.set()  # 触发停止事件
         with self._lock:
             self._logger.update_target(detail="强制退出，清空队列")
-            self._logger.info("开始",f"任务列表剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
+            self._logger.debug("开始",f"任务列表剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
             self._task_queue.clear()
             self._task_queue.task_done()
         

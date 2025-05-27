@@ -19,8 +19,8 @@ sys.path.append( os.path.join(root_path,'base') )
 
 
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType
-from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
-from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
+from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
+from base import as_normal,MultiThreadCoroutine
 from base import arrange_urls,postfix
 import pandas as pd
 
@@ -36,7 +36,24 @@ def get_real_url(url:str,url_page):
         name=org_path.name
         return url_page.replace(name,url)
 
-from base  import ts_files,move_file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class video_info:
@@ -47,23 +64,15 @@ class video_info:
         self.iv=None
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
-            'authority': 'c1.rrcdnbf5.com',
-            'accept': '*/*',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'origin': 'https://vip.vipuuvip.com',
-            'referer': 'https://vip.vipuuvip.com/',
             'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+            'Referer': 'https://api.ukubf.com/',
             'sec-ch-ua-mobile': '?0',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
             'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'cross-site',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
         }
         content=None
         if os.path.exists(m3u8_path):
             content=open(m3u8_path,"r",encoding="utf-8").read()
-
         
         if not content:
             response=requests.get(url, headers=headers,verify=False)
@@ -78,7 +87,7 @@ class video_info:
         try:
             header=content.split('#EXTINF:')[0].replace(",","\n")
 
-            self.logger.info("内容头",f"\n{header}\n")
+            self.logger.debug("内容头",f"\n{header}\n")
         except:
             pass
         # print(content)
@@ -144,7 +153,7 @@ class video_info:
         key=fetch_sync(url)
 
 
-        self.logger.info("加密信息",f"\nmethod:{self.method},\nuri:{self.uri},\niv:{self.iv},\nkey:{key}")
+        self.logger.debug("加密信息",f"\nmethod:{self.method},\nuri:{self.uri},\niv:{self.iv},\nkey:{key}")
         # print(len(self.iv))
         # print(len(key))
         return key
@@ -205,7 +214,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
             info=[multi_thread_coroutine.fail_infos,except_stack()]
             info_str="\n".join(info)
             playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
-        playlist_logger.trace(multi_thread_coroutine.result)
+        print(multi_thread_coroutine.result)
         
         return multi_thread_coroutine.success
     except Exception as e:
@@ -228,10 +237,9 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
     
     while True:
         play_logger.update_target(detail=f"第{download_time}次")
-        play_logger.update_time(UpdateTimeType.ALL)
-        play_logger.info("开始")
+        play_logger.debug("开始", update_time_type=UpdateTimeType.ALL)
         success = handle_playlist(urls, temp_paths, key, iv)
-        play_logger.info("完成", update_time_type=UpdateTimeType.ALL)
+        play_logger.debug("完成", update_time_type=UpdateTimeType.ALL)
         download_time+=1
         
         #检查下载情况
@@ -246,7 +254,7 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
                 else:
                     success_paths.append(temp_path)
             lost_count = len(losts)
-            play_logger.info("统计",f"已下载{all_count-lost_count}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
+            play_logger.debug("统计",f"已下载{all_count-lost_count}个,缺失{lost_count}个",update_time_type=UpdateTimeType.ALL)
                 
         if download_time>10 or lost_count<1 or (last_lost_count==lost_count):
             break
@@ -376,7 +384,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     dest_path=normal_path(os.path.join(root_path,"video",f"{dest_name}.mp4")) if not dest_dir else normal_path(os.path.join(dest_dir,f"{dest_name}.mp4"))
     
     play_logger= logger_helper("下载",f"{url}->{dest_name}-{dest_hash}")
-    play_logger.info("开始")
+    play_logger.debug("开始")
         
     os.makedirs(temp_dir, exist_ok=True)
     
@@ -389,12 +397,12 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
     url_list=[get_real_url(urls[2],url)  for urls in info_list]
-    play_logger.info(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
+    play_logger.debug(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
 
     
     temp_path_list=temp_video_paths(len(url_list),temp_dir,postfix(url_list[0]))
     
-    play_logger.info("开始","下载",update_time_type=UpdateTimeType.STAGE)
+    play_logger.debug("开始","下载",update_time_type=UpdateTimeType.STAGE)
 
     lost_count,success_paths=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
 
@@ -408,15 +416,15 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     
     # return True
     
-    play_logger.info("开始","合并",update_time_type=UpdateTimeType.STAGE)
+    play_logger.debug("开始","合并",update_time_type=UpdateTimeType.STAGE)
     merge_video(success_paths,temp_path)
-    play_logger.info("完成","合并",update_time_type=UpdateTimeType.STAGE)
+    play_logger.debug("完成","合并",update_time_type=UpdateTimeType.STAGE)
     
     move_file(temp_path,dest_path)
     
     if lost_count==0 and False:
-        recycle_bin(temp_dir)
-        play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
+        delete_directory(temp_dir)
+        play_logger.debug("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
         play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
         
@@ -449,7 +457,7 @@ def force_merge(dir_path,dest_path):
     temp_path=f"F:/worm_practice/player/temp/{hash_text(dest_path)}.mp4"
     merge_video(temp_path_list,temp_path)
     move_file(temp_path,dest_path)
-    recycle_bin(dir_path)
+    delete_directory(dir_path)
 def shut_down(time:10):
     os.system(f"shutdown /s /t {time}")
     
@@ -467,186 +475,16 @@ def force_merges():
         hash_path=row["hash_path"]
         name=row["name"]
         loger=logger_helper(f"合并{row["hash"]}",f"{row["hash_path"]}->{name}")
-        loger.info("开始")
+        loger.debug("开始")
         if name:
             force_merge(hash_path,os.path.join(dest_dir,f"{row["name"]}.mp4")) 
-            loger.info("完成",update_time_type=UpdateTimeType.ALL)
+            loger.debug("完成",update_time_type=UpdateTimeType.ALL)
         else:
-            loger.info("失败",f"{hash_path} 没有找到name:{row['hash']}",update_time_type=UpdateTimeType.ALL)
+            loger.debug("失败",f"{hash_path} 没有找到name:{row['hash']}",update_time_type=UpdateTimeType.ALL)
     
     # shut_down(10)
-    
-#系列视频
-
-def series_movies_info(name:str):
-    from base  import json_files,read_from_json_utf8_sig
-    lst=[]
-    for file in filter(lambda x: name in Path(x).stem, json_files(r"F:\worm_practice\player\urls")):
-        if not os.path.exists(file): continue
-        if "-lost" in Path(file).stem: 
-            os.remove(file)
-            continue
-        
-        json_data=read_from_json_utf8_sig(file)
-        if not json_data: continue
-        lst.append(json_data)
-    lst.sort(key=lambda x:x["name"])
-    return lst
-    
-
-#播放列表
-def series_movies(name:str):
-    lst=[]
-
-    for json_data in series_movies_info(name):
-        
-        lst.append((json_data["url"],json_data["name"]))
-    print(lst)
-    
-#系列视频合并
-def merge_series_movies(name:str):
-    collect_dir=None
-    logger=logger_helper("合并系列视频",name)
-    temp_root=r"F:\worm_practice\player\temp"
-    for index,json_data in enumerate(series_movies_info(name)):
-        cur_hash=json_data["hash"]
-
-        if not collect_dir: 
-            collect_dir=os.path.join(temp_root, cur_hash)
-
-        cur_dir=os.path.join(temp_root, cur_hash)
-        recycle_bin(cur_dir)
-        continue
-
-
-        
-        from base  import ts_files,move_file
-        files=ts_files(cur_dir)
-        for file in ts_files(cur_dir):
-            cur_path=Path(file)
-            new_name=f"{index:03}_{cur_path.name}"
-            
-            new_path=cur_path.with_name(new_name)
-            os.rename(cur_path,new_path)
-            
-            
-            # cur_index=int(cur_path.stem)
-            # if cur_index<21 or cur_index+15>len(files):
-            #     recycle_bin(str(new_path))
-            
-            
-            continue
-            dest_path=os.path.join(collect_dir,new_name)
-            # logger.trace(file,dest_path )
-            move_file(file,dest_path) 
-
-            
-            
-        # recycle_bin(cur_dir)
-        
-        
-    return
-            
-    logger.trace("合并目录",update_time_type=UpdateTimeType.STAGE)
-    dest_dir=os.path.join(r"F:\worm_practice\player\video", f"{name}.mp4")
-    force_merge(collect_dir,  dest_dir )
-    logger.trace("合并视频",update_time_type=UpdateTimeType.STAGE)
-    logger.trace("完成",update_time_type=UpdateTimeType.ALL)
-#系列视频 单独合并
-def series_movies_per_merge(name:str):
-    logger=logger_helper("合并系列视频",name)
-    temp_root=r"F:\worm_practice\player\temp"
-    cache_root=r"F:\worm_practice\player\cache"
-    cur_cache_dir=os.path.join(cache_root, name)
-    os.makedirs(cur_cache_dir,exist_ok=True)
-    temp_dirs=[]
-    for index,json_data in enumerate(series_movies_info(name)):
-        cur_hash=json_data["hash"]
-
-
-        cur_dir=os.path.join(temp_root, cur_hash)
-        if not os.path.exists(cur_dir):
-            continue
-        # move_file(cur_dir,cur_cache_dir)
-        temp_dirs.append(cur_dir)
-        continue
-
-        files=ts_files(cur_dir)
-        for file in ts_files(cur_dir):
-            cur_path=Path(file)
-            new_name=f"{index:03}_{cur_path.name}"
-            
-            new_path=cur_path.with_name(new_name)
-            os.rename(cur_path,new_path)
-            
-            
-            # cur_index=int(cur_path.stem)
-            # if cur_index<21 or cur_index+15>len(files):
-            #     recycle_bin(str(new_path))
-        move_file(cur_dir,cur_cache_dir)
-    if not temp_dirs:
-        return
-    logger.trace("合并目录",update_time_type=UpdateTimeType.STAGE)
-    
-    
-    for index,cur_dir in enumerate(temp_dirs):
-        dest_video=os.path.join(r"F:\worm_practice\player\video", f"{name}_{index+1:02}.mp4")
-        logger.update_target("合并目录",f"{cur_dir}->{dest_video}")
-        force_merge(cur_dir,  dest_video )
-        logger.trace("合并视频",update_time_type=UpdateTimeType.STAGE)
-        logger.trace("完成",update_time_type=UpdateTimeType.ALL)
-
-def rename_video(org_name:str):
-    result = re.sub(
-    r'(.*?)第([一二三四五六七八九十]+)季_(\d+)$',
-    lambda m: f"{m.group(1)}_第{arabic_numbers(m.group(2))[0]:02}季_{m.group(3)}",
-    org_name)
-    return result
-
-def rename_videos(file_base_name:str):
-    for file in mp4_files(r"F:\worm_practice\player\video"):
-        cur_path=Path(file)
-        name=cur_path.stem
-        if file_base_name not in name: continue
-        new_name=rename_video(name)
-        if new_name==name: continue
-        os.rename(file,cur_path.with_stem(new_name))
-        # print(file,cur_path.with_stem(new_name))
-    pass
  
-def filter_folder(file_base_name:str):
-    
-    pattern = f"^{file_base_name}" + r'_第(\d{2})季_(\d{2})$'
-    
-    for file in mp4_files(r"F:\worm_practice\player\video"):
-        cur_path=Path(file)
-        name=cur_path.stem
-        if match := re.match(pattern, name):
-
-            # 解析季数（如01）
-            season_num = match.group(1)
-            
-            # 构建目标目录名称（汪汪队立大功_第01季）
-            target_dir = f"{file_base_name}_第{season_num}季"
-            dest_dir=cur_path.parent /target_dir
-            
-            # 创建目录（exist_ok=True表示已存在时不报错）
-            os.makedirs(dest_dir, exist_ok=True)
-            move_file(file,dest_dir)
-    
-    pass
 if __name__=="__main__":
-
-    filter_folder("汪汪队立大功")
-    # rename_videos("汪汪队立大功")
-    exit(0)
-    # merge_series_movies("新编蓝猫淘气三千问")
-    
-    # series_movies_per_merge("汪汪队立大功第九季")
-    flag="一二三四五六七八"
-    for i in flag:
-        series_movies_per_merge(f"汪汪队立大功第{i}季")
-    exit(0)
     
     # force_merges()
     # exit(0)
@@ -675,9 +513,45 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-        # ('https://v6.tlkqc.com/wjv6/202309/09/5UHtQ4sRjM1/video/1000k_720/hls/index.m3u8', '神笔马良'),
 
-]
+
+("https://v6.qrssv.com/202311/04/GEqPHesb3C1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_01"),
+
+
+
+("https://v6.qrssv.com/202311/04/vKSTVCRpiC1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_11"),
+("https://v6.qrssv.com/202311/04/K9CFaai1JZ1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_12"),
+("https://v6.qrssv.com/202311/04/Qpier5WmEV1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_13"),
+("https://v6.qrssv.com/202311/04/kSWRHUgBcz1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_14"),
+("https://v6.qrssv.com/202311/04/RVJaiKdqKA1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_15"),
+("https://v6.qrssv.com/202311/04/auQqa5N7hA1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_16"),
+("https://v6.qrssv.com/202311/04/2uuD22PhCk1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_17"),
+("https://v6.qrssv.com/202311/04/mMKypGxssM1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_18"),
+("https://v6.qrssv.com/202311/04/uE2PhfezPz1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_19"),
+("https://v6.qrssv.com/202311/04/t985ye4nUf1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_20"),
+("https://v6.qrssv.com/202309/06/xXcX1a0YEn1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_01"),
+("https://v6.qrssv.com/202309/06/imkgb2X5j21/video/2000k_1080/hls/index.m3u8","葫芦兄弟_02"),
+("https://v6.qrssv.com/202309/06/drvmRWsWaR1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_03"),
+("https://v6.qrssv.com/202309/06/ELs46ZA1EB1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_04"),
+("https://v6.qrssv.com/202309/06/kxiQvZUhwe1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_05"),
+("https://v6.qrssv.com/202309/06/SjzimrVpbj1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_06"),
+("https://v6.qrssv.com/202309/09/qXGFDHiW7b1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_01"),
+("https://v6.qrssv.com/202309/09/QBNqiyDhqk1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_02"),
+("https://v6.qrssv.com/202309/09/qJYEEwrGpM1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_03"),
+("https://v6.qrssv.com/202309/06/GefacSent21/video/2000k_1080/hls/index.m3u8","葫芦小金刚_04"),
+("https://v6.qrssv.com/202309/06/kfyXme72Am1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_05"),
+("https://v6.qrssv.com/202309/09/5pbEGE2F9D1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_06"),
+("https://v7.qrssv.com/202405/09/Tz9n6CgtrK13/video/2000k_1080/hls/index.m3u8","黑猫警长电影版"),
+("https://v1.qrssv.com/202308/20/TFk1kSj2iC2/video/2000k_1080/hls/index.m3u8","黑猫警长之翡翠之星"),
+
+
+
+
+
+
+
+        
+    ]
 
     
     result=[main(*item) for item in lst]

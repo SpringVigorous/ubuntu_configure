@@ -8,6 +8,7 @@ import threading
 from time import time
 import operator
 from com_log import logger_helper,UpdateTimeType
+from com_decorator import  exception_decorator
 from except_tools import except_stack
 import random
 
@@ -81,6 +82,7 @@ class MultiThreadCoroutine:
                     return False
         return bool(self.result)
     @property
+    @exception_decorator(error_state=False)
     def _fail_info(self):
         if self.success:
             return []
@@ -90,6 +92,8 @@ class MultiThreadCoroutine:
             for j,item in enumerate(result):
                 if isinstance(item,Exception):
                     index=self.index(i,j)
+                    if  index<0 or index>=len(self.args_list):
+                        continue
                     info.append((index,self.args_list[index],item))
 
         return info

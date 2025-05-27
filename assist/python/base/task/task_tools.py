@@ -12,3 +12,5 @@ def until_success(func: Callable[..., any], max_retries=3, *args, **kwargs) -> b
         finally:
             retries += 1
     return False
+
+
