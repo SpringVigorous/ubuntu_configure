@@ -30,12 +30,12 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDc5OTYxMTgsImV4cCI6MTc0ODAzOTM0OCwiaWF0IjoxNzQ3OTk2MTQ4LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.q6w8ZPkLsH9jpYesKdyma9r9e_FcN59XH3otriEOYns',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDg1MDk1MTYsImV4cCI6MTc0ODU1Mjc0NiwiaWF0IjoxNzQ4NTA5NTQ2LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.cNbKOsZg6bcFbXfZHa9EJY4WjT-lhXeG0GusW871EhU',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
-    'origin': 'https://bxxxsevzb.xwcx6.com',
-    'pageurl': 'https://bxxxsevzb.xwcx6.com/live/page/835199786?v=1747996014000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
-    'referer': 'https://bxxxsevzb.xwcx6.com/',
+    'origin': 'https://tbmlghvzb.xwcx6.com',
+    'pageurl': 'https://tbmlghvzb.xwcx6.com/live/page/581094344?v=1748509568000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'referer': 'https://tbmlghvzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
@@ -48,14 +48,16 @@ headers = {
 }
 
 params = {
-    'tpid': '5F80C5F24927634CF54E8DE418F9D34F',
-    'time': '358730361',
+    'tpid': 'ECCD0776BD0C4A9600FDC5D3CF2B0DC7',
+    'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
     'loadNewCache': '1',
 }
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+
+
 
 
 
@@ -493,7 +495,7 @@ def main():
     # asyncio.run(download_images()) 
     # exit()
     
-    # init_param(time_val=193756838)
+    # init_param(time_val=439729842)
     init_param()
 
     logger=logger_helper("获取评论信息",file_name)

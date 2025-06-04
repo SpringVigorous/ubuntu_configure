@@ -59,9 +59,14 @@ def get_real_url(url:str,url_page):
 class video_info:
     def __init__(self,url,m3u8_path) -> None:
         self.url=url
+        self.logger=logger_helper("解析m3u8",f"{self.url}")
         self.method=None
         self.uri=None
         self.iv=None
+        
+        self.playlist=None
+        self.org_playlist=None
+        
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
             'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
@@ -71,16 +76,32 @@ class video_info:
             'sec-ch-ua-platform': '"Windows"',
         }
         content=None
-        if os.path.exists(m3u8_path):
-            content=open(m3u8_path,"r",encoding="utf-8").read()
-        
+        has_already=False
+        try:
+            flag=True
+            if os.path.exists(m3u8_path) and flag:
+                content=open(m3u8_path,"r",encoding="utf-8-sig").read()
+                has_already=True
+        except:
+            pass
         if not content:
             response=requests.get(url, headers=headers,verify=False)
             self.logger=logger_helper("解析m3u8",f"{self.url}")
             content=response.text
             
-            #写入文件
-            open(m3u8_path,"w",encoding="utf-8").write(content)
+        if "#EXT-X-STREAM-INF" in content:
+            rows=[data for data in content.split("\n") if data]
+            data=rows[-1]
+            url=get_real_url(data.strip(),url)
+            self.url=url
+            response=requests.get(url, headers=headers,verify=False)
+            self.logger=logger_helper("解析m3u8",f"{self.url}")
+            content=response.text
+            has_already=False
+            
+        #写入文件
+        if not has_already and content:
+            open(m3u8_path,"w",encoding="utf-8-sig").write(content)
             
             
         self.m3u8=content
@@ -95,10 +116,13 @@ class video_info:
         self._init_urls(content)
         self._init_keys(content)
 
+    @exception_decorator(error_state=False)
     def _init_urls(self,content):
         pattern = re.compile(r'#EXTINF:(.*?),\s*(\S+)\s')
 
         matches = pattern.findall(content)
+        if not matches:
+            return
         playlist=[]
         for val in matches :
             duration, ts_file =val
@@ -146,7 +170,6 @@ class video_info:
             return None
         url=self.uri
         if not is_http_or_https(url):
-
             org_path=Path(self.url)
             name=org_path.name
             url=self.url.replace(name,self.uri)
@@ -483,93 +506,65 @@ def force_merges():
             loger.debug("失败",f"{hash_path} 没有找到name:{row['hash']}",update_time_type=UpdateTimeType.ALL)
     
     # shut_down(10)
+    
+def split_info_to_srt(url_json_path:str,temp_dir:str,dest_srt_path:str):
+    from base import json_files,read_from_json_utf8_sig,ts_files
+    from pathlib import Path
+    json_data=read_from_json_utf8_sig(url_json_path)
+    if not  json_data: return
+    datas=json_data["playlist"]
+    json_result=[{"name":data[0],"duration":data[1]} for data in datas if data and len(data)>1]
+    
+    ts_result=[{"name":int(Path(ts_file).stem)} for ts_file in ts_files(temp_dir)]
+    
+    json_df=pd.DataFrame(json_result)
+    ts_df=pd.DataFrame(ts_result)
+    result_df=pd.merge(ts_df,json_df,on="name",how="left")
+    result_df["diff"]=result_df["name"].diff().fillna(5).astype(int)
+    result_df["time"]=result_df["duration"].cumsum()
+    mask=result_df["diff"]>1
+    
+    sub_dir=Path(temp_dir).stem
+    
+    pic_cache_dir=os.path.abspath(os.path.join(url_json_path,"../../pic",sub_dir))
+    os.makedirs(pic_cache_dir, exist_ok=True)
+    names=result_df.loc[mask,"name"].to_list()
+    from base import cover_video_pic
+    for i,name in enumerate(names):
+        ts_path=os.path.join(temp_dir,f"{name:04}.ts")
+        cover_path=os.path.join(pic_cache_dir,f"{i+1:04}.jpg")
+        cover_video_pic(ts_path,cover_path)
+    return
+    
+    pre_mask=mask.shift(-1,fill_value=True)
+    dest=result_df[pre_mask]
+    
+    dest_df=pd.DataFrame()
+    spec_time_lst=[0]
+    spec_time_lst.extend(result_df.loc[pre_mask,"time"].values)
+    results=[]
+    for i in range(len(spec_time_lst)-1):
+        start_time=int(spec_time_lst[i])
+        end_time=int(spec_time_lst[i+1])
+        results.append((start_time,end_time,f"{i+1:03}"))
+    from base import generate_srt
+    generate_srt(results,dest_srt_path,"s")
+    
+    return
+    dest_df["spec_time"]=spec_time_lst
+    dest_df["per_time"]=dest_df["spec_time"].diff().fillna(0).astype(int)
+
+    per_time_lst=dest_df["per_time"].values.tolist()
+    per_time_lst.remove(len(per_time_lst)-1)
+    
+    # result_df.loc[pre_mask,"总时长"]=result_df.loc[pre_mask,"time"]
+    dest_df.to_excel(f"{url_json_path}.xlsx")
+    
+    
+    pass
  
 if __name__=="__main__":
-    
-    # force_merges()
-    # exit(0)
-    
-    # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
-    # print(val)
-    # exit(0)
-    # temp_dir=r"F:\worm_practice\player\temp"
-    # rename_ts(temp_dir,".jpeg")
-    # exit(0)
-    # force_merge(temp_dir,r"F:\worm_practice\player\video\1.mp4")
-    # exit(0)
-
-    
-    # temp_dir=r"E:\FFOutput"
-    # suffix=[".mp4"]
-    # # convert_video_to_mp4_from_src_dir(temp_dir,suffix)
-
-    # temp_path_list=get_all_files_pathlib(temp_dir,suffix)
-    # dest_dir=r"F:\worm_practice\player"
-    # temp_name="1111.mp4"
-    # dest_name="13.mp4"
-    # temp_path=f"{dest_dir}/{temp_name}"
-    # merge_video(temp_path_list,temp_path)
-    # move_file(temp_path,f"{dest_dir}/{dest_name}")
-    # exit(0)
-    
-    lst=[
-
-
-("https://v6.qrssv.com/202311/04/GEqPHesb3C1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_01"),
-
-
-
-("https://v6.qrssv.com/202311/04/vKSTVCRpiC1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_11"),
-("https://v6.qrssv.com/202311/04/K9CFaai1JZ1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_12"),
-("https://v6.qrssv.com/202311/04/Qpier5WmEV1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_13"),
-("https://v6.qrssv.com/202311/04/kSWRHUgBcz1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_14"),
-("https://v6.qrssv.com/202311/04/RVJaiKdqKA1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_15"),
-("https://v6.qrssv.com/202311/04/auQqa5N7hA1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_16"),
-("https://v6.qrssv.com/202311/04/2uuD22PhCk1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_17"),
-("https://v6.qrssv.com/202311/04/mMKypGxssM1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_18"),
-("https://v6.qrssv.com/202311/04/uE2PhfezPz1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_19"),
-("https://v6.qrssv.com/202311/04/t985ye4nUf1/video/2000k_1080/hls/index.m3u8","超级飞侠第十四季_20"),
-("https://v6.qrssv.com/202309/06/xXcX1a0YEn1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_01"),
-("https://v6.qrssv.com/202309/06/imkgb2X5j21/video/2000k_1080/hls/index.m3u8","葫芦兄弟_02"),
-("https://v6.qrssv.com/202309/06/drvmRWsWaR1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_03"),
-("https://v6.qrssv.com/202309/06/ELs46ZA1EB1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_04"),
-("https://v6.qrssv.com/202309/06/kxiQvZUhwe1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_05"),
-("https://v6.qrssv.com/202309/06/SjzimrVpbj1/video/2000k_1080/hls/index.m3u8","葫芦兄弟_06"),
-("https://v6.qrssv.com/202309/09/qXGFDHiW7b1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_01"),
-("https://v6.qrssv.com/202309/09/QBNqiyDhqk1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_02"),
-("https://v6.qrssv.com/202309/09/qJYEEwrGpM1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_03"),
-("https://v6.qrssv.com/202309/06/GefacSent21/video/2000k_1080/hls/index.m3u8","葫芦小金刚_04"),
-("https://v6.qrssv.com/202309/06/kfyXme72Am1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_05"),
-("https://v6.qrssv.com/202309/09/5pbEGE2F9D1/video/2000k_1080/hls/index.m3u8","葫芦小金刚_06"),
-("https://v7.qrssv.com/202405/09/Tz9n6CgtrK13/video/2000k_1080/hls/index.m3u8","黑猫警长电影版"),
-("https://v1.qrssv.com/202308/20/TFk1kSj2iC2/video/2000k_1080/hls/index.m3u8","黑猫警长之翡翠之星"),
-
-
-
-
-
-
-
-        
-    ]
-
-    
-    result=[main(*item) for item in lst]
-    
-    exit(0)
-    # if all(result):    
-    if True:    
-        import os
-        os.system("shutdown /s /t 60")
-    else:
-        print("有失败")
-    # key=get_key("https://hd.ijycnd.com/play/Le32QD9d/enc.key")
-
-    # iv=bytes.fromhex("00000000000000000000000000000000")
-
-    # # val=video_info("https://hd.ijycnd.com/play/Le32QD9d/index.m3u8")
-    
-    # org_path=r"F:\worm_practice\player\temp\feb6b940-1\1.mp4"
-    # dest_path=r"F:\worm_practice\player\temp\feb6b940\1.mp4"
-    
-    # decryp_video(org_path,dest_path,key,iv)
+    split_info_to_srt(r"F:\worm_practice\player\urls\《爆笑虫子_第一季》HD中字高清资源免费在线观看_动画片_555电影网-3a7c8a7f.json",
+               r"F:\worm_practice\player\temp\3a7c8a7f",
+               r"F:\worm_practice\player\video\爆笑虫子_01.srt")
+    pass

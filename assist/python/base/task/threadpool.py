@@ -9,6 +9,7 @@ from typing import Callable, Any
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from com_log import logger_helper,UpdateTimeType
+from com_decorator import exception_decorator
 
 class ThreadPool:
     def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5,root_thread_name:str=""):
@@ -159,6 +160,7 @@ class ThreadPool:
             for thread in self._threads:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
+    @exception_decorator(error_state=False)
     def restart(self):
         """ 补充缺失的线程至目标数量 """
         
@@ -177,7 +179,7 @@ class ThreadPool:
             if current_threads < self._num_threads:
                 for _ in range(self._num_threads - current_threads):
                     self._start_thread()
-            logger.debug("成功",f"补充{len(self._threads)-len(current_threads)}个",update_time_type=UpdateTimeType.STAGE)
+            logger.debug("成功",f"补充{len(self._threads)-current_threads}个",update_time_type=UpdateTimeType.STAGE)
         
     def force_stop(self):
         self._stop_event.set()  # 触发停止事件

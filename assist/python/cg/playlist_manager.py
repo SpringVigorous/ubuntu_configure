@@ -18,7 +18,7 @@ from base import (
     update_col_nums,
     assign_col_numbers,
     mp4_files,
-
+    unique,
     concat_unique,
     content_same,
     sub_df,
@@ -146,7 +146,29 @@ class playlist_manager(file_manager):
             results.append((key,iv,info_list,total_len,video_name,m3u8_url))
             
         return results
-
+    @property
+    @exception_decorator(error_state=False)
+    def nom3u8_lst(self)->list:
+        if  df_empty(self._video_df):
+            return []
+        results=[]
+        drop_index=[]
+        for index,row in self._video_df[self._video_df[download_status_id]<1].iterrows():
+            video_name=row[video_name_id]
+            url_path=url_json_path(video_name)
+            data=read_from_json_utf8_sig(url_path)
+            if data:
+                continue
+            url=row[url_id]
+            if not url:
+                continue
+            results.append(url)
+            drop_index.append(index)
+        if drop_index:
+            with self.lock:
+                self._video_df.drop( self._video_df.index[drop_index] ,inplace=True)
+            
+        return unique(results)
     @exception_decorator(error_state=False)
     def has_downloaded(self,video_name:str)->bool:
         df=None
@@ -164,7 +186,7 @@ class playlist_manager(file_manager):
     @exception_decorator(error_state=False)
     def set_donwnloaded(self,video_name:str,status:int=1)->bool:
         logger=self.logger
-        logger.update_target("设置文件下载状态",video_name)
+        logger.update_target("更新下载状态",video_name)
         with self.lock:
             df=self._video_df
             if df_empty(df):

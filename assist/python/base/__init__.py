@@ -41,6 +41,7 @@ from .loops_tools import *
 
 from .webpage_watcher import *
 from .file_manager import file_manager
+from .srt_tools import *
 
 
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]

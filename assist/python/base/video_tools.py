@@ -9,6 +9,7 @@ import subprocess
 from com_log import logger_helper,UpdateTimeType
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from com_decorator import  exception_decorator
 def get_all_files_pathlib(directory,include_suffix:list=None):
     """
     获取指定目录下的所有文件的全路径
@@ -24,7 +25,12 @@ def get_all_files_pathlib(directory,include_suffix:list=None):
             file_paths.append(str(file.resolve()))
     return file_paths
 
-
+#获取视频首帧图片
+@exception_decorator(error_state=False)
+def cover_video_pic(video_path,dest_path):
+    command = [ffmpeg_path(),'-i', windows_path(video_path),'-ss','00:00:00.050', '-vframes', '1', '-c:v', 'mjpeg','-q:v', '2', '-an' ,'-y', windows_path(dest_path)]
+    _= subprocess.run(command, capture_output=True, text=True,errors="ignore",check=True)
+    
 
 def merge_video(temp_paths,dest_path):
     if not temp_paths or not dest_path:

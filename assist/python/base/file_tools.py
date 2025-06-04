@@ -251,7 +251,7 @@ async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
         tasks = [_download_async_semaphore(semaphore,session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths) if url and dest_path]
         await asyncio.gather(*tasks)
 
-def fetch_sync(url ,max_retries=5,timeout=300,**args):
+def fetch_sync(url ,max_retries=3,timeout=300,**args):
     """
     从给定的 URL 获取内容，支持重试机制和超时设置。
 

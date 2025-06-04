@@ -172,7 +172,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
 
     playlist_logger.trace("开始")
     def decode():
-        if not key or not iv:
+        if not key or  iv is None:
             return None 
         def _decode(encrypted_data):
             return decrypt_aes_128_from_key(key,iv,encrypted_data)
@@ -499,7 +499,6 @@ def series_movies(name:str):
     lst=[]
 
     for json_data in series_movies_info(name):
-        
         lst.append((json_data["url"],json_data["name"]))
     print(lst)
     
@@ -637,16 +636,19 @@ def filter_folder(file_base_name:str):
     pass
 if __name__=="__main__":
 
-    filter_folder("汪汪队立大功")
+    # filter_folder("汪汪队立大功")
     # rename_videos("汪汪队立大功")
-    exit(0)
+    # exit(0)
     # merge_series_movies("新编蓝猫淘气三千问")
     
-    # series_movies_per_merge("汪汪队立大功第九季")
-    flag="一二三四五六七八"
-    for i in flag:
-        series_movies_per_merge(f"汪汪队立大功第{i}季")
+    series_movies_per_merge("爆笑虫子")
+    
+    
     exit(0)
+    # flag="一二三四五六七八"
+    # for i in flag:
+    #     series_movies_per_merge(f"汪汪队立大功第{i}季")
+    # exit(0)
     
     # force_merges()
     # exit(0)
@@ -675,7 +677,7 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-        # ('https://v6.tlkqc.com/wjv6/202309/09/5UHtQ4sRjM1/video/1000k_720/hls/index.m3u8', '神笔马良'),
+        ('https://v1.tlkqc.com/wjv1/202308/20/wapkT3Qwez2/video/1000k_720/hls/index.m3u8', '《爆笑虫子_第三季》HD中字高清资源免费在线观看_动画片_555电影网'),
 
 ]
 

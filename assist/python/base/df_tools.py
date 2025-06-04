@@ -334,14 +334,10 @@ def sub_df(df1:pd.DataFrame,df2:pd.DataFrame,keys:list|str)->pd.DataFrame:
     keys = [keys] if isinstance(keys, str) else keys
     df1_only=df1[keys].astype(str).agg(','.join, axis=1)
     df2_only=df2[keys].astype(str).agg(','.join, axis=1)
-        
-    
-    
     mask=df1_only.isin(df2_only)
-    
-    
-    
     diff_result = df1[~mask]
+    
+    
     return diff_result.copy()
 
 

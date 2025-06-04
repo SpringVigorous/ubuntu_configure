@@ -125,12 +125,13 @@ def merge_url(df,keys:list):
 
 
 def arrange_urls(url_list:list)->list[dict]:
+    if not url_list: return []
     lst=[]
     for duration,url in url_list:
         item={"duration":float(duration)}
         item.update(split_url(url))
         lst.append(item)
-
+    
     keys_param= [key  for key in lst[0].keys() if key not in ["base_url","start","end","duration"]]
     if not keys_param:
         return [ {"url":item["base_url"] ,"duration":item['duration']}  for item in lst]
