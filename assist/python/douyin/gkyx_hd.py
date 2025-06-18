@@ -30,12 +30,12 @@ headers = {
     'authority': 'live-play.vzan.com',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDg1MDk1MTYsImV4cCI6MTc0ODU1Mjc0NiwiaWF0IjoxNzQ4NTA5NTQ2LCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.cNbKOsZg6bcFbXfZHa9EJY4WjT-lhXeG0GusW871EhU',
+    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MDQ4ODA4MDAiLCJuYmYiOjE3NDkxMjI5NDIsImV4cCI6MTc0OTE2NjE3MiwiaWF0IjoxNzQ5MTIyOTcyLCJpc3MiOiJ2emFuIiwiYXVkIjoidnphbiJ9.N2IPmxHrxciT3Tsd8yAQ1-m7qjBMOIDCB1ohy_wFLgA',
     'buid': '9E53C6E18A15FC5272C157351AE20631',
     'content-type': 'application/json;charset=UTF-8',
-    'origin': 'https://tbmlghvzb.xwcx6.com',
-    'pageurl': 'https://tbmlghvzb.xwcx6.com/live/page/581094344?v=1748509568000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
-    'referer': 'https://tbmlghvzb.xwcx6.com/',
+    'origin': 'https://wlhrukvzb.xwcx6.com',
+    'pageurl': 'https://wlhrukvzb.xwcx6.com/live/page/1032138497?v=1749122966000&jumpitd=1&shauid=Evcc232puSL2VXw08UkVQQ**',
+    'referer': 'https://wlhrukvzb.xwcx6.com/',
     'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
@@ -48,7 +48,7 @@ headers = {
 }
 
 params = {
-    'tpid': 'ECCD0776BD0C4A9600FDC5D3CF2B0DC7',
+    'tpid': 'DFB5805D02CE89A35CDC5BC0D5C20F4D',
     'time': '2147483647',
     'pagesize': '12',
     'mode': 'desc',
@@ -56,6 +56,7 @@ params = {
 }
 
 # response = requests.get('https://live-play.vzan.com/api/topic/topic_msg', params=params, headers=headers)
+
 
 
 
