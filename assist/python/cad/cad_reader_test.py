@@ -3,6 +3,7 @@ import math
 import numpy as np
 from matrix_tools import *
 import win32com.client
+from dwg_reader import DwgReader
 
 file= open(r"F:\hg\BJY\drawing_recogniton_dispatch\dwg_to_image\dwgs\entity.log", "w", encoding="utf-8-sig")
 def print_info(*args):
@@ -69,6 +70,7 @@ handler_map = {
 def print_entity(entity, ids: list, matrix: np.array):
     """主分发函数：根据实体类型调用对应处理函数"""
     obj_type = entity.ObjectName
+    
     ids.append(entity.Handle)
     # 使用字典映射替代if-elif链
     handler=handler_map.get(obj_type)
@@ -78,35 +80,34 @@ def print_entity(entity, ids: list, matrix: np.array):
     else:
         print_info(f"未处理的实体类型: {obj_type}","\nids:",ids,"\nscale:",scale(matrix),"\n\n")
 
-
-                
-if __name__ == "__main__":
-    file_path = r"F:\hg\BJY\drawing_recogniton_dispatch\dwg_to_image\dwgs\1.dwg"
-    # 初始化AutoCAD，如果不存在则创建，设置不可见
-    acad = Autocad(create_if_not_exists=True, visible=False)
-    
-    # 获取AutoCAD应用程序对象
-    acad_app =  win32com.client.Dispatch("AutoCAD.Application")
-    doc=None
-    try:
-        doc = acad_app.Documents.Open(file_path)
-    except Exception as e:
-        print(f"打开文件失败: {e}")
-        exit(1)
-
-    
-    msp = doc.ModelSpace
-    
+def print_entities(msp):
+    if not msp: return
     for entity in msp:
         ids=[]
         matrix=identity_matrix()
         print_entity(entity,ids,matrix)
+                
+if __name__ == "__main__":
+    file_path = r"F:\hg\BJY\drawing_recogniton_dispatch\dwg_to_image\dwgs\1.dwg"
+    doc = DwgReader.open_document(file_path)
+    
+    # msp = doc.ModelSpace
+    
+    # print_info("--- 模型空间实体 ---")
+    
+    # print_entities(msp)
+    # 2. 打印图纸空间实体类型（PaperSpace）
+    print_info("--- 图纸空间实体 ---")
+    layouts = doc.Layouts
+    for layout in layouts:
+        # 获取布局对应的图纸空间Block[7,8](@ref)
+        print_info(f"布局名称: {layout.Name}")
+        block = layout.Block
+        print_entities(block)
 
-    # 关闭文档：
-    doc.Close(False)  # 关闭文档且不保存
-    # 如果需要保存，可以：
+    DwgReader.close_current_document()
 
-    acad_app.Quit()
+    DwgReader.shutdown()
     
     
     file.close()
