@@ -9,7 +9,7 @@ from DrissionPage._elements.chromium_element import ChromiumElement
 from __init__ import *
 from base import  logger_helper,UpdateTimeType
 from base import setting as setting
-from base.string_tools import sanitize_filename,datetime_flag
+from base.string_tools import sanitize_filename,cur_datetime_str
 from redbook_tools import *
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE

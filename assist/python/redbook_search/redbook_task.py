@@ -7,7 +7,7 @@ from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 from base.state import ReturnState
 from base import logger as logger_helper,UpdateTimeType
-from base import read_write_sync, datetime_flag,sanitize_filename
+from base import read_write_sync, cur_datetime_str,sanitize_filename
 
 
 
@@ -62,7 +62,7 @@ class Parse(ThreadTask,NoteDir):
         if not self.themes_data:
             return
         #Excle输出
-        outPath = os.path.join(self.CurPath,f"笔记-{datetime_flag()}.xlsx")
+        outPath = os.path.join(self.CurPath,f"笔记-{cur_datetime_str()}.xlsx")
 
         parse_logger=logger_helper("汇总excle文件",outPath)
         parse_logger.trace("开始")

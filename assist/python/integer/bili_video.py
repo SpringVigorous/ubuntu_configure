@@ -16,7 +16,7 @@ from queue import Queue
 from lxml import etree
 import __init__
 from base.com_log import logger as logger
-from base.string_tools import sanitize_filename,date_flag
+from base.string_tools import sanitize_filename,cur_date_str
 from base.file_tools import read_write_async,read_write_sync
 from base.path_tools import normal_path
 import glob
@@ -178,7 +178,7 @@ def  get_catalog(url,headers,params):
                 else:
                     login_info(data,info)
             except: 
-                file_name=f"{date_flag()}_{params["bvid"]}_catalog.json"
+                file_name=f"{cur_date_str()}_{params["bvid"]}_catalog.json"
                 file_path=os.path.join(global_temp_dir,file_name)
                 read_write_sync(org_data,file_path,"w",encoding="utf-8") 
                 logger.error(f"解析失败：输出中间数据到文件{file_path}")   
@@ -387,7 +387,7 @@ class BiliVideoSet:
         logger.info(f"当前缓存根目录：{temp_dir}")
         
         os.makedirs(temp_dir,exist_ok=True)
-        self.html_dir=os.path.join(temp_dir,"html",date_flag())
+        self.html_dir=os.path.join(temp_dir,"html",cur_date_str())
         self.merge_dir=os.path.join(temp_dir,"dest")
         self.cache_dir=os.path.join(temp_dir,"cache")
         

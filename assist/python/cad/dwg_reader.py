@@ -46,15 +46,24 @@ class DwgReader:
         
         # 如果文档已经打开，直接返回现有文档
         if dwg_path in cls._open_documents:
+            
+           
             cls._current_doc = cls._open_documents[dwg_path]
+            
             return cls._current_doc
         
         try:
             # 规范化路径以处理大小写问题
             normalized_path = os.path.abspath(dwg_path)
+            doc=None
+            for _doc in cls._acad_app.Documents:
+                if _doc.FullName == normalized_path:
+                    doc=_doc
+                    break
             
             # 打开文档
-            doc = cls._acad_app.Documents.Open(normalized_path,False,None)
+            if not doc:
+                doc = cls._acad_app.Documents.Open(normalized_path,False,None)
             
             # 存储文档引用
             cls._open_documents[normalized_path] = doc

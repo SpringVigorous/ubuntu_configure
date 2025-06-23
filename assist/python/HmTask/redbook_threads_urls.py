@@ -17,7 +17,7 @@ import concurrent.futures
 from __init__ import *
 from base.com_log import logger as logger,usage_time_str,logger_helper,UpdateTimeType
 
-from base.string_tools import sanitize_filename,datetime_flag
+from base.string_tools import sanitize_filename,cur_datetime_str
 
 
 from HmTask.redbook_tools import *
@@ -491,7 +491,7 @@ class Parse(ThreadTask,NoteDir):
     def _final_run_after(self):
         start_time=time.time()
         #Excle输出
-        outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
+        outPath = os.path.join(self.CurPath,f"{cur_datetime_str()}.xlsx")
 
         parse_logger=logger_helper("汇总excle文件",outPath)
         parse_logger.trace("开始")

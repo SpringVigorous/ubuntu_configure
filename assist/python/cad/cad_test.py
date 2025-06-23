@@ -3,10 +3,7 @@ import math
 import numpy as np
 from matrix_tools import *
 import win32com.client
-
-file= open(r"F:\hg\BJY\drawing_recogniton_dispatch\dwg_to_image\dwgs\entity.log", "w", encoding="utf-8-sig")
-def print_info(*args):
-    file.write(f'{" ".join(map(str, args))}\n')
+from print_tools import print_info,close_print
     
 
 def transform_point(local_point, insert_point, scale, rotation):
@@ -109,5 +106,5 @@ if __name__ == "__main__":
     acad_app.Quit()
     
     
-    file.close()
+    close_print()
     

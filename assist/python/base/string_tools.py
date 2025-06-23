@@ -1,6 +1,6 @@
 ﻿# import path_tools as asp
 import  re
-from datetime import datetime
+from datetime import datetime,timedelta
 from bs4 import BeautifulSoup
 # asp.add_sys_path(__file__)
 from numbers import Number
@@ -66,11 +66,12 @@ def sanitize_filename(filename:str,limit_length=80):
     return sanitized
 
 
-def date_flag():
-    current_time = datetime.now()
+
+def cur_date_str(off_day:int=0):
+    current_time = datetime.now().date()+timedelta(days=off_day)
     return current_time.strftime('%Y%m%d')
 
-def datetime_flag():
+def cur_datetime_str():
     current_time = datetime.now()
     return current_time.strftime('%Y%m%d%H%M%S')
 
@@ -250,16 +251,18 @@ def chinese_to_arabic_number(chinese_num):
     if not chinese_num_pattern.match(chinese_num):
         raise ValueError("输入不是有效的中文数字")
     
+    count=len(chinese_num)
 
     unit = 1
+    unit_index=0
     num = 0
-    count=len(chinese_num)
     for index,char in enumerate(reversed(chinese_num)):
         if char in chinese_to_arabic:
             cur_val=chinese_to_arabic[char]
             
             if cur_val >= 10:
-                unit = cur_val
+                unit = cur_val*unit if index-1==unit_index else  cur_val
+                unit_index=index
                 if index+1==count:
                      num += 1 * unit
             else:
@@ -322,10 +325,7 @@ def bit_fuzzy_search(val,src_lst):
     
 import time
 
-def cur_date_str():
-    # 直接生成格式化字符串
-    current_date = time.strftime("%Y%m%d")
-    return current_date
+
 
 def str2time(str_val:str,format_str:str="%Y-%m-%d %H:%M:%S")->datetime:
     return datetime.strptime(str_val, format_str)

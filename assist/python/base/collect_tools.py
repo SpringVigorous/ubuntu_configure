@@ -1,8 +1,16 @@
 ﻿from collections import Counter,deque
+from itertools import groupby
 
 def unique(original_list):
     counter = Counter(original_list)
     return list(counter.keys())
+
+#删除连续相同的元素
+def remove_consecutive_duplicates(lst):
+    return [key for key, group in groupby(lst)]
+ 
+
+
 
 def remove_none(original_list):
     return filter(lambda x: x ,original_list)

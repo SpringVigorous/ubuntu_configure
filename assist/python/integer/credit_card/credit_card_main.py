@@ -12,7 +12,7 @@ if project_root not in sys.path:
 from  base.clipboard import to_clipboard
 from calculate_rest_days import cur_consume_to_paydays,cur_cycle_to_paydays
 from base.email.special_email import send_emails
-from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str
+from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str,cur_date_str
 
 
 
@@ -135,7 +135,7 @@ def arrage_month_figure(duration=31)->dict:
         
         df.drop(columns=["valid","billing_day","repayment_day","billday_included","limit"], inplace=True)
         
-        print(df.columns.to_list())
+        # print(df.columns.to_list())
 
 
         # 假设 df 是你的 DataFrame
@@ -162,7 +162,7 @@ def arrage_month_figure(duration=31)->dict:
 
         for credit_num, item_df in df.groupby("credit_num"):
             item_df.sort_values(by='cur_date', ascending=True, inplace=True)
-            plt.step(item_df['cur_date'], item_df['next_rest_day'], label=f'Credit Num {credit_num}', marker='o', where='post')
+            plt.step(item_df['cur_date'], item_df['next_rest_day'], label=f'{credit_num}', marker='o', where='post')
             
             
             # 在第一个数据点的顶部添加 credit_num 文字
@@ -205,7 +205,7 @@ def arrage_month_figure(duration=31)->dict:
         # plt.show()
 
         # 保存图形到本地
-        save_path = os.path.join(exe_dir(), f'{owner}.png')
+        save_path = os.path.join(exe_dir(), f'{owner}_{cur_date_str()}.png')
         plt.savefig(save_path)
         plt.close()
         figure_dict[owner]=save_path
@@ -220,8 +220,11 @@ def main(day_duration=1):
     file_path = os.path.join(exe_dir(),'credit_info.xlsx')
     sheet_name = 'credit_info'
     org_df=org_sheet_df(file_path, sheet_name)
+    #N天的数据
     figure_dict=arrage_month_figure(31)
     figures=list(figure_dict.values())
+    
+    #M天的记录，每天一个邮件
     for i in range(0,day_duration):  
         current_date = datetime.datetime.now().date()+datetime.timedelta(days=i)
         recommend_credit_card(org_df,current_date,attachment_path=figures)
@@ -238,4 +241,4 @@ def main(day_duration=1):
 if __name__ == '__main__':
     # arrage_month_figure(31)
     # exit(0)
-    main(1)
+    main()

@@ -16,7 +16,7 @@ from DrissionPage.common import Actions,Keys
 from __init__ import *
 from base.com_log import logger as logger,usage_time_str,logger_helper
 from base import setting as setting
-from base.string_tools import sanitize_filename,datetime_flag
+from base.string_tools import sanitize_filename,cur_datetime_str
 
 
 from HmTask.redbook_tools import *
@@ -397,7 +397,7 @@ class Parse(ThreadTask,NoteDir):
         self.handle_theme()
         stop_hanle_event.set()
         #Excle输出
-        outPath = os.path.join(self.CurPath,f"{datetime_flag()}.xlsx")
+        outPath = os.path.join(self.CurPath,f"{cur_datetime_str()}.xlsx")
         with pd.ExcelWriter(outPath) as writer:
             for info in self.themes_data:
                 if not info.pd is None:

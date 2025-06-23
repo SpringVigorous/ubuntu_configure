@@ -641,9 +641,9 @@ if __name__=="__main__":
     # exit(0)
     # merge_series_movies("新编蓝猫淘气三千问")
     
-    series_movies_per_merge("爆笑虫子")
+    # series_movies_per_merge("爆笑虫子")
     
-    
+    print(arabic_numbers("三千零一十万亿零三千百万零三十"))
     exit(0)
     # flag="一二三四五六七八"
     # for i in flag:
