@@ -1,5 +1,7 @@
 ﻿from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad ,pad
+import os
+from pathlib import Path
 
 
 def encrypt_aes_128(cipher:AES, data):
@@ -24,17 +26,6 @@ def decrypt_aes_128(cipher:AES,  encrypted_data):
 def new_cipher(key,iv):
     return AES.new(key, AES.MODE_CBC, iv)
 
-class AES_128:
-    def __init__(self,key,iv) -> None:
-        self.cipher = new_cipher(key,  iv) if key and iv else None
-
-    def encryept(self,data):
-        return encrypt_aes_128(self.cipher , data)
-    
-    def decrypt(self,data):
-        return decrypt_aes_128(self.cipher , data) 
-
-
 def encrypt_aes_128_from_key(key, iv, data):
     cipher = new_cipher(key,  iv)
 
@@ -45,15 +36,67 @@ def decrypt_aes_128_from_key(key, iv, encrypted_data):
 
     return decrypt_aes_128(cipher,encrypted_data)
 
+
+class AES_128:
+    def __init__(self,key,iv) -> None:
+        self.cipher = new_cipher(key,  iv) if key and iv else None
+    def encryept(self,data):
+        return encrypt_aes_128(self.cipher , data) if self.cipher else data
+    def decrypt(self,data):
+        return decrypt_aes_128(self.cipher , data)  if self.cipher else data
+
+def decrypt_dir_aes_128(key, iv,dir_path):
+    if not os.path.exists(dir_path):
+        print(f"错误: 指定的目录 '{dir_path}' 不存在")
+        return
+    aes=AES_128(key, iv)
+    
+    # 获取所有 .ts 文件
+    ts_files = list(Path(dir_path).rglob('*.ts'))
+    
+    if not ts_files:
+        print(f"在目录 '{dir_path}' 及其子目录中未找到 .ts 文件")
+        return
+
+    print(f"找到 {len(ts_files)} 个 .ts 文件，开始处理...")
+    
+    # 处理每个 .ts 文件
+    for file_path in ts_files:
+        file_path = str(file_path)
+        try:
+            # 读取文件内容
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            if content:
+                with open(file_path, 'wb') as f:
+                    f.write(aes.decrypt(content))
+
+            print(f"成功处理: {file_path}")
+        except Exception as e:
+            print(f"处理文件 {file_path} 时出错: {str(e)}")
+
 if __name__ == '__main__':
 
-    file_path=r"D:\Project\教程\Python全栈0基础入门\2025_01_26 14_39_12.ts" 
+    key=b'G5gn3dZxP5ErztBB'
+    iv=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    decrypt_dir_aes_128(key, iv,r"F:\worm_practice\player\temp-1\67f6ba6e")
+    
+    exit(0)
+
+    file_path=r"F:\worm_practice\player\temp-1\67f6ba6e\0067.ts" 
     with open(file_path,"rb") as f:
        data= f.read()
+    print(bool(iv))
 
-    iv=b'\x82q\xba\xe8_d\x87\x00\xce\xd6T}\xb6\xd5o\x08'
-    key=b"\xd2f\x85H\xef\n\x85\xf6\x91<m\xf0\xfa'\x92\xa6"
-
-    encrypted_data=encrypt_aes_128_from_key(key, iv, data)
-    with open("temp.ts","wb") as f:
+    
+    org_path=Path(file_path)
+    dest_path=org_path.with_stem(org_path.stem+"_decrypted")
+    
+    
+    
+    # encrypted_data=decrypt_aes_128_from_key(key, iv, data)
+    aes=AES_128(key, iv)
+    encrypted_data=aes.decrypt(data)
+    
+    with open(str(dest_path),"wb") as f:
         f.write(encrypted_data)

@@ -18,7 +18,7 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 
-from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType
+from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType,AES_128
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
 from base import arrange_urls,postfix
@@ -45,35 +45,9 @@ class video_info:
         self.method=None
         self.uri=None
         self.iv=None
-        # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
-        headers = {
-            'authority': 'c1.rrcdnbf5.com',
-            'accept': '*/*',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'origin': 'https://vip.vipuuvip.com',
-            'referer': 'https://vip.vipuuvip.com/',
-            'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'cross-site',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
-        }
-        content=None
-        if os.path.exists(m3u8_path):
-            content=open(m3u8_path,"r",encoding="utf-8").read()
-
+        self.logger=logger_helper()
         
-        if not content:
-            response=requests.get(url, headers=headers,verify=False)
-            self.logger=logger_helper("解析m3u8",f"{self.url}")
-            content=response.text
-            
-            #写入文件
-            open(m3u8_path,"w",encoding="utf-8").write(content)
-            
-            
+        content=self.get_m3u8_data(url,m3u8_path)
         self.m3u8=content
         try:
             header=content.split('#EXTINF:')[0].replace(",","\n")
@@ -85,6 +59,35 @@ class video_info:
         # 正则表达式模式
         self._init_urls(content)
         self._init_keys(content)
+    
+    
+    def get_m3u8_data(self,url,m3u8_path):
+        headers = {
+            'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+            'Referer': '',
+            'sec-ch-ua-mobile': '?0',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+            'sec-ch-ua-platform': '"Windows"',
+        }
+
+        params = None
+
+        content=None
+        if os.path.exists(m3u8_path):
+            content=open(m3u8_path,"r",encoding="utf-8-sig").read()
+        
+        if not content:
+            response=response = requests.get(url, params=params, headers=headers)
+            self.logger.update_target("解析m3u8",f"{self.url}")
+            content=response.text
+            
+            #写入文件
+            if content:
+                open(m3u8_path,"w",encoding="utf-8-sig").write(content)
+            
+            
+        return content
+
 
     def _init_urls(self,content):
         pattern = re.compile(r'#EXTINF:(.*?),\s*(\S+)\s')
@@ -171,17 +174,20 @@ def handle_playlist(url_list,temp_paths,key,iv):
     playlist_logger= logger_helper("下载文件",Path(temp_paths[0]).parent)
 
     playlist_logger.trace("开始")
-    def decode():
-        if not key or  iv is None:
-            return None 
-        def _decode(encrypted_data):
-            return decrypt_aes_128_from_key(key,iv,encrypted_data)
-        return _decode
     
+    
+    decry_inst= AES_128(key,iv)
+    # def decode():
+    #     if not key or  iv is None:
+    #         return None 
+    #     def _decode(encrypted_data):
+    #         return decrypt_aes_128_from_key(key,iv,encrypted_data)
+    #     return _decode
+
     async def download(semaphore,args:list|tuple):
         async with semaphore:
             url, temp_path=args
-            result=  await download_async(url, temp_path,decode()) 
+            result=  await download_async(url, temp_path,decry_inst.decrypt) 
             
             #转换为标准的mp4,看需求 转换
             # is_convert=True
@@ -378,13 +384,25 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     play_logger= logger_helper("下载",f"{url}->{dest_name}-{dest_hash}")
     play_logger.info("开始")
         
-    os.makedirs(temp_dir, exist_ok=True)
+    url_dir=os.path.join(root_path,"url")
+    m3u8_dir=os.path.join(root_path,"m3u8")
     
+    os.makedirs(temp_dir, exist_ok=True)
+    os.makedirs(url_dir, exist_ok=True)
+    os.makedirs(m3u8_dir, exist_ok=True)
+
     #加载已有数据
     cache_name=f"{dest_name}-{dest_hash}"
     
-    url_json_path=os.path.join(root_path,"urls",f"{cache_name}.json")
-    m3u8_path=os.path.join(root_path,"m3u8",f"{cache_name}.m3u8")
+    
+    
+    
+    url_json_path=os.path.join(url_dir,f"{cache_name}.json")
+    m3u8_path=os.path.join(m3u8_dir,f"{cache_name}.m3u8")
+    
+    os.makedirs(os.path.dirname(url_json_path), exist_ok=True)
+    os.makedirs(os.path.dirname(m3u8_path), exist_ok=True)
+    
     key,iv,info_list,total_len=get_url_data(url,url_json_path,m3u8_path)
     # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
@@ -643,8 +661,8 @@ if __name__=="__main__":
     
     # series_movies_per_merge("爆笑虫子")
     
-    print(arabic_numbers("三千零一十万亿零三千百万零三十"))
-    exit(0)
+    # print(arabic_numbers("三千零一十万亿零三千百万零三十"))
+    # exit(0)
     # flag="一二三四五六七八"
     # for i in flag:
     #     series_movies_per_merge(f"汪汪队立大功第{i}季")
@@ -656,11 +674,11 @@ if __name__=="__main__":
     # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
     # print(val)
     # exit(0)
-    # temp_dir=r"F:\worm_practice\player\temp"
+    temp_dir=r"F:\worm_practice\player\temp\67f6ba6e"
     # rename_ts(temp_dir,".jpeg")
     # exit(0)
-    # force_merge(temp_dir,r"F:\worm_practice\player\video\1.mp4")
-    # exit(0)
+    force_merge(temp_dir,r"F:\worm_practice\player\video\哪吒之魔童闹海.mp4")
+    exit(0)
 
     
     # temp_dir=r"E:\FFOutput"
@@ -677,7 +695,8 @@ if __name__=="__main__":
     # exit(0)
     
     lst=[
-        ('https://v1.tlkqc.com/wjv1/202308/20/wapkT3Qwez2/video/1000k_720/hls/index.m3u8', '《爆笑虫子_第三季》HD中字高清资源免费在线观看_动画片_555电影网'),
+        ('https://play.hhuus.com/play/kazrG7Ya/index.m3u8', '哪吒之魔童闹海'),
+        # ('https://pl-ali.youku.com/playlist/m3u8', '哪吒之魔童闹海_优酷'),
 
 ]
 

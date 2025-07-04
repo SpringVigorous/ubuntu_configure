@@ -54,8 +54,6 @@ def get_real_url(url:str,url_page):
 
 
 
-
-
 class video_info:
     def __init__(self,url,m3u8_path) -> None:
         self.url=url

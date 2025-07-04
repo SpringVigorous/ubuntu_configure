@@ -96,9 +96,9 @@ if  __name__ == '__main__':
 
 
 
-    # urls.extend([
-    #     "https://www.temayy.com/vod/tongjuguanxi1993.html",
-    # ])
+    urls.extend([
+        "https://00two.com/vodplay/nazhazhimotongnaohai-1-1.html",
+    ])
 
     # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzidiyiji/2-{i}.html" for i in  range(70,105)])
     # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzidierji2013/2-{i}.html" for i in  range(24,53)])
@@ -107,7 +107,7 @@ if  __name__ == '__main__':
     # urls.extend([f"https://www.temayy.com/vod/bxczhdqsj2018/1-{i}.html" for i in  range(3,27)])
 
     app.send_msg(urls)
-    app.continue_nom3u8()
-    app.continue_download()
+    # app.continue_nom3u8()
+    # app.continue_download()
     app.run()
     app.save_df()
