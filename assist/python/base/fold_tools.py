@@ -1,7 +1,7 @@
 ﻿# 导入所需模块
 import os
 import shutil
-
+from remove_special_fold import recycle_bin,is_empty_folder
 
 
 # 定义函数：清空文件夹内容，但不删除当前文件夹
@@ -14,20 +14,24 @@ def clear_folder(folder_path):
     在使用这个函数之前，建议先检查要清空的文件夹路径是否正确，避免误删。
     """
 
-    if not (os.path.exists(folder_path) or os.path.isdir(folder_path) ):
+    if is_empty_folder(folder_path):
         return
     for file in os.listdir(folder_path):
         abs_path=os.path.join(folder_path, file)
         try:
-            if os.path.isdir(abs_path):
-                delete_directory(abs_path)
-            else:
-                os.remove(abs_path)
+            delete_directory(abs_path)
+            # if os.path.isdir(abs_path):
+            # else:
+            #     os.remove(abs_path)
         except Exception as e:
             print(f"删除失败:{abs_path}-{e}")
             pass
 
 def delete_directory(directory_path):
+    
+    recycle_bin(directory_path)
+    return
+    
     """
     删除指定目录及其子目录和文件。
 
@@ -55,7 +59,8 @@ def delete_files(root_dir, exclude_dirs=None, file_patterns=None):
             file_path = os.path.join(root, file)
             if file_patterns is None or any(file.endswith(pattern) for pattern in file_patterns):
                 print(f"删除文件: {file_path}")
-                os.remove(file_path)  # 取消注释以实际删除文件
+                # os.remove(file_path)  # 取消注释以实际删除文件
+                recycle_bin(file_path)
 def check_dir(dir_path):
     if os.path.exists(dir_path):
         return

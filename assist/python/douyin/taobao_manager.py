@@ -552,6 +552,9 @@ class tb_manager():
     def separate_ocr_results(self):
         logger=self.logger
         with self._lock:
+            if self.ocr_df.empty or self.pic_df.empty:
+                
+                return
             ocr_df=pd.merge(self.ocr_df,self.pic_df,on=[name_id],how="inner")
             shop_good_df=pd.merge(self.product_df,self.shop_df,on=[shop_id],how="outer")
             groups=ocr_df.groupby(item_id)

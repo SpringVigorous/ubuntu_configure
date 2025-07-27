@@ -202,8 +202,8 @@ def main():
     try:
         # for url in goods_urls:
         #     manager.put((goods_type,url))
-        # for url in shop_urls:
-        #     app.send_msg(shop_type,url) 
+        for url in shop_urls:
+            app.send_msg(shop_type,url) 
         app.start()
         # app.done()
     except:

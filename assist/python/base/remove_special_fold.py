@@ -5,6 +5,7 @@ import send2trash
 import sys
 from com_log import logger as logger
 from collect_tools import unique
+from path_tools import is_empty_folder
 #判断字符串是否在列表中,忽略大小写
 def check_str_in_list(str,str_list:list=None):
     if str_list == None or len(str_list) < 1:
@@ -19,7 +20,10 @@ def check_str_exclude_list(path,exclude_strs:list=None):
     return not check_str_in_list(path,exclude_strs)
     
 
+    
+
 def recycle_bin(cur_path):
+    cur_path=str(cur_path)
     if not cur_path or not os.path.exists(cur_path):
         return
     expression_str="directory" if os.path.isdir(cur_path) else "file"

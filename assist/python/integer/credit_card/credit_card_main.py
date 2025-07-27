@@ -17,7 +17,7 @@ from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str,cu
 
 
 def org_sheet_df(file_path, sheet_name)->pd.DataFrame:
-    org_df = pd.read_excel(file_path, sheet_name='credit_info')
+    org_df = pd.read_excel(file_path, sheet_name=sheet_name)
     return org_df
 
 
@@ -115,10 +115,8 @@ plt.rcParams['font.sans-serif'] = ['SimHei']  # 或者 ['Microsoft YaHei']
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 
-def arrage_month_figure(duration=31)->dict:
-    file_path = os.path.join(exe_dir(),'credit_info.xlsx')
-    sheet_name = 'credit_info'
-    org_df=org_sheet_df(file_path, sheet_name)
+def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
+
     
     dfs=[]
     for i in range(0,duration):  
@@ -133,7 +131,7 @@ def arrage_month_figure(duration=31)->dict:
     figure_dict={}
     for owner,df in all_df.groupby("owner"):
         
-        df.drop(columns=["valid","billing_day","repayment_day","billday_included","limit"], inplace=True)
+        df.drop(columns=["billing_day","repayment_day","billday_included","limit"], inplace=True)
         
         # print(df.columns.to_list())
 
@@ -149,7 +147,8 @@ def arrage_month_figure(duration=31)->dict:
         # 计算x值的最小值和最大值
         x_min = df['cur_date'].min()
         x_max = df['cur_date'].max()
-
+        plt.xlim(x_min, x_max)
+        
         # 添加水平虚线
         for y in range(y_min, y_max + 1):
             plt.hlines(y, x_min, x_max, colors='gray', linestyles='dashed', linewidth=1)
@@ -162,13 +161,15 @@ def arrage_month_figure(duration=31)->dict:
 
         for credit_num, item_df in df.groupby("credit_num"):
             item_df.sort_values(by='cur_date', ascending=True, inplace=True)
-            plt.step(item_df['cur_date'], item_df['next_rest_day'], label=f'{credit_num}', marker='o', where='post')
+            cur_date_item=item_df['cur_date']
+            rest_item=item_df['next_rest_day']
+            plt.step(cur_date_item, rest_item, label=f'{credit_num}', marker='o', where='post')
             
             
             # 在第一个数据点的顶部添加 credit_num 文字
             if not item_df.empty:
-                first_x = item_df['cur_date'].iloc[0]
-                first_y = item_df['next_rest_day'].iloc[0]
+                first_x = cur_date_item.iloc[0]
+                first_y =rest_item.iloc[0]
                 pos=(first_x, first_y)
                 if title_dict.get(pos, None) is None:
                     title_dict[pos]=[credit_num]
@@ -177,7 +178,7 @@ def arrage_month_figure(duration=31)->dict:
                     
         for key, credit_nums in title_dict.items():
             first_x, first_y = key
-            plt.text(first_x, first_y, f'{"\n".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom')
+            plt.text(first_x, first_y+.2, f'{"\n".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom')
             # for index,credit_num in enumerate(credit_nums):
 
         
@@ -220,8 +221,9 @@ def main(day_duration=1):
     file_path = os.path.join(exe_dir(),'credit_info.xlsx')
     sheet_name = 'credit_info'
     org_df=org_sheet_df(file_path, sheet_name)
+    org_df.drop(columns=["valid"],inplace=True)
     #N天的数据
-    figure_dict=arrage_month_figure(31)
+    figure_dict=arrage_month_figure(org_df,31)
     figures=list(figure_dict.values())
     
     #M天的记录，每天一个邮件

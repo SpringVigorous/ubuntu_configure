@@ -21,7 +21,7 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType,AES_128
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
-from base import arrange_urls,postfix
+from base import arrange_urls,postfix,codec_base64,codec_base
 import pandas as pd
 
 
@@ -62,13 +62,29 @@ class video_info:
     
     
     def get_m3u8_data(self,url,m3u8_path):
+
+
         headers = {
+            'authority': 'vv.jisuzyv.com',
+            'accept': '*/*',
+            'accept-language': 'zh-CN,zh;q=0.9',
+            'origin': 'http://www.kaihuankeji.com',
+            'referer': 'http://www.kaihuankeji.com/',
             'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-            'Referer': '',
             'sec-ch-ua-mobile': '?0',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
             'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
         }
+
+
+        params = {
+            'encdomain': 'cmv1',
+        }
+
+
 
         params = None
 
@@ -145,7 +161,8 @@ class video_info:
             name=org_path.name
             url=self.url.replace(name,self.uri)
         key=fetch_sync(url)
-
+        if not key:
+            self.logger.error("获取key失败",f"{self.uri}->{url}")
 
         self.logger.info("加密信息",f"\nmethod:{self.method},\nuri:{self.uri},\niv:{self.iv},\nkey:{key}")
         # print(len(self.iv))
@@ -260,7 +277,7 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
         
     #输出未成功下载的文件信息
     if lost_count>0:    
-        with open(os.path.join(root_path, "urls", f"{dest_name}-{dest_hash}-lost.json"), "w", encoding="utf-8-sig") as f:
+        with open(os.path.join(root_path, "url", f"{dest_name}-{dest_hash}-lost.json"), "w", encoding="utf-8-sig") as f:
             lost_data = {"count": len(losts),"time":download_time, "data": losts}
             json.dump(lost_data, f, ensure_ascii=False, indent=4)
             
@@ -329,6 +346,9 @@ def save_m3u8_data(m3u8_path,data):
 @exception_decorator()
 def get_url_data(url,url_json_path,m3u8_path):
     info=load_url_data(url_json_path)
+    
+    codec_imp:codec_base=codec_base64()
+    
     if not info:
         video=video_info(url,m3u8_path)
         
@@ -338,9 +358,9 @@ def get_url_data(url,url_json_path,m3u8_path):
         iv=video.iv
 
         if key :
-            key= bytes_to_base64_utf8(key)
+            key= codec_imp.encode(key)
         if iv :
-            iv= bytes_to_base64_utf8(iv)
+            iv= codec_imp.encode(iv)
 
 
         info_list=video.playlist
@@ -364,9 +384,9 @@ def get_url_data(url,url_json_path,m3u8_path):
         key=info.get("key","")
         iv=info.get("iv","")
         if key:
-            key=base64_utf8_to_bytes(key)
+            key=codec_imp.decode(key)
         if iv:
-            iv=base64_utf8_to_bytes(iv)
+            iv=codec_imp.decode(iv)
         # return None,None,info.get("playlist",[]),info.get("total_len",0)
         return key,iv,info.get("playlist",[]),info.get("total_len",0)
     except:
@@ -379,7 +399,9 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
-    dest_path=normal_path(os.path.join(root_path,"video",f"{dest_name}.mp4")) if not dest_dir else normal_path(os.path.join(dest_dir,f"{dest_name}.mp4"))
+    if not dest_dir:
+        dest_dir=os.path.join(root_path,"video") 
+    dest_path=normal_path(dest_dir,f"{dest_name}.mp4")
     
     play_logger= logger_helper("下载",f"{url}->{dest_name}-{dest_hash}")
     play_logger.info("开始")
@@ -387,6 +409,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     url_dir=os.path.join(root_path,"url")
     m3u8_dir=os.path.join(root_path,"m3u8")
     
+    os.makedirs(dest_dir, exist_ok=True)
     os.makedirs(temp_dir, exist_ok=True)
     os.makedirs(url_dir, exist_ok=True)
     os.makedirs(m3u8_dir, exist_ok=True)
@@ -430,9 +453,9 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     merge_video(success_paths,temp_path)
     play_logger.info("完成","合并",update_time_type=UpdateTimeType.STAGE)
     
-    move_file(temp_path,dest_path)
+    move_success= move_file(temp_path,dest_path)
     
-    if lost_count==0 and False:
+    if lost_count==0 and move_success:
         recycle_bin(temp_dir)
         play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
     else:
@@ -674,35 +697,37 @@ if __name__=="__main__":
     # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
     # print(val)
     # exit(0)
-    temp_dir=r"F:\worm_practice\player\temp\67f6ba6e"
-    # rename_ts(temp_dir,".jpeg")
+    # temp_dir=r"F:\worm_practice\player\temp\67f6ba6e"
+    # # rename_ts(temp_dir,".jpeg")
+    # # exit(0)
+    # force_merge(temp_dir,r"F:\worm_practice\player\video\哪吒之魔童闹海.mp4")
     # exit(0)
-    force_merge(temp_dir,r"F:\worm_practice\player\video\哪吒之魔童闹海.mp4")
-    exit(0)
 
     
-    # temp_dir=r"E:\FFOutput"
-    # suffix=[".mp4"]
-    # # convert_video_to_mp4_from_src_dir(temp_dir,suffix)
+    # temp_dir=r"F:\worm_practice\player\temp\6e94ef53"
+    # suffix=[".ts"]
+    # # # convert_video_to_mp4_from_src_dir(temp_dir,suffix)
 
     # temp_path_list=get_all_files_pathlib(temp_dir,suffix)
     # dest_dir=r"F:\worm_practice\player"
     # temp_name="1111.mp4"
-    # dest_name="13.mp4"
+    # dest_name="美味姐妹群欢.mp4"
     # temp_path=f"{dest_dir}/{temp_name}"
     # merge_video(temp_path_list,temp_path)
     # move_file(temp_path,f"{dest_dir}/{dest_name}")
     # exit(0)
     
     lst=[
-        ('https://play.hhuus.com/play/kazrG7Ya/index.m3u8', '哪吒之魔童闹海'),
-        # ('https://pl-ali.youku.com/playlist/m3u8', '哪吒之魔童闹海_优酷'),
 
-]
+        ('https://vv.jisuzyv.com/play/9aABzVPb/index.m3u8', '紫罗兰'),
+        ('https://vv.jisuzyv.com/play/ZdPGj1yb/index.m3u8', '女仆的安慰食物'),
+
+
+        ]
 
     
     result=[main(*item) for item in lst]
-    
+    shut_down()
     exit(0)
     # if all(result):    
     if True:    

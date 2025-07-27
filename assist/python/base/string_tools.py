@@ -73,7 +73,7 @@ def cur_date_str(off_day:int=0):
 
 def cur_datetime_str():
     current_time = datetime.now()
-    return current_time.strftime('%Y%m%d%H%M%S')
+    return current_time.strftime('%Y%m%d_%H%M%S')
 
 #获取当前exe所在目录
 def exe_dir(exe_path:str=None):

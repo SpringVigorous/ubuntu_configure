@@ -44,11 +44,20 @@ def merge_video(temp_paths,dest_path):
     # 创建一个文件列表文件
     with open(temp_file, 'w') as file:
         for temp_path in temp_paths:
+            if not os.path.exists(temp_path):
+                continue
             file.write(f"file {windows_path(temp_path)}\n")
 
     # 使用 FFmpeg 合并文件
 
-    command = [ffmpeg_path(),'-y', '-f', 'concat', '-safe', '0', '-i', temp_file, '-c', 'copy', dest_path]
+    # command = [ffmpeg_path(),'-y', '-f', 'concat', '-safe', '0', '-i', temp_file, '-c', 'copy', dest_path]
+    command = [ffmpeg_path(),'-y', '-f', 'concat', '-safe', '0', '-i', temp_file]
+    if False:
+        command.extend(['-vf', "crop=1920:800:0:130" ,'-c:v', 'libx264',"-c:a"])
+    else:
+        command.extend(['-c'])
+    command.extend(['copy', dest_path])
+    
     
     merge_logger.update_target(detail=" ".join(command))
     merge_logger.trace("参数")

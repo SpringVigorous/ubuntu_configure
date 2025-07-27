@@ -3,13 +3,14 @@
 root_dir=r"F:\worm_practice\taobao"
 desc_dir=os.path.join(root_dir,"详图")
 main_dir=os.path.join(root_dir,"主图")
-
+cache_dir=os.path.join(root_dir,"cache")
 org_pic_dir=os.path.join(root_dir,"org_pic")
 ocr_pic_dir=os.path.join(root_dir,"ocr_pic")
 db_dir=os.path.join(root_dir,"数据")
 shop_dir=os.path.join(root_dir,"店铺")
 result_dir=os.path.join(root_dir,"结果")
 
+os.makedirs(cache_dir,exist_ok=True)
 os.makedirs(desc_dir,exist_ok=True)
 os.makedirs(main_dir,exist_ok=True)
 os.makedirs(org_pic_dir,exist_ok=True)

@@ -222,10 +222,10 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
         async_logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return False
     
-    # count=len(content)
     if lat_fun:
+        # count=len(content)    
         content=lat_fun(content)
-    # async_logger.trace(f"pre-{count},latter-{len(content)}" )
+        # async_logger.trace(f"pre-{count},latter-{len(content)}" )
         
     await read_write_async(content,dest_path,mode="wb")
         
@@ -318,18 +318,21 @@ def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
     return True
 
 
-def move_file(source_file,destination_file):
+def move_file(source_file,destination_file)->bool:
     move_logger= logger_helper("移动文件",f"{source_file} -> {destination_file}")
     # 移动文件
     try:
         result= shutil.move(source_file, destination_file)
         move_logger.debug("成功")
+        return True
     except FileNotFoundError:
         move_logger.error("失败",f"{source_file} 不存在")
     except PermissionError:
         move_logger.error("失败",f"{source_file} 权限不够")
     except Exception as e:
         move_logger.error("失败",except_stack())    
+        
+    return False
 
 def copy_file(source_file:str|list[str],destination_file:str|list[str],override=True):
     
@@ -431,7 +434,7 @@ def priority_read_excel_by_pandas(file_path,operator_func=None,sheet_name=None):
 
 
 def priority_read_json(file_path,operator_func=None,**file_kwargs):
-    import txt
+    # import txt
     readfunc=lambda file_path:json.load(open(file_path,"r",**file_kwargs))
     writefunc=lambda file_path,data :write_to_json(file_path,data,**file_kwargs)
     return priority_read(file_path,readfunc,operator_func,writefunc)

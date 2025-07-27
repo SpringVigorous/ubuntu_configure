@@ -2,7 +2,7 @@
 from Crypto.Util.Padding import unpad ,pad
 import os
 from pathlib import Path
-
+import threading
 
 def encrypt_aes_128(cipher:AES, data):
     if not cipher:
@@ -40,10 +40,14 @@ def decrypt_aes_128_from_key(key, iv, encrypted_data):
 class AES_128:
     def __init__(self,key,iv) -> None:
         self.cipher = new_cipher(key,  iv) if key and iv else None
+        self.lock = threading.Lock()
+
     def encryept(self,data):
-        return encrypt_aes_128(self.cipher , data) if self.cipher else data
+        # with self.lock:
+            return encrypt_aes_128(self.cipher , data) if self.cipher else data
     def decrypt(self,data):
-        return decrypt_aes_128(self.cipher , data)  if self.cipher else data
+        # with self.lock:
+            return decrypt_aes_128(self.cipher , data)  if self.cipher else data
 
 def decrypt_dir_aes_128(key, iv,dir_path):
     if not os.path.exists(dir_path):

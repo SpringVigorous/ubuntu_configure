@@ -415,7 +415,7 @@ class HandleProducts(ThreadTask):
         goods_df=pd.concat(goods_dfs)
         goods_df[shop_id]=shopId
         #默认是需要爬取的
-        goods_dfs[not_fetch_id]=0
+        # goods_dfs[not_fetch_id]=0
         goods_df[not_fetch_id]=0
     
         self.manager.update_shop_df(shop_df)
@@ -584,3 +584,17 @@ class OcrPics(ThreadTask):
         finally:
             logger.pop_target()
         
+if __name__ == "__main__":
+    org_path=r"F:\worm_practice\taobao\数据/微信图片_20250726085047_626.jpg"
+
+    
+    texts=None
+    try:
+        ocr_pic=OCRProcessor()
+        _,texts=ocr_pic.process_image(org_path)
+        # boxes, texts, scores = ocr_pic.recognize_text(org_path)
+    except Exception as e:
+        print(e)
+    finally:
+        
+        print(texts)

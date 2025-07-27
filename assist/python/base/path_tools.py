@@ -72,7 +72,7 @@ from typing import Callable
 
 def special_files(dest_dir,func:Callable[[str],bool]=None)->list[str]:
     results=[]
-    for root, dirs, files in os.walk(dest_dir):
+    for root, dirs, files in os.walk(str(dest_dir)):
         for file in files:
             if func and not func(file):
                 continue
@@ -98,6 +98,21 @@ def txt_files(dest_dir)->list[str]:
 def jpg_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".jpg")
 
+def img_files(dest_dir)->list[str]:
+    
+    image_file_extensions = [
+    # 常见格式
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp",
+    # 矢量图格式
+    ".svg", ".ai", ".eps", ".pdf",  # pdf部分情况下也可视为图片格式
+    # 特殊/专业格式
+    ".raw", ".cr2", ".nef", ".arw", ".dng", ".orf", ".psd", ".psb",
+    ".indd", ".cdr", ".ico", ".jfif", ".pjpeg", ".pjp", ".avif",
+    ".heic", ".heif", ".ppm", ".pgm", ".pbm", ".pnm", ".hdr", ".exr"
+]
+    
+    return spceial_suffix_files(dest_dir,image_file_extensions)
+
 def json_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".json")
 
@@ -105,6 +120,17 @@ def ts_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".ts")
 def m3u8_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".m3u8")
+
+
+
+
+def is_empty_folder(path):
+    if  not os.path.exists(path) or  not os.path.isdir(path):
+        return True  # 非目录直接返回非空
+    with os.scandir(path) as entries:
+        return not any(entries)  # 发现任一条目即返回False
+
+
 
 if __name__ == '__main__':
     print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

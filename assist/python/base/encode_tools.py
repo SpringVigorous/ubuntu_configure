@@ -1,8 +1,6 @@
 import base64
 
 def bytes_to_base64_utf8(byte_data:bytes):
-
-
     # 将 bytes 对象编码为 Base64 字符串
     base64_encoded = base64.b64encode(byte_data)
 
@@ -17,6 +15,17 @@ def base64_utf8_to_bytes(base64_string:str):
     # 将 Base64 字节序列解码为 bytes 对象
     byte_data = base64.b64decode(base64_encoded)
     return  byte_data
+
+
+def bytes_to_hexex(byte_data:bytes):
+    hex_string = byte_data.hex()
+    return hex_string
+
+def hexex_to_bytes(hex_string:str):
+    byte_data = bytes.fromhex(hex_string)
+    return byte_data
+
+
 
 if __name__ == '__main__':
         # 示例 bytes 对象
