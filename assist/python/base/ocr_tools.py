@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 import tempfile
 from pathlib import Path
+from com_log import logger_helper,UpdateTimeType
 def has_non_ascii(s):
     # 检查所有字符的ASCII码是否都在0-127之间
     return not all(ord(c) < 128 for c in s)
@@ -209,7 +210,7 @@ class OCRProcessor:
         """
         self.ocr = PaddleOCR(use_angle_cls=True, lang=lang,use_mp=True, **ocr_kwargs)
         self.default_font = 'simhei.ttf'
-        # self.logger = logger_helper("文字识别")
+        self.logger = logger_helper("文字识别")
         
 
     def recognize_text(self, img_path: str) -> Tuple[List, List, List]:
@@ -220,8 +221,8 @@ class OCRProcessor:
         :return: (boxes, texts, scores) 三元组
         """
         
-        # self.logger.update_target(detail="img_path")
-        # self.logger.update_time(UpdateTimeType.ALL)
+        self.logger.update_target(detail=f"{img_path}")
+        self.logger.update_time(UpdateTimeType.ALL)
         
         # self.logger.trace("开始")
         
@@ -232,7 +233,9 @@ class OCRProcessor:
         except Exception as e:
             print(f"失败: {str(e)}")
             pass
-            
+        finally:
+            self.logger.info("完成",update_time_type=UpdateTimeType.ALL)    
+        
         if not result:
             return [], [], []
             

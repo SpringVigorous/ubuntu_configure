@@ -41,7 +41,7 @@ def load_setting():
         return sender_email,password,receiver_email
 
 @exception_decorator()
-def send_email(subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None):
+def send_email_by_config(subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
         
         sender_email,password,receiver_email=load_setting() 
         
@@ -50,10 +50,20 @@ def send_email(subject,body:str,body_type='plain',attachment_path:str|list=None,
         # attachment_list=attachment_path if type(attachment_path)==list else [attachment_path] if attachment_path is not None else []
         # bodyfiles_list=bodyfiles if type(bodyfiles)==list else [bodyfiles] if bodyfiles is not None else []
         
-        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles)
-
+        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment)
 @exception_decorator()
-def send_emails(subject:str,body_dict:dict,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None):
+def send_email(receiver_email,subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
+        
+        sender_email,password,_=load_setting() 
+        
+        
+        email_sender = EmailSender(sender_email, password)
+        # attachment_list=attachment_path if type(attachment_path)==list else [attachment_path] if attachment_path is not None else []
+        # bodyfiles_list=bodyfiles if type(bodyfiles)==list else [bodyfiles] if bodyfiles is not None else []
+        
+        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment)
+@exception_decorator()
+def send_emails_by_config(subject:str,body_dict:dict,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
         
         sender_email,password,receiver_email=load_setting() 
         
@@ -83,7 +93,7 @@ def send_emails(subject:str,body_dict:dict,body_type='plain',attachment_path:str
             
             
             
-            email_sender.send_email(recievers, subject, body,body_type, attachment_path, bodyfiles)
+            email_sender.send_email(recievers, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment=image_as_attachment)
         
 
     
@@ -91,7 +101,7 @@ def send_emails(subject:str,body_dict:dict,body_type='plain',attachment_path:str
     
 
 if __name__ == '__main__':
-    send_email('test subject','test body',body_type='plain',
+    send_email_by_config('test subject','test body',body_type='plain',
                attachment_path=["F:/教程/多肉/哔哩哔哩视频/26 风车草属『1-24』.mp4",
                                 "F:/教程/多肉/哔哩哔哩视频/26 风车草属『1-24』.ai-zh.srt",
                                 "F:/教程/多肉/哔哩哔哩视频/26 风车草属『1-24』.ass"

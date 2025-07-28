@@ -163,7 +163,7 @@ def hash_text(text, algorithm='sha256',max_length=8,strict_no_num=False):
     hash_object = hashlib.new(algorithm)
     
     # 更新哈希对象的数据
-    hash_object.update(text.encode('utf-8'))
+    hash_object.update(str(text).encode('utf-8'))
     
     # 获取哈希值的十六进制表示
     hex_dig = hash_object.hexdigest()

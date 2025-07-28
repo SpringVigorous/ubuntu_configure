@@ -47,7 +47,7 @@ class ProhibitedWordsDetector:
         self.prohibited_words :list=prohibited_words
         self.ignore_chars = {'-', '_', '*', '#', ' '}  # 需跳过的干扰字符
         self.reset_automaton()
-        self.logger=logger_helper("ProhibitedWordsDetector")
+        self.logger=logger_helper("敏感词检测")
     @property
     def automaton(self):
         if self._automaton is None:
@@ -77,6 +77,8 @@ class ProhibitedWordsDetector:
 
     def detect(self, text):
         """使用 iter() 方法匹配违禁词并记录位置"""
+        self.logger.update_time(UpdateTimeType.STEP)
+        self.logger.stack_target(detail=f"当前文本\n{text}\n")
         text_lower = text.lower()
         results = defaultdict(list)
         
@@ -84,7 +86,11 @@ class ProhibitedWordsDetector:
         for end_index, original_value in self.automaton.iter(text_lower):
             start_index = end_index - len(original_value) + 1
             results[original_value].append((start_index, end_index))
-        return dict(results)
+        result= dict(results)
+        self.logger.trace("成功",update_time_type=UpdateTimeType.STEP)
+        self.logger.pop_target()
+        
+        return result
 
     def visualize(self, text, results):
         """可视化违禁词位置"""
@@ -99,7 +105,7 @@ class ProhibitedWordsDetector:
         
         self.logger.trace("原始文本:\n" + text)
         self.logger.trace("\n违禁词标记:\n" + ''.join(markers))
-        self.logger.update_target(detail="检测结果:")
+
         self.detect_result(text, results)
 
 
@@ -114,16 +120,21 @@ class ProhibitedWordsDetector:
         
         return results
     
-    def detect_result(self,prohibited_results) -> str:
-        self.logger.update_target(detail="检测结果:")
+    def detect_result(self,prohibited_results) -> list[tuple|list]:
+        self.logger.stack_target(detail="检测结果")
+        results=[(word,len(positions)) for word, positions in prohibited_results.items()]
+        self.logger.info("完成",f"\n{ProhibitedWordsDetector.results_txt(results)}\n")
+        self.logger.pop_target()
+        return results
         
-        results=[f"'{word}': 出现 {len(positions)} 次" for word, positions in prohibited_results.items()]
-        result = "\n".join(results)    
-        self.logger.info(f"\n{result}\n")
-        return result if result else "没有违禁词"
-        
-
-    
+    @staticmethod
+    def results_txt(results:list[tuple|list]):
+        result = "\n".join( [f"'{word}':出现{count}次" for word, count,*other in results])  if results else "无违禁词"  
+        return result
+    @staticmethod
+    def results_txt_short(results:list[tuple|list]):
+        result = "\n".join( [f"{word}:{count}" for word, count,*other in results])  if results else "无违禁词"  
+        return result
     
 # 示例用法
 if __name__ == "__main__":

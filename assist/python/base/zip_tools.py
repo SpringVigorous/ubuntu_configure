@@ -8,11 +8,11 @@ class ZipUtility:
     def __init__(self):
         self.default_chunk_size = 1024 * 1024 * 100  # 默认分卷大小100MB
 
-    def compress(self, source_path, output_dir=None, volume_size=None):
+    def compress(self, source_path, output_path=None, volume_size=None):
         """
         压缩文件/文件夹，支持分卷压缩
         :param source_path: 源文件/文件夹路径
-        :param output_dir: 输出目录（默认源路径父目录）
+        :param output_path: 输出路径（默认源路径父目录）
         :param volume_size: 分卷大小（字节），None表示不分卷
         """
         source = Path(source_path)
@@ -21,20 +21,16 @@ class ZipUtility:
 
         # 1. 处理输出目录和文件名
         timestamp = cur_datetime_str()
-        if output_dir is None:
-            output_dir = os.path.join(source.parent,"zip")
-            zip_name = f"{source.name}_{timestamp}"
-        else:
-            zip_name = f"{source.stem}_{timestamp}" if source.is_file() else f"{source.name}_{timestamp}"
+        if output_path is None:
+            output_path = os.path.join(source.parent,"zip",f"{source.name}_{timestamp}.zip")
 
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         # 2. 选择压缩模式
         if volume_size is None:
-            self._single_compress(source, output_dir / f"{zip_name}.zip")
+            self._single_compress(source, output_path )
         else:
-            self._volume_compress(source, output_dir, zip_name, volume_size)
+            self._volume_compress(source, output_path, volume_size)
 
     def _single_compress(self, source, zip_path):
         """普通压缩"""
@@ -53,8 +49,14 @@ class ZipUtility:
                     
         print(f"压缩完成: {zip_path}")
 
-    def _volume_compress(self, source, output_dir, base_name, volume_size):
+    def _volume_compress(self, source, output_path, volume_size):
         """分卷压缩核心逻辑 [7,9](@ref)"""
+        
+        org_path=Path(output_path)
+        
+        output_dir=org_path.parent
+        base_name=org_path.stem
+        
         temp_dir = output_dir / "temp_zip"
         temp_dir.mkdir(exist_ok=True)
         

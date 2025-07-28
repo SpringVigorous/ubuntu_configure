@@ -5,8 +5,7 @@ class HtmlHelper:
 
     @staticmethod
     def tab_head_item(head_content):
-        return """
-        <th style="text-align:center; border:1px solid black; padding:8px;">{content}</th>
+        return """<th style="text-align:center; border:1px solid black; padding:8px;">{content}</th>
         """.format(content=head_content)
 
     @staticmethod
@@ -14,7 +13,7 @@ class HtmlHelper:
         return """<tr>
             {content}
             </tr>
-            """.format(content=content)
+            """.format(content=content.strip())
 
     @staticmethod
     def tab_head(head_content:Iterable):
@@ -24,14 +23,14 @@ class HtmlHelper:
         
     @staticmethod
     def tab_body_item_txt(txt_content,vertical_align='center'):
-        return """
-        <td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;">{content}</td>
+        if isinstance(txt_content,str):
+            txt_content=txt_content.replace("\n", "<br>")
+        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;">{content}</td>
         """.format(align_type=vertical_align,content=txt_content)
         
     @staticmethod
     def tab_body_item_img(src_cid_content,vertical_align='center'):
-        return """
-        <td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;"><img src="cid:{src_id}"style="display:block;"></td>
+        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;"><img src="cid:{src_id}"style="display:block;"></td>
         """.format(align_type=vertical_align,src_id=src_cid_content)
 
     @staticmethod
@@ -61,7 +60,7 @@ class HtmlHelper:
         return """<table style="border-collapse: collapse; width: auto;">
             {head}
             {body}
-        </table>""".format(head=head,body=body)
+        </table>""".format(head=head.strip(),body=body.strip())
         
     @staticmethod
     def html_content(content):
@@ -69,7 +68,7 @@ class HtmlHelper:
         <body>
         {content}
         </body>
-        </html>""".format(content=content)
+        </html>""".format(content=content.strip())
         
     #content,item_type=0,vertical_align='center'
     @staticmethod

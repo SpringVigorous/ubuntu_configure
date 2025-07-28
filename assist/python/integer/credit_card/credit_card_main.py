@@ -11,7 +11,7 @@ if project_root not in sys.path:
 
 from  base.clipboard import to_clipboard
 from calculate_rest_days import cur_consume_to_paydays,cur_cycle_to_paydays
-from base.email.special_email import send_emails
+from base.email.special_email import send_emails_by_config
 from base.string_tools import exe_dir,convert_to_html_table,html_table_to_str,cur_date_str
 
 
@@ -106,7 +106,7 @@ def recommend_credit_card(org_df,current_date,attachment_path:str|list=None):
     # print(html_table_to_str(result))
 
     # send_email(f"{current_date}最大还款时间",convert_to_html_table(result) ,body_type='html')
-    send_emails(f"{current_date}推荐用卡",result_dict ,body_type='html',attachment_path=attachment_path)
+    send_emails_by_config(f"{current_date}推荐用卡",result_dict ,body_type='html',attachment_path=attachment_path)
     # to_clipboard(result)
 
 import matplotlib.pyplot as plt

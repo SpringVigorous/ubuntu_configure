@@ -12,8 +12,8 @@ sys.path.append( os.path.join(root_path,'base') )
 
 
 from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str
-from base import HtmlHelper
-from base.email.special_email import send_emails
+from base import HtmlHelper,hash_text
+from base.email.special_email import send_email
 
 import re
 
@@ -125,7 +125,7 @@ class prohibited_app:
         self._prohibited_words:list = []
         self._detector =None
         self._orc=None
-        self.logger=logger_helper("敏感词检测")
+        self.logger=logger_helper("图片敏感词检测")
         self._from_xlsx(xls_path)
     @property
     def  ocr(self):
@@ -141,12 +141,15 @@ class prohibited_app:
         self.add_prohibited_words(df["违禁词"].tolist())
         
         
-        self.logger.info("加载完毕",update_time_type=UpdateTimeType.STAGE)
+        self.logger.info("完成",f"目录：{xls_path}",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
         
     def save_prohibited_words(self,xls_path:str):
+        self.logger.stack_target(detail="保存词库")
         df = pd.DataFrame(self.prohibited_words)
         df.to_excel(xls_path,sheet_name="违禁词")
+        self.logger.info("完成",f"目录：{xls_path}",update_time_type=UpdateTimeType.STAGE)
+        self.logger.pop_target()
         
     @property
     def prohibited_words(self)->list:
@@ -185,34 +188,34 @@ class prohibited_app:
     def visualize(self,text,results):
         return self.detector.visualize(text,results)
 
-    def detect_pics(self,img_paths:list|str,dest_dir,img_root_dir=None,auto_show=True):
+    def _detect_pics(self,img_paths:list|str,dest_dir,auto_show=True)->list:
         if not img_paths: return
         
         if isinstance(img_paths,str) or isinstance(img_paths,Path): 
             img_paths=unique([img_paths])
-        if not img_root_dir:
-            img_root_dir=os.path.dirname(img_paths)
+            
+        results=[self._detect_pic(img_path,dest_dir,auto_show) for img_path in img_paths]
+        return results
+
+
+    def _detect_folder_pics(self,img_dir,dest_dir,auto_show=True)->list[tuple|list]:
+        self.logger.stack_target(detail=f"当前文件夹{img_dir}")
+        self.logger.update_time(UpdateTimeType.STAGE)
         
-        results=[]
-        for img_path in img_paths:
-            info=self.detect_pic(img_path,dest_dir,auto_show)
-            real_path=Path(img_path).relative_to(img_root_dir)
-            results.append(f"{real_path}:\n{info}"+"\n"*4) 
-    
-        return "\n".join(results)
+        img_paths=img_files(img_dir)
+        infos=self._detect_pics(img_paths,dest_dir,auto_show)
+        
+        self.logger.info("完成",update_time_type=UpdateTimeType.STAGE)
+        self.logger.pop_target()
+        return infos
 
-
-    def detect_folder_pics(self,img_dir,dest_dir,auto_show=True):
-        self.logger.stack_target(detail="当前文件夹{img_dir}")
-        return self.detect_pics(img_files(img_dir),dest_dir,img_dir,auto_show)
-
-    def detect_pic(self,img_path,dest_dir,auto_show=True)->str:
-        self.logger.update_target(detail=f"正在检测{img_path}")
+    def _detect_pic(self,img_path,dest_dir,auto_show=True)->tuple|list:
+        self.logger.stack_target(detail=f"正在检测{img_path}")
+        self.logger.update_time(UpdateTimeType.STEP)
+        
         
         ocr_results = self.ocr.recognize_text(img_path)        
         img_output_path=Path(dest_dir)/Path(img_path).name
-        
-
         boxes, texts, scores=ocr_results
         
         org_text="".join(texts)
@@ -240,13 +243,14 @@ class prohibited_app:
         results=self.detector.detect(org_text)
         
         
-        info=self.detector.detect_result(results)
+        info:list=self.detector.detect_result(results)
         if not results:
-            self.logger.info("成功","没有敏感词")
+            self.logger.info("成功","没有敏感词",update_time_type=UpdateTimeType.STEP)
             
             #若是没有敏感词，且不是强制显示，则直接返回
             if auto_show:
-                return info
+                self.logger.pop_target()
+                return str(img_output_path),info
             else:
                 img_output_path=img_output_path.with_stem(f"无敏感词_{img_output_path.stem}")
         
@@ -259,38 +263,99 @@ class prohibited_app:
 
         ImageHelper.draw(img_path,img_output_path,boxes,dest_index)
         
-        return info
+        #日志
+        self.logger.trace("完成",update_time_type=UpdateTimeType.STEP)
+        self.logger.pop_target()
+        return str(img_output_path),info
 
         
+    def detect_fold(self,img_dir,dest_dir,auto_show=True):
+        self.logger.stack_target(detail=f"{img_dir}-{dest_dir}")
+        self.logger.update_time(UpdateTimeType.ALL)
+        
+        if is_empty_folder(img_dir):
+            self.logger.error("文件夹为空",f"{img_dir}",update_time_type=UpdateTimeType.STAGE)
+            return
+        
+        timestamp = cur_datetime_str()
+        out_name=f"违禁词检测结果_{timestamp}"
+        #输出检测结果
+        results=self._detect_folder_pics(img_dir,dest_dir,auto_show=auto_show)
+        
+        if not results:
+            self.logger.error("检测结果为空",update_time_type=UpdateTimeType.STAGE)
+            return
+        
+        
+        
+        text_contents=[]
+        for result in results:
+            file_path,info=result
+            text_info=ProhibitedWordsDetector.results_txt(info)
+            text_contents.append(f"{Path(file_path).relative_to(dest_dir)}:\n{text_info}\n\n")
+        if text_contents:
+            txt_path=os.path.join(dest_dir,f"{out_name}.txt")
+            self.logger.update_target(detail=f"保存结果->{txt_path}")
+            write_to_txt_utf8_sig(txt_path,"\n".join(text_contents))
+            self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+
+        #压缩包
+        zipper=ZipUtility()
+        source=Path(dest_dir)
+        zip_path=os.path.join(source.parent,"zip",f"{source.name}_{timestamp}.zip")
+        zipper.compress(dest_dir,zip_path)
+        self.logger.update_target(detail=f"打包结果->{zip_path}")
+        self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+
+        #发送邮件
+        
+        heads=["编号","结果","图片"]
+        bodys=[
+            [(index+1,0,"top"),(ProhibitedWordsDetector.results_txt_short(row[1]),0,"top"),(hash_text(row[0]),1,"center")]
+            for index,row in enumerate(results)
+        ]
+        html_body=HtmlHelper.html_tab(heads,bodys)
+        email_reciever="350868206@qq.com"
+        self.logger.update_target(detail=f"发送邮件->{email_reciever}")
+        attachment_path=[item[0] for item in results]
+        attachment_path.append(zip_path)
+        send_email(email_reciever,out_name,html_body,body_type="html",attachment_path=attachment_path,image_as_attachment=True)
+        self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+        
+        
+        if is_empty_folder(dest_dir):
+            return
+        #清空
+        clear_folder(img_dir)
+        
+
+    
+        
+        pass
 def main(img_dir,output_dir):
+    
+        #清空
+    # clear_folds(img_dir)
+    clear_folder(output_dir)
+    
     xlsx_path=r"F:\worm_practice\taobao\违禁词\违禁词.xlsx"
    
     app=prohibited_app(xlsx_path)
     org_xlsx_path=Path(xlsx_path)
+    #输出违禁词库
     app.save_prohibited_words(org_xlsx_path.with_stem(org_xlsx_path.stem+"_prohibited_words"))
-    
     #输出检测结果
-    result=app.detect_folder_pics(img_dir,output_dir,auto_show=False)
-    if result:
-        write_to_txt_utf8_sig(os.path.join(output_dir,f"敏感词检测结果_{cur_datetime_str()}.txt"),result)
+    app.detect_fold(img_dir,output_dir,auto_show=False)
+    
 
-
+    
 
 if __name__ == '__main__':
     img_dir=Path(r"F:\worm_practice\taobao\五味食养\images")
     output_dir= str(img_dir.with_name(f"{img_dir.name}_prohibite"))
 
-    #清空
-    # clear_folds(img_dir)
-    clear_folder(output_dir)
+
     
 
     
     main(img_dir,output_dir)
-    if is_empty_folder(output_dir):
-        exit()
-    #清空
-    clear_folder(img_dir)
-    zipper=ZipUtility()
-    zipper.compress(output_dir)
-    

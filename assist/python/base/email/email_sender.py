@@ -5,7 +5,7 @@ from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 import json
 from enum import Enum
-
+from email.header import Header
 import sys
 import os
 
@@ -155,20 +155,20 @@ class EmailSender:
                 try:
                     with open(attachment, 'rb') as file:
                         data=file.read()
-                        part=None
                         #若是图片,顺便添加到正文，即设置id
                         if is_image_file(attachment):
                             part = MIMEImage(data)
                             part.add_header('Content-ID', f'<{hash_text(attachment)}>')  # CID与HTML中一致
+                            # part.add_header('Content-Disposition', 'inline', filename=attachment)  # 关键修改
+                            #后续证明，没有什么用
+                            # if image_as_attachment:
+                            #     part.add_header('Content-Disposition', 'attachment', filename={attachment})  # 关键修改
                             msg.attach(part)
-                            
-                            #不作为附件时，直接返回
-                            if not image_as_attachment:
-                                continue
-                        #保存为附件
-                        part = MIMEApplication(data, Name=attachment)
-                        part['Content-Disposition'] = f'attachment; filename="{attachment}"'
-                        msg.attach(part)
+                        else:
+                            #保存为附件
+                            part = MIMEApplication(data, Name=attachment)
+                            part['Content-Disposition'] = f'attachment; filename="{attachment}"'
+                            msg.attach(part)
                 except Exception as e:
                     email_helper.error("添加附件失败",f"原因：{e}")
                 

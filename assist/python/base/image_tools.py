@@ -105,12 +105,20 @@ class ImageHelper:
         for _index,item in sort_dict.items():
             box=[]
             whole_text=[]
+            
+            small_box=[]
+            has_big_box=False
             for index,texts in item:
+                count=len(index)
                 for i in index:
                     if i >= len(boxes):
                         continue
                     box.extend(boxes[i])
                 whole_text.extend(texts)
+                if count==1:
+                    small_box.append(boxes[index[0]])
+                elif count>1:
+                    has_big_box=True
                     
             text=f"【{'】【'.join(whole_text)}】"
             pos=ImageHelper.box_pos(box)
@@ -118,6 +126,9 @@ class ImageHelper:
             
             box=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]
             ImageHelper.draw_box(img_draw,box,color=box_color)
+            if has_big_box:
+                for _box in small_box:
+                    ImageHelper.draw_box(img_draw,_box,color=box_color)
             ImageHelper.draw_text(img_draw,pos,text,font=font,color=text_color)
             
         img.save(output_img_path)
