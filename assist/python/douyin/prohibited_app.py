@@ -12,7 +12,8 @@ sys.path.append( os.path.join(root_path,'base') )
 
 
 from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str
-
+from base import HtmlHelper
+from base.email.special_email import send_emails
 
 import re
 
@@ -184,23 +185,26 @@ class prohibited_app:
     def visualize(self,text,results):
         return self.detector.visualize(text,results)
 
-    def detect_pics(self,img_paths:list|str,dest_dir,auto_show=True):
+    def detect_pics(self,img_paths:list|str,dest_dir,img_root_dir=None,auto_show=True):
         if not img_paths: return
         
         if isinstance(img_paths,str) or isinstance(img_paths,Path): 
             img_paths=unique([img_paths])
+        if not img_root_dir:
+            img_root_dir=os.path.dirname(img_paths)
         
         results=[]
         for img_path in img_paths:
             info=self.detect_pic(img_path,dest_dir,auto_show)
-            real_path=Path(img_path).relative_to(img_dir)
+            real_path=Path(img_path).relative_to(img_root_dir)
             results.append(f"{real_path}:\n{info}"+"\n"*4) 
     
         return "\n".join(results)
 
 
-    def detect_folder_pics(self,img_path,dest_dir,auto_show=True):
-        return self.detect_pics(img_files(img_dir),dest_dir,auto_show)
+    def detect_folder_pics(self,img_dir,dest_dir,auto_show=True):
+        self.logger.stack_target(detail="当前文件夹{img_dir}")
+        return self.detect_pics(img_files(img_dir),dest_dir,img_dir,auto_show)
 
     def detect_pic(self,img_path,dest_dir,auto_show=True)->str:
         self.logger.update_target(detail=f"正在检测{img_path}")

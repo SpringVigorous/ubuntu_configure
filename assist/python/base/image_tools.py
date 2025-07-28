@@ -15,7 +15,9 @@ class ImageHelper:
     default_font = 'simhei.ttf'
     def __init__(self):
         pass
-        
+    @staticmethod
+    def shape(image_path):
+        return Image.open(image_path).size
     @staticmethod
     def open_draw(image_path,mode="RGB") -> ImageDraw:
         # 打开原图->先转指定模式

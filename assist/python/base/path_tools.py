@@ -98,9 +98,8 @@ def txt_files(dest_dir)->list[str]:
 def jpg_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".jpg")
 
-def img_files(dest_dir)->list[str]:
-    
-    image_file_extensions = [
+
+img_extensions= [
     # 常见格式
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp",
     # 矢量图格式
@@ -109,9 +108,10 @@ def img_files(dest_dir)->list[str]:
     ".raw", ".cr2", ".nef", ".arw", ".dng", ".orf", ".psd", ".psb",
     ".indd", ".cdr", ".ico", ".jfif", ".pjpeg", ".pjp", ".avif",
     ".heic", ".heif", ".ppm", ".pgm", ".pbm", ".pnm", ".hdr", ".exr"
-]
-    
-    return spceial_suffix_files(dest_dir,image_file_extensions)
+        ]
+
+def img_files(dest_dir)->list[str]:
+    return spceial_suffix_files(dest_dir,img_extensions)
 
 def json_files(dest_dir)->list[str]:
     return spceial_suffix_files(dest_dir,".json")
@@ -131,6 +131,8 @@ def is_empty_folder(path):
         return not any(entries)  # 发现任一条目即返回False
 
 
+def is_image_file(file_path):
+    return Path(file_path).suffix in img_extensions
 
 if __name__ == '__main__':
     print(windows_path(r"F:\test\ubuntu_configure\assist\python\logs\playlist\1.txt"))

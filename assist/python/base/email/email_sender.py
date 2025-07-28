@@ -2,6 +2,7 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from email.mime.image import MIMEImage
 import json
 from enum import Enum
 
@@ -19,7 +20,8 @@ if project_root not in sys.path:
 from  com_log import  logger_helper
 from  com_decorator import exception_decorator
 from file_tools import detect_encoding
-from string_tools import exe_dir
+from string_tools import exe_dir,hash_text
+from path_tools import is_image_file
     
 from PIL import Image
 import os
@@ -41,15 +43,6 @@ class EmailType(Enum):
 
 
 
-def is_image(file_path):
-    try:
-        # 尝试打开文件
-        with Image.open(file_path) as img:
-            # 如果成功打开，则文件是图片
-            return True
-    except (IOError, SyntaxError):
-        # 如果打开失败，则文件不是图片
-        return False
 
 
 class EmailSender:
@@ -118,7 +111,7 @@ class EmailSender:
         适用于发送带有格式的文本内容，类似于 Word 文档。
         """
     @exception_decorator()
-    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:str|list=None, body_files:str|list=None):
+    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:str|list=None, body_files:str|list=None,image_as_attachment:bool=False):
         """
         发送邮件
         
@@ -143,7 +136,7 @@ class EmailSender:
         bodyfiles_list=body_files if type(body_files)==list else [body_files] if body_files is not None else []
         
         # 添加正文
-        msg.attach(MIMEText(body, body_type))
+        msg.attach(MIMEText(body, body_type,"utf-8"))
         
         if bodyfiles_list:
             for body_file in bodyfiles_list:
@@ -152,19 +145,33 @@ class EmailSender:
                 encoding= detect_encoding(body_file)
                 with open(body_file, 'r', encoding=encoding) as file:
                     file_body = file.read()
-                    msg.attach(MIMEText(file_body, 'plain'))
+                    msg.attach(MIMEText(file_body, 'plain',"utf-8"))
         
         # 添加附件
         if attachment_list:
             for attachment in attachment_list:
                 if not attachment or not os.path.exists(attachment):
                     continue
-                with open(attachment, 'rb') as file:
-                    data=file.read()
-                    
-                    part = MIMEApplication(data, Name=attachment)
-                    part['Content-Disposition'] = f'attachment; filename="{attachment}"'
-                    msg.attach(part)
+                try:
+                    with open(attachment, 'rb') as file:
+                        data=file.read()
+                        part=None
+                        #若是图片,顺便添加到正文，即设置id
+                        if is_image_file(attachment):
+                            part = MIMEImage(data)
+                            part.add_header('Content-ID', f'<{hash_text(attachment)}>')  # CID与HTML中一致
+                            msg.attach(part)
+                            
+                            #不作为附件时，直接返回
+                            if not image_as_attachment:
+                                continue
+                        #保存为附件
+                        part = MIMEApplication(data, Name=attachment)
+                        part['Content-Disposition'] = f'attachment; filename="{attachment}"'
+                        msg.attach(part)
+                except Exception as e:
+                    email_helper.error("添加附件失败",f"原因：{e}")
+                
 
                     
 
@@ -209,8 +216,64 @@ def test():
     email_sender = EmailSender(sender_email, password)
     email_sender.send_email(receiver_email, subject, body, 'plain',attachments, body_files)
 
+def test_1():
+    # 使用 QQ 邮箱发送邮件
+    sender_email = '960902471@qq.com'
+    password = 'txxbbjkizzhabdjg'
+    # receiver_email = ['1107917658@qq.com',"spring_flourish@outlook.com","spring_flourish@aliyun.com"]
+    receiver_email = ['1107917658@qq.com']
+    subject = '测试图文混合内容'
 
+
+    
+    cur_dir=r"F:\worm_practice\taobao\五味食养\images_prohibite"
+    org_files=["微信图片_20250727225420_674.jpg",
+        "微信图片_20250727225424_673.jpg",
+        "微信图片_20250727225430_672.jpg",
+        "微信图片_20250727225438_670.jpg",
+        "微信图片_20250727225446_669.jpg",
+        ]
+    attachments = [os.path.join(cur_dir,file) for file in org_files]
+    
+    file_infos=[(os.path.join(cur_dir,file), file) for file in org_files]
+
+#     html_content = """
+#     <html>
+#     <body>
+#     <table style="border-collapse: collapse; width: auto;">
+#         <tr>
+#         <th style="text-align:center; border:1px solid black; padding:8px;">编号</th>
+#         <th style="text-align:center; border:1px solid black; padding:8px;">描述</th>
+#         <th style="text-align:center; border:1px solid black; padding:8px;">图片</th>
+#         </tr>
+#         {rows}
+#     </table>
+#     </body>
+#     </html>
+#     """.format(
+#          rows="".join(
+# f'<tr><td style="vertical-align:top;  border:1px solid black;padding:8px;width:auto;">{index+1}</td><td style="vertical-align:top;  border:1px solid black;padding:8px;width:auto;">{row[1]}</td><td style="vertical-align:center; border:1px solid black; padding:8px;width:auto;"><img src="cid:{hash_text(row[0])}" style="display:block;" ></td></tr>'
+#             for index,row in enumerate(file_infos)
+#         )
+#     )
+
+    
+    
+    from html_tools import HtmlHelper
+    heads=["编号","描述","图片"]
+    bodys=[
+        [(index+1,0,"top"),(row[1],0,"top"),(hash_text(row[0]),1,"center")]
+        for index,row in enumerate(file_infos)
+    ]
+    html_content = HtmlHelper.html_tab(heads,bodys)
+    
+    
+    
+    email_sender = EmailSender(sender_email, password)
+    email_sender.send_email(receiver_email, subject, html_content, 'html',attachments)
 
 # 示例使用
 if __name__ == "__main__":
-    test()
+    # test()
+    test_1()
+

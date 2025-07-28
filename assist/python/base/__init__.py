@@ -46,5 +46,6 @@ from .codec_tools import *
 
 from .image_tools import *
 from .zip_tools import *
+from .html_tools import *
 
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]
