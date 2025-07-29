@@ -188,7 +188,7 @@ class prohibited_app:
     def visualize(self,text,results):
         return self.detector.visualize(text,results)
 
-    def _detect_pics(self,img_paths:list|str,dest_paths:list|str=None,orc_paths:list|str=None,auto_show=True)->list:
+    def _detect_pics(self,img_paths:list|str,dest_paths:list|str=None,ocr_paths:list|str=None,auto_show=True)->list:
         if not img_paths: return
         
         if isinstance(img_paths,str) or isinstance(img_paths,Path): 
@@ -197,10 +197,10 @@ class prohibited_app:
 
         if not dest_paths:   
             dest_paths=[Path(img_path).with_stem(Path(img_path).stem+"_detect") for img_path in img_paths] 
-        if not dest_paths:   
-            dest_paths=[None]*len(img_paths) 
+        if not ocr_paths:   
+            ocr_paths=[None]*len(img_paths) 
             
-        results=[self._detect_pic(img_path,str(dest_path),ocr_path,auto_show) for img_path,dest_path,ocr_path in zip(img_paths,dest_paths,orc_paths)]
+        results=[self._detect_pic(img_path,dest_path,ocr_path,auto_show) for img_path,dest_path,ocr_path in zip(img_paths,dest_paths,ocr_paths)]
         return results
 
 
@@ -235,7 +235,7 @@ class prohibited_app:
 
 
 
-        boxes,texts,scores = ocr_results
+        boxes,texts,scores,subboxes = ocr_results
         org_text="".join(texts)
         def get_start_indices(str_list):
             """
@@ -266,11 +266,14 @@ class prohibited_app:
             self.logger.info("成功","没有敏感词",update_time_type=UpdateTimeType.STEP)
             
             #若是没有敏感词，且不是强制显示，则直接返回
+            dest_path=Path(dest_img_path)
+            
+            
             if auto_show:
                 self.logger.pop_target()
-                return str(dest_img_path),info
+                return str(dest_path),info
             else:
-                dest_img_path=dest_img_path.with_stem(f"无敏感词_{dest_img_path.stem}")
+                dest_img_path=dest_path.with_stem(f"无敏感词_{dest_path.stem}")
         
         
         pos_index=self.detector.pos(results,org_index)

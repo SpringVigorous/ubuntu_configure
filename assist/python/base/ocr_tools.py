@@ -26,12 +26,19 @@ def crop_image_with_offsets(image, crop_height=1000, overlap=100):
     :return: 子图列表和对应的偏移量列表 (y方向偏移)
     """
     h, w = image.shape[:2]
+    crop_height=abs(crop_height)
+    overlap=abs(overlap)
+    if crop_height==0:
+        crop_height=1500
+    
     
     # 新增：如果图片高度小于等于裁剪高度，直接返回原图，不拆分
     if h <= crop_height:
-        return [image], [0]  # 子图列表只包含原图，偏移量为0
+        return [image], [0] ,None # 子图列表只包含原图，偏移量为0
     
     sub_images = []
+    sub_boxes = []
+    
     offsets = []  # 记录每个子图在原图中的y坐标偏移
     start_y = 0
     sub_image_index = 0  # 用于标记是否为第一个子图
@@ -47,23 +54,17 @@ def crop_image_with_offsets(image, crop_height=1000, overlap=100):
         sub_img = image[start_y:end_y, :, :]
         sub_images.append(sub_img)
         offsets.append(start_y)
+        sub_boxes.append(((0,start_y),(w,end_y)))
+        
+        if end_y >= h:
+            break
         
         # 计算下一个子图的起始位置
-        if sub_image_index == 0:
-            # 第一个子图之后，直接从end_y开始，不考虑重叠
-            next_start_y = end_y
-        else:
-            # 从第二个子图开始，应用重叠
-            next_start_y = end_y - overlap
+        start_y = end_y - overlap
         
-        # 防止无限循环（当剩余高度小于重叠区域时）
-        if next_start_y >= h or next_start_y <= start_y:
-            break
-            
-        start_y = next_start_y
         sub_image_index += 1
     
-    return sub_images, offsets
+    return sub_images, offsets,sub_boxes
 
 # def adjust_bbox_coordinates(ocr_results, offset_y):
 #     """
@@ -138,7 +139,7 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
     try:
         image = cv2.imread(cache_path)
         if image is None:
-            return all_results
+            return all_results,None
     except Exception as e:
         logger.error("打开失败",e)
     finally:
@@ -148,7 +149,7 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
 
     
     # 裁剪为子图并获取偏移量
-    sub_images, offsets = crop_image_with_offsets(image, crop_height, overlap)
+    sub_images, offsets,sub_boxes = crop_image_with_offsets(image, crop_height, overlap)
     h, w = image.shape[:2]
     logger.info(f"图片尺寸:{w}x{h}",f"共拆分为{len(sub_images)}个子图",update_time_type=UpdateTimeType.STEP)
     
@@ -190,7 +191,10 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
         logger.pop_target()
         
     logger.info("完毕",update_time_type=UpdateTimeType.STAGE)
-    return all_results
+    
+    
+    
+    return all_results,sub_boxes
 
 
 class OCRProcessor:
@@ -232,8 +236,9 @@ class OCRProcessor:
         # self.logger.trace("开始")
         
         result=None
+        subboxes=None
         try:
-            result = ocr_large_image(self.ocr.ocr,img_path,1980,200)
+            result,subboxes = ocr_large_image(self.ocr.ocr,img_path,1980,200)
             # self.logger.trace("完成",update_time_type=UpdateTimeType.STEP)
         except Exception as e:
             self.logger.error("失败",str(e))
@@ -242,18 +247,18 @@ class OCRProcessor:
             self.logger.info("完成",update_time_type=UpdateTimeType.ALL)    
         
         if not result:
-            return [], [], []
+            return [], [], [],subboxes
             
         # result = result[0]  # 获取第一页结果
         
         if not result:
-            return [], [], []
+            return [], [], [],subboxes
             
         
         boxes = [line[0] for line in result if line]
         texts = [line[1][0] for line in result if line]
         scores = [line[1][1] for line in result if line]
-        return boxes, texts, scores
+        return boxes, texts, scores,subboxes
 
     def visualize_results(
         self,
@@ -319,14 +324,28 @@ class OCRProcessor:
         self.logger.update_target("识别结果",f"{img_path}->{ocr_path}")
         self.logger.update_time(UpdateTimeType.STAGE)
         
-        boxes,texts,scores = ocr_results
+        boxes,texts,scores,subboxes = ocr_results
         #绘制文字识别结果
 
         font=ImageHelper.create_font()
         img,img_draw=ImageHelper.open_draw(img_path)
+        index=0
         for box,text,score in zip(boxes,texts,scores):
+            index+=1
             pos= ImageHelper.draw_box(img_draw,box)      
-            ImageHelper.draw_text(img_draw,pos,f"{text}:{score:.2}",font=font)
+            ImageHelper.draw_text(img_draw,pos,f"{index}:{text}:{score:.2}",font=font)
+            
+        if subboxes and len(subboxes)>1:
+            for index,pos in enumerate(subboxes):
+                (x0,y0),(x1,y1)=pos
+                is_odd=index%2==0
+                off=4 if is_odd else 2
+                x0+=off
+                x1-=off
+
+                box=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]
+                ImageHelper.draw_box(img_draw,box,color='yellow' if is_odd else 'green' )    
+            
         os.makedirs(os.path.dirname(ocr_path) ,exist_ok=True)
         ImageHelper.save_draw(img,ocr_path)
 
@@ -354,7 +373,7 @@ class OCRProcessor:
             
             # OCR识别
             ocr_results = self.recognize_text(img_path)
-            boxes, texts, scores=ocr_results
+            boxes, texts, scores,subboxes=ocr_results
             
             # 打开原图
             image = Image.open(img_path).convert("RGB")
