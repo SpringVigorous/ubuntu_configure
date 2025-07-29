@@ -22,24 +22,24 @@ class HtmlHelper:
 
         
     @staticmethod
-    def tab_body_item_txt(txt_content,vertical_align='center'):
+    def tab_body_item_txt(txt_content,vertical_align='center',color='black'):
         if isinstance(txt_content,str):
             txt_content=txt_content.replace("\n", "<br>")
-        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;">{content}</td>
-        """.format(align_type=vertical_align,content=txt_content)
+        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;color: {color};">{content}</td>
+        """.format(align_type=vertical_align,content=txt_content,color=color)
         
     @staticmethod
-    def tab_body_item_img(src_cid_content,vertical_align='center'):
-        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;"><img src="cid:{src_id}"style="display:block;"></td>
-        """.format(align_type=vertical_align,src_id=src_cid_content)
+    def tab_body_item_img(src_cid_content,vertical_align='center',color='black'):
+        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;color: {color};"><img src="cid:{src_id}"style="display:block;"></td>
+        """.format(align_type=vertical_align,src_id=src_cid_content,color=color)
 
     @staticmethod
-    def tab_body_item(content,item_type=0,vertical_align='center'):
+    def tab_body_item(content,item_type=0,vertical_align='center',color='black'):
         is_txt=item_type==0
         func=HtmlHelper.tab_body_item_txt if  is_txt else HtmlHelper.tab_body_item_img
         if not vertical_align:
             vertical_align='top' if is_txt else 'center'
-        return func(content,vertical_align)
+        return func(content,vertical_align,color=color)
             
     @staticmethod
     def tab_body_row(row_content:Iterable):

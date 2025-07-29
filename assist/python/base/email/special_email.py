@@ -11,7 +11,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 
-from email_sender import EmailSender
+from email_sender import EmailSender,ImageMode
 
 # 获取项目根目录
 project_root = os.path.dirname(os.path.dirname(__file__))
@@ -41,7 +41,7 @@ def load_setting():
         return sender_email,password,receiver_email
 
 @exception_decorator()
-def send_email_by_config(subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
+def send_email_by_config(subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_mode:ImageMode=ImageMode.INSERT):
         
         sender_email,password,receiver_email=load_setting() 
         
@@ -50,9 +50,9 @@ def send_email_by_config(subject,body:str,body_type='plain',attachment_path:str|
         # attachment_list=attachment_path if type(attachment_path)==list else [attachment_path] if attachment_path is not None else []
         # bodyfiles_list=bodyfiles if type(bodyfiles)==list else [bodyfiles] if bodyfiles is not None else []
         
-        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment)
+        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_mode)
 @exception_decorator()
-def send_email(receiver_email,subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
+def send_email(receiver_email,subject,body:str,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_mode:ImageMode=ImageMode.INSERT):
         
         sender_email,password,_=load_setting() 
         
@@ -61,9 +61,9 @@ def send_email(receiver_email,subject,body:str,body_type='plain',attachment_path
         # attachment_list=attachment_path if type(attachment_path)==list else [attachment_path] if attachment_path is not None else []
         # bodyfiles_list=bodyfiles if type(bodyfiles)==list else [bodyfiles] if bodyfiles is not None else []
         
-        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment)
+        email_sender.send_email(receiver_email, subject, body,body_type, attachment_path, bodyfiles,image_mode)
 @exception_decorator()
-def send_emails_by_config(subject:str,body_dict:dict,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_as_attachment:bool=False):
+def send_emails_by_config(subject:str,body_dict:dict,body_type='plain',attachment_path:str|list=None,bodyfiles:str|list=None,image_mode:ImageMode=ImageMode.INSERT):
         
         sender_email,password,receiver_email=load_setting() 
         
@@ -93,7 +93,7 @@ def send_emails_by_config(subject:str,body_dict:dict,body_type='plain',attachmen
             
             
             
-            email_sender.send_email(recievers, subject, body,body_type, attachment_path, bodyfiles,image_as_attachment=image_as_attachment)
+            email_sender.send_email(recievers, subject, body,body_type, attachment_path, bodyfiles,image_mode=image_mode)
         
 
     

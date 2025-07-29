@@ -9,6 +9,7 @@ import cv2
 import tempfile
 from pathlib import Path
 from com_log import logger_helper,UpdateTimeType
+from image_tools import ImageHelper
 def has_non_ascii(s):
     # 检查所有字符的ASCII码是否都在0-127之间
     return not all(ord(c) < 128 for c in s)
@@ -118,7 +119,7 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
     :param overlap: 子图重叠像素
     :return: 合并后的OCR结果（坐标对应原图）
     """
-    
+    logger=logger_helper(f"文字识别{image_path}",f"子图高度{crop_height}，重叠高度{overlap}")
             
     # 存储所有校正后的结果
     all_results = []
@@ -139,23 +140,27 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
         if image is None:
             return all_results
     except Exception as e:
-        print(e)
-    
+        logger.error("打开失败",e)
     finally:
         if cache_path!=image_path:
             os.remove(cache_path)
     
+
+    
     # 裁剪为子图并获取偏移量
     sub_images, offsets = crop_image_with_offsets(image, crop_height, overlap)
-    
+    h, w = image.shape[:2]
+    logger.info(f"图片尺寸:{w}x{h}",f"共拆分为{len(sub_images)}个子图",update_time_type=UpdateTimeType.STEP)
     
     # 逐个处理子图
     for i, (sub_img, offset_y) in enumerate(zip(sub_images, offsets)):
-        print(f"处理子图 {i+1}/{len(sub_images)}...")
+        logger.stack_target(detail=f"处理子图 {i+1}/{len(sub_images)}")
+        logger.trace("开始",update_time_type=UpdateTimeType.STEP)
         # 识别子图（cls=True表示使用方向分类器）
         # result = ocr.ocr(sub_img, cls=True)
         result = ocr_obj(sub_img, cls=True)
         if result is None:
+            logger.pop_target()
             continue
         
         # 校正坐标并添加到总结果
@@ -178,13 +183,13 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
                 return not(cur_min_y>=min_y and cur_max_y<=max_y)
 
             dest=list(filter(is_inner, dest))
-            
-            
-            pass
         
         
         all_results.extend(dest)
-    
+        logger.trace("完毕",update_time_type=UpdateTimeType.STEP)
+        logger.pop_target()
+        
+    logger.info("完毕",update_time_type=UpdateTimeType.STAGE)
     return all_results
 
 
@@ -231,7 +236,7 @@ class OCRProcessor:
             result = ocr_large_image(self.ocr.ocr,img_path,1980,200)
             # self.logger.trace("完成",update_time_type=UpdateTimeType.STEP)
         except Exception as e:
-            print(f"失败: {str(e)}")
+            self.logger.error("失败",str(e))
             pass
         finally:
             self.logger.info("完成",update_time_type=UpdateTimeType.ALL)    
@@ -276,7 +281,7 @@ class OCRProcessor:
             font = ImageFont.truetype(font_path, size=25)
         except:
             font = ImageFont.load_default()
-            self._log_warning(f"字体 {font_path} 加载失败，使用默认字体")
+            self.logger.warn(f"字体 {font_path} 加载失败，使用默认字体")
 
         for i, box in enumerate(boxes):
             # 计算矩形边界
@@ -307,6 +312,25 @@ class OCRProcessor:
             draw.text((x0, text_y), text, font=font, fill='red')
 
         return image
+
+    #ocr_results: OCRProcessor.recognize_text()的结果
+    def draw_results(self, img_path, ocr_results,ocr_path):
+        
+        self.logger.update_target("识别结果",f"{img_path}->{ocr_path}")
+        self.logger.update_time(UpdateTimeType.STAGE)
+        
+        boxes,texts,scores = ocr_results
+        #绘制文字识别结果
+
+        font=ImageHelper.create_font()
+        img,img_draw=ImageHelper.open_draw(img_path)
+        for box,text,score in zip(boxes,texts,scores):
+            pos= ImageHelper.draw_box(img_draw,box)      
+            ImageHelper.draw_text(img_draw,pos,f"{text}:{score:.2}",font=font)
+        os.makedirs(os.path.dirname(ocr_path) ,exist_ok=True)
+        ImageHelper.save_draw(img,ocr_path)
+
+        self.logger.info("完成",UpdateTimeType.STAGE)
 
     def process_image(
         self,
@@ -345,9 +369,9 @@ class OCRProcessor:
                     f"result_{os.path.basename(img_path)}"
                 )
                 result_image.save(output_path)
-                print(f"结果已保存至: {output_path}")
+                self.logger.info("保存完成",f"结果已保存至: {output_path}")
         except Exception as e:
-            print(f"处理图片时出错: {e}")
+            self.logger.error("异常",f"处理图片时出错: {e}")
             pass
         
         
@@ -366,9 +390,7 @@ class OCRProcessor:
                 return hei_font
         return self.default_font
 
-    def _log_warning(self, message: str):
-        """打印警告信息"""
-        print(f"[警告] {message}")
+
 
 # 使用示例
 if __name__ == "__main__":

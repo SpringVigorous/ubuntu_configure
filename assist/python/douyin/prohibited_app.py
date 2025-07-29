@@ -13,7 +13,7 @@ sys.path.append( os.path.join(root_path,'base') )
 
 from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str
 from base import HtmlHelper,hash_text
-from base.email.special_email import send_email
+from base.email import send_email ,ImageMode
 
 import re
 
@@ -188,36 +188,54 @@ class prohibited_app:
     def visualize(self,text,results):
         return self.detector.visualize(text,results)
 
-    def _detect_pics(self,img_paths:list|str,dest_dir,auto_show=True)->list:
+    def _detect_pics(self,img_paths:list|str,dest_paths:list|str=None,orc_paths:list|str=None,auto_show=True)->list:
         if not img_paths: return
         
         if isinstance(img_paths,str) or isinstance(img_paths,Path): 
             img_paths=unique([img_paths])
+        if not img_paths: return
+
+        if not dest_paths:   
+            dest_paths=[Path(img_path).with_stem(Path(img_path).stem+"_detect") for img_path in img_paths] 
+        if not dest_paths:   
+            dest_paths=[None]*len(img_paths) 
             
-        results=[self._detect_pic(img_path,dest_dir,auto_show) for img_path in img_paths]
+        results=[self._detect_pic(img_path,str(dest_path),ocr_path,auto_show) for img_path,dest_path,ocr_path in zip(img_paths,dest_paths,orc_paths)]
         return results
 
 
-    def _detect_folder_pics(self,img_dir,dest_dir,auto_show=True)->list[tuple|list]:
+    def _detect_folder_pics(self,img_dir,dest_dir,ocr_result_dir=None,auto_show=True)->list[tuple|list]:
         self.logger.stack_target(detail=f"当前文件夹{img_dir}")
         self.logger.update_time(UpdateTimeType.STAGE)
         
         img_paths=img_files(img_dir)
-        infos=self._detect_pics(img_paths,dest_dir,auto_show)
+        dest_paths=[]
+        ocr_paths=[]
+        for img_path in img_paths:
+            relative_path=Path(img_path).relative_to(img_dir)           
+            dest_paths.append(os.path.join(dest_dir,relative_path))
+            if ocr_result_dir:
+                ocr_paths.append(os.path.join(ocr_result_dir,relative_path))
+        infos=self._detect_pics(img_paths,dest_paths,ocr_paths,auto_show)
         
         self.logger.info("完成",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
         return infos
 
-    def _detect_pic(self,img_path,dest_dir,auto_show=True)->tuple|list:
+    def _detect_pic(self,img_path,dest_img_path,ocr_path=None,auto_show=True)->tuple|list:
         self.logger.stack_target(detail=f"正在检测{img_path}")
         self.logger.update_time(UpdateTimeType.STEP)
         
         
-        ocr_results = self.ocr.recognize_text(img_path)        
-        img_output_path=Path(dest_dir)/Path(img_path).name
-        boxes, texts, scores=ocr_results
-        
+        ocr_results = self.ocr.recognize_text(img_path)  
+        #绘制文字识别结果
+        if ocr_path:
+            self.ocr.draw_results(img_path,ocr_results,ocr_path)
+
+
+
+
+        boxes,texts,scores = ocr_results
         org_text="".join(texts)
         def get_start_indices(str_list):
             """
@@ -250,9 +268,9 @@ class prohibited_app:
             #若是没有敏感词，且不是强制显示，则直接返回
             if auto_show:
                 self.logger.pop_target()
-                return str(img_output_path),info
+                return str(dest_img_path),info
             else:
-                img_output_path=img_output_path.with_stem(f"无敏感词_{img_output_path.stem}")
+                dest_img_path=dest_img_path.with_stem(f"无敏感词_{dest_img_path.stem}")
         
         
         pos_index=self.detector.pos(results,org_index)
@@ -260,18 +278,20 @@ class prohibited_app:
         #归类
         dest_index=combine_to_dict(pos_index)
         #绘制
-
-        ImageHelper.draw(img_path,img_output_path,boxes,dest_index)
+        ImageHelper.draw(img_path,dest_img_path,boxes,dest_index)
+        
+        
         
         #日志
-        self.logger.trace("完成",update_time_type=UpdateTimeType.STEP)
+        self.logger.trace("完成",f"比对结果输出到{dest_img_path}",update_time_type=UpdateTimeType.STEP)
         self.logger.pop_target()
-        return str(img_output_path),info
+        return str(dest_img_path),info
 
         
-    def detect_fold(self,img_dir,dest_dir,auto_show=True):
-        self.logger.stack_target(detail=f"{img_dir}-{dest_dir}")
+    def detect_fold(self,img_dir,detect_result_dir,ocr_result_dir=None,auto_show=True):
+        self.logger.stack_target(detail=f"{img_dir}->{detect_result_dir}")
         self.logger.update_time(UpdateTimeType.ALL)
+        self.logger.info("开始")
         
         if is_empty_folder(img_dir):
             self.logger.error("文件夹为空",f"{img_dir}",update_time_type=UpdateTimeType.STAGE)
@@ -280,7 +300,7 @@ class prohibited_app:
         timestamp = cur_datetime_str()
         out_name=f"违禁词检测结果_{timestamp}"
         #输出检测结果
-        results=self._detect_folder_pics(img_dir,dest_dir,auto_show=auto_show)
+        results=self._detect_folder_pics(img_dir,detect_result_dir,ocr_result_dir,auto_show=auto_show)
         
         if not results:
             self.logger.error("检测结果为空",update_time_type=UpdateTimeType.STAGE)
@@ -292,47 +312,50 @@ class prohibited_app:
         for result in results:
             file_path,info=result
             text_info=ProhibitedWordsDetector.results_txt(info)
-            text_contents.append(f"{Path(file_path).relative_to(dest_dir)}:\n{text_info}\n\n")
+            text_contents.append(f"{Path(file_path).relative_to(detect_result_dir)}:\n{text_info}\n\n")
         if text_contents:
-            txt_path=os.path.join(dest_dir,f"{out_name}.txt")
-            self.logger.update_target(detail=f"保存结果->{txt_path}")
+            txt_path=os.path.join(detect_result_dir,f"{out_name}.txt")
+            self.logger.stack_target(detail=f"保存结果->{txt_path}")
             write_to_txt_utf8_sig(txt_path,"\n".join(text_contents))
-            self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+            self.logger.info("记录结果:完成",update_time_type=UpdateTimeType.STAGE)
+            self.logger.pop_target()
 
         #压缩包
         zipper=ZipUtility()
-        source=Path(dest_dir)
+        source=Path(detect_result_dir)
         zip_path=os.path.join(source.parent,"zip",f"{source.name}_{timestamp}.zip")
-        zipper.compress(dest_dir,zip_path)
-        self.logger.update_target(detail=f"打包结果->{zip_path}")
-        self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+        zipper.compress(detect_result_dir,zip_path)
+        self.logger.stack_target(detail=f"打包结果->{zip_path}")
+        self.logger.info("打包:完成",update_time_type=UpdateTimeType.STAGE)
+        self.logger.pop_target()
 
         #发送邮件
         
         heads=["编号","结果","图片"]
         bodys=[
-            [(index+1,0,"top"),(ProhibitedWordsDetector.results_txt_short(row[1]),0,"top"),(hash_text(row[0]),1,"center")]
+            [(index+1,0,"top"),(ProhibitedWordsDetector.results_txt_short(row[1]),0,"top","red"),(hash_text(row[0]),1,"center")]
             for index,row in enumerate(results)
         ]
         html_body=HtmlHelper.html_tab(heads,bodys)
         email_reciever="350868206@qq.com"
-        self.logger.update_target(detail=f"发送邮件->{email_reciever}")
+        self.logger.stack_target(detail=f"发送邮件->{email_reciever}")
         attachment_path=[item[0] for item in results]
         attachment_path.append(zip_path)
-        send_email(email_reciever,out_name,html_body,body_type="html",attachment_path=attachment_path,image_as_attachment=True)
-        self.logger.info("完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+        send_email(email_reciever,out_name,html_body,body_type="html",attachment_path=attachment_path,image_mode=ImageMode.INSERT)
+        self.logger.info("邮件：完成","检测结果",update_time_type=UpdateTimeType.STAGE)
+        self.logger.pop_target()
+
         
-        
-        if is_empty_folder(dest_dir):
+        if is_empty_folder(detect_result_dir):
             return
         #清空
         clear_folder(img_dir)
-        
+        self.logger.info("成功",f"共{len(results)}个文件",update_time_type=UpdateTimeType.ALL)
 
     
         
         pass
-def main(img_dir,output_dir):
+def main(img_dir,output_dir,ocr_dir):
     
         #清空
     # clear_folds(img_dir)
@@ -345,17 +368,21 @@ def main(img_dir,output_dir):
     #输出违禁词库
     app.save_prohibited_words(org_xlsx_path.with_stem(org_xlsx_path.stem+"_prohibited_words"))
     #输出检测结果
-    app.detect_fold(img_dir,output_dir,auto_show=False)
+    app.detect_fold(img_dir,output_dir,ocr_dir,auto_show=False)
     
 
     
 
 if __name__ == '__main__':
     img_dir=Path(r"F:\worm_practice\taobao\五味食养\images")
-    output_dir= str(img_dir.with_name(f"{img_dir.name}_prohibite"))
+    
+    name=img_dir.name
+    
+    output_dir= str(img_dir.with_name(f"{name}_prohibite"))
+    ocr_dir=str(img_dir.with_name(f"{name}_ocr"))
 
 
     
 
     
-    main(img_dir,output_dir)
+    main(img_dir,output_dir,ocr_dir)

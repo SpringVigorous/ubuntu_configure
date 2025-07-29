@@ -8,7 +8,7 @@ from enum import Enum
 from email.header import Header
 import sys
 import os
-
+from pathlib import Path
 
 
 # 获取项目根目录
@@ -25,7 +25,30 @@ from path_tools import is_image_file
     
 from PIL import Image
 import os
+from enum import IntFlag, auto
 
+class ImageMode(IntFlag):
+    """图像类型位标志枚举，支持组合状态"""
+    INSERT = auto()    # 自动分配值 1 (0b01)
+    ATTACH = auto()    # 自动分配值 2 (0b10)
+    INSERT_ATTACH = INSERT | ATTACH  # 组合状态，值=3 (0b11)
+
+    # --- 功能方法 ---
+    @property
+    def can_insert(self) -> bool:
+        return self & ImageMode.INSERT != 0  # 检查是否包含INSERT标志位
+
+    @property
+    def can_attach(self) -> bool:
+        return self & ImageMode.ATTACH != 0  # 检查是否包含ATTACH标志位
+    
+    @property
+    def is_insert_and_attach(self) -> bool:
+        """是否同时包含插入和附件"""
+        return self.can_insert() and self.can_attach()
+    
+
+    
 # 定义枚举变量，用于标识不同的邮箱服务提供商
 class EmailType(Enum):
     QQ = 'qq'
@@ -111,7 +134,7 @@ class EmailSender:
         适用于发送带有格式的文本内容，类似于 Word 文档。
         """
     @exception_decorator()
-    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:str|list=None, body_files:str|list=None,image_as_attachment:bool=False):
+    def send_email(self, receiver_email: str | list, subject:str, body:str,body_type:str='plain', attachments:str|list=None, body_files:str|list=None,image_mode:ImageMode=ImageMode.ATTACH):
         """
         发送邮件
         
@@ -152,23 +175,30 @@ class EmailSender:
             for attachment in attachment_list:
                 if not attachment or not os.path.exists(attachment):
                     continue
+                
+                attachment_name = Path(attachment).name
                 try:
                     with open(attachment, 'rb') as file:
                         data=file.read()
                         #若是图片,顺便添加到正文，即设置id
-                        if is_image_file(attachment):
+                        if is_image_file(attachment) and image_mode.can_insert:
+                            
                             part = MIMEImage(data)
                             part.add_header('Content-ID', f'<{hash_text(attachment)}>')  # CID与HTML中一致
-                            # part.add_header('Content-Disposition', 'inline', filename=attachment)  # 关键修改
+                            # part.add_header('Content-Disposition', 'inline', filename=attachment_name)  # 关键修改
                             #后续证明，没有什么用
                             # if image_as_attachment:
-                            #     part.add_header('Content-Disposition', 'attachment', filename={attachment})  # 关键修改
+                            #     part.add_header('Content-Disposition', 'attachment', filename={attachment_name})  # 关键修改
                             msg.attach(part)
-                        else:
-                            #保存为附件
-                            part = MIMEApplication(data, Name=attachment)
-                            part['Content-Disposition'] = f'attachment; filename="{attachment}"'
-                            msg.attach(part)
+                            
+                            #如果不作为附件，则直接返回，忽略后续的 添加附件
+                            if not image_mode.can_attach:
+                                continue
+
+                        #保存为附件
+                        part = MIMEApplication(data, Name=attachment_name)
+                        part['Content-Disposition'] = f'attachment; filename="{attachment_name}"'
+                        msg.attach(part)
                 except Exception as e:
                     email_helper.error("添加附件失败",f"原因：{e}")
                 

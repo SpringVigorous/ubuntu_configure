@@ -33,14 +33,15 @@ class ImageHelper:
         draw.save(image_path)
     
     @staticmethod
-    def create_font(font_path: Optional[str] = None):
+    def create_font(font_path: Optional[str] = None,size: int = 16):
         font=None
         # 设置字体
         font_path = font_path or ImageHelper._find_system_font()
         try:
-            font = ImageFont.truetype(font_path, size=25)
+            font = ImageFont.truetype(font_path, size=size)
         except:
             font = ImageFont.load_default()
+            font=font.font_variant(size=size)
         finally:
             return font
        
@@ -70,7 +71,7 @@ class ImageHelper:
         
         return pos
     @staticmethod
-    def draw_text(draw, pos:tuple|list, text, font, color='red'):
+    def draw_text(draw:ImageDraw, pos:tuple|list, text, font, color='red'):
         (x0,y0),(x1,y1)=pos
         # 准备文本
 
@@ -131,6 +132,7 @@ class ImageHelper:
                     ImageHelper.draw_box(img_draw,_box,color=box_color)
             ImageHelper.draw_text(img_draw,pos,text,font=font,color=text_color)
             
+        os.makedirs(os.path.dirname(output_img_path),exist_ok=True)
         img.save(output_img_path)
         
     
