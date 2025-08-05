@@ -23,7 +23,7 @@ import json
 import pandas as pd
 from openpyxl import load_workbook
 from base import merge_all_identical_column_file,move_columns_to_front,columns_index,copy_file,move_file,path_equal
-from dy_unity import OrgInfo,DestInfo,dy_root
+from dy_utility import OrgInfo,DestInfo,dy_root
 from datetime import datetime, timedelta
 
 
@@ -415,17 +415,8 @@ class ManerSplit(SplitBase):
             org_path=os.path.join(root_path,org_path)
         return org_path
     
-    
-    def precise_cut(self,input_video, split_times, dest_dir="output"):
+    def _precise_cut(self,input_video, split_times, dest_dir="output"):
         logger=logger_helper("分割视频",f"{input_video}->{dest_dir}")
-        logger.trace("开始",f"{split_times}")
-        # if self.file_manager.exists(dest_dir,input_video):
-        if self.file_manager.all_exists(input_video):
-            
-            logger.info("跳过","已存在")
-            return
-        
-        
         src_path=Path(input_video)
         src_name=src_path.stem
         """
@@ -462,9 +453,23 @@ class ManerSplit(SplitBase):
                 
         if not failure_lst:
             logger.info("成功",update_time_type=UpdateTimeType.ALL)
-            self.file_manager.update_dir(dest_dir)
+            return dest_dir
         else:
             logger.error("失败",update_time_type=UpdateTimeType.ALL)
+    
+    def precise_cut(self,input_video, split_times, dest_dir="output"):
+        logger=logger_helper("分割视频",f"{input_video}->{dest_dir}")
+        logger.trace("开始",f"{split_times}")
+        # if self.file_manager.exists(dest_dir,input_video):
+        if self.file_manager.all_exists(input_video):
+            
+            logger.info("跳过","已存在")
+            return
+        
+        result_dir=self._precise_cut(input_video, split_times, dest_dir)
+        if result_dir:
+            self.file_manager.update_dir(dest_dir)
+
             
     #lst:[(input_video, splits)]
     def precise_cuts(self,lst:list[list[str,list[str]]],dest_dir):
@@ -580,12 +585,26 @@ def main():
     SplitBase.save_split_xlsx()
     logger.info("成功",update_time_type=UpdateTimeType.ALL)
     
-    
-    
+
+def split_main():
+    input_dir=r"E:\video\20250804"
+    input_name="video_20250804_162015.mp4"
+    input_video=os.path.join(input_dir,input_name)
+    split_times:list[float]=[6,12,18,24,30]
+    dest_dir=os.path.join(input_dir,"split")
+    maner_split=ManerSplit()
+    maner_split._precise_cut(input_video, split_times, dest_dir) 
+
     
 # 示例调用
 if __name__ == "__main__":
+    from base import new_path_by_rel_path,get_folder_path_by_rel
+    
 
+    
+
+    split_main()
+    exit()
     
     
     # lst=[

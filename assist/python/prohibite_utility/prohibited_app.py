@@ -170,7 +170,7 @@ class prohibited_app:
             return
         
             # 定义要使用的分隔符
-        delimiters = [',', '/', ';', '；', '、', '|','，','・','：','\u200b']
+        delimiters = [',', '/', ';', '；', '、', '|','，','・','：','\u200b'," ",' ','。',"\n"]
         lst=split_by_multiple_delimiters(keyword, delimiters)
         self._prohibited_words.extend(filter(lambda x:x, lst))   
     def add_prohibited_words(self,words:list[str]):
@@ -185,8 +185,7 @@ class prohibited_app:
     def detect(self,text):
         return self.detector.detect(text)
 
-    def visualize(self,text,results):
-        return self.detector.visualize(text,results)
+
 
     def _detect_pics(self,img_paths:list|str,dest_paths:list|str=None,ocr_paths:list|str=None,auto_show=True)->list:
         if not img_paths: return
@@ -372,13 +371,10 @@ def main(img_dir,output_dir,ocr_dir):
     app.save_prohibited_words(org_xlsx_path.with_stem(org_xlsx_path.stem+"_prohibited_words"))
     #输出检测结果
     app.detect_fold(img_dir,output_dir,ocr_dir,auto_show=False)
-    
 
-    
 
 if __name__ == '__main__':
     img_dir=Path(r"F:\worm_practice\taobao\五味食养\images")
-    
     name=img_dir.name
     
     output_dir= str(img_dir.with_name(f"{name}_prohibite"))

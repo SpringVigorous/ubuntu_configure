@@ -5,6 +5,7 @@ import os
 import sys
 import os
 from typing import Callable, Any
+from collections.abc import Iterable
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,8 +13,8 @@ from com_log import logger_helper,UpdateTimeType
 from com_decorator import exception_decorator
 
 class ThreadPool:
-    def __init__(self, num_threads=max(os.cpu_count()*2,1),ideal_time=5,root_thread_name:str=""):
-        self._num_threads = num_threads  # 线程数量
+    def __init__(self, num_threads:int=max(os.cpu_count()*2,1),ideal_time=5,root_thread_name:str=""):
+        self._num_threads = num_threads if num_threads  else max(os.cpu_count()*2,1) # 线程数量
         self._task_queue = queue.Queue()  # 任务队列
         self._stop_event = threading.Event()  # 停止事件
         self._threads:list[threading.Thread] = []  # 线程列表
@@ -188,8 +189,17 @@ class ThreadPool:
             self._logger.debug("开始",f"任务列表剩余{len(self._task_queue)}个",update_time_type=UpdateTimeType.STAGE)
             self._task_queue.clear()
             self._task_queue.task_done()
-        
-                
+
+            
+
+def pool_executor(callable_lst:Iterable[Iterable],thread_count:int=0):
+    #线程池
+    pool=ThreadPool(thread_count)
+    for item in callable_lst:
+        pool.submit(*item)
+    pool.join()
+
+    
 import random
 # 使用示例
 if __name__ == "__main__":

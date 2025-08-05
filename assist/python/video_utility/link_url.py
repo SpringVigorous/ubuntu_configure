@@ -15,7 +15,7 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import as_normal,logger_helper,UpdateTimeType,mp4_files
 from base import write_to_txt,read_content_by_encode,path_equal,unique
 
-from dy_unity import dy_root,OrgInfo
+from base.video_utility.dy_utility import dy_root,OrgInfo
 
 def now_pd_str():
     return f"{pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"

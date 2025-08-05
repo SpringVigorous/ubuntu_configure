@@ -15,7 +15,6 @@ from base import as_normal,logger_helper,UpdateTimeType
 target_dir = r'F:\店铺素材'
 xlsx_file = os.path.join(target_dir,'图片名.xlsx')
 sheet_name="图片"
-
 def to_xlsx(df:pd.DataFrame):
     """将DataFrame写入指定sheet，并保留其他sheet内容"""
     # 读取所有sheet

@@ -18,7 +18,7 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 
-from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path,UpdateTimeType,AES_128
+from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType,AES_128
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
 from base import arrange_urls,postfix,codec_base64,codec_base

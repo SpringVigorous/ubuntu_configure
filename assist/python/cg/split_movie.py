@@ -10,7 +10,7 @@ root_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.extend([root_dir,os.path.join(root_dir,"base")])
 
 
-from base.video_tools import merge_video
+from base.video_utility.video_tools import merge_video
 from base.com_log import logger_helper,UpdateTimeType
 from base.except_tools import except_stack
 

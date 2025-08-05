@@ -11,6 +11,20 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 from base import unique,logger_helper,UpdateTimeType
+
+def replace_xx_with_pattern(text):
+    # 匹配模式：连续2个及以上的x/X（忽略大小写）
+    pattern = r'x{2,}'
+    # 替换为字符串 '.*?'
+    dest = r'[^.,!?;:\'\"()\[\]{}<>，。；：！？、！@#$%^&*\n]{1,10}'
+    return re.sub(pattern, dest, text, flags=re.IGNORECASE)
+
+def wildcard_to_regex(pattern):
+    """将含XX的通配符转为正则表达式"""
+    # 转义特殊字符后替换XX为.*
+    escaped = re.escape(pattern)  # 转义.^$等符号
+    regex_pattern = escaped.replace('XX', '.*?')  # *?非贪婪匹配
+    return f"^{regex_pattern}$"  # 全词匹配
 def binary_search_floor(sorted_list, target):
     """
     二分法查找已排序列表中不大于目标值的最大值的索引
@@ -44,10 +58,19 @@ def binary_search_floor(sorted_list, target):
 
 class ProhibitedWordsDetector:
     def __init__(self, prohibited_words:list):
-        self.prohibited_words :list=prohibited_words
+        self.prohibited_words :list=[]
+        self.reg_patterns:list=[]
+        if prohibited_words: 
+            for word in prohibited_words: 
+                if not word:
+                    continue
+                self.add_keyword(word)
+        
         self.ignore_chars = {'-', '_', '*', '#', ' '}  # 需跳过的干扰字符
         self.reset_automaton()
         self.logger=logger_helper("敏感词检测")
+        
+        
     @property
     def automaton(self):
         if self._automaton is None:
@@ -61,7 +84,13 @@ class ProhibitedWordsDetector:
     def add_keyword(self, keyword:str):
         if not keyword:
             return
-        self.prohibited_words.append(keyword)
+        
+        #针对含有模糊匹配的情况
+        partern_word=replace_xx_with_pattern(keyword)
+        if partern_word!=keyword:
+            self.reg_patterns.append(re.compile(partern_word))
+        else:
+            self.prohibited_words.append(keyword)
         
 
     
@@ -86,27 +115,21 @@ class ProhibitedWordsDetector:
         for end_index, original_value in self.automaton.iter(text_lower):
             start_index = end_index - len(original_value) + 1
             results[original_value].append((start_index, end_index))
+        
+        #正则表达式
+        for pattern in self.reg_patterns:
+            for match in pattern.finditer(text):
+                value=match.group()
+                results[value].append((match.start(), match.end()))
+
+            
+            
         result= dict(results)
         self.logger.trace("成功",update_time_type=UpdateTimeType.STEP)
         self.logger.pop_target()
         
         return result
 
-    def visualize(self, text, results):
-        """可视化违禁词位置"""
-        markers = [' '] * len(text)
-        for word, positions in results.items():
-            for start, end in positions:
-                if start < len(markers) and end <= len(markers):
-                    markers[start] = '▶'
-                    for i in range(start + 1, end):
-                        markers[i] = '■'
-                    markers[end - 1] = '◀'
-        
-        self.logger.trace("原始文本:\n" + text)
-        self.logger.trace("\n违禁词标记:\n" + ''.join(markers))
-
-        self.detect_result(text, results)
 
 
     def pos(self,prohibited_results,indices:list)->list:
@@ -138,9 +161,9 @@ class ProhibitedWordsDetector:
     
 # 示例用法
 if __name__ == "__main__":
-    PROHIBITED_WORDS = ["最佳", "国家级", "抗癌", "增强免疫力", "100%有效"]
+    PROHIBITED_WORDS = ["最佳", "国家级", "抗癌", "增强免疫力", "xx%有效","xx专供","xx专用"]
     detector = ProhibitedWordsDetector(PROHIBITED_WORDS)
-    sample_text = "本产品采用**国家级**配方，具有最佳抗癌效果，国家级，能增强免疫力，100%有效！"
+    sample_text = "本产品采用**国家级**配方，具有最佳抗癌效果，国家级，国家队专供gsdfg ，能增强免疫力，效果100%有效！sm,ile,eragadf, b@%中国国家队专供，Hekle，美国国家队专用"
     
     results = detector.detect(sample_text)
-    detector.visualize(sample_text, results)
+    detector.detect_result(results)

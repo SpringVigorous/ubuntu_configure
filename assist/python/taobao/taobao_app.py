@@ -9,7 +9,7 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import ThreadTask,get_param_from_url,logger_helper,UpdateTimeType,exception_decorator,except_stack,ThreadPool
 
 from taobao_manager import tb_manager
-from douyin.taobao_thread import InteractShop,HandleProducts,InteractProduct,HandlePics,InteractImp,DownloadPics,OcrPics
+from taobao_thread import InteractShop,HandleProducts,InteractProduct,HandlePics,InteractImp,DownloadPics,OcrPics
 from queue import Queue
 import threading
 from taobao_setting import *
@@ -22,9 +22,6 @@ class TbApp():
         self.manager=tb_manager()
         class_name=self.__class__.__name__
         self.logger=logger_helper(class_name)
-        
-        
-        
 
         self.shop_url_queue=Queue()
         self.products_json_queue=Queue()
@@ -57,10 +54,6 @@ class TbApp():
         
         self.queue_lst:list=[]
         self.thread_lst:list=[]
-        
-        
-        
-
         
     @property
     def _msg_queque_dict(self):
