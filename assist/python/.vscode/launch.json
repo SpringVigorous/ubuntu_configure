@@ -13,7 +13,8 @@
       // "args" : "-i 'F:/test/cmake_project/3rd/vcpkg/installed/x64-windows/include/Eigen/src/Core/arch/Default/BFloat16.h' -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
       // "args" : "-i 'F:/temp/bill.txt'  -c ascii -f '.txt' ",
       "python": "myenv/Scripts/python.exe",
-      "args" : "-r  'F:/worm_practice/player/urls/'  -f '.log' -i 'lost' ",
+      // "args" : "-r  'F:/worm_practice/player/urls/'  -f '.log' -i 'lost' ",
+      "args" : "-m F:/hg/pushserver/src/Server/BrokerWebSocketServer.h  F:/hg/pushserver/src/Server/BrokerWebSocketServer_new.h -c sb",
       
     }
   ]
