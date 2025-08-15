@@ -84,7 +84,6 @@ class ProhibitedWordsDetector:
     def add_keyword(self, keyword:str):
         if not keyword:
             return
-        
         #针对含有模糊匹配的情况
         partern_word=replace_xx_with_pattern(keyword)
         if partern_word!=keyword:
@@ -98,9 +97,10 @@ class ProhibitedWordsDetector:
         """构建AC自动机（跳过干扰字符）"""
         automaton = ahocorasick.Automaton()
         for word in set(self.prohibited_words):
+            # word=word.lower()
             clean_word = ''.join(c for c in word if c not in self.ignore_chars)
             if clean_word:
-                automaton.add_word(clean_word, word)  # 存储原始词用于输出
+                automaton.add_word(clean_word.lower(), word)  # 存储原始词用于输出
         automaton.make_automaton()
         return automaton
 

@@ -84,12 +84,8 @@ class ImageHelper:
             text_y = y1 + 5
         draw.text((x0, text_y), text, font=font, fill=color)
     
-
     @staticmethod
-    def draw(src_img_path,output_img_path,boxes,dest_index,font_path=None,box_color='red',text_color='red'):
-        
-        font=ImageHelper.create_font(font_path)
-        img,img_draw=ImageHelper.open_draw(src_img_path,mode="L")
+    def sort_index(dest_index:dict[int,list[tuple]]):
         sort_dict={}
         
         for index,texts in dest_index.items():
@@ -101,8 +97,15 @@ class ImageHelper:
                 sort_dict[i]=[item]
             else:
                 sort_dict[i].append(item)
+                
+        return sort_dict
+
+    @staticmethod
+    def draw(src_img_path,output_img_path,boxes,sort_dict,font_path=None,box_color='red',text_color='red'):
         
-        
+        font=ImageHelper.create_font(font_path)
+        img,img_draw=ImageHelper.open_draw(src_img_path,mode="L")
+
         for _index,item in sort_dict.items():
             box=[]
             whole_text=[]

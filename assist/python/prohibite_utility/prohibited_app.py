@@ -11,7 +11,7 @@ sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
 
-from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str
+from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str,write_to_txt_utf8
 from base import HtmlHelper,hash_text
 from base.email import send_email ,ImageMode
 
@@ -144,10 +144,16 @@ class prohibited_app:
         self.logger.info("完成",f"目录：{xls_path}",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
         
+        
+        
     def save_prohibited_words(self,xls_path:str):
         self.logger.stack_target(detail="保存词库")
-        df = pd.DataFrame(self.prohibited_words)
-        df.to_excel(xls_path,sheet_name="违禁词")
+        try:
+            df = pd.DataFrame(self.prohibited_words)
+            df.to_excel(xls_path,sheet_name="违禁词")
+        except Exception as e:
+            self.logger.error("保存失败",e)
+
         self.logger.info("完成",f"目录：{xls_path}",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
         
@@ -279,15 +285,28 @@ class prohibited_app:
 
         #归类
         dest_index=combine_to_dict(pos_index)
+        sorted_index=ImageHelper.sort_index(dest_index)
+        sort_dict={}
+        
+        for index_key,detect_lst in sorted_index.items():
+            cur_index=[]
+            cur_detect=[]
+            for item in detect_lst:
+                cur_index.extend(item[0])
+                cur_detect.extend(item[1])
+                
+            src_text="".join([texts[index] for index in unique(cur_index)])
+
+            sort_dict[src_text]=cur_detect
         #绘制
-        ImageHelper.draw(img_path,dest_img_path,boxes,dest_index)
+        ImageHelper.draw(img_path,dest_img_path,boxes,sorted_index)
         
         
         
         #日志
         self.logger.trace("完成",f"比对结果输出到{dest_img_path}",update_time_type=UpdateTimeType.STEP)
         self.logger.pop_target()
-        return str(dest_img_path),info
+        return str(dest_img_path),info,sort_dict
 
         
     def detect_fold(self,img_dir,detect_result_dir,ocr_result_dir=None,auto_show=True):
@@ -308,13 +327,16 @@ class prohibited_app:
             self.logger.error("检测结果为空",update_time_type=UpdateTimeType.STAGE)
             return
         
-        
+        def _arrage_result(info):
+            _info="\n".join([f"'{key}'->【{'】;【'.join(val)}】"for key,val in info.items()])
+            return f"详细信息如下：\n{_info}"
         
         text_contents=[]
         for result in results:
-            file_path,info=result
+            file_path,info,sorted_dict=result
             text_info=ProhibitedWordsDetector.results_txt(info)
-            text_contents.append(f"{Path(file_path).relative_to(detect_result_dir)}:\n{text_info}\n\n")
+
+            text_contents.append(f"{Path(file_path).relative_to(detect_result_dir)}:\n{text_info}\n\n{_arrage_result(sorted_dict)}\n\n")
         if text_contents:
             txt_path=os.path.join(detect_result_dir,f"{out_name}.txt")
             self.logger.stack_target(detail=f"保存结果->{txt_path}")
@@ -322,6 +344,20 @@ class prohibited_app:
             self.logger.info("记录结果:完成",update_time_type=UpdateTimeType.STAGE)
             self.logger.pop_target()
 
+
+
+        #邮件头
+        
+        heads=["编号","结果","图片"]
+        bodys=[
+            [(index+1,0,"top"),(f"{ProhibitedWordsDetector.results_txt_short(row[1])}\n\n{_arrage_result(row[2])}",0,"top","red"),((hash_text(row[0]),Path(row[0]).relative_to(detect_result_dir)),1,"center")]
+            for index,row in enumerate(results)
+        ]
+        html_body=HtmlHelper.html_tab(heads,bodys)
+        #把结果保存为网页
+        write_to_txt_utf8(os.path.join(detect_result_dir,f"{out_name}.html"),html_body)
+        
+        
         #压缩包
         zipper=ZipUtility()
         source=Path(detect_result_dir)
@@ -330,15 +366,9 @@ class prohibited_app:
         self.logger.stack_target(detail=f"打包结果->{zip_path}")
         self.logger.info("打包:完成",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
-
-        #发送邮件
         
-        heads=["编号","结果","图片"]
-        bodys=[
-            [(index+1,0,"top"),(ProhibitedWordsDetector.results_txt_short(row[1]),0,"top","red"),(hash_text(row[0]),1,"center")]
-            for index,row in enumerate(results)
-        ]
-        html_body=HtmlHelper.html_tab(heads,bodys)
+        
+        #发送邮件
         email_reciever="350868206@qq.com"
         self.logger.stack_target(detail=f"发送邮件->{email_reciever}")
         attachment_path=[item[0] for item in results]
@@ -346,6 +376,8 @@ class prohibited_app:
         send_email(email_reciever,out_name,html_body,body_type="html",attachment_path=attachment_path,image_mode=ImageMode.INSERT)
         self.logger.info("邮件：完成","检测结果",update_time_type=UpdateTimeType.STAGE)
         self.logger.pop_target()
+
+        
 
         
         if is_empty_folder(detect_result_dir):

@@ -120,7 +120,7 @@ def ocr_large_image(ocr_obj,image_path,  crop_height=1000, overlap=100):
     :param overlap: 子图重叠像素
     :return: 合并后的OCR结果（坐标对应原图）
     """
-    logger=logger_helper(f"文字识别{image_path}",f"子图高度{crop_height}，重叠高度{overlap}")
+    logger=logger_helper(f"文字识别->{image_path}",f"子图高度{crop_height}，重叠高度{overlap}")
             
     # 存储所有校正后的结果
     all_results = []

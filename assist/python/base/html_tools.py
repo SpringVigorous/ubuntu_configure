@@ -29,9 +29,10 @@ class HtmlHelper:
         """.format(align_type=vertical_align,content=txt_content,color=color)
         
     @staticmethod
-    def tab_body_item_img(src_cid_content,vertical_align='center',color='black'):
-        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;color: {color};"><img src="cid:{src_id}"style="display:block;"></td>
-        """.format(align_type=vertical_align,src_id=src_cid_content,color=color)
+    def tab_body_item_img(src_image,vertical_align='center',color='black'):
+        src_cid_content,name,*args=src_image
+        return """<td style="vertical-align:{align_type}; border:1px solid black; padding:8px;width:auto;color: {color};"><img src="cid:{src_id}"style="display:block;">{src_name}</td>
+        """.format(align_type=vertical_align,src_id=src_cid_content,color=color,src_name=name)
 
     @staticmethod
     def tab_body_item(content,item_type=0,vertical_align='center',color='black'):

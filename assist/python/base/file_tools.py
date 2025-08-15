@@ -423,6 +423,12 @@ def write_to_txt_utf8_sig(file_path,data):
 def read_from_txt_utf8_sig(file_path):
     return read_from_txt(file_path,encoding="utf-8-sig")
 
+def write_to_txt_utf8(file_path,data):
+    return write_to_txt(file_path,data,encoding="utf-8")
+    
+def read_from_txt_utf8(file_path):
+    return read_from_txt(file_path,encoding="utf-8")
+
 def priority_read_excel_by_pandas(file_path,operator_func=None,sheet_name=None):
     import pandas as pd
     
