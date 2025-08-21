@@ -401,7 +401,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
     if not dest_dir:
         dest_dir=os.path.join(root_path,"video") 
-    dest_path=normal_path(dest_dir,f"{dest_name}.mp4")
+    dest_path=normal_path(os.path.join(dest_dir,f"{dest_name}.mp4"))
     
     play_logger= logger_helper("下载",f"{url}->{dest_name}-{dest_hash}")
     play_logger.info("开始")
@@ -719,15 +719,20 @@ if __name__=="__main__":
     
     lst=[
 
-        ('https://vv.jisuzyv.com/play/9aABzVPb/index.m3u8', '紫罗兰'),
-        ('https://vv.jisuzyv.com/play/ZdPGj1yb/index.m3u8', '女仆的安慰食物'),
+
+        ('https://bfikuncdn.com/20221223/qvWpB59M/2000kb/hls/index.m3u8', '坐台小姐'),
+
+
+
+
+
 
 
         ]
 
     
     result=[main(*item) for item in lst]
-    shut_down()
+    # shut_down()
     exit(0)
     # if all(result):    
     if True:    

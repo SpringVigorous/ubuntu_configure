@@ -130,12 +130,15 @@ class InteractImp():
 
         
         def failure_func():
+            self.wp.listen.stop()# 操作完成后释放资源
             logger.warn("未捕获到数据包，尝试重新监听...",update_time_type=UpdateTimeType.STEP)
             self.wp.listen.start(listent_shop_api)  # 重新启动监听
             self.wp.refresh()
             self.wp._wait_loaded()
         with self._lock:
             # 初始化监听
+            # self.wp.listen.stop()# 操作完成后释放资源
+            
             self._retry_operater.reset(2, normal_func=do_func, failure_func=failure_func)
             self.wp.listen.start(listent_shop_api)
             if has_url:

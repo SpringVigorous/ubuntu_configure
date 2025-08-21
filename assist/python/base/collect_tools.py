@@ -60,6 +60,38 @@ class Stack:
         # 返回栈中元素的数量
         return len(self.items)
 
+#元素归类，元素给出值即对应索引(紧邻重复值，索引序列)
+def get_consecutive_elements_info(lst)->list:
+    """
+    获取列表中紧邻重复元素及非重复元素的信息（值、索引、是否重复）
+    
+    :param lst: 输入列表
+    :return: 字典列表，每个字典包含 'value'（元素值）、'indices'（索引列表）、'is_consecutive_duplicate'（是否紧邻重复）
+    """
+    if not lst:  # 处理空列表
+        return []
+    
+    result = []
+    start_index = 0  # 连续元素的起始索引
+    prev_value = lst[0]  # 前一个元素的值
+    
+    # 从第二个元素开始遍历
+    for i in range(1, len(lst)):
+        current_value = lst[i]
+        if current_value != prev_value:
+            # 前一段连续元素结束，记录信息
+            indices = list(range(start_index, i))
+            result.append((prev_value, indices) )
+            # 更新起始索引和前一个值
+            start_index = i
+            prev_value = current_value
+    
+    # 处理最后一段连续元素
+    last_indices = list(range(start_index, len(lst)))
+    result.append((prev_value, last_indices) )
+    
+    return result
+
 
 
 # 以下是使用自定义 Stack 类的示例

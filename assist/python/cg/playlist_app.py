@@ -92,19 +92,12 @@ if  __name__ == '__main__':
     app=playlist_app()
 
     urls=[]
+    # urls.extend([
+    #     "https://00two.com/vodplay/nazhazhimotongnaohai-1-1.html",
+    # ])
 
+    # urls.extend([f"https://www.588806.com/vodplay/142207-0-{i}.html" for i in  range(81)])
 
-
-
-    urls.extend([
-        "https://00two.com/vodplay/nazhazhimotongnaohai-1-1.html",
-    ])
-
-    # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzidiyiji/2-{i}.html" for i in  range(70,105)])
-    # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzidierji2013/2-{i}.html" for i in  range(24,53)])
-    # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzidisanji2015/2-{i}.html" for i in  range(1,53)])
-    # urls.extend([f"https://www.temayy.com/vod/baoxiaochongzizaizhongguo/1-{i}.html" for i in  range(1,27)])
-    # urls.extend([f"https://www.temayy.com/vod/bxczhdqsj2018/1-{i}.html" for i in  range(3,27)])
 
     app.send_msg(urls)
     # app.continue_nom3u8()

@@ -35,7 +35,7 @@ def m3u8_path(vieo_name:str):
 def cache_name(video_name:str):
     return f"{video_name}-{video_hash_name(video_name)}"
 
-listent_shop_api=["hls/index.m3u8","hls/mixed.m3u8","index.m3u8"]
+listent_shop_api=["hls/index.m3u8","hls/mixed.m3u8","index.m3u8","master.m3u8","*/master.m3u8*"]
 # 
 # listent_shop_api=["*/index.m3u8"]
 

@@ -270,7 +270,7 @@ def cover_video_pic(video_path,output_path):
 def merge_video(temp_paths,output_path):
     if not temp_paths or not output_path:
         return
-
+    logger= logger_helper("合并视频",f"{temp_paths} -> {output_path}")
     temp_file= windows_path(os.path.join(Path(temp_paths[0]).parent,'file_list.txt'))
     logger.trace(temp_file)
 

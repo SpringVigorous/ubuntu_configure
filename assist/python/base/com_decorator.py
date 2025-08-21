@@ -82,6 +82,22 @@ def dynamic_wrapper(*functions):
 
     return wrapper
 
+
+def singleton(cls):
+    """单例装饰器"""
+    # 用于缓存类的实例
+    instances = {}
+    
+    def wrapper(*args, **kwargs):
+        # 如果类未实例化，则创建实例并缓存
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        # 返回缓存的实例
+        return instances[cls]
+    
+    return wrapper
+
+
 # # 假设我们有多个函数
 # def add(x, y):
 #     return x + y
