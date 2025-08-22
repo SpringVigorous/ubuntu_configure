@@ -14,13 +14,17 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers
-
-from station_routine import *
+from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load
 from station_config import StationConfig
 station_config=StationConfig(max_transfers=3)
+station_config.set_same_wait_time(1,200)
+station_config.set_diff_wait_time(60,200)
+
+
 
 from station_routine import TrainStationManager
+from station_routine import *
+from train_route_visualizer import TrainRouteVisualizer
 
 station_manager=TrainStationManager()
 @exception_decorator(error_state=False)
@@ -251,7 +255,8 @@ def rest_tickets(date, from_city, to_city, kind,name_prefix=None):
                 if not info: continue
             
                 cur_df=pd.DataFrame(info)
-                train_name=cur_df["station_train_code"][0]
+                org_train_name=cur_df["station_train_code"]
+                train_name=org_train_name[0]
                 logger.stack_target(f"获取{train_name}车次信息")
                 logger.trace(f"成功",update_time_type=UpdateTimeType.STEP)
                 
@@ -262,7 +267,7 @@ def rest_tickets(date, from_city, to_city, kind,name_prefix=None):
                 try:
                     cur_df=cur_df[retain_cols]
                     cur_df["train_no"]=train_no
-                    cur_df["train_name"]=train_name
+                    cur_df["train_name"]=org_train_name
                     dfs.append(cur_df)
                     
                     # cur_df["start_time"]=cur_df["start_time"].apply(lambda x:str_to_time(x))
@@ -299,31 +304,6 @@ def whole_routine(from_city,to_city,interchanges:list|tuple):
     results.append(to_city)
     return results
 
-import pickle
-# 2. 序列化到本地文件
-# ------------------------------
-def serialize_df_list(df_list, file_path):
-    """将DataFrame列表序列化到本地文件"""
-    with open(file_path, 'wb') as f:
-        # 使用pickle.dump序列化对象
-        pickle.dump(df_list, f)
-    print(f"已将DataFrame列表序列化到 {file_path}")
-
-# # 保存到本地（推荐使用.pkl作为文件后缀）
-# serialize_df_list(df_list, 'df_list.pkl')
-
-# ------------------------------
-# 3. 反序列化（从本地文件恢复）
-# ------------------------------
-def deserialize_df_list(file_path):
-    """从本地文件反序列化DataFrame列表"""
-    with open(file_path, 'rb') as f:
-        # 使用pickle.load反序列化
-        df_list = pickle.load(f)
-    print(f"已从 {file_path} 反序列化DataFrame列表")
-    return df_list
-
-
 
 def unique_df_lst(df_list):
     
@@ -354,14 +334,13 @@ def dfs_to_trains(dfs):
             
     trains=[]    
     for df in dfs:
-        train_name=None
+        train_name=[]
         train_no=None
         
         stations=[]
         
         for index, row in df.iterrows():
-            if not train_name:
-                train_name=row["train_name"]
+            train_name.append(row["train_name"])
             if not train_no:
                 train_no=row["train_no"]
             station_name = row['station_name']
@@ -369,25 +348,23 @@ def dfs_to_trains(dfs):
             arrive_time=row["arrive_time"]
             start_time=row["start_time"]
             running_time=row["running_time"]
-
             stations.append(Station(station_name,str(arrive_time),str(start_time)))
+        train_name="/".join(unique(train_name))
         trains.append(Train(train_name,stations))
     
     return trains
 
 #挑选路线车次
 def handle_routine(start_station,end_station):
-    
-    bin_path=station_config.train_routines_path
-    
-    dfs=deserialize_df_list(station_config.train_routines_path)
+   
+    dfs=pickle_load(station_config.train_routines_path)
     trains=dfs_to_trains(filter(lambda x:_train_type(x["train_name"][0]) not in ["G","D","C"] ,dfs))
     finder = TrainRouteFinder(trains)
     # 查找从上海虹桥站到广州南站的路线（最多换乘2次）
 
     logger=logger_helper("路线",f"{start_station}->{end_station}")
     org_routes = finder.find_transfer_routes(start_station, end_station, max_transfers=1)
-    routes=TrainRouteFinder.classify_routes(org_routes)
+    routes=finder.classify_routes(org_routes)
     logger.info("成功",f"共找到 {len(routes)} 条路线",update_time_type=UpdateTimeType.STAGE)
     
     # 输出路线信息
@@ -411,7 +388,13 @@ def handle_routine(start_station,end_station):
     logger.info(f"已保存结果到 {out_txt_path}",update_time_type=UpdateTimeType.STAGE)
     # 可视化路线
     visualizer = TrainRouteVisualizer(figsize=(16, 30))
-    visualizer.draw(org_routes, title=f"{start_station}到{end_station}的列车路线方案",pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station))
+    
+    pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station)
+    #序列化为二进制，便于后续调试绘制图片
+    pickle_dump(org_routes,pic_path.with_suffix(".pkl"))
+    
+    
+    visualizer.draw(org_routes, title=f"{start_station}到{end_station}的列车路线方案",pic_path=pic_path)
     pass
 
 def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[]):
@@ -433,7 +416,7 @@ def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", ki
             dfs.extend(rest_tickets(date, cities[i], cities[i-1], kind,f"1_{index}_{count-i}"))
             time.sleep(1)
             
-    serialize_df_list(dfs,station_config.train_routines_path)
+    pickle_dump(dfs,station_config.train_routines_path)
             
 def main():
     
@@ -447,14 +430,19 @@ def main():
     ]
     #获取车次信息表，包含 各车站、出发时间、到达时间、时长信息
     #此过程耗时较长，若是获取过一次，可跳过此步骤
+    logger=logger_helper("火车票路线筛选")
+    # logger.stack_target(detail="获取车次信息表")
     # fetch_train_routine(start_station,end_station,date="2025.08.26",kind="全部",transfer_cities=transfer_cities)
+    # logger.info("完成",update_time_type=UpdateTimeType.STAGE)
+    # logger.pop_target()
     
-    
+    logger.stack_target(detail="获取推荐车次结果表")
     #获取推荐车次结果表
     #单程
     handle_routine(start_station,end_station)
     #返程
     handle_routine(end_station,start_station)
+    logger.info("完成",update_time_type=UpdateTimeType.STAGE)
     
 if __name__ ==  '__main__':    
     main()

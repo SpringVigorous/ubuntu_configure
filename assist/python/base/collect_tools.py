@@ -1,9 +1,13 @@
 ﻿from collections import Counter,deque
 from itertools import groupby
-
-def unique(original_list):
-    counter = Counter(original_list)
-    return list(counter.keys())
+from typing import Callable
+from more_itertools import unique_everseen
+def unique(original_list,key_func:Callable=None):
+    if not key_func:
+        counter = Counter(original_list)
+        return list(counter.keys())
+    elif key_func:
+        return list(unique_everseen(original_list, key=key_func))
 
 #删除连续相同的元素
 def remove_consecutive_duplicates(lst):

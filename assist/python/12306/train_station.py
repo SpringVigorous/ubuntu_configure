@@ -18,7 +18,7 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import df_empty,singleton,exception_decorator
 from station_config import StationConfig
 
-station_config=StationConfig()
+
 from urllib.parse import quote
 
 # 由于火车站使用三字码，所以我们需要先获取站点对应的三字码
@@ -48,9 +48,11 @@ def _station_df(filepath):
     
 @singleton
 class TrainStationManager:
-    
-    def __init__(self,station_path:str=station_config.train_ticket_path):
-        self._station_xlsx_path=station_path
+
+    def __init__(self,station_path:str=None):
+        
+        station_config=StationConfig()
+        self._station_xlsx_path=station_path or station_config.train_ticket_path
         os.makedirs(self.root_path,exist_ok=True)
         self._df=_station_df(self._station_xlsx_path)
         self._station_code_path=os.path.join(self.root_path,station_config.station_code_path.name)

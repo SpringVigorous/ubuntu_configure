@@ -15,6 +15,8 @@ import shutil
 from collect_tools import unique
 import json
 from pathlib import Path
+import pickle
+
 # 使用chardet模块检测文件的编码
 def detect_encoding(file_path)->str:
     detect_logger= logger_helper("检测文件编码",file_path)
@@ -483,7 +485,21 @@ def prettey_json_file(json_file_path, encoding='utf-8'):
     with open(json_file_path, 'w', encoding=encoding) as file:
         json.dump(json_data, ensure_ascii=False,indent=4)
         
-        
+def pickle_dump(obj, file_path):
+    logger=logger_helper("序列化文件",file_path)
+    with open(file_path, 'wb') as f:
+        # 使用pickle.dump序列化对象
+        pickle.dump(obj, f)
+    logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+def pickle_load(file_path):
+    logger=logger_helper("反序列化文件",file_path)
+    result=None
+    with open(file_path, 'rb') as f:
+        # 使用pickle.load反序列化对象
+        result = pickle.load(f)
+    logger.trace("完成",update_time_type=UpdateTimeType.ALL)
+    return result
+
 
 if __name__ == '__main__':
 

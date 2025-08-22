@@ -1,22 +1,21 @@
 ﻿from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
-import matplotlib.pyplot as plt
-import networkx as nx
-import numpy as np
-from train_station import TrainStationManager
+
 import os
 
 import sys
 
 from pathlib import Path
-
+from collections.abc import Iterable
 
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique
 from station_config import StationConfig
+
+from train_station import TrainStationManager
 
 
 
@@ -62,8 +61,8 @@ class Station:
 
 
 class Train:
-    def __init__(self, train_no: str, stations: List[Station]):
-        self.train_no = train_no
+    def __init__(self, train_name: str, stations: List[Station]):
+        self.train_name = train_name
         self.stations = stations
         
     def get_station_index(self, station_name: str) -> int:
@@ -79,7 +78,7 @@ class Train:
         return self.get_station_index(station_name) != -1
         
     def __repr__(self) -> str:
-        return f"车次 {self.train_no}: {[s.name for s in self.stations]}"
+        return f"车次 {self.train_name}: {[s.name for s in self.stations]}"
 
 
 class RouteSegment:
@@ -90,7 +89,7 @@ class RouteSegment:
         end_idx = train.get_station_index(end_station)
         
         if start_idx == -1 or end_idx == -1 or start_idx >= end_idx:
-            raise ValueError(f"列车 {train.train_no} 无法从 {start_station} 到达 {end_station}")
+            raise ValueError(f"列车 {train.train_name} 无法从 {start_station} 到达 {end_station}")
         
         #模糊查找站点名称
         departure_station=train.stations[start_idx]
@@ -146,7 +145,7 @@ class RouteSegment:
     
     
     def __repr__(self) -> str:
-        return f"{self.train.train_no}: {self.start_station} {self.departure_time_str} -> {self.end_station} {self.arrival_time_str}"
+        return f"{self.train.train_name}: {self.start_station} {self.departure_time_str} -> {self.end_station} {self.arrival_time_str}"
 
 
 
@@ -159,7 +158,7 @@ class Route:
         self.end_station = segments[-1].end_station
         
     def arrage(self):
-        seg_names= [seg.train.train_no for seg in self.segments]
+        seg_names= [seg.train.train_name for seg in self.segments]
         lst=get_consecutive_elements_info(seg_names)
         if all( len(item[1])==1 for item in lst):
             return
@@ -254,19 +253,35 @@ class Route:
             
         return result
 
-
 # ---------------------------
 # 路线查找器（与之前一致）
 # ---------------------------
 class TrainRouteFinder:
-    def __init__(self, trains: List[Train]):
-        self.trains = trains
+    def __init__(self, trains:Iterable[Train]|Train):
+        self.reset_train(trains)
+        self.station_config=StationConfig()
+        
+    def add_train(self,trains:Iterable[Train]|Train):
+        if isinstance(trains,Train):
+            trains=[trains]
+        self._trains.extend(trains)
+        self._trains=unique(self._trains,lambda x:x.train_name)
+        
+    def clear_train(self):
+        self._trains:List[Train]=[]
+    def reset_train(self, trains:Iterable[Train]|Train=None):
+        self.clear_train()
+        if not trains:
+            return
+        self.add_train(trains)
 
-
-    def _is_valid_transfer(self, arrival_time: datetime, departure_time: datetime, 
+    @property
+    def train_names(self)->list[str]:
+        return [train.train_name for train in self._trains]
+        
+    def _is_valid_transfer(self, arr_time: datetime, dep_time: datetime, 
                           arrival_station: str, departure_station: str) -> bool:
-        arr_time = arrival_time
-        dep_time = departure_time
+
         
         if dep_time < arr_time:
             dep_time += timedelta(days=1)
@@ -274,17 +289,17 @@ class TrainRouteFinder:
         time_diff = (dep_time - arr_time).total_seconds() / 60
         
         if arrival_station == departure_station:
-            return 1 < time_diff < 480
+            return self.station_config.same_wait_time_min <= time_diff <= self.station_config.same_wait_time_max
             
         elif _is_same_city(arrival_station, departure_station):
-            return 30 < time_diff < 480
+            return self.station_config.diff_wait_time_min <= time_diff <= self.station_config.diff_wait_time_max
             
         return False
     
     def find_direct_routes(self, start_station: str, end_station: str) -> List[Route]:
         direct_routes = []
         
-        for train in self.trains:
+        for train in self._trains:
             start_idx = train.get_station_index(start_station)
             end_idx = train.get_station_index(end_station)
             
@@ -312,7 +327,7 @@ class TrainRouteFinder:
             
             for station, routes in reachable.items():
                 for segments, arr_time in routes:
-                    for train in self.trains:
+                    for train in self._trains:
                         station_idx = train.get_station_index(station)
                         if station_idx == -1:
                             continue
@@ -396,7 +411,7 @@ class TrainRouteFinder:
                 logger.pop_target()
                 continue
             
-            route_key = tuple((seg.train.train_no, seg.start_station, seg.end_station) for seg in route.segments)
+            route_key = tuple((seg.train.train_name, seg.start_station, seg.end_station) for seg in route.segments)
             if route_key not in seen:
                 seen.add(route_key)
                 routes.append(route)
@@ -408,7 +423,7 @@ class TrainRouteFinder:
     def classify_routes(all_routes)->dict:
         routes={}       
         for route in all_routes:
-            route_key = tuple(seg.train.train_no for seg in route.segments)
+            route_key = tuple(seg.train.train_name for seg in route.segments)
             if route_key not in routes:
                 routes[route_key] = [route]
             else:
@@ -418,144 +433,6 @@ class TrainRouteFinder:
         
         
     
-    
-# ---------------------------
-# 可视化工具（已修复节点颜色不匹配问题）
-# ---------------------------
-class TrainRouteVisualizer:
-    """列车路线可视化工具（修复节点颜色与数量匹配问题）"""
-    def __init__(self, figsize=(14, 10)):
-        self.init_size(*figsize)
-        # self.fig, self.ax = plt.subplots(figsize=figsize)
-        # 关闭Matplotlib的交互式模式（关键修复）
-        plt.ioff()  # 禁用交互式模式，确保窗口显示时阻塞程序
-        self.G = nx.DiGraph()  # 有向图
-        self.node_colors = []  # 节点颜色列表（需与节点数量严格一致）
-        self.node_labels = {}  # 节点标签
-        self.edge_labels = {}  # 边标签
-        self.pos = {}  # 节点位置
-        
-        # 样式配置
-        self.station_color = "#4CAF50"  # 普通站点（绿色）
-        self.transfer_color = "#FF9800"  # 换乘站（橙色）
-        self.direct_edge_color = "#2196F3"  # 路线边（蓝色）
-        self.font_size = 10
-    
-    def init_size(self,cx,cy):
-        self.fig, self.ax =plt.subplots(figsize=(cx,cy)) 
-        
-
-    def _get_node_id(self, station_name: str, route_idx: int, seg_idx: int) -> str:
-        """生成唯一节点ID（确保每个节点唯一）"""
-        return f"{station_name}_r{route_idx}_s{seg_idx}"
-
-    def add_route(self, route: Route, route_idx: int, y_offset: float = 0):
-        """添加一条路线到图中（修复颜色添加逻辑）"""
-        segments = route.segments
-        num_segments = len(segments)
-        x_step = 1.0 / (num_segments + 1)  # x轴步长（均匀分布节点）
-        
-        for seg_idx in range(num_segments):
-            segment = segments[seg_idx]
-            # 生成当前段的起点和终点节点ID（唯一标识）
-            start_node_id = self._get_node_id(segment.start_station, route_idx, seg_idx)
-            end_node_id = self._get_node_id(segment.end_station, route_idx, seg_idx + 1)
-            
-            # 1. 添加起点节点（如果不存在）
-            if start_node_id not in self.G:
-                self.G.add_node(start_node_id)
-                self.node_labels[start_node_id] = segment.start_station
-                self.node_colors.append(self.station_color)  # 仅新节点添加颜色
-                self.pos[start_node_id] = (seg_idx * x_step, y_offset)  # 位置
-            
-            # 2. 添加终点节点（如果不存在）
-            if end_node_id not in self.G:
-                self.G.add_node(end_node_id)
-                self.node_labels[end_node_id] = segment.end_station
-                self.node_colors.append(self.station_color)  # 仅新节点添加颜色
-                self.pos[end_node_id] = ((seg_idx + 1) * x_step, y_offset)  # 位置
-            
-            # 3. 添加边（车次+时间）
-            edge_label = f"{segment.train.train_no}\n{segment.departure_time}→{segment.arrival_time}"
-            self.G.add_edge(start_node_id, end_node_id)
-            self.edge_labels[(start_node_id, end_node_id)] = edge_label
-            
-            # 4. 标记换乘站（如果不是最后一段）
-            if seg_idx < num_segments - 1:
-                # 终点节点是下一段的起点，标记为换乘站
-                # self.node_labels[end_node_id] += "\n[换乘]"
-                # 找到该节点在颜色列表中的索引并修改颜色
-                node_list = list(self.G.nodes)
-                node_index = node_list.index(end_node_id)
-                self.node_colors[node_index] = self.transfer_color
-
-    def draw(self, routes: List[Route], title: str = "列车路线方案",pic_path:str=None):
-        """绘制所有路线（确保节点数量与颜色数量一致）"""
-        total_routes = len(routes)
-        self.init_size(10,int(total_routes/4))
-        if total_routes == 0:
-            print("没有找到可用路线")
-            return
-            
-        # 计算y轴偏移（区分不同路线，避免重叠）
-        y_offsets = np.linspace(-0.5 * (total_routes - 1), 0.5 * (total_routes - 1), total_routes)
-        
-        # 添加所有路线
-        for i, route in enumerate(routes):
-            self.add_route(route, i, y_offsets[i])
-        
-        # 验证节点数量与颜色数量是否一致（调试用）
-        assert len(self.G.nodes) == len(self.node_colors), \
-            f"节点数量({len(self.G.nodes)})与颜色数量({len(self.node_colors)})不匹配"
-        
-        # 绘制节点
-        nx.draw_networkx_nodes(
-            self.G, self.pos, 
-            node_size=1500, 
-            node_color=self.node_colors,  # 颜色列表与节点数量一致
-            node_shape="s",  # 方形节点
-            edgecolors="black"  # 节点边框
-        )
-        
-        # 绘制边
-        nx.draw_networkx_edges(
-            self.G, self.pos, 
-            arrowstyle="->", 
-            arrowsize=20, 
-            edge_color=self.direct_edge_color, 
-            width=2
-        )
-        
-        # 绘制节点标签（站点名称）
-        nx.draw_networkx_labels(
-            self.G, self.pos, 
-            self.node_labels, 
-            font_size=self.font_size, 
-            font_family="SimHei"  # 支持中文
-        )
-        
-        # 绘制边标签（车次和时间）
-        nx.draw_networkx_edge_labels(
-            self.G, self.pos, 
-            self.edge_labels, 
-            font_size=self.font_size - 2,
-            font_family="SimHei",
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.7)  # 标签背景
-        )
-        
-        # 设置标题和样式
-        self.ax.set_title(title, fontsize=15, fontfamily="SimHei")
-        self.ax.axis("off")  # 关闭坐标轴
-        plt.tight_layout()
-        # plt.show()
-
-        # 保存图形到本地
-        save_path = pic_path 
-        if not save_path:
-            route=routes[0]
-            save_path = StationConfig().result_pic_path(station_manager.get_station_city( route.start_station),station_manager.get_station_city(route.end_station))
-        plt.savefig(save_path)
-        plt.close()
 
 # ---------------------------
 # 示例数据与运行（与之前一致）
@@ -750,6 +627,3 @@ if __name__ == "__main__":
         if i < len(routes):
             print("-" * 80)
     
-    # 可视化路线
-    visualizer = TrainRouteVisualizer(figsize=(16, 10))
-    visualizer.draw(routes, title=f"{start_station}到{end_station}的列车路线方案")

@@ -171,8 +171,8 @@ class TrainRouteFinder:
             return 20 < time_diff < 120  # 20分钟到2小时之间
             
         # 同一城市不同站点换乘
-        elif self._is_same_city(arrival_station, departure_station):
-            return 60 < time_diff < 120  # 1小时到2小时之间
+        elif not self._is_same_city(arrival_station, departure_station):
+            return 60 < time_diff < 360  # 1小时到2小时之间
             
         # 不同城市，无法换乘
         return False
