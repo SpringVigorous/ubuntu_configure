@@ -166,7 +166,7 @@ class TrainRouteVisualizer:
         header_node_id = f"route_{route_idx}"
         if header_node_id not in self.header_G:  # 添加路线索引节点
             self.header_G.add_node(header_node_id)
-            self.header_labels[header_node_id] = f"耗时:{route.get_total_duration()}\n等待：{route.wait_total_time()}"
+            self.header_labels[header_node_id] = f"方案{route_idx:02}：\n耗时:{route.get_total_duration()}\n等待：{route.wait_total_time()}"
             self.header_pos[header_node_id] = (0, y_offset)
         
         for seg_idx in range(num_segments):
@@ -218,7 +218,7 @@ class TrainRouteVisualizer:
                 
 
     def draw(self, routes: List[Route], title: str = "列车路线方案",pic_path:str=None):
-        
+        routes=list(sorted(routes,key=lambda x:x.get_total_duration(),reverse=True))
         
         """绘制所有路线（确保节点数量与颜色数量一致）"""
         total_routes = len(routes)
@@ -237,7 +237,7 @@ class TrainRouteVisualizer:
         y_offsets = np.linspace(-0.5 * (total_routes), 0.5 * (total_routes ), total_routes)
         
         # 添加所有路线
-        for i, route in enumerate(reversed(routes)):
+        for i, route in enumerate(routes):
             self.add_route(route, i, y_offsets[i])
         
         # 验证节点数量与颜色数量是否一致（调试用）
@@ -252,10 +252,10 @@ class TrainRouteVisualizer:
         min_x,max_x=min(x_values),max(x_values)
         min_y,max_y=min(y_values),max(y_values)
         
-        x_pad=(max_x-min_x)*0.1+.1
+        x_pad=(max_x-min_x)*0.1
         y_pad=(max_y-min_y)*0.1
         
-        self.ax.set_xlim(min_x-x_pad, max_x+x_pad)
+        self.ax.set_xlim(min_x-x_pad-.1, max_x+x_pad)
         self.ax.set_ylim(min_y-y_pad, max_y+y_pad)
         
         
@@ -331,7 +331,7 @@ if __name__ == "__main__":
     
     routes=pickle_load(r"F:\worm_practice\train_ticket\result\上海-西峡_routes.pkl")
     start_station = "上海"
-    end_station = "广州"
+    end_station = "西峡"
     # 可视化路线
     visualizer = TrainRouteVisualizer(figsize=(16, 10))
-    visualizer.draw(routes, title=f"{start_station}到{end_station}的列车路线方案")
+    visualizer.draw(routes, title=f"{start_station}到{end_station}的列车路线方案\n共{len(routes)}个选择")
