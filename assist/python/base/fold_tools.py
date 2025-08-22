@@ -2,7 +2,7 @@
 import os
 import shutil
 from remove_special_fold import recycle_bin,is_empty_folder
-
+from com_log import logger_helper,UpdateTimeType
 
 # 定义函数：清空文件夹内容，但不删除当前文件夹
 def clear_folder(folder_path):
@@ -68,6 +68,7 @@ def check_dir(dir_path):
        
 # 获取文件夹大小
 def get_folder_size(folder_path):
+    logger=logger_helper("获取文件夹大小",folder_path)
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(folder_path):
         for filename in filenames:
@@ -76,7 +77,8 @@ def get_folder_size(folder_path):
                 # 获取文件大小并累加到总大小
                 total_size += os.path.getsize(file_path)
             except (OSError, PermissionError) as e:
-                print(f"无法访问 {file_path}: {e}")
+                logger.error("失败",f"无法访问 {file_path}: {e}")
+    logger.trace(f"成功",f"总大小为{.0+total_size/(2**20):.2f}MB")
     return total_size
 
 # 格式化字节大小
@@ -100,7 +102,7 @@ def get_directory_sizes(start_path):
     - 值：对应文件/目录的大小（单位：字节）
     """
     size_dict = {}
-    
+    logger=logger_helper("获取目录及各个子目录的大小",start_path)
     def calculate_size(path):
         total_size = 0
         try:
@@ -118,18 +120,18 @@ def get_directory_sizes(start_path):
                         size_dict[entry_path] = dir_size
                         total_size += dir_size
                 except (PermissionError, FileNotFoundError) as e:
-                    print(f"跳过无权限条目: {entry_path} ({e})")
+                    logger.error("失败",f"跳过无权限条目: {entry_path} ({e})")
                     continue
         except (PermissionError, FileNotFoundError) as e:
-            print(f"无法访问目录: {path} ({e})")
+            logger.error("失败",f"无法访问目录: {path} ({e})")
             return 0
-        
         # 记录当前目录总大小
         size_dict[path] = total_size
         return total_size
     
     # 从起始路径开始计算
     calculate_size(os.path.abspath(start_path))
+    logger.trace(f"成功",f"一共获取了{len(size_dict)}个目录及文件大小")
     return size_dict 
 
 
