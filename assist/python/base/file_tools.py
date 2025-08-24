@@ -16,8 +16,11 @@ from collect_tools import unique
 import json
 from pathlib import Path
 import pickle
+import shutil
+from typing import Callable 
 
 # 使用chardet模块检测文件的编码
+
 def detect_encoding(file_path)->str:
     detect_logger= logger_helper("检测文件编码",file_path)
     with open(file_path, 'rb') as f:
@@ -335,6 +338,37 @@ def move_file(source_file,destination_file)->bool:
         move_logger.error("失败",except_stack())    
         
     return False
+
+
+
+def copy_folder(src, dst,filter_func:Callable=None,overwrite=False):
+    logger=logger_helper("拷贝目录",f"{src}->{dst}")
+    # 创建目标根目录
+    os.makedirs(dst, exist_ok=True)  
+    
+    src_results=[]
+    dest_results=[]
+    for root, dirs, files in os.walk(src):
+        # 计算相对路径，保持目录结构
+        rel_path = os.path.relpath(root, src)  
+        dest_dir = os.path.join(dst, rel_path)
+        
+        # 创建子目录
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+        
+        # 复制文件
+        for file in files:
+            if filter_func and not filter_func(file):
+                continue
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(dest_dir, file)
+            
+            src_results.append(src_file)
+            dest_results.append(dst_file)
+    if src_results:
+        copy_file(src_results,dest_results,override=overwrite)
+    logger.info("完成")
 
 def copy_file(source_file:str|list[str],destination_file:str|list[str],override=True):
     

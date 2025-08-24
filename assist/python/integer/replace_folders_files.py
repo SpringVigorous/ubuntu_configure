@@ -7,15 +7,14 @@ import argparse
 
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
-project_root =str(Path(__file__).resolve().parent.parent)
-for module_path in [project_root,os.path.join(project_root,"base")]:
-    if not module_path in sys.path:
-        sys.path.insert(0,module_path)
+__root_path__=Path(__file__).parent.parent.resolve()
+sys.path.append(str(__root_path__ ))
+sys.path.append( os.path.join(__root_path__,'base') )
 
 
 # import base.add_sys_path as asp
 # asp.add_sys_path(os.path.join(project_root,"base"))
-from base.com_log import logger as logger
+from base import logger 
 
 
 # logger.info(sys.path)
@@ -201,7 +200,7 @@ class ParseParams:
         args = parser.parse_args()
         
         org_agrs = args.org
-        dest_agrs = args.dest
+        dest_agrs = args.dest or org_agrs
         replace_agrs = args.replace
 
         
@@ -256,7 +255,8 @@ class ParseParams:
         else:
             self.dest_datas=handle_params(org_agrs,dest_agrs,replace_agrs)    
         
-        
+        if self.dest_datas and not self.special_files:
+            self.special_files=[None]* len(self.dest_datas)
         
 
 @cd.exception_decorator(show_eg)
@@ -283,9 +283,9 @@ def main():
                     cur_dest=os.path.dirname(cur_dest)
             if not special:
                 repalce_fun= rf.replace_dir_str if is_fold else rf.replace_file_str        
-                success=repalce_fun(cur_source,cur_dest,item.replace_args,rf.CoverType.NO_COVER)
+                success=repalce_fun(cur_source,cur_dest,item.replace_args,rf.CoverType.FORCE_COVER)
             elif is_fold:
-                success=rf.clone_dir_str(cur_source,cur_dest,item.replace_args,special.replace_args,rf.CoverType.NO_COVER)
+                success=rf.clone_dir_str(cur_source,cur_dest,item.replace_args,special.replace_args,rf.CoverType.FORCE_COVER)
                 
                 
             flag=f"成功" if success else "失败"

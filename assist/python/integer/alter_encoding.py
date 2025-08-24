@@ -19,6 +19,7 @@ import base.fold_tools as fo
 import base.path_tools as pt
 from base.com_log import logger_helper
 import base.com_decorator as dr 
+from base.task.threadpool import ThreadPool
 
 @dr.exception_decorator()
 def operate_imp(source_path,dest_path,dest_encoding,operate_func):
@@ -113,6 +114,8 @@ def main():
             output=input_agrs
         if not pt.path_equal(input_agrs,output) and is_clear:
             fo.clear_folder(output)
+            
+        pool=ThreadPool()
         for root, dirs, files in os.walk(input_agrs):
             # 构建输出文件路径
             relative_path = get_real_name(os.path.relpath(root, input_agrs))
@@ -123,10 +126,10 @@ def main():
                 org_file_path = os.path.join(root, file)
                 os.makedirs(dest_dir_path, exist_ok=True)
                 dest_file_path=os.path.join(dest_dir_path, get_real_name(file))
-
-                operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)    
-
-
+                pool.submit(operate_imp,org_file_path, dest_file_path,dest_encoding,operate_func)
+                # operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)    
+        pool.join()
+    encode_logger.info("成功",f"{input_agrs} 处理成功")
 #仅修改编码模式
 if __name__ == '__main__':
     main()

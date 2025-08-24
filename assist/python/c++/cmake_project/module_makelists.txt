@@ -1,0 +1,31 @@
+﻿set(hm_module_DLL hm_module)
+
+file(GLOB_RECURSE hm_module_hdrs *.h *.hxx *.inc)
+file(GLOB_RECURSE hm_module_srcs *.cpp *.cc)
+
+set(hm_module_all_files ${hm_module_hdrs} ${hm_module_srcs})
+
+add_library(${hm_module_DLL} SHARED ${hm_module_all_files})
+
+target_compile_definitions(${hm_module_DLL} PRIVATE HM_MODULE_DLL)
+
+ds_source_group_by_dir(hm_module_all_files)
+
+target_include_directories(${hm_module_DLL} PUBLIC include)
+
+#[[
+target_link_libraries(${hm_module_DLL}
+  PUBLIC
+  PRIVATE
+)
+]]
+
+install(
+  TARGETS ${hm_module_DLL}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install_local_dependencies(TARGETS ${hm_module_DLL} DIRECTORIES
+  ${my_dependency_paths})

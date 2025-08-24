@@ -1,0 +1,16 @@
+﻿
+    [
+        {
+            "old_name": "X_FRAMEWORK",
+            "new_name": "JOY_UTILITY",
+            "is_reg": false,
+            "ignore_case": false
+        },
+        {
+            "old_name": "x_framework",
+            "new_name": "joy_utility",
+            "is_reg": false,
+            "ignore_case": false
+        }
+    ]
+

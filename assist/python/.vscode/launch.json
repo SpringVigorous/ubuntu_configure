@@ -6,16 +6,27 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      // "args": " -t '浣犱笘' -s UTF-8",
-      // "args": "-o 'F:/test/cmake_project/src/runtime' -d 'F:/test/cmake_project/src/runtime' -r 'assist/replace_params.json',   "
-      // "args": "-o 'F:/test/cmake_project/src/project_template' -d 'F:/test/cmake_project/src/' -r 'assist/replace_params_project_files_eigen.json'",
-      // "args" : "-i F:/test/cmake_project/src  -c utf-8-sig -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
-      // "args" : "-i 'F:/test/cmake_project/3rd/vcpkg/installed/x64-windows/include/Eigen/src/Core/arch/Default/BFloat16.h' -c ascii -f '.hpp;.cpp;.h;.cxx;.hxx;.c;.cc;.hh;.inl' ",
-      // "args" : "-i 'F:/temp/bill.txt'  -c ascii -f '.txt' ",
       "python": "myenv/Scripts/python.exe",
-      // "args" : "-r  'F:/worm_practice/player/urls/'  -f '.log' -i 'lost' ",
-      "args" : "-m F:/hg/pushserver/src/Server/BrokerWebSocketServer.h  F:/hg/pushserver/src/Server/BrokerWebSocketServer_new.h -c sb",
-      
+      "args": "-o F:/TH/th/x_framework_clone -d F:/TH/th  -r F:/test/ubuntu_configure/assist/python/c++/fold_replace_args.json"
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "f:/test/ubuntu_configure/assist/python/c++/cmake_project/test",
+      "program": "f:/test/ubuntu_configure/assist/python/c++/cmake_project/test/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }

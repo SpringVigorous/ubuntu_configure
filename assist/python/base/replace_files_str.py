@@ -35,7 +35,7 @@ class CoverType(Enum):
 @dr.exception_decorator()
 def replace_file_str(source_path, dest_path, replace_list_tuple,cover_type:CoverType=CoverType.NEW_FILE):
     
-    replace_logger=logger_helper("替换：{source_path}->{dest_path}",f"{replace_list_tuple},覆盖类型:{cover_type}")
+    replace_logger=logger_helper(f"替换：{source_path}->{dest_path}",f"{replace_list_tuple},覆盖类型:{cover_type}")
     replace_logger.trace("开始")
     if os.path.exists(dest_path):
         if cover_type==cover_type.NO_COVER:
@@ -66,7 +66,7 @@ def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverTyp
     
     folder_name =st.replace_list_tuple_str(org_base_dir,replace_list_tuple)
     dest_dir=os.path.join(dest_dir,folder_name)
-    if pt.path_equal(source_dir,dest_dir):
+    if not pt.path_equal(source_dir,dest_dir):
         fo.clear_folder(dest_dir)
     for root, dirs, files in os.walk(source_dir):
         # 构建输出文件路径

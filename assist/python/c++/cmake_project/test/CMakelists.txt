@@ -1,0 +1,62 @@
+﻿project("test_main")
+
+include(GoogleTest)
+
+option(ENABLE_PROFILER "enable dapr")
+
+file(GLOB_RECURSE ALL_SOURCE *.cpp *.hxx)
+
+link_directories(/usr/local/lib)
+
+#include_directories(${CMAKE_SOURCE_DIR}/src/ds_proto/include)
+
+add_executable(${PROJECT_NAME} ${ALL_SOURCE})
+copy_sanitizer_runtime(${PROJECT_NAME})
+target_code_coverage(${PROJECT_NAME} EXCLUDE AUTO ALL EXCLUDE tests/*)
+
+gtest_discover_tests(${PROJECT_NAME}
+                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+ds_source_group_by_dir(ALL_SOURCE)
+
+target_compile_definitions(${PROJECT_NAME}
+                           PRIVATE PROJECT_FOLDER="${CMAKE_SOURCE_DIR}")
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+find_package(GTest REQUIRED)
+
+if((NOT WIN32) AND ENABLE_PROFILER)
+  add_definitions(-DENABLE_PROFILER)
+  target_link_libraries(
+    ${PROJECT_NAME} profiler
+    PRIVATE GTest::gmock
+            GTest::gtest
+            GTest::gmock_main
+            GTest::gtest_main
+  )
+else()
+  target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE GTest::gmock
+            GTest::gtest
+            GTest::gmock_main
+            GTest::gtest_main
+            )
+endif()
+
+#[[
+set(_COPY_NAME "拷贝测试用图纸文件")
+set(_COPY_SRC_DATA ${CMAKE_SOURCE_DIR}/test/data/1.dwg)
+set(_COPY_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+ds_copy_file_using(${_COPY_NAME} ${_COPY_SRC_DATA} ${_COPY_DEST_DIR})
+
+file(GLOB _CLOSED_DATA ${CMAKE_SOURCE_DIR}/test/data/polyline_data/*.* )
+foreach(_DataFile ${_CLOSED_DATA})
+    ds_copy_file_using(${_COPY_NAME} ${_DataFile} ${_COPY_DEST_DIR}/polyline_data/)
+endforeach()]]
+
+if(MSVC)
+  set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY
+                                               "${_COPY_DEST_DIR}")
+endif(MSVC)

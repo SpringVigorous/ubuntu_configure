@@ -236,9 +236,9 @@ class logger_helper:
             
             
         if not targe:
-            targe=self._target
+            targe=str(self._target)
         if not detail:
-            detail=self._detail
+            detail=str(self._detail)
             
         if targe or detail:
             self.update_target(targe,detail)
