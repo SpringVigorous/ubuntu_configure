@@ -13,8 +13,8 @@ from base import logger_helper,UpdateTimeType,replace_content_same_encode,replac
 
 root_src=Path(r"F:\test\ubuntu_configure\assist\python\c++\cmake_project")
 org_macro_path = os.path.join(root_src, "hm_module_marco.h")
-org_header_path = os.path.join(root_src, "hm_module_sample.h")
-org_cpp_path = os.path.join(root_src, "hm_module_sample.cpp")
+org_header_path = os.path.join(root_src, "sample.h")
+org_cpp_path = os.path.join(root_src, "sample.cpp")
 
 org_project_cmake_path = os.path.join(root_src, "project_makelists.txt")
 org_module_cmake_path = os.path.join(root_src, "module_makelists.txt")
@@ -42,6 +42,7 @@ def create_macro_replace_list(module_name):
 def create_cpp_replace_list(module_name,cpp_name):
     result=create_macro_replace_list(module_name)
     result.append((org_cpp_name,cpp_name))
+    result.append(("SAMPLE",cpp_name.upper()))
     return result
 
 
@@ -52,15 +53,22 @@ def create_macro_file(module_name,header_dir:Path):
     replace_file_str(org_macro_path,dest_macro_path,replace_list_tuple,cover_type=CoverType.NO_COVER)
     logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
 
-def create_src_files(module_name,cpp_name,header_dir,src_dir):
+def create_src_files(module_name,cpp_name:Path|str,header_dir,src_dir):
     
-    logger=logger_helper(f"创建{module_name}源文件",cpp_name)
-    replace_list_tuple=create_cpp_replace_list(module_name,cpp_name)
+    if isinstance(cpp_name,str):
+        cpp_name=Path(*cpp_name.split("."))
+    
+    name=cpp_name.name
+    name_parts=cpp_name.parts    
+    
+    logger=logger_helper(f"创建{module_name}源文件",name)
+    replace_list_tuple=[] if len(name_parts)==1 else [(f"{org_cpp_name}.h",f"{"/".join(name_parts)}.h")]
+    replace_list_tuple.extend(create_cpp_replace_list(module_name,name))
     #.header
-    dest_header_path = os.path.join(header_dir, f"{cpp_name}.h")
+    dest_header_path = os.path.join(header_dir, f"{name}.h")
     replace_file_str(org_header_path,dest_header_path,replace_list_tuple,cover_type=CoverType.NO_COVER)
     # .cpp
-    dest_cpp_path = os.path.join(src_dir, f"{cpp_name}.cpp")
+    dest_cpp_path = os.path.join(src_dir, f"{name}.cpp")
     replace_file_str(org_cpp_path,dest_cpp_path,replace_list_tuple,cover_type=CoverType.NO_COVER)
     
     logger.info("完成",f"头文件{dest_header_path}\n源文件{dest_cpp_path}",update_time_type=UpdateTimeType.STAGE)
@@ -108,6 +116,8 @@ def create_module_structue(module_name:str,src_names:list|str=None,root_dir="./"
     for name in src_names:
         names=name.split(".")
         name=names[-1]
+        sub_path=Path(*names)
+        
         dest_header_dir=header_dir
         dest_header_dir
         has_sub_dir=len(names)>1
@@ -119,7 +129,7 @@ def create_module_structue(module_name:str,src_names:list|str=None,root_dir="./"
             os.makedirs(header_dir,exist_ok=True)
             header_dir.mkdir(parents=True, exist_ok=True)
            
-        create_src_files(module_name,name,header_dir=dest_header_dir,src_dir=dest_src_dir)
+        create_src_files(module_name,sub_path,header_dir=dest_header_dir,src_dir=dest_src_dir)
     
     logger.trace("完成",f"目录{dest_dir}",update_time_type=UpdateTimeType.STAGE)
 

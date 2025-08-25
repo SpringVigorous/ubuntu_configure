@@ -1,5 +1,5 @@
 ﻿
-#include "hm_module_sample.h"
+#include "hm_module/sample.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

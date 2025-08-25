@@ -7,7 +7,7 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "python": "myenv/Scripts/python.exe",
-      "args": "-o F:/TH/th/x_framework_clone -d F:/TH/th  -r F:/test/ubuntu_configure/assist/python/c++/fold_replace_args.json"
+      "args": " -r F:/test  -p joy_project -m joy_utility -f kenel.hruntime_class,kenel.hobject,kenel.harchive"
     },
     {
       "name": "C/C++ Runner: Debug Session",
