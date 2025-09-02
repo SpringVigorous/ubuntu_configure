@@ -1,0 +1,66 @@
+boost-algorithm:x64-windows                       1.85.0#1            Boost algorithm module
+boost-align:x64-windows                           1.85.0#1            Boost align module
+boost-array:x64-windows                           1.85.0#1            Boost array module
+boost-assert:x64-windows                          1.85.0#1            Boost assert module
+boost-atomic:x64-windows                          1.85.0#1            Boost atomic module
+boost-bind:x64-windows                            1.85.0#1            Boost bind module
+boost-chrono:x64-windows                          1.85.0#1            Boost chrono module
+boost-cmake:x64-windows                           1.85.0#1            Boost CMake support infrastructure
+boost-concept-check:x64-windows                   1.85.0#1            Boost concept_check module
+boost-config:x64-windows                          1.85.0#1            Boost config module
+boost-container-hash:x64-windows                  1.85.0#1            Boost container_hash module
+boost-container:x64-windows                       1.85.0#1            Boost container module
+boost-conversion:x64-windows                      1.85.0#1            Boost conversion module
+boost-core:x64-windows                            1.85.0#2            Boost core module
+boost-date-time:x64-windows                       1.85.0#1            Boost date_time module
+boost-describe:x64-windows                        1.85.0#2            Boost describe module
+boost-detail:x64-windows                          1.85.0#1            Boost detail module
+boost-dynamic-bitset:x64-windows                  1.85.0#1            Boost dynamic_bitset module
+boost-exception:x64-windows                       1.85.0#1            Boost exception module
+boost-function-types:x64-windows                  1.85.0#1            Boost function_types module
+boost-function:x64-windows                        1.85.0#1            Boost function module
+boost-functional:x64-windows                      1.85.0#1            Boost functional module
+boost-fusion:x64-windows                          1.85.0#1            Boost fusion module
+boost-headers:x64-windows                         1.85.0#1            Boost headers module
+boost-integer:x64-windows                         1.85.0#1            Boost integer module
+boost-intrusive:x64-windows                       1.85.0#2            Boost intrusive module
+boost-io:x64-windows                              1.85.0#1            Boost io module
+boost-iterator:x64-windows                        1.85.0#1            Boost iterator module
+boost-lexical-cast:x64-windows                    1.85.0#1            Boost lexical_cast module
+boost-locale:x64-windows                          1.85.0#2            Boost locale module
+boost-move:x64-windows                            1.85.0#1            Boost move module
+boost-mp11:x64-windows                            1.85.0#1            Boost mp11 module
+boost-mpl:x64-windows                             1.85.0#1            Boost mpl module
+boost-numeric-conversion:x64-windows              1.85.0#1            Boost numeric_conversion module
+boost-optional:x64-windows                        1.85.0#1            Boost optional module
+boost-predef:x64-windows                          1.85.0#1            Boost predef module
+boost-preprocessor:x64-windows                    1.85.0#1            Boost preprocessor module
+boost-random:x64-windows                          1.85.0#1            Boost random module
+boost-range:x64-windows                           1.85.0#1            Boost range module
+boost-ratio:x64-windows                           1.85.0#1            Boost ratio module
+boost-regex:x64-windows                           1.85.0#1            Boost regex module
+boost-smart-ptr:x64-windows                       1.85.0#1            Boost smart_ptr module
+boost-static-assert:x64-windows                   1.85.0#1            Boost static_assert module
+boost-system:x64-windows                          1.85.0#1            Boost system module
+boost-thread:x64-windows                          1.85.0#1            Boost thread module
+boost-throw-exception:x64-windows                 1.85.0#1            Boost throw_exception module
+boost-tokenizer:x64-windows                       1.85.0#1            Boost tokenizer module
+boost-tti:x64-windows                             1.85.0#1            Boost tti module
+boost-tuple:x64-windows                           1.85.0#1            Boost tuple module
+boost-type-traits:x64-windows                     1.85.0#1            Boost type_traits module
+boost-typeof:x64-windows                          1.85.0#1            Boost typeof module
+boost-uninstall:x64-windows                       1.85.0#1            Internal vcpkg port used to uninstall Boost
+boost-unordered:x64-windows                       1.85.0#2            Boost unordered module
+boost-utility:x64-windows                         1.85.0#1            Boost utility module
+boost-uuid:x64-windows                            1.85.0#1            Boost uuid module
+boost-variant2:x64-windows                        1.85.0#2            Boost variant2 module
+boost-winapi:x64-windows                          1.85.0#1            Boost winapi module
+cpp-base64:x64-windows                            V2.rc.08            Base64 encoding and decoding with c++.
+gtest:x64-windows                                 1.14.0#1            Google Testing and Mocking Framework
+jsoncpp:x64-windows                               1.9.6               JsonCpp is a C++ library that allows manipulatin...
+libiconv:x64-windows                              1.17#3              GNU Unicode text conversion
+magic-enum:x64-windows                            0.9.5               Header-only C++17 library provides static reflec...
+tinyxml2:x64-windows                              11.0.0              A simple, small, efficient, C++ XML parser
+vcpkg-boost:x64-windows                           2024-05-15          
+vcpkg-cmake-config:x64-windows                    2024-05-23          
+vcpkg-cmake:x64-windows                           2024-04-23          
