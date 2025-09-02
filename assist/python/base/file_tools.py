@@ -364,6 +364,12 @@ def copy_folder(src, dst,filter_func:Callable=None,overwrite=False):
             src_file = os.path.join(root, file)
             dst_file = os.path.join(dest_dir, file)
             
+            if not os.path.exists(src_file):
+                continue
+            if not overwrite and os.path.exists(dst_file):
+                continue
+            
+            
             src_results.append(src_file)
             dest_results.append(dst_file)
     if src_results:
@@ -382,9 +388,8 @@ def copy_file(source_file:str|list[str],destination_file:str|list[str],override=
     for file,dest in zip(source_file,destination_file):
         copy_logger= logger_helper("拷贝文件",f"{file} -> {dest}")
         if not override :
-            
             dest_path=dest if  Path(dest).is_file() else os.path.join(dest,Path(file).name)
-            if pt.path_equal(file,dest_path):
+            if pt.path_equal(file,dest_path) or os.path.exists(dest_path):
                 copy_logger.trace("忽略","文件路径相同，跳过拷贝")
                 continue
         

@@ -1,9 +1,9 @@
 ﻿
 #include "hm_module/sample.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
+//#ifdef _DEBUG
+//#define new DEBUG_NEW
+//#endif
 _HM_MODULE_BEGIN_
 
 

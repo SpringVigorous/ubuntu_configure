@@ -12,7 +12,7 @@ sys.path.append( os.path.join(__root_path__,'base') )
 from base import logger_helper,UpdateTimeType,replace_content_same_encode,replace_file_str,CoverType,copy_folder
 
 root_src=Path(r"F:\test\ubuntu_configure\assist\python\c++\cmake_project")
-org_macro_path = os.path.join(root_src, "hm_module_marco.h")
+org_macro_path = os.path.join(root_src, "hm_module_macro.h")
 org_header_path = os.path.join(root_src, "sample.h")
 org_cpp_path = os.path.join(root_src, "sample.cpp")
 
@@ -47,7 +47,7 @@ def create_cpp_replace_list(module_name,cpp_name):
 
 
 def create_macro_file(module_name,header_dir:Path):
-    dest_macro_path = header_dir/ f"{module_name}_marco.h"
+    dest_macro_path = header_dir/ f"{module_name}_macro.h"
     logger=logger_helper("创建宏文件",dest_macro_path)
     replace_list_tuple=create_macro_replace_list(module_name)
     replace_file_str(org_macro_path,dest_macro_path,replace_list_tuple,cover_type=CoverType.NO_COVER)
@@ -145,7 +145,7 @@ def create_project_structure(project_name="my_project",root_dir="./",):
     
     os.makedirs(project_dir/"src",exist_ok=True)
     os.makedirs(project_dir/"cmake",exist_ok=True)
-    os.makedirs(project_dir/"test",exist_ok=True)
+    os.makedirs(project_dir/"test"/"data",exist_ok=True)
     os.makedirs(project_dir/"config",exist_ok=True)
     
     # project_dir,*arg= create_structer(project_dir)
