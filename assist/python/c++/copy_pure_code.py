@@ -53,7 +53,9 @@ def create_ignore_function(exclude_dirs, exclude_files):
 
 def copy_pure_project_code(source_dir, destination_dir,exclude_dirs, exclude_files):
 
+    logger=logger_helper("开始复制项目代码",f"{source_dir}->{destination_dir}")
     if os.path.exists(destination_dir):
+        logger.info("删除目标目录",f"{destination_dir}已存在")
         shutil.rmtree(destination_dir)
     # os.makedirs(destination_dir, exist_ok=True)
     # 创建忽略函数实例
@@ -62,11 +64,11 @@ def copy_pure_project_code(source_dir, destination_dir,exclude_dirs, exclude_fil
     # 执行复制，并应用过滤规则
     try:
         shutil.copytree(source_dir, destination_dir, ignore=ignore_function)
-        print(f"成功复制目录，已过滤指定内容。")
+        logger.info("完成",update_time_type=UpdateTimeType.ALL)
     except FileExistsError:
-        print(f"目标目录 '{destination_dir}' 已存在。")
+        logger.info("失败",f"目标目录 '{destination_dir}' 已存在。",update_time_type=UpdateTimeType.ALL)
     except Exception as e:
-        print(f"复制过程中发生错误: {e}")
+        logger.info("异常",f"{e}",update_time_type=UpdateTimeType.ALL)
         
         
 if __name__ == "__main__":
