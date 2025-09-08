@@ -12,12 +12,12 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique,find_last_value_by_col_val
 from station_config import StationConfig
 
 from train_station import TrainStationManager
 
-
+from ticket_price import PriceManager
 
 station_manager:TrainStationManager = TrainStationManager()
 def _is_same_city( station1: str, station2: str) -> bool:
@@ -34,6 +34,15 @@ def _parse_time(time_str: str) -> datetime:
     except :
         pass
     
+def date_format(dt:datetime)->str:
+    return dt.strftime("%Y.%m.%d")
+    
+def days_latter_format(offset:int=0):  
+    # 获取当前日期和时间
+    now = datetime.now()
+    if offset>0:
+        now+=timedelta(days=offset)
+    return date_format(now)
     
 def time_format(dt:datetime)->str:
     
@@ -61,9 +70,10 @@ class Station:
 
 
 class Train:
-    def __init__(self, train_name: str, stations: List[Station]):
+    def __init__(self, train_name: str, stations: List[Station],train_no:str):
         self.train_name = train_name
         self.stations = stations
+        self.train_no=train_no
         
     def get_station_index(self, station_name: str) -> int:
         for idx, station in enumerate(self.stations):
@@ -81,8 +91,29 @@ class Train:
         return f"车次 {self.train_name}: {[s.name for s in self.stations]}"
 
 
-class RouteSegment:
+class date_base:
+    def __init__(self):
+        self.set_date(days_latter_format())
+        self.set_include_price(False)
+    
+    def set_include_price(self,include_price:bool=False):
+        self.include_price=include_price
+    def set_date(self,date:str):
+        self._date=date.replace(".","-")
+        
+        
+    @property
+    def has_price(self)->bool:
+        return self.include_price
+        
+    @property
+    def date(self)->str:
+        return self._date
+
+
+class RouteSegment(date_base):
     def __init__(self, train: Train, start_station: str, end_station: str):
+        super().__init__()
         self.train = train
 
         start_idx = train.get_station_index(start_station)
@@ -99,6 +130,8 @@ class RouteSegment:
             
         self.departure_time = departure_station.departure_time
         self.arrival_time =arrival_station.arrival_time
+
+
         
     @property
     def diff_day(self)->int:
@@ -143,19 +176,28 @@ class RouteSegment:
     def arrival_time_str(self):
         return time_format(self.arrival_time)
     
+
+    #date: 2025-09-11
+    @property
+    def prices(self):
+        return PriceManager().query_price(self.train.train_no,self.start_station,self.end_station)
+
+
     
     def __repr__(self) -> str:
-        return f"{self.train.train_name}: {self.start_station} {self.departure_time_str} -> {self.end_station} {self.arrival_time_str}"
+        return f"{self.train.train_name}: {self.start_station} {self.departure_time_str} -> {self.end_station} {self.arrival_time_str} {self.prices}"
 
 
 
 
 
-class Route:
+class Route(date_base):
     def __init__(self, segments: List[RouteSegment]):
+        super().__init__()
         self.segments = segments
         self.start_station = segments[0].start_station
         self.end_station = segments[-1].end_station
+
         
     def arrage(self):
         seg_names= [seg.train.train_name for seg in self.segments]
@@ -247,9 +289,12 @@ class Route:
         
         segments=self.segments
         for i, seg in enumerate(segments):
+            seg.set_date(self.date)
+            seg.set_include_price(True)
             wait_time_str= f" {'同站等待' if segments[i].end_station==segments[i+1].start_station else '异站换乘' }：{self.wait_time(i)}" if transfer_count>0 and i<transfer_count else ""
                 
             result += f"  第{i+1}段: {seg}{wait_time_str}\n"
+            seg.set_include_price(False)
             
         return result
 
@@ -595,11 +640,17 @@ def handle_routine():
     total_time=route.get_total_duration()
     print(total_time)
     
-    
-
+def test_prices():
+    price_manager=PriceManager()
+    df=price_manager.query_prices("西峡","合肥","20250911")
+    vals=find_last_value_by_col_val(df,"train_no","850000K30638","infoAll_list","")
+    train_manager=TrainStationManager()
+    price_dict=train_manager.prices(vals)
+    print(price_dict)
 
 if __name__ == "__main__":
-    
+    test_prices()
+    exit()
     for time_str in ["06:00","23:01:00","16:00","08:00"]:
         print(TrainRouteFinder.start_time_valid(_parse_time(time_str)))
 

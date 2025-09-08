@@ -19,7 +19,7 @@ from base import logger_helper,UpdateTimeType,copy_folder
 import shutil
 
 
-def create_ignore_function(exclude_dirs, exclude_files):
+def create_ignore_function(exclude_dirs, exclude_files,ignored_lst:list=None):
     """
     创建一个忽略函数，用于 shutil.copytree。
     
@@ -37,40 +37,48 @@ def create_ignore_function(exclude_dirs, exclude_files):
         for name in names:
             full_path = os.path.join(dir, name)
             # 检查是否是目录且在排除列表中
-            if os.path.isdir(full_path) and name in exclude_dirs:
-                ignored.add(name)
+            if exclude_dirs and os.path.isdir(full_path) and name in exclude_dirs:
+                    ignored.add(name)
             # 检查是否是文件且在排除列表中，或匹配通配符
-            elif os.path.isfile(full_path):
-                if name in exclude_files:
+            elif exclude_files :
+                if os.path.isfile(full_path) and  name in exclude_files:
                     ignored.add(name)
                 # 简单的通配符匹配（示例：匹配 .tmp 结尾的文件）
                 elif any(name.endswith(pattern.strip('*')) for pattern in exclude_files if '*' in pattern):
                     ignored.add(name)
+      
+        if ignored_lst is not None:
+            ignored_lst.extend([os.path.join(dir,item) for item in ignored])
         return ignored
     return ignore_func
 
 
 
-def copy_pure_project_code(source_dir, destination_dir,exclude_dirs, exclude_files):
+def copy_pure_project_code(source_dir, destination_dir,exclude_dirs:list, exclude_files:list):
 
     logger=logger_helper("开始复制项目代码",f"{source_dir}->{destination_dir}")
-    if os.path.exists(destination_dir):
-        logger.info("删除目标目录",f"{destination_dir}已存在")
-        shutil.rmtree(destination_dir)
-    # os.makedirs(destination_dir, exist_ok=True)
+
     # 创建忽略函数实例
-    ignore_function = create_ignore_function(exclude_dirs, exclude_files)
+    ignored_lst=[]
+    ignore_function = create_ignore_function(exclude_dirs, exclude_files,ignored_lst)
 
     # 执行复制，并应用过滤规则
     try:
-        shutil.copytree(source_dir, destination_dir, ignore=ignore_function)
-        logger.info("完成",update_time_type=UpdateTimeType.ALL)
+        shutil.copytree(source_dir, destination_dir, ignore=ignore_function,dirs_exist_ok=True)
+        logger.info("完成",f"排除了以下目录及文档\n{'\n'.join(ignored_lst)}\n",update_time_type=UpdateTimeType.ALL)
     except FileExistsError:
         logger.info("失败",f"目标目录 '{destination_dir}' 已存在。",update_time_type=UpdateTimeType.ALL)
     except Exception as e:
         logger.info("异常",f"{e}",update_time_type=UpdateTimeType.ALL)
         
+    #可用以下替换
         
+    # 示例：忽略所有 .tmp 临时文件和 __pycache__ 目录
+    # temp:list=exclude_dirs.copy()
+    # temp.extend(exclude_files)
+    # ignore_patterns = shutil.ignore_patterns(*temp)
+    # shutil.copytree(source_dir, destination_dir, ignore=ignore_patterns, dirs_exist_ok=True) # 可与 dirs_exist_ok 结合使用
+            
 if __name__ == "__main__":
 
     # 要排除的目录和文件列表

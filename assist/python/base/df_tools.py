@@ -88,9 +88,13 @@ def find_values_by_col_val_contains(df, col_name,val,dest_name,default_val=pd.Se
         
 def find_last_value_by_col_val(df, col_name,val,dest_name,default_val=None):
     vals=find_values_by_col_val(df, col_name,val,dest_name,default_val)
-    if vals is None or vals.empty:
+    if vals is None:
         return default_val
-    return vals.iloc[-1]
+    if isinstance(vals,pd.DataFrame) or isinstance(vals,pd.Series):
+        if vals.empty:
+            return default_val
+        return vals.iloc[-1]
+    return vals
 
 
 def sheet_names(file_path):

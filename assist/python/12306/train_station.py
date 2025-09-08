@@ -15,7 +15,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import df_empty,singleton,exception_decorator
+from base import df_empty,singleton,exception_decorator,logger_helper,UpdateTimeType
 from station_config import StationConfig
 
 
@@ -51,12 +51,12 @@ class TrainStationManager:
 
     def __init__(self,station_path:str=None):
         
-        station_config=StationConfig()
-        self._station_xlsx_path=station_path or station_config.train_ticket_path
+        config=StationConfig()
+        self._station_xlsx_path=station_path or config.train_ticket_path
         os.makedirs(self.root_path,exist_ok=True)
         self._df=_station_df(self._station_xlsx_path)
-        self._station_code_path=os.path.join(self.root_path,station_config.station_code_path.name)
-        self._station_city_path=os.path.join(self.root_path,station_config.station_city_path.name)
+        self._station_code_path=os.path.join(self.root_path,config.station_code_path.name)
+        self._station_city_path=os.path.join(self.root_path,config.station_city_path.name)
 
         self._station_code:dict={}
         self._station_city:dict={}
@@ -208,7 +208,43 @@ class TrainStationManager:
         
         # 3. 用%2C（逗号的URL编码）连接两部分
         return f'{chinese_part}%2C{pinyin_part.upper()}' if chinese_part and pinyin_part else ''
+    
+    
+    @staticmethod
+    def seat_name(flag:str)->str:
+        if not flag:
+            return
+        names={
+            "1":"yz",
+            "3":"yw",
+            "4":"rw",
+            "9":"swz",
+            "M":"zy",
+            "O":"ze",
+        }
+        return names.get(flag,"未知")
 
+
+    @staticmethod
+    def prices(raw_data:str)->dict:
+        if not raw_data:
+            return
+        logger=logger_helper("拆分票价信息",raw_data)
+        lst=raw_data.split("#")
+        results={}
+        info =TrainStationManager()
+        for item in lst:
+            if not item:
+                continue
+            try:
+                name=info.seat_name(item[0])
+                price=int(item[1:6])/10.0
+                if name not in results.keys():
+                    results[name]=price
+            except Exception as e:
+                logger.error("异常",f"{e},当前值是{item}")
+                pass
+        return results
 
 if __name__ == '__main__':
     # all_to_file('station_names.xlsx')

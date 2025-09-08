@@ -27,6 +27,7 @@ from station_routine import *
 from train_route_visualizer import TrainRouteVisualizer
 
 station_manager=TrainStationManager()
+from ticket_price import PriceManager
 @exception_decorator(error_state=False)
 def str_to_time(time_str:str)->datetime:
     try:
@@ -238,8 +239,8 @@ def rest_tickets(date, from_city, to_city, kind,name_prefix=None):
     
     def _write_excel(lst,name):
         
-        pre_name=f"{date}_" +(f"{name_prefix}_" if name_prefix is not None else "") 
-        cur_name=f"{pre_name}{from_city}-{to_city}.xlsx"
+        pre_letter=f"{name_prefix}_" if name_prefix is not None else "" 
+        cur_name=f"{pre_letter}{from_city}-{to_city}_{date.replace("-","")}_rest.xlsx"
         cur_path=station_config.data_dir/cur_name
         
         dfs=[]
@@ -350,20 +351,30 @@ def dfs_to_trains(dfs):
             running_time=row["running_time"]
             stations.append(Station(station_name,str(arrive_time),str(start_time)))
         train_name="/".join(unique(train_name))
-        trains.append(Train(train_name,stations))
+        trains.append(Train(train_name,stations,train_no))
     
     return trains
 
 #挑选路线车次
-def handle_routine(start_station,end_station):
-   
-    dfs=pickle_load(station_config.train_routines_path)
+def handle_routine(start_station,end_station,date:str):
+    mid_path=station_config.mid_routine_path(start_station,end_station,date=date)
+    dfs=pickle_load(mid_path)
     trains=dfs_to_trains(filter(lambda x:_train_type(x["train_name"][0]) not in ["G","D","C"] ,dfs))
     finder = TrainRouteFinder(trains)
     # 查找从上海虹桥站到广州南站的路线（最多换乘2次）
 
     logger=logger_helper("路线",f"{start_station}->{end_station}")
-    org_routes = finder.find_transfer_routes(start_station, end_station, max_transfers=1)
+    
+    pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station)
+    result_pkl_path=pic_path.with_suffix(".pkl")
+    exist_cache=os.path.exists(result_pkl_path)
+    org_routes = None
+    # 读取缓存
+    if exist_cache:
+        org_routes = pickle_load(result_pkl_path)
+    else:
+        org_routes=finder.find_transfer_routes(start_station, end_station, max_transfers=1) 
+
     routes=finder.classify_routes(org_routes)
     logger.info("成功",f"共找到 {len(routes)} 条路线",update_time_type=UpdateTimeType.STAGE)
     
@@ -381,6 +392,7 @@ def handle_routine(start_station,end_station):
             f.write(f'{"-" * 20}\n')
                 
             for j,route in enumerate(cur_routes,1):
+                route.set_date(date)
                 f.write(f"第{i:02}-{j}个分线：{route}")
                 if j < cur_count:
                     f.write(f'{"-" * 20}\n')
@@ -389,15 +401,17 @@ def handle_routine(start_station,end_station):
     # 可视化路线
     visualizer = TrainRouteVisualizer(figsize=(16, 30))
     
-    pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station)
     #序列化为二进制，便于后续调试绘制图片
-    pickle_dump(org_routes,pic_path.with_suffix(".pkl"))
+    if not exist_cache:
+        pickle_dump(org_routes,result_pkl_path)
     
     
     visualizer.draw(org_routes, title=f"{start_station}到{end_station}的列车路线方案",pic_path=pic_path)
     pass
 
-def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[]):
+
+
+def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[])->Path:
 
     date=date.replace('.', '-')
     #换乘站
@@ -411,15 +425,32 @@ def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", ki
         count=len(cities)
         index+=1
         for i in range(1,count):
-            dfs.extend(rest_tickets(date, cities[i-1], cities[i], kind,f"0_{index}_{i}"))
+            dfs.extend(rest_tickets(date, cities[i-1], cities[i], kind,f"{index}_{i}"))
             # time.sleep(1)
-            dfs.extend(rest_tickets(date, cities[i], cities[i-1], kind,f"1_{index}_{count-i}"))
-            time.sleep(1)
-            
-    pickle_dump(dfs,station_config.train_routines_path)
+            # dfs.extend(rest_tickets(date, cities[i], cities[i-1], kind,f"1_{index}_{count-i}"))
+            # time.sleep(1)
+    mid_path=station_config.mid_routine_path(from_city, to_city, date)        
+    
+    pickle_dump(dfs,mid_path)
+    return mid_path
+
+def find_routine(start_station,end_station,date:str,transfer_cities):
+    logger=logger_helper("火车票路线",f"{start_station}->{end_station}:{date}")
+    #获取车次信息表，包含 各车站、出发时间、到达时间、时长信息
+    #此过程耗时较长，若是获取过一次，可跳过此步骤
+    mid_path=station_config.mid_routine_path(start_station, end_station, date)
+    if not os.path.exists(mid_path):
+        logger.stack_target(detail="获取车次信息表")
+        cur_mid_path=fetch_train_routine(start_station,end_station,date=date,kind="全部",transfer_cities=transfer_cities)
+        logger.info("完成",f"{cur_mid_path}",update_time_type=UpdateTimeType.STAGE)
+        logger.pop_target()
+    logger.stack_target(detail="获取推荐车次结果表")
+    #获取推荐车次结果表
+    if not os.path.exists(mid_path):
+        return
+    handle_routine(start_station,end_station,date)
             
 def main():
-    
     start_station = "上海"
     end_station = "西峡"
     transfer_cities=[
@@ -428,22 +459,17 @@ def main():
         ("合肥"),
         ("信阳"),
     ]
-    #获取车次信息表，包含 各车站、出发时间、到达时间、时长信息
-    #此过程耗时较长，若是获取过一次，可跳过此步骤
+    
     logger=logger_helper("火车票路线筛选")
-    # logger.stack_target(detail="获取车次信息表")
-    # fetch_train_routine(start_station,end_station,date="2025.08.26",kind="全部",transfer_cities=transfer_cities)
-    # logger.info("完成",update_time_type=UpdateTimeType.STAGE)
-    # logger.pop_target()
-    
-    logger.stack_target(detail="获取推荐车次结果表")
-    #获取推荐车次结果表
+    days_latter=3
+    date=days_latter_format(offset=days_latter)
     #单程
-    handle_routine(start_station,end_station)
+    find_routine(start_station,end_station,date,transfer_cities)
     #返程
-    handle_routine(end_station,start_station)
-    logger.info("完成",update_time_type=UpdateTimeType.STAGE)
+    find_routine(end_station,start_station,date,transfer_cities)
     
+    logger.info("完成",update_time_type=UpdateTimeType.STAGE)
+    PriceManager().export_df()
 if __name__ ==  '__main__':    
     main()
     

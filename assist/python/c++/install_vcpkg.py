@@ -148,6 +148,7 @@ if __name__ == "__main__":
     vcpkg_exe_path = find_exe_path("vcpkg")  # 替换为你的 vcpkg.exe 完整路径
     package_list_file = r"F:\test\joy_project\3rd\vcpkg\installed_packages.txt"  # 包含包列表的文本文件，每行一个包
     install_root=r"F:/test/joy_project/3rd/vcpkg/installed"
+    #通过文件安装包
     intall_vcpkg_from_list_file(vcpkg_exe_path,package_list_file,install_root)
     
     #单独安装一个包

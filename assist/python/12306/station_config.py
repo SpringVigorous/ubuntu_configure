@@ -13,7 +13,7 @@ from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutiv
 
 
 @singleton
-class StationConfig():
+class StationConfig:
     def __init__(self,path:str=None,max_transfers:int=2,) -> None:
         self._default_root=r"F:\worm_practice\train_ticket"
         self.logger=logger_helper()
@@ -61,11 +61,15 @@ class StationConfig():
     def max_transfers(self):
         return self._max_transfers
     
-    # @property
-        
-    @property
-    def train_routines_path(self)->Path:
-        return self.data_dir / "routine.pkl"
+
+    def routine_name(self,from_city: str, to_city: str, date: str="2025.08.26")->str:
+        name_pre=f"{from_city}-{to_city}_{date.replace('.', '').replace("-","")}"
+        return name_pre
+    def mid_routine_path(self,from_city: str, to_city: str, date: str="2025.08.26")->Path:
+        name_pre=self.routine_name(from_city,to_city,date)
+        return self.train_routines_path(name_pre)
+    def train_routines_path(self,name_pre)->Path:
+        return self.data_dir / f"{name_pre}_routine.pkl"
         
     @property
     def data_dir(self):
