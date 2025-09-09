@@ -3,13 +3,13 @@
 import sys
 
 from pathlib import Path
-
+import pandas as pd
 
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df
 
 
 @singleton
@@ -21,7 +21,7 @@ class StationConfig:
         self.set_max_transfers(max_transfers)
         
         self._wait_time=[1,480,60,480]
-        
+        self.load_xlsx()
         
     def set_same_wait_time(self,min_minus:int=1,max_minus:int=480):
         self._wait_time[0], self._wait_time[1]=min_minus,max_minus 
@@ -62,11 +62,11 @@ class StationConfig:
         return self._max_transfers
     
 
-    def routine_name(self,from_city: str, to_city: str, date: str="2025.08.26")->str:
-        name_pre=f"{from_city}-{to_city}_{date.replace('.', '').replace("-","")}"
+    def routine_name(self,from_city: str, to_city: str)->str:
+        name_pre=f"{from_city}-{to_city}"
         return name_pre
-    def mid_routine_path(self,from_city: str, to_city: str, date: str="2025.08.26")->Path:
-        name_pre=self.routine_name(from_city,to_city,date)
+    def mid_routine_path(self,from_city: str, to_city: str)->Path:
+        name_pre=self.routine_name(from_city,to_city)
         return self.train_routines_path(name_pre)
     def train_routines_path(self,name_pre)->Path:
         return self.data_dir / f"{name_pre}_routine.pkl"
@@ -82,20 +82,96 @@ class StationConfig:
         os.makedirs(result,exist_ok=True)
         return result   
         
-    @property
-    def station_city_path(self):
-        return self.data_dir / "station_city.json"
-    
-    
-    @property
-    def station_code_path(self):
-        return self.data_dir / "station_code.json"
-    
-    @property
-    def train_ticket_path(self):
-        return self.data_dir / "train_ticket.xlsx"
-    
 
+    @property
+    def xlsx_path(self):
+        return self.data_dir / "12306.xlsx"
+    @property
+    def city_code_name(self):
+        return "站点代码表"
+    
+    @property
+    def train_info_name(self):
+        return "车次信息"
+
+    @property
+    def train_route_name(self):
+        return "车次时刻表"
+    
+    @property
+    def price_name(self):
+        return "价格"
+    def load_xlsx(self):
+        cur_path=self.xlsx_path
+        if cur_path.exists():
+            with pd.ExcelFile(cur_path) as reader:
+                sheetnames=reader.sheet_names
+                def get_df(name:str)->pd.DataFrame:
+                    if name not in sheetnames:
+                        return pd.DataFrame()
+                    return reader.parse(name)
+                self._city_code_df=get_df(self.city_code_name)
+                self._train_info_df=get_df(self.train_info_name)
+                self._train_route_df=get_df(self.train_route_name)
+                self._price_df=get_df(self.price_name)
+                #添加 train_type列
+                
+                # if not(df_empty(self._train_route_df) or df_empty(self._train_info_df)) :
+                                        
+                #     # 步骤1：从b中构建「编号→类型」的映射（用Series实现，索引为编号，值为类型）
+                #     type_map = self._train_route_df.set_index('编号')['类型']
+
+                #     # 步骤2：用a的train_no匹配映射，结果赋给a的train_type列
+                #     self._train_info_df['train_type'] = self._train_info_df['train_no'].map(type_map)
+
+                
+                
+        else:
+            self._city_code_df:pd.DataFrame=pd.DataFrame()
+            self._train_info_df:pd.DataFrame=pd.DataFrame()
+            self._train_route_df:pd.DataFrame=pd.DataFrame()
+            self._price_df:pd.DataFrame=pd.DataFrame()
+    def save_xlsx(self):
+        cur_path=self.xlsx_path
+        with pd.ExcelWriter(cur_path) as writer:
+            def _save_df(df:pd.DataFrame,name:str):
+                if not df_empty(df):
+                    df.to_excel(writer,name,index=False)
+            _save_df(self._city_code_df,self.city_code_name)      
+            _save_df(self._train_info_df,self.train_info_name)
+            _save_df(self._train_route_df,self.train_route_name)
+            _save_df(self._price_df,self.price_name)
+    @property
+    def city_code_df(self)->pd.DataFrame:
+        return self._city_code_df
+    
+    @property
+    def train_info_df(self)->pd.DataFrame:
+        return self._train_info_df
+    
+    @property
+    def train_route_df(self)->pd.DataFrame:
+        return self._train_route_df
+    
+    @property
+    def price_df(self)->pd.DataFrame:
+        return self._price_df
+
+    def add_city_code_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._city_code_df=add_df(df,self.city_code_df,"简拼")
+        return self.city_code_df
+    def add_train_info_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._train_info_df=add_df(df,self.train_info_df,["train_no","station_no"])
+        return self.train_info_df
+    def add_train_route_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._train_route_df=add_df(df,self.train_route_df,"编号")
+        return self.train_route_df
+    
+    def add_price_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._price_df=add_df(df,self.price_df,["train_no","from_station_name","to_station_name"])
+        return self.price_df
+    
+    
 if __name__ == "__main__":
     
     lst=[ StationConfig(max_transfers=i+1) for i in range(10)]
@@ -103,7 +179,3 @@ if __name__ == "__main__":
         print(f"{id(i)}:{i.max_transfers}")
 
     
-    # station_config = StationConfig()
-    # print(station_config.station_city_path)
-    # print(station_config.station_code_path)
-    # print(station_config.train_ticket_path)

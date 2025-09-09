@@ -28,8 +28,8 @@ def _parse_time(time_str: str) -> datetime:
     if time_str is None: 
         return None
     time_str=str(time_str)
-    count=time_str.count(':')
     try:
+        count=time_str.count(':')
         return datetime.strptime(time_str, "%H:%M" if count==1 else "%H:%M:%S")
     except :
         pass
@@ -91,27 +91,10 @@ class Train:
         return f"车次 {self.train_name}: {[s.name for s in self.stations]}"
 
 
-class date_base:
-    def __init__(self):
-        self.set_date(days_latter_format())
-        self.set_include_price(False)
-    
-    def set_include_price(self,include_price:bool=False):
-        self.include_price=include_price
-    def set_date(self,date:str):
-        self._date=date.replace(".","-")
-        
-        
-    @property
-    def has_price(self)->bool:
-        return self.include_price
-        
-    @property
-    def date(self)->str:
-        return self._date
 
 
-class RouteSegment(date_base):
+
+class RouteSegment:
     def __init__(self, train: Train, start_station: str, end_station: str):
         super().__init__()
         self.train = train
@@ -191,7 +174,7 @@ class RouteSegment(date_base):
 
 
 
-class Route(date_base):
+class Route:
     def __init__(self, segments: List[RouteSegment]):
         super().__init__()
         self.segments = segments
@@ -289,12 +272,11 @@ class Route(date_base):
         
         segments=self.segments
         for i, seg in enumerate(segments):
-            seg.set_date(self.date)
-            seg.set_include_price(True)
+
             wait_time_str= f" {'同站等待' if segments[i].end_station==segments[i+1].start_station else '异站换乘' }：{self.wait_time(i)}" if transfer_count>0 and i<transfer_count else ""
                 
             result += f"  第{i+1}段: {seg}{wait_time_str}\n"
-            seg.set_include_price(False)
+
             
         return result
 

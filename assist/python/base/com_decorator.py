@@ -98,6 +98,32 @@ def singleton(cls):
     return wrapper
 
 
+class Ref:
+    """优雅的引用式包装类，支持属性代理和直观赋值"""
+    def __init__(self, value):
+        self._value = value  # 用下划线标识内部存储
+    
+    def set(self, new_value):
+        """设置新值（替代直接赋值变量本身）"""
+        self._value = new_value
+    
+    @property
+    def value(self):
+        """获取原始值（可选，用于显式访问）"""
+        return self._value
+    
+    # 核心：代理内部对象的所有属性访问
+    def __getattr__(self, name):
+        """当访问不存在的属性时，转发给内部对象"""
+        return getattr(self._value, name)
+    
+    # 让打印更直观
+    def __repr__(self):
+        return f"Ref({self._value!r})"
+    
+    def __str__(self):
+        return str(self._value)
+
 # # 假设我们有多个函数
 # def add(x, y):
 #     return x + y

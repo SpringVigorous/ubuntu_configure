@@ -2,14 +2,13 @@
 
 
 import pandas as pd
-import requests
-import json
+
 import os
 
 import sys
 
 from pathlib import Path
-from collections.abc import Iterable
+
 
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
@@ -17,57 +16,28 @@ sys.path.append( os.path.join(root_path,'base') )
 
 from base import df_empty,singleton,exception_decorator,logger_helper,UpdateTimeType
 from station_config import StationConfig
-
-
 from urllib.parse import quote
 
-# 由于火车站使用三字码，所以我们需要先获取站点对应的三字码
-def _station_df_by_url()-> pd.DataFrame:
-    code_url = r"https://kyfw.12306.cn/otn/resources/js/framework/station_name.js"
-    response = requests.get(code_url)
-    response.encoding = 'utf-8'
-    code_data = response.text
-    # 处理每个匹配项，按 | 分割
-    ls=code_data.split("@")[1:]
-    # 处理每个匹配项，按 | 分割
-    result = [match.split('|') for match in ls if match]
-    df = pd.DataFrame(result)
-    header=['简拼','站名','编码','全拼','缩称','站编号','城市编码','城市','国家拼音','国家','英文']
-    df.columns = header
-    return df
-
-def _station_df_by_file(filepath)-> pd.DataFrame:
-    
-    return pd.read_excel(filepath) if os.path.exists(filepath) else pd.DataFrame()
-
-def _station_df(filepath):
-    df=_station_df_by_file(filepath)
-    if df_empty(df):
-        df=_station_df_by_url()
-    return df
-    
 @singleton
 class TrainStationManager:
 
-    def __init__(self,station_path:str=None):
+    def __init__(self):
         
-        config=StationConfig()
-        self._station_xlsx_path=station_path or config.train_ticket_path
-        os.makedirs(self.root_path,exist_ok=True)
-        self._df=_station_df(self._station_xlsx_path)
-        self._station_code_path=os.path.join(self.root_path,config.station_code_path.name)
-        self._station_city_path=os.path.join(self.root_path,config.station_city_path.name)
-
+        self._set_df()
         self._station_code:dict={}
         self._station_city:dict={}
-        self._city_station:dict={}
-        
-        
+        self._city_station:dict={}     
         self._code_station:dict={}
     
-    @property
-    def xlsx_path(self):
-        return self._station_xlsx_path
+    
+    def _set_df(self):
+        config=StationConfig()
+        df=config.city_code_df
+        #获取城市代码
+        if df_empty(df):
+            from  ticket_url import TicketUrl
+            df=config.add_city_code_df(TicketUrl.query_station_map())
+        self._df=df
     
     @property
     def df(self):
@@ -79,17 +49,12 @@ class TrainStationManager:
     def empty(self):
         return df_empty(self._df)
 
-    @exception_decorator(error_state=False)
-    def save_to_excel(self):
-        # 将结果输出到Excel文件
-        if  self.empty:
-            return
-        self._df.to_excel(self.xlsx_path, index=False)
+
 
     @property
     def station_code_dict(self)->dict:
         if not self._station_code:
-            self._station_code=self.import_from_json(self._station_code_path) or self._df.set_index('站名').to_dict()['编码']
+            self._station_code=self._df.set_index('站名').to_dict()['编码']
         return self._station_code
 
     @property
@@ -102,7 +67,7 @@ class TrainStationManager:
     def station_city_dict(self)->dict:
         
         if not self._station_city:
-            self._station_city=self.import_from_json(self._station_city_path) or self._df.set_index('站名').to_dict()['城市']
+            self._station_city= self._df.set_index('站名').to_dict()['城市']
         return self._station_city
         
     @property
@@ -147,27 +112,6 @@ class TrainStationManager:
         
         return all(self._is_same_city(stations[0],item) for item in stations[1:])
 
-    def export_station_code(self):
-        self.export_to_json(self.station_code_dict,self._station_code_path)
-        
-    def export_station_city(self):
-        self.export_to_json(self.station_city_dict,self._station_city_path)    
-        
-    
-    @staticmethod
-    def export_to_json(data_dict:dict,filepath):
-        if not data_dict:
-            return
-        with open(filepath,'w',encoding='utf-8') as f:
-            json.dump(data_dict,f,ensure_ascii=False,indent=4)
-    
-    
-    @staticmethod
-    def import_from_json(filepath)->dict:
-        if not os.path.exists(filepath):
-            return 
-        with open(filepath,'r',encoding='utf-8') as f:
-            return json.load(f)
 
     
     def code_from_city(self,city_name:str)->str:

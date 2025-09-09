@@ -3,7 +3,7 @@ from com_log import logger_helper
 import os
 import concurrent.futures
 import gc
-
+from collections.abc import Iterable
 
 def find_rows_by_col_val(df, col_name,val,default_val=pd.DataFrame()):
 
@@ -358,3 +358,19 @@ def get_attr(df:pd.DataFrame,attr_name:str)->str:
     return df.attrs.get(attr_name)
 def df_empty(df:pd.DataFrame)->bool:
     return df is None or df.empty
+
+
+def add_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[str]=None)->pd.DataFrame:
+    if df_empty(src_df):
+        return dest_df
+    
+    
+    if df_empty(dest_df):
+        dest_df=src_df
+    else:
+        dest=concat_dfs([dest_df,src_df])
+        if unique_cols :
+            if isinstance(unique_cols,str):
+                unique_cols=[unique_cols]
+            dest_df=unique_df(dest,keys=unique_cols)
+    return dest_df
