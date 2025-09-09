@@ -17,8 +17,8 @@ sys.path.append( os.path.join(root_path,'base') )
 from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton
 from station_config import StationConfig
 station_config=StationConfig(max_transfers=3)
-station_config.set_same_wait_time(1,200)
-station_config.set_diff_wait_time(60,200)
+station_config.set_same_wait_time(1,360)
+station_config.set_diff_wait_time(60,360)
 
 
 
@@ -85,9 +85,6 @@ def df_to_train(df):
     for index, row in df.iterrows():
         name=row["station_train_code"]
         train_name.append(name)
-        if index==0:
-            logger.update_target(detail=name)
-        
         try:
             train_no=row["train_no"]
             station_name = row['station_name']
@@ -99,6 +96,7 @@ def df_to_train(df):
         except Exception as e:
             logger.error("异常",f"{e}\n{row}\n",update_time_type=UpdateTimeType.STEP)
     train_name="/".join(unique(train_name))
+    logger.update_target(detail=train_name)
     
     logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
     return Train(train_name,stations,train_no)
@@ -106,38 +104,47 @@ def df_to_train(df):
 
 @exception_decorator(error_state=False)
 def dfs_to_trains(dfs):
-            
+    logger=logger_helper("dfs_to_trains")  
     trains=[]    
     for df in dfs:
         train=df_to_train(df)
         if train:
             trains.append(train)
-    
+    logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
     return trains
 
-#挑选路线车次
 @exception_decorator(error_state=False)
-def handle_routine(start_station,end_station):
-    mid_path=station_config.mid_routine_path(start_station,end_station)
-    dfs=pickle_load(mid_path)
+def _caculate_route(start_station,end_station,dfs):
+    if not dfs:
+        return
     trains=dfs_to_trains(filter(lambda x:x.iloc[0]["train_type"] not in ["G","D","C"] ,dfs))
     finder = TrainRouteFinder(trains)
     # 查找从上海虹桥站到广州南站的路线（最多换乘2次）
 
-    logger=logger_helper("路线",f"{start_station}->{end_station}")
+    logger=logger_helper("挑选路线",f"{start_station}->{end_station}")
     
     pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station)
-    result_pkl_path=pic_path.with_suffix(".pkl")
+    
+    
+    result_pkl_path=station_config.result_pkl_path(start_station=start_station,end_station=end_station)
     exist_cache=os.path.exists(result_pkl_path)
-    org_routes = None
-    # 读取缓存
-    if exist_cache:
-        org_routes = pickle_load(result_pkl_path)
-    else:
-        org_routes=finder.find_transfer_routes(start_station, end_station, max_transfers=1) 
+    org_routes = finder.find_transfer_routes(start_station, end_station, max_transfers=1) 
+    logger.info("成功",f"共找到 {len(org_routes)} 条路线",update_time_type=UpdateTimeType.STAGE)
 
-    routes=finder.classify_routes(org_routes)
-    logger.info("成功",f"共找到 {len(routes)} 条路线",update_time_type=UpdateTimeType.STAGE)
+    return org_routes
+
+
+
+#挑选路线车次
+@exception_decorator(error_state=False)
+def handle_routine(start_station,end_station,org_routes:list[Route])->list[Route]:
+    if not org_routes:
+        return
+
+    # 查找从上海虹桥站到广州南站的路线（最多换乘2次）
+    logger=logger_helper("处理路线结果",f"{start_station}->{end_station}")
+    routes=TrainRouteFinder.classify_routes(org_routes)
+
     
     # 输出路线信息
     out_txt_path=station_config.result_txt_path(start_station=start_station,end_station=end_station)
@@ -162,18 +169,18 @@ def handle_routine(start_station,end_station):
     # 可视化路线
     visualizer = TrainRouteVisualizer(figsize=(16, 30))
     
-    #序列化为二进制，便于后续调试绘制图片
-    if not exist_cache:
-        pickle_dump(org_routes,result_pkl_path)
-    
+
+    pic_path=station_config.result_pic_path(start_station=start_station,end_station=end_station)
     
     visualizer.draw(org_routes, title=f"{start_station}到{end_station}的列车路线方案",pic_path=pic_path)
-    pass
+
+
+    return org_routes
 
 from train_route_info import TrainRouteManager,TrainInfoManager
 
 @exception_decorator(error_state=False)
-def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[])->Path:
+def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[]):
 
     date=date.replace('.', '-')
     #换乘站
@@ -198,26 +205,31 @@ def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", ki
                     continue
                 cur_df["train_type"]=type
                 dfs.append(cur_df)
-    mid_path=station_config.mid_routine_path(from_city, to_city)        
-    pickle_dump(dfs,mid_path)
-    return mid_path
+
+    return dfs
 @exception_decorator(error_state=False)
 
 def find_routine(start_station,end_station,date:str,transfer_cities):
     logger=logger_helper("火车票路线",f"{start_station}->{end_station}:{date}")
     #获取车次信息表，包含 各车站、出发时间、到达时间、时长信息
     #此过程耗时较长，若是获取过一次，可跳过此步骤
-    mid_path=station_config.mid_routine_path(start_station, end_station)
-    if not os.path.exists(mid_path):
+    result_pkl_path=station_config.result_pkl_path(start_station=start_station,end_station=end_station)
+    exist_cache=os.path.exists(result_pkl_path)
+    # 读取缓存
+    org_routes = pickle_load(result_pkl_path)  if exist_cache else None
+    if not org_routes:
         logger.stack_target(detail="获取车次信息表")
-        cur_mid_path=fetch_train_routine(start_station,end_station,date=date,kind="全部",transfer_cities=transfer_cities)
-        logger.info("完成",f"{cur_mid_path}",update_time_type=UpdateTimeType.STAGE)
+        dfs=[]
+        dfs=fetch_train_routine(start_station,end_station,date=date,kind="全部",transfer_cities=transfer_cities)
+        logger.info("完成",f"{len(dfs)}条",update_time_type=UpdateTimeType.STAGE)
         logger.pop_target()
-    logger.stack_target(detail="获取推荐车次结果表")
-    #获取推荐车次结果表
-    if not os.path.exists(mid_path):
-        return
-    handle_routine(start_station,end_station)
+        #获取推荐车次结果表
+        org_routes=_caculate_route(start_station,end_station,dfs)
+        pickle_dump(org_routes,result_pkl_path)
+
+    routes=handle_routine(start_station,end_station,org_routes)
+    if routes:
+        logger.info("完成",f"共{len(routes)}条可选路线",update_time_type=UpdateTimeType.ALL)
            
 @exception_decorator(error_state=False) 
 def main():

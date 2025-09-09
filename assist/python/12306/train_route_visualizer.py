@@ -202,7 +202,7 @@ class TrainRouteVisualizer:
                 self.pos[end_node_id] = ((seg_idx + 1) * x_step-off_x, y_offset)  # 位置
             
             # 3. 添加边（车次+时间）
-            edge_label = f"{segment.train.train_name}\n{segment.departure_time_str}→{segment.arrival_time_str}"
+            edge_label = f"{segment.train.train_name}\n{segment.departure_time_str}→{segment.arrival_time_str}\n{segment.short_prices}"
             self.G.add_edge(start_node_id, end_node_id)
             self.edge_labels[(start_node_id, end_node_id)] = edge_label
             
@@ -238,7 +238,7 @@ class TrainRouteVisualizer:
         
         # 添加所有路线
         for i, route in enumerate(routes):
-            self.add_route(route, i, y_offsets[i])
+            self.add_route(route, total_routes-i, y_offsets[i])
         
         # 验证节点数量与颜色数量是否一致（调试用）
         assert len(self.G.nodes) == len(self.node_colors), \

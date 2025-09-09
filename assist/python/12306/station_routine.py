@@ -12,7 +12,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique,find_last_value_by_col_val
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique,find_last_value_by_col_val,format_float
 from station_config import StationConfig
 
 from train_station import TrainStationManager
@@ -165,7 +165,13 @@ class RouteSegment:
     def prices(self):
         return PriceManager().query_price(self.train.train_no,self.start_station,self.end_station)
 
-
+    @property
+    def short_prices(self):
+        data:dict= PriceManager().query_price(self.train.train_no,self.start_station,self.end_station)
+        lst= sorted(list(data.values()))
+        return " | ".join(map(format_float,lst))
+        
+        
     
     def __repr__(self) -> str:
         return f"{self.train.train_name}: {self.start_station} {self.departure_time_str} -> {self.end_station} {self.arrival_time_str} {self.prices}"
@@ -284,7 +290,7 @@ class Route:
 # 路线查找器（与之前一致）
 # ---------------------------
 class TrainRouteFinder:
-    def __init__(self, trains:Iterable[Train]|Train):
+    def __init__(self, trains:Iterable[Train]|Train=None):
         self.reset_train(trains)
         self.station_config=StationConfig()
         

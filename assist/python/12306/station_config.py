@@ -22,7 +22,17 @@ class StationConfig:
         
         self._wait_time=[1,480,60,480]
         self.load_xlsx()
+        self.set_dirty(False)
         
+        
+    def set_dirty(self,is_dirty:bool=True):
+        self._is_dirty=is_dirty
+        
+    @property
+    def is_dirty(self):
+        return self._is_dirty
+    
+    
     def set_same_wait_time(self,min_minus:int=1,max_minus:int=480):
         self._wait_time[0], self._wait_time[1]=min_minus,max_minus 
         
@@ -57,19 +67,15 @@ class StationConfig:
         
     def result_pic_path(self,start_station,end_station):
         return  self.result_txt_path(start_station,end_station).with_suffix(".png")
+    
+    def result_pkl_path(self,start_station,end_station):
+        return  self.result_txt_path(start_station,end_station).with_suffix(".pkl")
     @property
     def max_transfers(self):
         return self._max_transfers
     
 
-    def routine_name(self,from_city: str, to_city: str)->str:
-        name_pre=f"{from_city}-{to_city}"
-        return name_pre
-    def mid_routine_path(self,from_city: str, to_city: str)->Path:
-        name_pre=self.routine_name(from_city,to_city)
-        return self.train_routines_path(name_pre)
-    def train_routines_path(self,name_pre)->Path:
-        return self.data_dir / f"{name_pre}_routine.pkl"
+
         
     @property
     def data_dir(self):
@@ -131,8 +137,16 @@ class StationConfig:
             self._train_info_df:pd.DataFrame=pd.DataFrame()
             self._train_route_df:pd.DataFrame=pd.DataFrame()
             self._price_df:pd.DataFrame=pd.DataFrame()
+            
+            
+    @exception_decorator(error_state=False)
     def save_xlsx(self):
         cur_path=self.xlsx_path
+        logger=logger_helper("保存",cur_path)
+        if not self.is_dirty:
+            logger.info("未修改，忽略保存")
+            return
+        
         with pd.ExcelWriter(cur_path) as writer:
             def _save_df(df:pd.DataFrame,name:str):
                 if not df_empty(df):
@@ -141,6 +155,7 @@ class StationConfig:
             _save_df(self._train_info_df,self.train_info_name)
             _save_df(self._train_route_df,self.train_route_name)
             _save_df(self._price_df,self.price_name)
+        logger.info("成功",update_time_type=UpdateTimeType.ALL)
     @property
     def city_code_df(self)->pd.DataFrame:
         return self._city_code_df
@@ -157,18 +172,23 @@ class StationConfig:
     def price_df(self)->pd.DataFrame:
         return self._price_df
 
+
     def add_city_code_df(self,df:pd.DataFrame)->pd.DataFrame:
         self._city_code_df=add_df(df,self.city_code_df,"简拼")
+        self.set_dirty(True)
         return self.city_code_df
     def add_train_info_df(self,df:pd.DataFrame)->pd.DataFrame:
         self._train_info_df=add_df(df,self.train_info_df,["train_no","station_no"])
+        self.set_dirty(True)
         return self.train_info_df
     def add_train_route_df(self,df:pd.DataFrame)->pd.DataFrame:
-        self._train_route_df=add_df(df,self.train_route_df,"编号")
+        self._train_route_df=add_df(df,self.train_route_df,["编号","出发站","到达站"])
+        self.set_dirty(True)
         return self.train_route_df
     
     def add_price_df(self,df:pd.DataFrame)->pd.DataFrame:
         self._price_df=add_df(df,self.price_df,["train_no","from_station_name","to_station_name"])
+        self.set_dirty(True)
         return self.price_df
     
     

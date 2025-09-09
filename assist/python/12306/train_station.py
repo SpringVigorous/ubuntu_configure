@@ -82,6 +82,10 @@ class TrainStationManager:
             self._city_station=result
         return self._city_station
         
+    def city_stations(self,city)->list:
+        return self.city_station_dict.get(city,None)
+        
+        
     def get_station_city(self,station)->str:
         return self.station_city_dict.get(station,None) 
     

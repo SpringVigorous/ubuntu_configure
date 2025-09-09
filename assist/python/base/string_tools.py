@@ -330,6 +330,16 @@ import time
 def str2time(str_val:str,format_str:str="%Y-%m-%d %H:%M:%S")->datetime:
     return datetime.strptime(str_val, format_str)
 
+
+
+def format_float(num):
+    # 先将浮点数四舍五入保留1位小数，转换为字符串
+    formatted = f"{num:.1f}"
+    # 如果末尾是.0，则去掉这部分
+    if formatted.endswith(".0"):
+        return formatted[:-2]
+    return formatted
+
 if __name__ == '__main__':
 
     # 测试
