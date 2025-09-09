@@ -41,7 +41,9 @@ class PriceManager:
     def date(self):
         return self._date
     
-
+    @property
+    def df(self):
+        return self._df
         
     def load_df(self):
        config= StationConfig()
@@ -52,12 +54,45 @@ class PriceManager:
         config= StationConfig()
         self._df= config.add_price_df(df)
 
+    @exception_decorator(error_state=False)
     def _query_prices_from_url(self,from_station, to_station, train_date)->pd.DataFrame:
         train_date=train_date.replace(".","-")
         return TicketUrl.query_prices(from_station, to_station, train_date)
-        
 
-    
+    @exception_decorator(error_state=False)
+    def _query_df_impl(self,df:pd.DataFrame,from_city, to_city)->pd.DataFrame:
+        if df_empty(df):
+            return
+      
+        
+        result=StationConfig().get_route_key_df(from_city,to_city,df)
+        if df_empty(result):            
+            return 
+        result=result.copy()
+        new_names={
+            "from_station_name": "出发站", 
+            "to_station_name": "到达站",
+            "train_no":"编号",
+            "station_train_code":"车次",
+            "train_type":"类型",
+            "start_time":"出发时间",
+            "arrive_time":"到达时间",
+            "lishi":"耗时",
+
+        }
+        
+        result.rename(columns=new_names, inplace=True)
+        
+        return unique_df(result,keys="编号")
+    @exception_decorator(error_state=False)
+    def query_df(self,from_city, to_city)->dict:
+        df= self._query_df_impl(self.df,from_city, to_city)
+        if df_empty(df):
+            df=self._query_prices_from_url(from_city,to_city,self.date)
+            self.add_df(df)
+            return self._query_df_impl(self.df,from_city, to_city)
+        return df
+
     @exception_decorator(error_state=False)
     def _query_price_by_df(self,df,train_no,from_station, to_station):
         if df_empty(df) or not train_no:

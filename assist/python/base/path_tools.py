@@ -150,6 +150,9 @@ def txt_files(dest_dir,is_recurse=True)->list[str]:
 def jpg_files(dest_dir,is_recurse=True)->list[str]:
     return spceial_suffix_files(dest_dir,".jpg",is_recurse=is_recurse)
 
+def pkl_files(dest_dir,is_recurse=True)->list[str]:
+    return spceial_suffix_files(dest_dir,".pkl",is_recurse=is_recurse)
+
 
 img_extensions= [
     # 常见格式

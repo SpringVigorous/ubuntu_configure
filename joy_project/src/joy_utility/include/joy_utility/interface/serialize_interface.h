@@ -225,9 +225,13 @@ private:
 
 class JOY_UTILITY_API member_rw_interface
 {
+protected:
+	member_rw_interface(); // 只能由框架或派生类来构造这个对象
+	member_rw_interface(const member_rw_interface& src);
+	virtual ~member_rw_interface();
 public:
 	virtual bool is_storing() = 0;
-	inline bool is_loading() { return !is_storing(); } // 此接口不需要定义为virtual的
+	inline bool is_loading(){ return !is_storing(); } // 此接口不需要定义为virtual的
 
 	// 重载&运算符，以便利用boost库序列化的代码减少移植代价，以及序列化代码的批量生成
 	// 用法主要有两种，示例如下：
@@ -654,10 +658,7 @@ protected:
 		write_impl(name, serialize_flag::array_ed);
 	}
 
-protected:
-	member_rw_interface(); // 只能由框架或派生类来构造这个对象
-	member_rw_interface(const member_rw_interface& src);
-	virtual ~member_rw_interface();
+
 
 private:
 	friend class serialize_interface;

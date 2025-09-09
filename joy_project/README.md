@@ -21,6 +21,10 @@ python integer/alter_encoding.py -i F:/test/joy_project/src/joy_utility -c utf-8
 3.文件内容替换
 python.exe integer/replace_folders_files.py -o F:/TH/th/x_framework_clone -d F:/TH/th  -r F:/test/ubuntu_configure/assist/python/c++/fold_replace_args.json
 
+使用 --keep-buildtrees 选项，保留编译过程中生成的源码目录（buildtrees 目录）。安装包时添加该选项即可避免删除源文件。
+eg:vcpkg install <包名> --keep-buildtrees
+或者永久生效的方式：在环境变量中添加 VCPKG_KEEP_BUILDTREES=1
+
 
 
 vcpkg 安装、导出
@@ -38,12 +42,15 @@ vcpkg install gtest:x64-windows --x-install-root="F:/test/joy_project/3rd/vcpkg/
 vcpkg install magic-enum:x64-windows --x-install-root="F:/test/joy_project/3rd/vcpkg/installed"
 vcpkg install boost-uuid:x64-windows --x-install-root="F:/test/joy_project/3rd/vcpkg/installed"
 
+升级已安装的所有包
+vcpkg upgrade  --x-install-root="F:/test/joy_project/3rd/vcpkg/installed" --no-dry-run
+
 升级某个包
 vcpkg upgrade tinyxml2:x64-windows --x-install-root="F:/test/joy_project/3rd/vcpkg/installed" --no-dry-run
 vcpkg upgrade jsoncpp:x64-windows --x-install-root="F:/test/joy_project/3rd/vcpkg/installed" --no-dry-run
 
 导出已安装的包
-vcpkg list > installed_packages.txt cd
+vcpkg list > installed_packages.txt 
 json格式
 vcpkg list --x-json > installed_packages.json
 

@@ -10,9 +10,9 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,df_empty,arabic_numbers
+from base import exception_decorator,logger_helper,UpdateTimeType,df_empty,arabic_numbers,unique
 from train_station import TrainStationManager
-
+from station_config import StationConfig
 class TicketUrl:
     
     @exception_decorator(error_state=False)
@@ -87,15 +87,23 @@ class TicketUrl:
             headers=headers,
         )
         datas=[item["queryLeftNewDTO"] for item in response.json()["data"]]
+        
         df=TicketUrl.add_date(pd.DataFrame(datas),train_date)
-        logger.info("完成",update_time_type=UpdateTimeType.ALL)
+        if df_empty(df): 
+            return df
+        
+        
+        df["train_type"]=df["station_train_code"].apply(lambda x:x[0])
+        StationConfig().add_route_key_to_df(from_station,to_station,df)
+        
+        name=",".join(unique(df["station_train_code"].tolist()))
+        logger.info("完成",f"共{len(df)}个车次，车次如下\n{name}\n",update_time_type=UpdateTimeType.ALL)
         return df
             
     @exception_decorator(error_state=False)
     @staticmethod
     def query_train_info(train_no,date)->pd.DataFrame:
         logger=logger_helper("获取火车途径信息",f"{train_no} {date}")
-        
         cookies = {
                 # 'JSESSIONID': '7D7D874B1DF46F5EAE2CC1BBE6824E21',
                 # 'guidesStatus': 'off',
@@ -141,8 +149,15 @@ class TicketUrl:
         response = requests.get('https://kyfw.12306.cn/otn/queryTrainInfo/query', params=params, cookies=cookies, headers=headers)
 
         df= TicketUrl.add_date(pd.DataFrame(response.json()["data"]["data"]),date)
+        if df_empty(df):
+            logger.warn("异常",f"获取信息为空，详情{response.url}",update_time_type=UpdateTimeType.STAGE)
+            
+            return df
         df["train_no"]=train_no
-        logger.info("完成",update_time_type=UpdateTimeType.STAGE)
+        
+        col_name="station_train_code"
+        name= "/".join(unique(df["station_train_code"].tolist())) if col_name in df.columns else ""
+        logger.info("完成",f"{name}车次，共{len(df)}站",update_time_type=UpdateTimeType.STAGE)
         return df
     @exception_decorator(error_state=False)
     @staticmethod    
@@ -272,7 +287,7 @@ class TicketUrl:
         }
 
         response = requests.get('https://kyfw.12306.cn/otn/leftTicket/queryU', params=params, cookies=cookies, headers=headers)
-        logger.info("完成",update_time_type=UpdateTimeType.STAGE)   
+        logger.trace("完成",update_time_type=UpdateTimeType.STAGE)   
         logger.stack_target("解析响应结果")    
         lst=[]
         for item in response.json()['data']['result']:
@@ -283,10 +298,11 @@ class TicketUrl:
             if not result:
                 continue
             lst.append(result) 
-        logger.info("完成",update_time_type=UpdateTimeType.STAGE)   
         logger.pop_target()
         df=TicketUrl.add_date(pd.DataFrame(lst),date) if lst else None
-        logger.info("完成",update_time_type=UpdateTimeType.ALL)
+        StationConfig().add_route_key_to_df(from_station,to_station,df)
+        
+        logger.info("完成",f"共{len(lst)}条，车次详情：\n{','.join(df["车次"].to_list())}\n",update_time_type=UpdateTimeType.ALL)   
         return df
     
     @exception_decorator(error_state=False)
@@ -307,7 +323,7 @@ class TicketUrl:
         df = pd.DataFrame(result)
         header=['简拼','站名','编码','全拼','缩称','站编号','城市编码','城市','国家拼音','国家','英文']
         df.columns = header
-        logger.info("完成",update_time_type=UpdateTimeType.ALL)
+        logger.info("完成",f"共{len(df)}个",update_time_type=UpdateTimeType.ALL)
         return df
     
 if __name__ == '__main__':

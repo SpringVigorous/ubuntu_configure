@@ -185,6 +185,11 @@ def unique_df(df:pd.DataFrame,keys:list[str]):
     result_df = df.groupby(keys,sort=False).first().reset_index()
     return result_df
 
+def unique_df_last(df:pd.DataFrame,keys:list[str]):
+    if df.empty or df is None:
+        return df
+    result_df = df.groupby(keys,sort=False).last().reset_index()
+    return result_df
 def concat_dfs(dfs:list[pd.DataFrame])->pd.DataFrame:
     
     
@@ -373,4 +378,10 @@ def add_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[str
             if isinstance(unique_cols,str):
                 unique_cols=[unique_cols]
             dest_df=unique_df(dest,keys=unique_cols)
+    return dest_df
+
+def update_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[str]=None)->pd.DataFrame:
+    dest_df=add_df(src_df,dest_df,unique_cols)
+    if unique_cols :
+        dest_df=unique_df_last(dest_df,keys=unique_cols)
     return dest_df

@@ -1,7 +1,7 @@
 ﻿import sys
 
 import time
-from functools import wraps
+from functools import wraps,update_wrapper
 from com_log import logger as logger
 from output_agent import OutputAgent
 from state import ReturnState
@@ -50,6 +50,10 @@ def exception_decorator(error_callback:callable=None,error_state=True):
 
         return wrapper
     return decorator
+
+
+        
+@exception_decorator(error_state=False)
 def details_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -94,8 +98,8 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         # 返回缓存的实例
         return instances[cls]
-    
-    return wrapper
+    # 手动使用 update_wrapper 复制元数据
+    return update_wrapper(wrapper,cls)
 
 
 class Ref:

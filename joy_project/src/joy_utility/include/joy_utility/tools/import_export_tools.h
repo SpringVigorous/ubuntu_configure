@@ -16,6 +16,10 @@
 #include <iostream>
 #include <stdexcept>
 _JOY_UTILITY_BEGIN_
+
+JOY_UTILITY_API void test_export_xml(tinyxml2::XMLElement* root);
+
+
 template<class T, class Archive>
 bool read_members(T& data, Archive& ar)
 {
@@ -84,12 +88,17 @@ bool import_from_xml_file(const std::string& file_path, T& data)
         tinyxml2::XMLDocument doc;
         if (tinyxml2::XML_SUCCESS != doc.LoadFile(file_path.c_str())) return false;
 
+        //doc.SaveFile("F:/test/joy_project/test/data/joy_utility/test_serialize_1.xml");
+
         tinyxml2::XMLElement* xml = doc.FirstChildElement("xml_root"); // 写入的时候最外层会强制加上此节点，否则无法序列化
         if (!xml) return false;
 
+
         xml_archive ar(xml, false);
-        //data.serialize_members(ar);
+
         read_members(data, ar);
+        
+        //doc.SaveFile("F:/test/joy_project/test/data/joy_utility/test_serialize_2.xml");
         return true;
     }
     else
@@ -97,35 +106,32 @@ bool import_from_xml_file(const std::string& file_path, T& data)
         return false;
     }
 }
+
+
 template<class T>
 bool export_to_xml_file(const T& data, const std::string& file_path)
 {
     if constexpr (has_serialize_members_func_v<T>)
     {
-        std::string  declaration{ "<?xml version=\"1.0\" encoding=\"utf-8\"?>" };
+
         tinyxml2::XMLDocument doc;
-        doc.Parse(declaration.c_str());// 清空内容并生成一个带默认声明的xml文档（这种方式比使用接口添加声明更简单）
+        tinyxml2::XMLDeclaration* declare=doc.NewDeclaration();
+        doc.LinkEndChild(declare);
 
-        tinyxml2::XMLElement* new_node = doc.NewElement("xml_root"); // 写入的时候最外层会强制加上此节点，否则无法序列化
-        if (!new_node) return false;
+        tinyxml2::XMLElement* root_node = doc.NewElement("xml_root"); // 写入的时候最外层会强制加上此节点，否则无法序列化
+        if (!root_node) return false;
+        doc.LinkEndChild(root_node);
 
-        xml_archive ar(new_node, true);
-        //data.serialize_members(ar);
 
+        xml_archive ar(root_node, true);
         write_members(data, ar);
 
-        doc.LinkEndChild(new_node);
+        //test_export_xml(root_node);
+
         tinyxml2::XMLError err = doc.SaveFile(file_path.c_str());
         if (tinyxml2::XML_SUCCESS != err)
             return false;
-        try
-        {
-            doc.Clear();
-        }
-        catch (const std::exception& e)
-        {
-            std::cout << e.what() << std::endl;
-        }
+
         return true;
     }
     else

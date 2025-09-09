@@ -296,7 +296,7 @@ void xml_archive::write_impl(const std::string& name, const serialize_flag& data
 		XMLElement* new_node = doc->NewElement(raw_name);
 		if (!new_node) return;
 
-		m_xml->InsertEndChild(new_node);
+		m_xml->LinkEndChild(new_node);
 		m_xml = new_node;
 	}
 	else if (serialize_flag::sub_obj_ed == data)
@@ -309,7 +309,7 @@ void xml_archive::write_impl(const std::string& name, const serialize_flag& data
 		XMLElement* new_node = doc->NewElement(raw_name);
 		if (!new_node) return;
 
-		m_xml->InsertEndChild(new_node);
+		m_xml->LinkEndChild(new_node);
 		m_xml = new_node;
 	}
 	else if (serialize_flag::array_ed == data)
@@ -417,6 +417,9 @@ void xml_archive::write_impl(const std::string& name, const long double& data)
 
 void xml_archive::write_impl(const std::string& name, const std::string& data)
 {
+	tinyxml2::XMLDocument* doc = (m_xml ? m_xml->GetDocument() : nullptr);
+	if (!doc) return;
+
 	std::string name_str;
 	std::string data_str;
 	xml_tree_encoding encoding = get_xml_tree_encoding(m_xml);
@@ -435,14 +438,12 @@ void xml_archive::write_impl(const std::string& name, const std::string& data)
 	// xml格式为了与json匹配，且适应大数据对象，所有数据均写到新节点的value中，而不是当前节点的attribute中
 	// xml当序列化数组的时候，子节点的节点名均相同，此时按同名的兄弟节点添加到末尾，否则按子节点添加
 	// m_parent_xml->SetAttribute(name, data_str.c_str());
-	tinyxml2::XMLDocument* doc = (m_xml ? m_xml->GetDocument() : nullptr);
-	if (!doc) return;
 
-	tinyxml2::XMLElement* new_node = doc->NewElement(name_str.c_str());
-	if (!new_node) return;
 
-	new_node->InsertEndChild(doc->NewText(data_str.c_str()));
-	m_xml->InsertEndChild(new_node);
+	tinyxml2::XMLElement* cur_node = doc->NewElement(name_str.c_str());
+	if (!cur_node) return;
+	m_xml->LinkEndChild(cur_node);
+	cur_node->SetText(data_str.c_str());
 }
 
 void xml_archive::write_impl(const std::string& name, char* buffer, long byte_count)

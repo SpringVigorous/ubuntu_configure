@@ -14,11 +14,11 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton
+from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton,add_df,RAIITool,wrapper_lamda
 from station_config import StationConfig
 station_config=StationConfig(max_transfers=3)
-station_config.set_same_wait_time(1,360)
-station_config.set_diff_wait_time(60,360)
+station_config.set_same_wait_time(1,200)
+station_config.set_diff_wait_time(60,200)
 
 
 
@@ -28,16 +28,6 @@ from ticket_url import TicketUrl
 
 from ticket_price import PriceManager
 station_manager=TrainStationManager()
-
-
-
-
-
-    
-
-
-
-
 
 def whole_routine(from_city,to_city,interchanges:list|tuple):
     results=[from_city]
@@ -183,30 +173,60 @@ from train_route_info import TrainRouteManager,TrainInfoManager
 def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", kind:str="全部",transfer_cities:list[str|tuple]=[]):
 
     date=date.replace('.', '-')
+    
     #换乘站
     option_citys=[
        whole_routine(from_city,to_city,citys)  for   citys in transfer_cities
     ]
     
-    dfs=[]
+    dfs:dict={}
     route_manager=TrainRouteManager()
     info_manager=TrainInfoManager()
+    price_manager=PriceManager()
+    logger=logger_helper("获取车次信息表",f"{from_city}->{to_city}:{date}")
+    
     for index,cities in enumerate(option_citys):
         count=len(cities)
         index+=1
         for i in range(1,count):
-            df=route_manager.train_route(cities[i-1], cities[i], date)
-            if df_empty(df):
-                continue
-            for _, row in df.iterrows():
-                train_no,type =row["编号"],row["类型"]
-                cur_df=info_manager.train_info(train_no,date)
-                if df_empty(cur_df):
+            
+            cur_start_city,cur_end_city=cities[i-1],cities[i]
+            
+            with RAIITool(wrapper_lamda(logger.stack_target,detail=f"{cur_start_city}->{cur_end_city}:{date}"),
+                          wrapper_lamda(logger.pop_target)) :
+                
+                # logger.stack_target(detail=f"{cur_start_city}->{cur_end_city}:{date}")
+                route_df=route_manager.train_route(cur_start_city, cur_end_city, date)
+                price_df=price_manager.query_df(cur_start_city, cur_end_city)
+                
+                def train_names(df):
+                    return   ",".join(sorted(df["车次"])) if not df_empty(df) else ""
+                route_name=train_names(route_df)
+                price_name=train_names(price_df)
+                if route_name!=price_name:
+                    logger.trace("车次差异",f"\ntrain_route:{route_name}\ntiket_price:{price_name}\n")
+                
+                #车次时刻表，总是有误;合并用
+                df=add_df(route_df,price_df,"编号")
+                if df_empty(df):
+                    # logger.pop_target()
                     continue
-                cur_df["train_type"]=type
-                dfs.append(cur_df)
-
-    return dfs
+                for _, row in df.iterrows():
+                    # train_no,type,train_name =row["编号"],row["类型"],row["车次"]
+                    train_no,type,train_name =row["编号"],row["类型"],row["车次"]
+                    if train_no in dfs:
+                        logger.trace("忽略",f"{train_name}重复")
+                        continue
+                    cur_df=info_manager.train_info(train_no,date)
+                    if df_empty(cur_df):
+                        continue
+                    cur_df["train_type"]=type
+                    dfs[train_no]=(cur_df)
+                    
+                # logger.pop_target()
+            
+    logger.info("完成",f"共获取 {len(dfs)} 条车次信息表",update_time_type=UpdateTimeType.STAGE)
+    return list(dfs.values())
 @exception_decorator(error_state=False)
 
 def find_routine(start_station,end_station,date:str,transfer_cities):
@@ -241,10 +261,16 @@ def main():
         ("合肥"),
         ("信阳"),
     ]
+
+    # station_config.clear_result_cache()
+    # station_config.clear_train_info_df()
+    # station_config.clear_train_route_df()
+    # station_config.clear_price_df()
     
     logger=logger_helper("火车票路线筛选")
     days_latter=3
     date=days_latter_format(offset=days_latter)
+    #单例初始化
     price=PriceManager(date)
     #单程
     find_routine(start_station,end_station,date,transfer_cities)
@@ -258,4 +284,3 @@ def main():
     
 if __name__ ==  '__main__':    
     main()
-   

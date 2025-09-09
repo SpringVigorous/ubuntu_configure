@@ -14,7 +14,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton,find_last_value_by_col_val,find_values_by_col_val
+from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton,find_last_value_by_col_val,find_values_by_col_val,unique_df
 from station_config import StationConfig
 
 
@@ -45,7 +45,8 @@ class TrainInfoManager:
             from ticket_url import TicketUrl
             config= StationConfig()
             df= TicketUrl.query_train_info(train_no,date)
-            self.train_route_df=config.add_train_info_df(df)
+            if not df_empty(df):  # 检查df是否为空
+                self.train_route_df=config.add_train_info_df(df)
         return df
 
     @exception_decorator(error_state=False)
@@ -103,18 +104,7 @@ class TrainRouteManager:
         from train_station import TrainStationManager
         if df_empty(self.df) :
             return 
-        
-        station_manager=TrainStationManager()
-        #类似于模糊查找，先查找对应城市，再获取城市有哪些站点
-        from_stations=station_manager.city_stations(station_manager.get_station_city(from_city))
-        to_stations=station_manager.city_stations(station_manager.get_station_city(to_city))
-        
-        if not from_stations or not to_stations:
-            return
-        
-        df=self.df
-        condition=(df["出发站"].isin(from_stations)& (df['到达站'].isin(to_stations)))
-        result=df[condition]
+        result=StationConfig().get_route_key_df(from_city,to_city,self.df)
         return result
         
     def train_route(self,from_city,to_city,date):
@@ -123,8 +113,9 @@ class TrainRouteManager:
             from ticket_url import TicketUrl
             config= StationConfig()
             df= TicketUrl.query_rest_ticket(from_city,to_city,date)
-            self._train_route_df=config.add_train_route_df(df)
-        return df
+            if not df_empty(df):  # 检查df是否为空
+                self._train_route_df=config.add_train_route_df(df)
+        return unique_df(df,keys=["编号"])
         
     @exception_decorator(error_state=False)
     def train_name(self,train_no):

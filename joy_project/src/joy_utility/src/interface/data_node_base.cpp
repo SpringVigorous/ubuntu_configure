@@ -139,7 +139,7 @@ void data_node_base::serialize_children(member_rw_interface& mt)
 	}
 	else
 	{
-		mt& x_wrapper_macro(children_version);
+
 
 		size_t children_count = 0;
 		mt& x_wrapper_macro_named(serialize_helper::pack_count("m_children"), children_count);
@@ -1141,7 +1141,7 @@ bool data_node_base::export_data(int type, const std::string& full_path_name)
 
 			//xml_archive ar(new_node, true);
 			//serialize_members(ar);
-			//doc.InsertEndChild(new_node);
+			//doc.LinkEndChild(new_node);
 
 			//tinyxml2::XMLError err = doc.SaveFile(string_tools::CString_to_string(full_path_name).c_str());
 			//if (tinyxml2::XML_NO_ERROR != err) return false;
@@ -1195,7 +1195,7 @@ bool data_node_base::export_data(std::string& value, int type)
 
 	//	xml_archive ar(new_node, true);
 	//	serialize_members(ar);
-	//	doc.InsertEndChild(new_node);
+	//	doc.LinkEndChild(new_node);
 
 	//	tinyxml2::XMLPrinter printer;
 	//	doc.Accept(&printer);

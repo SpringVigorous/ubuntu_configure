@@ -9,7 +9,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df,recycle_bin,pkl_files,update_df
 
 
 @singleton
@@ -74,6 +74,11 @@ class StationConfig:
     def max_transfers(self):
         return self._max_transfers
     
+    # 清理缓存
+    def clear_result_cache(self):
+        pkl_lst=pkl_files(self.result_dir)
+        if pkl_lst:
+            recycle_bin(pkl_lst)
 
 
         
@@ -98,7 +103,7 @@ class StationConfig:
     
     @property
     def train_info_name(self):
-        return "车次信息"
+        return "车次途径信息"
 
     @property
     def train_route_name(self):
@@ -137,8 +142,7 @@ class StationConfig:
             self._train_info_df:pd.DataFrame=pd.DataFrame()
             self._train_route_df:pd.DataFrame=pd.DataFrame()
             self._price_df:pd.DataFrame=pd.DataFrame()
-            
-            
+
     @exception_decorator(error_state=False)
     def save_xlsx(self):
         cur_path=self.xlsx_path
@@ -191,6 +195,58 @@ class StationConfig:
         self.set_dirty(True)
         return self.price_df
     
+    def update_city_code_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._city_code_df=update_df(df,self.city_code_df,"简拼")
+        self.set_dirty(True)
+        return self.city_code_df
+    def update_train_info_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._train_info_df=update_df(df,self.train_info_df,["train_no","station_no"])
+        self.set_dirty(True)
+        return self.train_info_df
+    def update_train_route_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._train_route_df=update_df(df,self.train_route_df,["编号","出发站","到达站"])
+        self.set_dirty(True)
+        return self.train_route_df
+    def update_price_df(self,df:pd.DataFrame)->pd.DataFrame:
+        self._price_df=update_df(df,self.price_df,["train_no","from_station_name","to_station_name"])
+        self.set_dirty(True)
+        return self.price_df
+    
+    def clear_df(self,df:pd.DataFrame):
+        df.drop(df.index,inplace=True)
+    
+    def clear_city_code_df(self):
+        self.clear_df(self._city_code_df)
+        self.set_dirty(True)
+        
+    def clear_train_info_df(self):
+        self.clear_df(self._train_info_df)
+        self.set_dirty(True)
+        
+    def clear_train_route_df(self):
+        self.clear_df(self._train_route_df)
+        self.set_dirty(True)
+        
+    def clear_price_df(self):
+        self.clear_df(self._price_df)
+        self.set_dirty(True)
+
+    @property
+    def route_col_name(self):
+        return "query_key"
+
+    def route_key(self,from_city,to_city):
+        return f"{from_city}-{to_city}"
+    
+    def add_route_key_to_df(self,from_city,to_city,df:pd.DataFrame):
+        if df_empty(df): 
+            return
+        df[self.route_col_name]=self.route_key(from_city,to_city)
+    
+    def get_route_key_df(self,from_city,to_city,df:pd.DataFrame):
+        if df_empty(df): 
+            return
+        return df[df[self.route_col_name]==self.route_key(from_city,to_city)]
     
 if __name__ == "__main__":
     

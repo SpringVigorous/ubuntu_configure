@@ -6,6 +6,8 @@ import sys
 from com_log import logger as logger
 from collect_tools import unique
 from path_tools import is_empty_folder
+from pathlib import Path
+from com_decorator import exception_decorator
 #判断字符串是否在列表中,忽略大小写
 def check_str_in_list(str,str_list:list=None):
     if str_list == None or len(str_list) < 1:
@@ -21,15 +23,18 @@ def check_str_exclude_list(path,exclude_strs:list=None):
     
 
     
-
-def recycle_bin(cur_path):
-    cur_path=str(cur_path)
-    if not cur_path or not os.path.exists(cur_path):
+@exception_decorator(error_state=False)
+def recycle_bin(cur_path:str|Path|list[str|Path]):
+    if not isinstance(cur_path,list):
+        cur_path=[cur_path]
+     #send2trash 需要目录中 使用\\而不是 /
+    cur_path=[str(item).replace("/","\\") for item in cur_path if item and os.path.exists(item)]
+    if not cur_path:
         return
-    expression_str="directory" if os.path.isdir(cur_path) else "file"
+    expression_str="directory" if os.path.isdir(cur_path[0]) else "file"
     
     try:
-        cur_path = cur_path.replace("/","\\") #send2trash 需要目录中 使用\\而不是 /
+        # cur_path = cur_path.replace("/","\\") #send2trash 需要目录中 使用\\而不是 /
         # shutil.rmtree(dir_path)
         send2trash.send2trash(cur_path)
         logger.debug(f"Removed {expression_str} {cur_path}") 

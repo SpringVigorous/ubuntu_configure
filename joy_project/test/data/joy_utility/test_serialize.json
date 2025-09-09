@@ -38,7 +38,7 @@
 				"m_children_recycling_type" : 3,
 				"m_name" : "",
 				"m_node_info" : "",
-				"m_node_tag" : "3c0060c7-a032-4613-844f-830b779b20b6",
+				"m_node_tag" : "72084893-658b-458e-be69-cb0241741de7",
 				"num_" : "金锣号",
 				"students_" : 
 				[
@@ -116,7 +116,7 @@
 							"m_children_recycling_type" : 3,
 							"m_name" : "",
 							"m_node_info" : "",
-							"m_node_tag" : "222912ef-7628-4457-920e-a1854c27947d",
+							"m_node_tag" : "9a3b13a4-67e1-419a-8438-4c1f87fa1cfc",
 							"num_" : "申花",
 							"students_" : []
 						}
@@ -125,7 +125,7 @@
 				"m_children_recycling_type" : 3,
 				"m_name" : "",
 				"m_node_info" : "",
-				"m_node_tag" : "4493d73e-fc75-4fb2-bfde-2367aff3a8e5",
+				"m_node_tag" : "3fc2744d-422d-41cb-a1fd-2e13efe71375",
 				"num_" : "小主人",
 				"students_" : []
 			}
@@ -134,5 +134,5 @@
 	"m_children_recycling_type" : 3,
 	"m_name" : "根节点",
 	"m_node_info" : "",
-	"m_node_tag" : "665e0eb7-c0c7-4200-927d-a54f6a867c11"
+	"m_node_tag" : "50615128-92a3-4a35-8ec8-0646a211545e"
 }

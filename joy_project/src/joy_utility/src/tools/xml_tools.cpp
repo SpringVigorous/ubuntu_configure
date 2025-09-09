@@ -39,10 +39,11 @@ xml_tree_encoding get_xml_tree_encoding(const tinyxml2::XMLElement* node)
 	if (!node) return xml_tree_encoding::unknown;
 
 	const tinyxml2::XMLDocument* doc = node->GetDocument();
-	tinyxml2::XMLDeclaration* dec = doc ? const_cast<tinyxml2::XMLDocument*>(doc)->NewDeclaration() : nullptr;
+	//获取声明
+	tinyxml2::XMLDeclaration* dec = doc ? const_cast<tinyxml2::XMLDocument*>(doc)->FirstChild()->ToDeclaration() : nullptr;
 	const char* dec_text = dec ? dec->Value() : nullptr;
 	string dec_info(dec_text ? dec_text : "");
-	safe_delete_array(dec_text); // 内存要自己释放
+	//safe_delete_array(dec_text); // 内存要自己释放
 
 	string encoding = get_declaration_encoding(dec_info);
 	for (char& ch : encoding) ch = tolower(ch);

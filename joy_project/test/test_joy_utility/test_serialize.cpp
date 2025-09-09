@@ -13,6 +13,12 @@
 #include "environment.hxx"
 #include <filesystem>
 
+//#ifdef _DEBUG
+//#include <crtdbg.h>
+//#define _CRTDBG_MAP_ALLOC
+//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//#endif
+
 using namespace JOY_UTILITY;
 using namespace std;
 class Person
@@ -140,6 +146,24 @@ private:
 IMPLEMENT_SERIAL(School,data_node_base)
 using FilePath = std::filesystem::path;
 
+School* create_school()
+{
+    auto jlh = new School("金锣号");
+    jlh->set_recycling_type(false);
+    jlh->add_student("胡旭尧", 5, "中一班");
+    jlh->add_student("李占有", 5, "中一班");
+    jlh->add_student("李子柒", 5, "大四班");
+    jlh->add_techer("王老师", 25, "中一班");
+    jlh->add_techer("赵老师", 30, "中二班");
+    return jlh;
+}
+Person* create_person()
+{
+    auto jlh = new Person("金锣号",10);
+
+    return jlh;
+}
+
 
 void create_data(data_node_base& root)
 {
@@ -189,22 +213,24 @@ void test_json(data_node_base& data,const FilePath& org_path)
     EXPECT_EQ(true, success);
 }
 
-
-void test_xml(data_node_base& data, const FilePath& org_path)
+template<class T>
+void test_xml(T& data, const FilePath& org_path)
 {
     auto dest_path = org_path;
     dest_path.replace_extension(".xml");
 
     auto xml_file_path = dest_path.generic_string();
+    bool success = false;
 
-    bool success = export_to_xml_file(data, xml_file_path);
+    success = export_to_xml_file(data, xml_file_path);
     EXPECT_EQ(true, success);
 
-    data_node_base temp;
+    T temp;
     success = import_from_xml_file(xml_file_path, temp);
 
     EXPECT_EQ(true, success);
 }
+
 
 
 TEST(joy_utility,serialize ) {
@@ -216,9 +242,13 @@ TEST(joy_utility,serialize ) {
     auto org_path = environment::GlobalEnvironment::GetTestDataPath() / "joy_utility" / "test_serialize.json";
 
 
-    test_json(root, org_path);
+    //test_json(root, org_path);
+
+    auto* jlh = create_person();
 
     test_xml(root, org_path);
+    //test_xml(*jlh, org_path);
 
+    delete jlh;
 
 }
