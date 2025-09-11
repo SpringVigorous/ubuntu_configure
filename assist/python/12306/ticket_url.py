@@ -10,7 +10,7 @@ root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
 sys.path.append( os.path.join(root_path,'base') )
 
-from base import exception_decorator,logger_helper,UpdateTimeType,df_empty,arabic_numbers,unique
+from base import exception_decorator,logger_helper,UpdateTimeType,df_empty,arabic_numbers,unique,whole_url
 from train_station import TrainStationManager
 from station_config import StationConfig
 class TicketUrl:
@@ -27,7 +27,7 @@ class TicketUrl:
     def query_prices(from_station, to_station, train_date)->pd.DataFrame:
         train_date=train_date.replace(".","-")
         
-        logger=logger_helper("获取票价",f"{from_station}->{to_station} {train_date}")
+        logger=logger_helper("url获取票价",f"{from_station}->{to_station} {train_date}")
         
         
         station_manager=TrainStationManager()
@@ -103,7 +103,7 @@ class TicketUrl:
     @exception_decorator(error_state=False)
     @staticmethod
     def query_train_info(train_no,date)->pd.DataFrame:
-        logger=logger_helper("获取火车途径信息",f"{train_no} {date}")
+        logger=logger_helper(f"url途径信息:{train_no} {date}")
         cookies = {
                 # 'JSESSIONID': '7D7D874B1DF46F5EAE2CC1BBE6824E21',
                 # 'guidesStatus': 'off',
@@ -145,8 +145,10 @@ class TicketUrl:
             'leftTicketDTO.train_date': date,
             'rand_code': '',
         }
-
-        response = requests.get('https://kyfw.12306.cn/otn/queryTrainInfo/query', params=params, cookies=cookies, headers=headers)
+        url=whole_url('https://kyfw.12306.cn/otn/queryTrainInfo/query', params=params)
+        logger.update_target(detail=url)
+        response = requests.get(url, cookies=cookies, headers=headers)
+        logger.trace(response.reason)
 
         df= TicketUrl.add_date(pd.DataFrame(response.json()["data"]["data"]),date)
         if df_empty(df):
@@ -234,7 +236,7 @@ class TicketUrl:
     @exception_decorator(error_state=False)
     @staticmethod
     def query_rest_ticket(from_station, to_station,date)->pd.DataFrame:
-        logger=logger_helper("获取火车票信息",f"{from_station}->{to_station}:{date}")
+        logger=logger_helper(f"url获取火车票信息:{from_station}->{to_station}:{date}")
         
         
         station_manager=TrainStationManager()
@@ -242,7 +244,7 @@ class TicketUrl:
         to_url_cookie=station_manager.city_cookie_param(to_station)
         cookies = {
             '_uab_collina': '175550955572785146880319',
-            'JSESSIONID': '8F63A59DE9E42E8179E8FCA883EF922E',
+            'JSESSIONID': 'FE73B0D030B4CC4547040A94A81D5E12',
             '_jc_save_wfdc_flag': 'dc',
             '_jc_save_zwdch_cxlx': '0',
             '_c_WBKFRo': 'sraC6YRdJb6MbjH9xxa1sLa6fYmljIB032VpIYoS',
@@ -250,7 +252,7 @@ class TicketUrl:
             'guidesStatus': 'off',
             'highContrastMode': 'defaltMode',
             'cursorStatus': 'off',
-            'route': 'c5c62a339e7744272a54643b3be5bf64',
+            'route': '495c805987d0f5c8c84b14f60212447d',
             'BIGipServerotn': '1356398858.24610.0000',
             'BIGipServerpassport': '887619850.50215.0000',
             '_jc_save_zwdch_fromStation': from_url_cookie,
@@ -267,7 +269,6 @@ class TicketUrl:
             'Connection': 'keep-alive',
             # 'Cookie': '_uab_collina=175550955572785146880319; ___rl__test__cookies=1755665093121; JSESSIONID=7D7D874B1DF46F5EAE2CC1BBE6824E21; guidesStatus=off; highContrastMode=defaltMode; cursorStatus=off; _jc_save_wfdc_flag=dc; BIGipServerotn=1591279882.50210.0000; BIGipServerpassport=887619850.50215.0000; route=c5c62a339e7744272a54643b3be5bf64; _jc_save_toDate=2025-08-20; _jc_save_zwdch_fromStation=%u56FA%u59CB%2CGXN; _jc_save_zwdch_cxlx=0; _c_WBKFRo=sraC6YRdJb6MbjH9xxa1sLa6fYmljIB032VpIYoS; _nb_ioWEgULi=; OUTFOX_SEARCH_USER_ID_NCOO=742496979.536112; _jc_save_fromStation=%u897F%u5CE1%2CXIF; _jc_save_toStation=%u4FE1%u9633%2CXUN; _jc_save_fromDate=2025-08-29',
             'If-Modified-Since': '0',
-            'Referer': 'https://www.12306.cn/index/index.html',
             'Referer': f'https://kyfw.12306.cn/otn/leftTicket/init?linktypeid=dc&fs={station_manager.city_url_param(from_station)}&ts={station_manager.city_url_param(to_station)}&date={date}&flag=N,N,Y',
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
@@ -285,9 +286,10 @@ class TicketUrl:
             'leftTicketDTO.to_station': station_manager.code_from_city(to_station),
             'purpose_codes': 'ADULT',
         }
-
-        response = requests.get('https://kyfw.12306.cn/otn/leftTicket/queryU', params=params, cookies=cookies, headers=headers)
-        logger.trace("完成",update_time_type=UpdateTimeType.STAGE)   
+        url=whole_url('https://kyfw.12306.cn/otn/leftTicket/queryG', params=params)
+        logger.update_target(detail=url)
+        response = requests.get(url, cookies=cookies, headers=headers)
+        logger.trace(response.reason,update_time_type=UpdateTimeType.STAGE)   
         logger.stack_target("解析响应结果")    
         lst=[]
         for item in response.json()['data']['result']:
@@ -309,10 +311,10 @@ class TicketUrl:
     @staticmethod
     def query_station_map()->pd.DataFrame:
         
-        logger=logger_helper("获取车站代码表信息")
-        
-        
         code_url = r"https://kyfw.12306.cn/otn/resources/js/framework/station_name.js"
+        logger=logger_helper("url获取车站代码表信息",code_url)
+        
+        
         response = requests.get(code_url)
         response.encoding = 'utf-8'
         code_data = response.text
@@ -329,10 +331,16 @@ class TicketUrl:
 if __name__ == '__main__':
     from_city="上海"
     to_city="南阳"
-    date="2025-09-12"
+    date="2025-09-20"
     kind="全部"
     name_prefix=""
     df=TicketUrl.query_station_map()
+    print(f"\n站点代码表\n{df}")
     df=TicketUrl.query_train_info("5l000G147608",date)
+    print(f"\n途径信息\n{df}")
+
     df=TicketUrl.query_rest_ticket( from_city, to_city, date)
-    print(df)
+    print(f"\n余票信息\n{df}")
+
+    df=TicketUrl.query_prices( from_city, to_city, date)
+    print(f"\n票价信息\n{df}")

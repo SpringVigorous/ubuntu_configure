@@ -230,4 +230,16 @@ def get_param_from_url(url:str,key:str):
 
 
 
+def whole_url(url:str,params:dict=None)->str:
+    
+    if not params:
+        return url
+    
+    # 生成查询字符串
+    query_string = urlencode(params)
+
+    # 拼接完整URL
+    full_url = f"{url}?{query_string}"
+
+    return full_url
 

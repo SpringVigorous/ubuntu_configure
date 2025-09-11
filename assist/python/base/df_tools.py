@@ -180,13 +180,13 @@ def sparse_columns_name(df):
 
 #根据keys进行唯一化，若是存在重复行，则只保留第一行已有值的项
 def unique_df(df:pd.DataFrame,keys:list[str]):
-    if df.empty or df is None:
+    if df_empty(df):
         return df
     result_df = df.groupby(keys,sort=False).first().reset_index()
     return result_df
 
 def unique_df_last(df:pd.DataFrame,keys:list[str]):
-    if df.empty or df is None:
+    if df_empty(df):
         return df
     result_df = df.groupby(keys,sort=False).last().reset_index()
     return result_df

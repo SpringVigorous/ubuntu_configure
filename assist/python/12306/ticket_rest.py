@@ -191,6 +191,8 @@ def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", ki
         for i in range(1,count):
             
             cur_start_city,cur_end_city=cities[i-1],cities[i]
+            if not cur_start_city or not cur_end_city:
+                continue
             
             with RAIITool(wrapper_lamda(logger.stack_target,detail=f"{cur_start_city}->{cur_end_city}:{date}"),
                           wrapper_lamda(logger.pop_target)) :
@@ -238,11 +240,18 @@ def find_routine(start_station,end_station,date:str,transfer_cities):
     # 读取缓存
     org_routes = pickle_load(result_pkl_path)  if exist_cache else None
     if not org_routes:
-        logger.stack_target(detail="获取车次信息表")
-        dfs=[]
-        dfs=fetch_train_routine(start_station,end_station,date=date,kind="全部",transfer_cities=transfer_cities)
-        logger.info("完成",f"{len(dfs)}条",update_time_type=UpdateTimeType.STAGE)
-        logger.pop_target()
+        
+        with RAIITool(wrapper_lamda(logger.stack_target,detail="获取车次信息表"),
+                      wrapper_lamda(logger.pop_target)) :
+
+
+            dfs=[]
+            dfs=fetch_train_routine(start_station,end_station,date=date,kind="全部",transfer_cities=transfer_cities)
+            if dfs:
+                logger.info("完成",f"{len(dfs)}条",update_time_type=UpdateTimeType.STAGE)
+            else:
+                logger.warn("异常",f"无车次信息表",update_time_type=UpdateTimeType.STAGE)
+
         #获取推荐车次结果表
         org_routes=_caculate_route(start_station,end_station,dfs)
         pickle_dump(org_routes,result_pkl_path)
@@ -262,7 +271,8 @@ def main():
         ("信阳"),
     ]
 
-    # station_config.clear_result_cache()
+    station_config.clear_result_cache()
+    # station_config.clear_city_code_df()
     # station_config.clear_train_info_df()
     # station_config.clear_train_route_df()
     # station_config.clear_price_df()
