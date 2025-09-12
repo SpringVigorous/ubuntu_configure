@@ -10,8 +10,8 @@
 #include "common_header/cereal_macro.h"
 
 
-CEREAL_SERIALIZE_PRE_DECLEAR_(DATA,Person)
-CEREAL_SERIALIZE_PRE_DECLEAR_(DATA,Student)
+CEREAL_SERIALIZE_FRIEND_PRE_DECLEAR_(DATA,Person)
+CEREAL_SERIALIZE_FRIEND_PRE_DECLEAR_(DATA,Student)
 
 _DATA_BEGIN_
 using namespace std;
@@ -29,7 +29,7 @@ protected:
     string name_{};
     int age_{};
 private:
-    CEREAL_SERIALIZE_DECLEAR(Person);
+    CEREAL_SERIALIZE_FRIEND_DECLEAR(Person);
 };
 
 
@@ -46,7 +46,7 @@ public:
 protected:
     int score_{ };  // 新增成员
 private:
-    CEREAL_SERIALIZE_DECLEAR(Student);
+    CEREAL_SERIALIZE_FRIEND_DECLEAR(Student);
 };
 
 

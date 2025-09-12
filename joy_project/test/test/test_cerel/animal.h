@@ -7,9 +7,7 @@
 #include <memory>
 #include "common_header/cereal_macro.h"
 
-CEREAL_SERIALIZE_PRE_DECLEAR(Animal)
-CEREAL_SERIALIZE_PRE_DECLEAR(Dog)
-CEREAL_SERIALIZE_PRE_DECLEAR(Cat)
+
 
 // 基类定义（无序列化代码）
 class Animal {
@@ -22,7 +20,7 @@ public:
 protected:
     int age = 0;
 private:
-    CEREAL_SERIALIZE_DECLEAR(Animal);
+    CEREAL_SERIALIZE_MEMBER_DECLEAR();
 };
 
 // 派生类1（无序列化代码）
@@ -37,7 +35,7 @@ public:
 protected:
     std::string breed;
 private:
-    CEREAL_SERIALIZE_DECLEAR(Dog);
+    CEREAL_SERIALIZE_MEMBER_DECLEAR();
 };
 
 // 派生类2（无序列化代码）
@@ -54,7 +52,7 @@ public:
 protected:
     bool hasLongHair;
 private:
-    CEREAL_SERIALIZE_DECLEAR(Cat);
+    CEREAL_SERIALIZE_MEMBER_DECLEAR();
 };
 
 
