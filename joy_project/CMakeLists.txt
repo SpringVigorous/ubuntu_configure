@@ -101,7 +101,7 @@ include(OSInstall)
 
 # include_directories(${CMAKE_SOURCE_DIR}/src/logger/include)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/joy_utility)
+add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 set(BUILD_TESTING TRUE)
 
 message(STATUS "BUILD_TESTING:${BUILD_TESTING}")

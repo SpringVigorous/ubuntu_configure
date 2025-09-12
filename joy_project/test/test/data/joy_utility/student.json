@@ -1,0 +1,18 @@
+{
+    "student": {
+        "polymorphic_id": 2147483649,
+        "polymorphic_name": "DATA::Student",
+        "ptr_wrapper": {
+            "id": 2147483649,
+            "data": {
+                "cereal_class_version": 1,
+                "value0": {
+                    "cereal_class_version": 1,
+                    "name": "Alice",
+                    "age": 20
+                },
+                "score": 89
+            }
+        }
+    }
+}

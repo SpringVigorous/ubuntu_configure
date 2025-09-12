@@ -140,22 +140,21 @@ def create_project_structure(project_name="my_project",root_dir="./",):
     project_dir =Path(os.path.abspath(root_dir))/ project_name
     logger=logger_helper(f"创建项目{project_name}",project_dir)
     
-    vcpkg_dir = os.path.join(project_dir,"3rd","vcpkg")
+    vcpkg_dir=project_dir/"3rd"/"vcpkg"
+    test_dir = project_dir/"test"/"test"
     os.makedirs(vcpkg_dir,exist_ok=True)
     
     os.makedirs(project_dir/"src",exist_ok=True)
     os.makedirs(project_dir/"cmake",exist_ok=True)
-    os.makedirs(project_dir/"test"/"data",exist_ok=True)
+    os.makedirs(test_dir/"data",exist_ok=True)
     os.makedirs(project_dir/"config",exist_ok=True)
     
     # project_dir,*arg= create_structer(project_dir)
     
     replace_list_tuple=[("hm_project",project_name)]
     create_cmakelist(project_dir,org_project_cmake_path,replace_list_tuple)
-    
-    
     copy_folder(org_cmake_script_path,project_dir/"cmake")
-    copy_folder(org_test_root,project_dir/"test")
+    copy_folder(org_test_root,test_dir)
 
     logger.info("完成",update_time_type=UpdateTimeType.STAGE)
 def main():
@@ -166,23 +165,27 @@ def main():
     parser.add_argument("-m", "--module_name", default="", help="模块名称,可以为多个 用','分割（为空表示不创建模块）")
     parser.add_argument("-f", "--file_name", default="", help="源文件名称,若是有子目录用'.'区分,可以为多个 用','分割（为空表示不创建源文件）")
     parser.add_argument('-v', '--create_vxpkg', action='store_true', help='是否创建vcpkg目录结构')
+    parser.add_argument('-t', '--test_module', action='store_true', help='是否测试模块')
     args = parser.parse_args()
     
     root_dir = args.root
     if not root_dir:
         root_dir = os.getcwd()
         
+    root_dir=Path(root_dir)
     project_name = args.project_name
     if project_name:
         create_project_structure(project_name,root_dir)
         #修正当前目录
-        root_dir=os.path.join(root_dir,project_name)
+        root_dir=root_dir/project_name
 
     module_name = args.module_name.split(",") if args.module_name else []
     file_name = args.file_name.split(",") if args.file_name else []
-        
+    
+    #是否是测试模块
+    cur_root_dir=root_dir/"test" if args.test_module else root_dir
     for module in module_name:
-        create_module_structue(module,file_name,root_dir)
+        create_module_structue(module,file_name,cur_root_dir)
 
 
 
@@ -199,4 +202,9 @@ if __name__ == "__main__":
     3.运行
     python c++/create_c_project.py-r F:/test  -p joy_project -m joy_utility -f interface.serialize_interface,interface.member_rw_interface,interface.bin_archive,interface.json_archive,interface.xml_archive
     python c++/create_c_project.py -r F:/test  -p joy_project -m joy_utility -f tools.string_tools,tools.xml_tools,tools.json_tools
+    创建模块 common_header
+    python c++/create_c_project.py -r F:/test  -p joy_project -m common_header -f macro.cereal_macro
+    创建测试中的模块
+    python c++/create_c_project.py -r F:/test  -p joy_project -m data -f data.student -t
+    python c++/create_c_project.py -r F:/test  -p joy_project -m handle_data -f serialize.cereal_student -t
 """

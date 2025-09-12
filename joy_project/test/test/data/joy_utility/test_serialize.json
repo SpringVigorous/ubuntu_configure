@@ -1,0 +1,138 @@
+{
+	"__data_node_base_children_version__" : 1,
+	"__data_node_base_version__" : 1,
+	"__m_children_count__" : 2,
+	"m_auto_recycle" : true,
+	"m_children" : 
+	[
+		{
+			"__class_name__" : "School",
+			"__is_nullptr__" : false,
+			"__item__" : 
+			{
+				"__School_version__" : 1,
+				"__clerks__count__" : 2,
+				"__data_node_base_children_version__" : 1,
+				"__data_node_base_version__" : 1,
+				"__m_children_count__" : 0,
+				"__students__count__" : 3,
+				"clerks_" : 
+				[
+					{
+						"__Animal_version__" : 1,
+						"__Techer_version__" : 1,
+						"age_" : 25,
+						"name_" : "王老师",
+						"num_" : "中一班"
+					},
+					{
+						"__Animal_version__" : 1,
+						"__Techer_version__" : 1,
+						"age_" : 30,
+						"name_" : "赵老师",
+						"num_" : "中二班"
+					}
+				],
+				"m_auto_recycle" : false,
+				"m_children" : [],
+				"m_children_recycling_type" : 3,
+				"m_name" : "",
+				"m_node_info" : "",
+				"m_node_tag" : "10cd0f04-11a1-474d-90fb-4d626eb94cb3",
+				"num_" : "金锣号",
+				"students_" : 
+				[
+					{
+						"__Animal_version__" : 1,
+						"__Monkey_version__" : 1,
+						"age_" : 5,
+						"name_" : "胡旭尧",
+						"num_" : "中一班"
+					},
+					{
+						"__Animal_version__" : 1,
+						"__Monkey_version__" : 1,
+						"age_" : 5,
+						"name_" : "李占有",
+						"num_" : "中一班"
+					},
+					{
+						"__Animal_version__" : 1,
+						"__Monkey_version__" : 1,
+						"age_" : 5,
+						"name_" : "李子柒",
+						"num_" : "大四班"
+					}
+				]
+			}
+		},
+		{
+			"__class_name__" : "School",
+			"__is_nullptr__" : false,
+			"__item__" : 
+			{
+				"__School_version__" : 1,
+				"__clerks__count__" : 1,
+				"__data_node_base_children_version__" : 1,
+				"__data_node_base_version__" : 1,
+				"__m_children_count__" : 1,
+				"__students__count__" : 0,
+				"clerks_" : 
+				[
+					{
+						"__Animal_version__" : 1,
+						"__Techer_version__" : 1,
+						"age_" : 5,
+						"name_" : "李子柒",
+						"num_" : "大四班"
+					}
+				],
+				"m_auto_recycle" : false,
+				"m_children" : 
+				[
+					{
+						"__class_name__" : "School",
+						"__is_nullptr__" : false,
+						"__item__" : 
+						{
+							"__School_version__" : 1,
+							"__clerks__count__" : 1,
+							"__data_node_base_children_version__" : 1,
+							"__data_node_base_version__" : 1,
+							"__m_children_count__" : 0,
+							"__students__count__" : 0,
+							"clerks_" : 
+							[
+								{
+									"__Animal_version__" : 1,
+									"__Techer_version__" : 1,
+									"age_" : 5,
+									"name_" : "李子柒",
+									"num_" : "大四班"
+								}
+							],
+							"m_auto_recycle" : false,
+							"m_children" : [],
+							"m_children_recycling_type" : 3,
+							"m_name" : "",
+							"m_node_info" : "",
+							"m_node_tag" : "48479926-9d2c-4ce0-bbb7-37f35603a10f",
+							"num_" : "申花",
+							"students_" : []
+						}
+					}
+				],
+				"m_children_recycling_type" : 3,
+				"m_name" : "",
+				"m_node_info" : "",
+				"m_node_tag" : "d0c0e62e-672b-4d34-bb89-f5b2997a6fb3",
+				"num_" : "小主人",
+				"students_" : []
+			}
+		}
+	],
+	"m_children_recycling_type" : 3,
+	"m_name" : "根节点",
+	"m_node_info" : "",
+	"m_node_tag" : "ea8f170d-7b62-4902-9fbe-2b9767345a2e"
+}
