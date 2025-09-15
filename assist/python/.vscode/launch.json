@@ -7,7 +7,8 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "python": "myenv/Scripts/python.exe",
-      "args": " -r F:/test  -r F:/test  -p joy_project -m data -f data.student -t"
+      // "args": " -r F:/test  -r F:/test  -p joy_project -m data -f data.student -t"
+      "args": "-o F:/test/joy_project/test/test/test_cerel -d F:/test/joy_project/test/test/test_cerel -r assist/replace_params_animal.json"
     },
     {
       "name": "C/C++ Runner: Debug Session",

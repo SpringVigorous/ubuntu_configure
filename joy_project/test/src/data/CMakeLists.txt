@@ -15,7 +15,7 @@ target_include_directories(${data_DLL} PUBLIC include)
 
 
 target_link_libraries(${data_DLL}
-  PUBLIC common_header
+  PUBLIC utilities
 )
 
 

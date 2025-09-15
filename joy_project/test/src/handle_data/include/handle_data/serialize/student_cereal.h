@@ -1,7 +1,7 @@
 ﻿#pragma once
 #ifndef __HANDLE_DATA_CEREAL_STUDENT_H__
 #define __HANDLE_DATA_CEREAL_STUDENT_H__
-#include "common_header/cereal_macro.h"
+#include "utilities/cereal_macro.h"
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/polymorphic.hpp>

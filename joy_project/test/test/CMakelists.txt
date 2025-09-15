@@ -39,6 +39,7 @@ if((NOT WIN32) AND ENABLE_PROFILER)
             joy_utility
             cereal::cereal
             handle_data
+            data
   )
 else()
   target_link_libraries(
@@ -50,7 +51,7 @@ else()
             joy_utility
             cereal::cereal
             handle_data
-
+            data
             )
 endif()
 

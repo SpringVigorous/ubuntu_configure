@@ -3,11 +3,8 @@
 #define __DATA_STUDENT_H__
 #include <string>
 
-//#include <cereal/access.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/polymorphic.hpp>
+#include "utilities/cereal_macro.h"
 #include "data/data_macro.h"
-#include "common_header/cereal_macro.h"
 
 
 CEREAL_SERIALIZE_FRIEND_PRE_DECLEAR_(DATA,Person)

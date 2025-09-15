@@ -55,7 +55,7 @@ def replace_file_str(source_path, dest_path, replace_list_tuple,cover_type:Cover
 @dr.exception_decorator()
 def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverType=CoverType.NO_COVER):
     # 遍历文件夹
-    replace_logger=logger_helper("替换：{source_dir}->{dest_dir}",f"{replace_list_tuple},覆盖类型:{cover_type}")
+    replace_logger=logger_helper(f"替换：{source_dir}->{dest_dir}",f"{replace_list_tuple},覆盖类型:{cover_type}")
     replace_logger.trace("开始")
 
     org_base_dir=os.path.basename(source_dir)
@@ -68,6 +68,9 @@ def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverTyp
     dest_dir=os.path.join(dest_dir,folder_name)
     if not pt.path_equal(source_dir,dest_dir):
         fo.clear_folder(dest_dir)
+        
+    #先获取文件列表，然后再处理，避免源文件夹和目标文件夹重合时，导致文件递增    
+    lst=[]
     for root, dirs, files in os.walk(source_dir):
         # 构建输出文件路径
         relative_path = st.replace_list_tuple_str(os.path.relpath(root, source_dir),replace_list_tuple)
@@ -79,9 +82,10 @@ def replace_dir_str(source_dir, dest_dir, replace_list_tuple,cover_type:CoverTyp
             # file_extension=os.path.splitext(org_file_path)
             # dest_file_path=os.path.join(dest_dir_path, st.replace_list_tuple_str(file_extension[0],replace_list_tuple)+file_extension[1])
             dest_file_path=os.path.join(dest_dir_path, st.replace_list_tuple_str(file,replace_list_tuple))
-
-            replace_file_str(org_file_path, dest_file_path,replace_list_tuple,cover_type)
-
+            lst.append((org_file_path,dest_file_path))
+            
+    for org_file_path,dest_file_path in lst:
+        replace_file_str(org_file_path, dest_file_path,replace_list_tuple,cover_type)
     return True
 #文件夹中所有
 @dr.exception_decorator()

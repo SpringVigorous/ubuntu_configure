@@ -1,0 +1,27 @@
+﻿[
+    {
+        "old_name": "animal",
+        "new_name": "plant",
+        "is_reg": true,
+        "ignore_case": true
+    },
+    {
+        "old_name": "dog",
+        "new_name": "flower",
+        "is_reg": true,
+        "ignore_case": true
+    },
+    {
+        "old_name": "cat",
+        "new_name": "tree",
+        "is_reg": true,
+        "ignore_case": true
+    }
+    ,
+    {
+        "old_name": "speak",
+        "new_name": "grow",
+        "is_reg": true,
+        "ignore_case": true
+    }
+]
