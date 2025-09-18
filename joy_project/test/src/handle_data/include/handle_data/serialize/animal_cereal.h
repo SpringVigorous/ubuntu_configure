@@ -28,8 +28,8 @@ CEREAL_SERIALIZE_MEMBER_IMPLEMENT(Dog) {
 
     CEREAL_SERIALIZE_MEMBER_FIELDS(
         cereal::base_class<DATA::Animal>(this),
-        //SERIALIZE_NVP(breed)
-        CEREAL_NVP(breed)
+        SERIALIZE_NVP(breed)
+        //CEREAL_NVP(breed)
     );
 }
 
@@ -37,8 +37,8 @@ CEREAL_SERIALIZE_MEMBER_IMPLEMENT(Cat) {
 
     CEREAL_SERIALIZE_MEMBER_FIELDS(
         cereal::base_class<DATA::Animal>(this),
-        //SERIALIZE_NVP(hasLongHair)
-        CEREAL_NVP(hasLongHair)
+        SERIALIZE_NVP(hasLongHair)
+        //CEREAL_NVP(hasLongHair)
     );
 }
 _DATA_END_

@@ -29,9 +29,16 @@ AutoConvertGbk<T> make_auto_convert(T& value) {
 };
 // 为 AutoConvertGbk<T> 特化 cereal 的序列化函数
 _UTILITIES_END_
+#define USE_AUTO_CONVERT_GBK
 
-//#define SERIALIZE_NVP_(name, value) ::cereal::make_nvp(name, ::UTILITIES::make_auto_convert(value))
-#define SERIALIZE_NVP_(name, value) ::cereal::make_nvp(JOY_UTILITY::string_tools::gbk_to_utf8(name), ::UTILITIES::make_auto_convert(value))
+
+
+#ifdef USE_AUTO_CONVERT_GBK
+    #define SERIALIZE_NVP_(name, value) ::cereal::make_nvp(JOY_UTILITY::string_tools::gbk_to_utf8(name), ::UTILITIES::make_auto_convert(value))
+#else
+    #define SERIALIZE_NVP_(name, value) CEREAL_NVP_(name,value)
+#endif // 
+
 #define SERIALIZE_NVP(T) SERIALIZE_NVP_(#T,T)
 
 namespace cereal {

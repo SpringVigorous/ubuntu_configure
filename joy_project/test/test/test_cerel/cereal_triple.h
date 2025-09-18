@@ -15,9 +15,10 @@ T cereal_triple(const T& data, const std::string& file_name)
 {
     using filesystem_path = std::filesystem::path;
 
-    filesystem_path json_path = environment::GlobalEnvironment::GetTestDataPath() / "joy_utility" / (file_name + ".json");
-    auto xml_path = json_path.replace_extension(filesystem_path(".xml"));
-    auto bin_path = json_path.replace_extension(filesystem_path(".bin"));
+    filesystem_path base_path = environment::GlobalEnvironment::GetTestDataPath() / "joy_utility" / (file_name + ".json");
+    filesystem_path json_path = base_path;
+    auto xml_path = base_path.replace_extension(filesystem_path(".xml"));
+    auto bin_path = base_path.replace_extension(filesystem_path(".bin"));
 
     UTILITIES::save_data_to_json(data, json_path);
     UTILITIES::save_data_to_xml(data, xml_path);

@@ -17,7 +17,7 @@ TEST(test_cereal, serialize_animal) {
 
 
     // 序列化
-    std::unique_ptr<DATA::Animal> animal = std::make_unique<DATA::Dog>(3, "Husky");
+    std::shared_ptr<DATA::Animal> animal = std::make_shared<DATA::Dog>(3, "Husky");
     auto data = cereal_triple(animal, "animal");
 
     data->speak();
