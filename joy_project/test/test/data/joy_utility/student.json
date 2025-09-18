@@ -1,5 +1,5 @@
 {
-    "student": {
+    "value0": {
         "polymorphic_id": 2147483649,
         "polymorphic_name": "DATA::Student",
         "ptr_wrapper": {
@@ -8,10 +8,16 @@
                 "cereal_class_version": 1,
                 "value0": {
                     "cereal_class_version": 1,
-                    "name": "Alice",
-                    "age": 20
+                    "name": {
+                        "value0": "Alice"
+                    },
+                    "age": {
+                        "value0": 20
+                    }
                 },
-                "score": 89
+                "score": {
+                    "value0": 89
+                }
             }
         }
     }

@@ -22,7 +22,7 @@ target_include_directories(${utilities_DLL} PUBLIC include
 find_package(cereal CONFIG REQUIRED)
 target_link_libraries(${utilities_DLL}
   PUBLIC cereal::cereal
-
+        joy_utility
   
 )
 

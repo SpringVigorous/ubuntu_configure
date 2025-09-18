@@ -4,6 +4,7 @@
 
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
+#include <utilities/cereal_wrapper.h>
 
 #include "data/animal.h"
 // 注册多态类型（必须）
@@ -19,13 +20,15 @@ CEREAL_SERIALIZE_MEMBER_IMPLEMENT(Animal) {
 
     CEREAL_SERIALIZE_MEMBER_FIELDS(
 
-        CEREAL_NVP(age)
+        SERIALIZE_NVP(age)
+        //CEREAL_NVP(age)
     );
 }
 CEREAL_SERIALIZE_MEMBER_IMPLEMENT(Dog) {
 
     CEREAL_SERIALIZE_MEMBER_FIELDS(
         cereal::base_class<DATA::Animal>(this),
+        //SERIALIZE_NVP(breed)
         CEREAL_NVP(breed)
     );
 }
@@ -34,6 +37,7 @@ CEREAL_SERIALIZE_MEMBER_IMPLEMENT(Cat) {
 
     CEREAL_SERIALIZE_MEMBER_FIELDS(
         cereal::base_class<DATA::Animal>(this),
+        //SERIALIZE_NVP(hasLongHair)
         CEREAL_NVP(hasLongHair)
     );
 }

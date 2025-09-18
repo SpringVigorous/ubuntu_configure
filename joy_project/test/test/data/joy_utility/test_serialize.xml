@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xml_root>
     <__data_node_base_version__>1</__data_node_base_version__>
-    <m_node_tag>ea8f170d-7b62-4902-9fbe-2b9767345a2e</m_node_tag>
+    <m_node_tag>6f915473-2af2-4b49-93bf-7519387ae322</m_node_tag>
     <m_name>根节点</m_name>
     <m_node_info></m_node_info>
     <m_children_recycling_type>3</m_children_recycling_type>
@@ -14,7 +14,7 @@
             <__class_name__>School</__class_name__>
             <__item__>
                 <__data_node_base_version__>1</__data_node_base_version__>
-                <m_node_tag>10cd0f04-11a1-474d-90fb-4d626eb94cb3</m_node_tag>
+                <m_node_tag>8167d81b-21d6-4db7-a265-36ad3e5ba8c9</m_node_tag>
                 <m_name></m_name>
                 <m_node_info></m_node_info>
                 <m_children_recycling_type>3</m_children_recycling_type>
@@ -72,7 +72,7 @@
             <__class_name__>School</__class_name__>
             <__item__>
                 <__data_node_base_version__>1</__data_node_base_version__>
-                <m_node_tag>d0c0e62e-672b-4d34-bb89-f5b2997a6fb3</m_node_tag>
+                <m_node_tag>ca01d72e-1d6c-4c40-8c69-c51ba3784937</m_node_tag>
                 <m_name></m_name>
                 <m_node_info></m_node_info>
                 <m_children_recycling_type>3</m_children_recycling_type>
@@ -85,7 +85,7 @@
                         <__class_name__>School</__class_name__>
                         <__item__>
                             <__data_node_base_version__>1</__data_node_base_version__>
-                            <m_node_tag>48479926-9d2c-4ce0-bbb7-37f35603a10f</m_node_tag>
+                            <m_node_tag>c0d2dd7f-37dd-40f6-a444-bfd93212b80f</m_node_tag>
                             <m_name></m_name>
                             <m_node_info></m_node_info>
                             <m_children_recycling_type>3</m_children_recycling_type>

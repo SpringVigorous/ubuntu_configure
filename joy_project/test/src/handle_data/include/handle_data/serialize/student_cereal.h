@@ -8,6 +8,7 @@
 #include <cereal/types/string.hpp>
 #include "data/student.h"
 #include "handle_data/handle_data_macro.h"
+#include <utilities/cereal_wrapper.h>
 
 
 // 版本控制：升级为版本1（每次变更递增）
@@ -21,9 +22,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(DATA::Person, DATA::Student);
 CEREAL_SERIALIZE_FRIEND_IMPLEMENT(DATA::Person) {
 
     CEREAL_SERIALIZE_FRIEND_FIELDS(
-
-        CEREAL_NVP_("name", data.name_),
-        CEREAL_NVP_("age", data.age_)
+        SERIALIZE_NVP_("name", data.name_),
+        SERIALIZE_NVP_("age", data.age_)
     );
 }
 
@@ -31,7 +31,7 @@ CEREAL_SERIALIZE_FRIEND_IMPLEMENT(DATA::Student) {
 
     CEREAL_SERIALIZE_FRIEND_FIELDS(
         cereal::base_class<DATA::Person>(&data),
-        CEREAL_NVP_("score", data.score_)
+        SERIALIZE_NVP_("score", data.score_)
     );
 }
 
