@@ -25,7 +25,9 @@ from base import arrange_urls,postfix
 import pandas as pd
 
 
-from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8
+from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8,ThreadPool,AES_128
+from concurrent.futures import ThreadPoolExecutor
+
 def get_real_url(url:str,url_page):
     if is_http_or_https(url) :
         return url
@@ -68,7 +70,7 @@ class video_info:
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
             'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-            'Referer': 'https://api.ukubf.com/',
+            'Referer': 'https://www.baidu.com/',
             'sec-ch-ua-mobile': '?0',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
             'sec-ch-ua-platform': '"Windows"',
@@ -193,7 +195,7 @@ class video_info:
 
 
 @exception_decorator()
-def handle_playlist(url_list,temp_paths,key,iv):
+def handle_playlist_async(url_list,temp_paths,key,iv):
     if not url_list or not temp_paths:
         return False
     
@@ -241,7 +243,60 @@ def handle_playlist(url_list,temp_paths,key,iv):
     except Exception as e:
         playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
         return False
+
+#同步方式下载
+@exception_decorator()
+def handle_playlist(url_list,temp_paths,key,iv):
+    if not url_list or not temp_paths:
+        return False
     
+
+    playlist_logger= logger_helper("下载文件",Path(temp_paths[0]).parent)
+
+    playlist_logger.trace("开始")
+    decry_inst= AES_128(key,iv)
+    
+    #替换为真实的文件头
+    headers = {
+        'authority': 'v.cdnlz19.com',
+        'accept': '*/*',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'origin': 'https://v.youku.com',
+        'referer': 'https://v.youku.com',
+        'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'cross-site',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+    }
+
+
+    lst=[(url,path) for url,path in zip(url_list,temp_paths) if not os.path.exists(path) ]
+
+
+        
+    results={}
+    # 使用 ThreadPoolExecutor 创建线程池，max_workers 指定最大线程数
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # 使用 submit 方法将任务提交到线程池，返回 Future 对象
+        future_to_url = {executor.submit(download_sync,url,path,decry_inst.decrypt,headers=headers):url for url,path in lst}
+        # 使用 as_completed 获取已完成的任务结果
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            data=False
+            try:
+                data = future.result()  # 获取任务返回值，如果发生异常会在这里抛出
+
+            except Exception as e:
+                playlist_logger.error("异常",f"下载{url}失败: {e}")
+            results[url]=data
+
+    return  all([item for key,item in results.items()])
+
+
+
 def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, dest_hash):
     play_logger=logger_helper(f"{dest_name}")
     
@@ -265,6 +320,7 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
         
         #检查下载情况
         if success:
+            play_logger.debug("统计",f"下载完毕，已下载{all_count}/{all_count}个",update_time_type=UpdateTimeType.ALL)
             return 0,all_path_list
         else:
             losts = []

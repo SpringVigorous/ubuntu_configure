@@ -121,20 +121,55 @@ def merge_url(df,keys:list):
     query_dict={key:df[key] for key in keys }
     return f"{url}?{urlencode(query_dict)}"
 
-
-
-
 def arrange_urls(url_list:list)->list[dict]:
     if not url_list: return []
+    lst=[{"duration":float(duration),
+              "url":url} for duration,url in url_list]
+    df=pd.json_normalize(lst)
+    # df=pd.json_normalize(lst).drop_duplicates(subset="url").reset_index()
+    df["base_url"]=df["url"].apply(lambda url: Path(split_url(url)["base_url"]).parent)
+    count_dict = df['base_url'].value_counts().to_dict()
+    total=len(url_list)
+    del_url=[url for url,count in count_dict.items() if float(count)/total<.05]
+    if del_url: 
+        df=df[~df["base_url"].isin(del_url)]
+    
+    
+    sum_duration=df["duration"].sum()
+    return df[["url","duration"]].to_dict(orient="records",index=True)
+    
+    keys_param= [key  for key in lst[0].keys() if key not in ["base_url","start","end","duration_fake_id"]]
+    if not keys_param:
+        return [ {"url":item["base_url"] ,"duration":item['duration_fake_id']}  for item in lst]
+    
+    def unique_same_url(df):
+        # print(df)
+        duration=df["duration"].agg("sum")
+        df_unique = df.drop_duplicates(subset=keys_param)
+        # print(df_unique)
+        df_unique.loc[:,"duration"]=duration
+        return df_unique
+
+    df=pd.json_normalize(lst)
+    group_df= df.groupby("base_url",sort=False).apply(unique_same_url, include_groups=False).reset_index()
+    group_df["url"]=group_df.apply(lambda row: merge_url(row,keys_param),axis=1)
+    return group_df[["url","duration"]].to_dict(orient="records",index=True)
+
+
+
+
+def _arrange_urls(url_list:list)->list[dict]:
+    if not url_list: return []
     lst=[]
+    duration_fake_id="___duration___"
     for duration,url in url_list:
-        item={"duration":float(duration)}
+        item={duration_fake_id:float(duration)}
         item.update(split_url(url))
         lst.append(item)
     
-    keys_param= [key  for key in lst[0].keys() if key not in ["base_url","start","end","duration"]]
+    keys_param= [key  for key in lst[0].keys() if key not in ["base_url","start","end","duration_fake_id"]]
     if not keys_param:
-        return [ {"url":item["base_url"] ,"duration":item['duration']}  for item in lst]
+        return [ {"url":item["base_url"] ,"duration":item['duration_fake_id']}  for item in lst]
     
     def unique_same_url(df):
         # print(df)

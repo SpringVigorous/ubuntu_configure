@@ -49,13 +49,13 @@ class M3U8Encoder(json.JSONEncoder):
 if __name__ == "__main__":
     # 假设有以下对象
  
-    url = "https://website.com"
+    info = "https://website.com"
     title = "示例标题"
     m3u8_url="https://website.com/m3u8.m3u8"
     m3u8_data="m3u8数据"
 
     # 创建数据对象
-    m3u8_obj = M3U8Data(url,m3u8_url, m3u8_data, title=title)
+    m3u8_obj = M3U8Data(info,m3u8_url, m3u8_data, title=title)
     
     # 方法1：直接序列化字典
     print(json.dumps(m3u8_obj.to_dict(encode_m3u8=True)))

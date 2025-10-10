@@ -1,4 +1,6 @@
-﻿import requests
+﻿
+#同步下载（线程池）
+import requests
 
 import os
 import concurrent.futures
@@ -26,6 +28,7 @@ import pandas as pd
 
 
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8
+from base import ThreadPool
 def get_real_url(url:str,url_page):
     if is_http_or_https(url) :
         return url
@@ -243,37 +246,15 @@ def handle_playlist(url_list,temp_paths,key,iv):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
     }
 
+    pool=ThreadPool()
 
-    async def download(semaphore,args:list|tuple):
-        async with semaphore:
-            url, temp_path=args
-            result=  await download_async(url, temp_path,decry_inst.decrypt,headers=headers) 
-            
-            #转换为标准的mp4,看需求 转换
-            # is_convert=True
-            # if result and is_convert:
-            #     org_path=Path(temp_path)
-            #     output_path = os.path.join(f"{org_path.parent}_output",org_path.stem + '.mp4')
-            #     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            #     convert_video_to_mp4(temp_path,output_path)
-            #     move_file(output_path,temp_path)
-
-            
-            return result
     lst=[(url,path) for url,path in zip(url_list,temp_paths) if not os.path.exists(path) ]
-    if not lst:
-        return True
-    multi_thread_coroutine = MultiThreadCoroutine(download,lst)
+
+    for url,path in zip(url_list,temp_paths):
+        if not os.path.exists(path):
+            pool.submit(download_sync,url,path,decry_inst.decrypt,headers=headers)
     try:
-        asyncio.run(multi_thread_coroutine.run_tasks()) 
-        success=multi_thread_coroutine.success
-        if not success:
-            info=[multi_thread_coroutine.fail_infos,except_stack()]
-            info_str="\n".join(info)
-            playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
-        playlist_logger.trace(multi_thread_coroutine.result)
-        
-        return multi_thread_coroutine.success
+        pool.join()
     except Exception as e:
         playlist_logger.error("下载异常",except_stack(),update_time_type=UpdateTimeType.ALL)
         return False
@@ -437,7 +418,7 @@ def get_url_data(url,url_json_path,m3u8_path):
         
     
 @exception_decorator()
-def main(url,dest_name,dest_dir:str=None,force_merge=False):
+def main(merge_pool:ThreadPool,url,dest_name,dest_dir:str=None,force_merge=False):
     root_path=r"F:\worm_practice/player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
@@ -495,18 +476,21 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     
     # return True
     
-    play_logger.info("开始","合并",update_time_type=UpdateTimeType.STAGE)
-    merge_video(success_paths,temp_path)
-    play_logger.info("完成","合并",update_time_type=UpdateTimeType.STAGE)
-    
-    move_success= move_file(temp_path,dest_path)
-    
-    if lost_count==0 and move_success:
-        recycle_bin(temp_dir)
-        play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
-    else:
-        play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
+    if merge_pool:
         
+        def lat_func():
+            play_logger.info("开始","合并",update_time_type=UpdateTimeType.STAGE)
+            merge_video(success_paths,temp_path)
+            play_logger.info("完成","合并",update_time_type=UpdateTimeType.STAGE)
+            
+            move_success= move_file(temp_path,dest_path)
+            
+            if lost_count==0 and move_success:
+                recycle_bin(temp_dir)
+                play_logger.info("完成" ,update_time_type=UpdateTimeType.ALL)
+            else:
+                play_logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.ALL)
+        merge_pool.submit(lat_func)
     return True
     
 def get_key(url):
@@ -767,13 +751,48 @@ if __name__=="__main__":
 
 
         # ('https://pl-ali.youku.com/playlist/m3u8', 'love_english示范课'),
-        ('https://v.cdnlz19.com/20240327/24474_34f63808/2000k/hls/mixed.m3u8', '神奇汉字星球_01'),
+('https://v.cdnlz19.com/20240327/24493_69a160ab/2000k/hls/mixed.m3u8', '神奇汉字星球_21'),
+('https://v.cdnlz19.com/20240327/24498_9a96c74d/2000k/hls/mixed.m3u8', '神奇汉字星球_22'),
+('https://v.cdnlz19.com/20240327/24495_2f2af33b/2000k/hls/mixed.m3u8', '神奇汉字星球_23'),
+('https://v.cdnlz19.com/20240327/24497_fa739f6b/2000k/hls/mixed.m3u8', '神奇汉字星球_24'),
+('https://v.cdnlz19.com/20240327/24496_ffb21f7a/2000k/hls/mixed.m3u8', '神奇汉字星球_25'),
+('https://v.cdnlz19.com/20240327/24500_21de4810/2000k/hls/mixed.m3u8', '神奇汉字星球_26'),
+('https://v.cdnlz19.com/20240327/24501_53b8875d/2000k/hls/mixed.m3u8', '神奇汉字星球_27'),
+('https://v.cdnlz19.com/20240327/24499_103cbb2f/2000k/hls/mixed.m3u8', '神奇汉字星球_28'),
+('https://v.cdnlz19.com/20240327/24502_7c231963/2000k/hls/mixed.m3u8', '神奇汉字星球_29'),
+('https://v.cdnlz19.com/20240327/24503_30d4b033/2000k/hls/mixed.m3u8', '神奇汉字星球_30'),
+('https://v.cdnlz19.com/20240327/24504_87e9aa5c/2000k/hls/mixed.m3u8', '神奇汉字星球_31'),
+('https://v.cdnlz19.com/20240327/24505_90223b35/2000k/hls/mixed.m3u8', '神奇汉字星球_32'),
+('https://v.cdnlz19.com/20240327/24506_d61e687d/2000k/hls/mixed.m3u8', '神奇汉字星球_33'),
+('https://v.cdnlz19.com/20240327/24507_6adf4fd7/2000k/hls/mixed.m3u8', '神奇汉字星球_34'),
+('https://v.cdnlz19.com/20240327/24508_966baabf/2000k/hls/mixed.m3u8', '神奇汉字星球_35'),
+('https://v.cdnlz19.com/20240327/24509_40315818/2000k/hls/mixed.m3u8', '神奇汉字星球_36'),
+('https://v.cdnlz19.com/20240327/24510_e42caa96/2000k/hls/mixed.m3u8', '神奇汉字星球_37'),
+('https://v.cdnlz19.com/20240327/24511_284a60c3/2000k/hls/mixed.m3u8', '神奇汉字星球_38'),
+('https://v.cdnlz19.com/20240327/24512_cc5ae425/2000k/hls/mixed.m3u8', '神奇汉字星球_39'),
+('https://v.cdnlz19.com/20240327/24513_777d2787/2000k/hls/mixed.m3u8', '神奇汉字星球_40'),
+('https://v.cdnlz19.com/20240327/24514_14566b4b/2000k/hls/mixed.m3u8', '神奇汉字星球_41'),
+('https://v.cdnlz19.com/20240327/24515_171ddc09/2000k/hls/mixed.m3u8', '神奇汉字星球_42'),
+('https://v.cdnlz19.com/20240327/24516_fbe85a6e/2000k/hls/mixed.m3u8', '神奇汉字星球_43'),
+('https://v.cdnlz19.com/20240327/24517_89d1f80b/2000k/hls/mixed.m3u8', '神奇汉字星球_44'),
+('https://v.cdnlz19.com/20240327/24518_6355d024/2000k/hls/mixed.m3u8', '神奇汉字星球_45'),
+('https://v.cdnlz19.com/20240327/24519_f63429c8/2000k/hls/mixed.m3u8', '神奇汉字星球_46'),
+('https://v.cdnlz19.com/20240327/24520_344b408f/2000k/hls/mixed.m3u8', '神奇汉字星球_47'),
+('https://v.cdnlz19.com/20240327/24521_dc88b9c5/2000k/hls/mixed.m3u8', '神奇汉字星球_48'),
+('https://v.cdnlz19.com/20240327/24522_4340a0e3/2000k/hls/mixed.m3u8', '神奇汉字星球_49'),
+('https://v.cdnlz19.com/20240327/24523_13f7c9dc/2000k/hls/mixed.m3u8', '神奇汉字星球_50'),
+('https://v.cdnlz19.com/20240327/24526_7e693554/2000k/hls/mixed.m3u8', '神奇汉字星球_51'),
+('https://v.cdnlz19.com/20240327/24536_f3407350/2000k/hls/mixed.m3u8', '神奇汉字星球_52'),
+
+
 
 
         ]
 
+    merge_pool=ThreadPool()
+    result=[main(merge_pool,*item) for item in lst]
     
-    result=[main(*item) for item in lst]
+    merge_pool.join()
     # shut_down()
     exit(0)
     # if all(result):    

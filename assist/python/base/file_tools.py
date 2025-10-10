@@ -18,7 +18,7 @@ from pathlib import Path
 import pickle
 import shutil
 from typing import Callable 
-
+import httpx
 # 使用chardet模块检测文件的编码
 
 def detect_encoding(file_path)->str:
@@ -184,14 +184,16 @@ def read_sync(dest_path,mode="r",encoding=None):
 def write_sync(data,dest_path,mode="w",encoding=None):
     return read_write_sync(data,dest_path,mode,encoding)
 
-
-
-async def __fetch_async(url ,session,max_retries=3,**args):
+async def __fetch_async(url ,session,max_retries=3,**kwargs):
     async_logger=logger_helper("异步获取资源",url)
     retries = 0
     while retries < max_retries:
         try:
-            async with session.get(url,**args) as response:
+           # 添加超时控制
+            timeout = aiohttp.ClientTimeout(total=30, connect=10)
+            #临时关闭 SSL 验证（不推荐生产环境） ssl=False,
+            async with httpx.AsyncClient(verify=False, timeout=timeout) as client:
+                response = await client.get(url, **kwargs)
 
                 if response.status == 200:
                     content_length = int(response.headers.get('Content-Length', 0))
@@ -210,6 +212,44 @@ async def __fetch_async(url ,session,max_retries=3,**args):
             async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
             retries += 1
             await asyncio.sleep(5)  # 等待 5 秒后重试
+        except Exception as e:
+            async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
+            # retries += 1
+            # await asyncio.sleep(5)  # 等待 5 秒后重试
+    return None
+    # raise Exception("Max retries exceeded")
+
+async def ___fetch_async(url ,session,max_retries=3,**kwargs):
+    async_logger=logger_helper("异步获取资源",url)
+    retries = 0
+    while retries < max_retries:
+        try:
+           # 添加超时控制
+            timeout = aiohttp.ClientTimeout(total=30, connect=10)
+            #临时关闭 SSL 验证（不推荐生产环境） ssl=False,
+            async with  session.get(url,timeout=timeout,**kwargs) as response:
+
+                if response.status == 200:
+                    content_length = int(response.headers.get('Content-Length', 0))
+                    received_data = await response.read()
+                    if len(received_data) == content_length:
+                        async_logger.trace("成功", update_time_type=UpdateTimeType.ALL)
+                        return received_data
+                    else:
+                        raise aiohttp.ClientError(
+                            response.status,
+                            "Not enough data for satisfy content length header."
+                        )
+                else:
+                    raise Exception(f"HTTP error: {response.status}")
+        except aiohttp.ClientError as e:
+            async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
+            retries += 1
+            await asyncio.sleep(5)  # 等待 5 秒后重试
+        except Exception as e:
+            async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
+            # retries += 1
+            # await asyncio.sleep(5)  # 等待 5 秒后重试
     return None
     # raise Exception("Max retries exceeded")
 
@@ -258,6 +298,7 @@ async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
         tasks = [_download_async_semaphore(semaphore,session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths) if url and dest_path]
         await asyncio.gather(*tasks)
 
+@cd.exception_decorator(error_state=False)
 def fetch_sync(url ,max_retries=3,timeout=300,**args):
     """
     从给定的 URL 获取内容，支持重试机制和超时设置。
@@ -291,13 +332,16 @@ def fetch_sync(url ,max_retries=3,timeout=300,**args):
                 
                 
                 
-        except requests.exceptions.ConnectionError as e:
-            fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.STEP)
+        except Exception as e:
+            fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}\n{e}",update_time_type=UpdateTimeType.STEP)
             retries += 1
             time.sleep(5)  # 等待 5 秒后重试
-            timeout+=30
-        except:
-            pass
+            if isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, requests.exceptions.Timeout):
+                timeout+=30
+
+        
+
+
             
     fetch_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",update_time_type=UpdateTimeType.ALL)
     return None

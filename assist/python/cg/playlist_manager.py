@@ -33,6 +33,7 @@ from typing import Callable
 
 
 from playlist_config import *
+from playlist_tools import get_url_data
 
 class playlist_manager(file_manager):
     _instance = None
@@ -87,7 +88,7 @@ class playlist_manager(file_manager):
         logger=self.logger
         logger.update_time(UpdateTimeType.STAGE)
         logger.trace("开始")
-        
+        self.update_status()
         def _save_imp(xlsx_path:str):
             logger.update_target("保存数据",xlsx_path)
             self._save_df_xlsx_imp([self.video_df],xlsx_path)
@@ -125,45 +126,50 @@ class playlist_manager(file_manager):
         return self._video_df[m3u8_url_id].tolist()
         
     @property
-    @exception_decorator(error_state=False)
-    def undownloaded_lst(self)->list:
+    def undownloaded_infos(self)->list:
         if  df_empty(self._video_df):
             return []
-        
         results=[]
-        for _,row in self._video_df[self._video_df[download_status_id]<1].iterrows():
-            video_name=row[video_name_id]
-            url_path=url_json_path(video_name)
-            data=read_from_json_utf8_sig(url_path)
+        for index,row in self._video_df[self._video_df[download_status_id]<1].iterrows():
+            results.append((index,VideoUrlInfo.from_dict(row)))
+            
+        return results
+    
+    @property
+    @exception_decorator(error_state=False)
+    def undownloaded_lst(self)->list:
+        infos=self.undownloaded_infos
+        if not infos:
+            return []
+        results=[]
+        for _,info in infos:
+            data=get_url_data(info.m3u8_url,info.url_path,info.m3u8_path)
             if not data:
                 continue
+            video_name=info.title
             from base import base64_utf8_to_bytes
-            key,iv,info_list,total_len,m3u8_url=data["key"],data["iv"],data["playlist"],data["total_len"],data["url"]
-            if key:
-                key=base64_utf8_to_bytes(key)
-            if iv:
-                iv=base64_utf8_to_bytes(iv)
-            results.append((key,iv,info_list,total_len,video_name,m3u8_url))
-            
+            key,iv,info_list,total_len=data
+            results.append((key,iv,info_list,total_len,video_name,info.m3u8_url))
         return results
     @property
     @exception_decorator(error_state=False)
-    def nom3u8_lst(self)->list:
+    def no_m3u8_lst(self)->list:
         if  df_empty(self._video_df):
             return []
-        results=[]
+        infos=self.undownloaded_infos
+        if not infos:
+            return []
+        
         drop_index=[]
-        for index,row in self._video_df[self._video_df[download_status_id]<1].iterrows():
-            video_name=row[video_name_id]
-            url_path=url_json_path(video_name)
-            data=read_from_json_utf8_sig(url_path)
-            if data:
+        results=[]
+        for index,info in infos:
+            if info.has_m3u8_url:
                 continue
-            url=row[url_id]
-            if not url:
-                continue
-            results.append(url)
+            if info.valid:
+                results.append(info.url)
             drop_index.append(index)
+        
+
         if drop_index:
             with self.lock:
                 self._video_df.drop( self._video_df.index[drop_index] ,inplace=True)
@@ -184,7 +190,7 @@ class playlist_manager(file_manager):
     
     
     @exception_decorator(error_state=False)
-    def set_donwnloaded(self,video_name:str,status:int=1)->bool:
+    def set_downloaded(self,video_name:str,status:int=1)->bool:
         logger=self.logger
         logger.update_target("更新下载状态",video_name)
         with self.lock:
@@ -201,4 +207,4 @@ class playlist_manager(file_manager):
     def update_status(self):
         for file in mp4_files(video_dir):
             cur_path=Path(file)
-            self.set_donwnloaded(cur_path.stem,1)
+            self.set_downloaded(cur_path.stem,1)

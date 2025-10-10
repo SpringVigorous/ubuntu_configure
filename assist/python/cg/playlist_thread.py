@@ -20,6 +20,8 @@ from playlist_config import *
 from playlist_data import *
 from playlist_manager import playlist_manager
 
+
+
 class InteractImp():
     def __init__(self,output_queue,stop_event):
         self._lock=threading.Lock()
@@ -104,10 +106,27 @@ class InteractImp():
  
 
     @exception_decorator(error_state=False)
-    def handle_url(self, url):
+    def handle_url(self, info:VideoUrlInfo):
+        if not info.has_m3u8_url:  # 不存在m3u8_url
+            return self.handle_imp(info)
+        else:
+            return self.cache_url(info)
 
-        return self.handle_imp(url)
+
         
+    @exception_decorator(error_state=False)   
+    def cache_url(self, info:VideoUrlInfo)->list[dict]:
+        logger=self._logger
+        logger.update_target(f"收到第{self.msg_count}个消息:{info}")
+        logger.info("成功")
+
+        result=info.to_dict
+        df=self.manager.update_video_df(pd.DataFrame([result]))
+        if df_empty(df):
+            return
+        return df.to_dict(orient="records")
+        
+
 
     @exception_decorator(error_state=False)
     def handle_imp(self, url:str=None)->list[dict]:
@@ -125,7 +144,7 @@ class InteractImp():
         logger.update_target(log_detail,"监听事件")
         def do_func():
             # 捕获API数据包
-            packet = self.wp.listen.wait(timeout=15)
+            packet = self.wp.listen.wait(timeout=5)
             return packet
 
         
@@ -160,25 +179,22 @@ class InteractImp():
 
             logger.update_target(f"{self.wp.url}")
             try:
-                # self.wp._wait_loaded()
+                self.wp._wait_loaded()
                 self.wp.wait(1)
                 packet=self._retry_operater.success()
                 if not packet:
                     return
+                # m3u8_url="https://v.cdnlz19.com/20240327/24526_7e693554/2000k/hls/mixed.m3u8"
                 cur_url=self.wp.url
+                
                 m3u8_url=packet.url
                 
                 logger.info("成功",f"m3u8_urls:{m3u8_url}")
-                title=sanitize_filename(self.wp.title).replace("-","_")
-                result={url_id:cur_url,m3u8_url_id:m3u8_url,video_title_id:title,download_status_id:-1}
                 body=packet.response.body
                 m3u8_data=body.decode("utf-8") if body else ""
-                
-                write_to_txt_utf8_sig(m3u8_path(title),m3u8_data)
-                df=self.manager.update_video_df(pd.DataFrame([result]))
-                if df_empty(df):
-                    return
-                return df.to_dict(orient="records")
+                title=sanitize_filename(self.wp.title).replace("-","_")
+                return self.cache_url(m3u8_url,title,raw_url=cur_url,m3u8_data=m3u8_data)
+
             except Exception as e:
                 logger.error("异常",except_stack(),update_time_type=UpdateTimeType.STAGE)
 
@@ -189,7 +205,7 @@ class InteractUrl(ThreadTask):
         self.interact:InteractImp=InteractImp(output_queue,stop_event)
         self.set_thread_name(self.__class__.__name__)
     @exception_decorator()
-    def _handle_data(self, data):
+    def _handle_data(self, data:VideoUrlInfo):
         #致命错误，退出
         if self.interact.fatal_error:
             self.logger.error("收到致命错误","退出交互")
@@ -197,6 +213,11 @@ class InteractUrl(ThreadTask):
             self.stop()
             return
         #可能有多个
+        if not data or  not isinstance(data,VideoUrlInfo) or  not data.vaild:
+            return
+
+        
+        
         return self.interact.handle_url(data)
 
     def _final_run_after(self):
@@ -211,6 +232,9 @@ class HandleUrl(ThreadTask):
         
     @exception_decorator(error_state=False)
     def _handle_data_imp(self, data:dict):
+        if not data  or not isinstance(data,dict):
+            return
+
         url=data[url_id]
         m3u8_url=data[m3u8_url_id]
         video_name=data[video_title_id]       
@@ -350,5 +374,5 @@ class MergeVideo(ThreadTask):
         else:
             logger.error("部分缺失",f"缺失{lost_count}个文件",update_time_type=UpdateTimeType.STAGE)
             
-        self.manager.set_donwnloaded(video_name,1)
+        self.manager.set_downloaded(video_name,1)
         return True

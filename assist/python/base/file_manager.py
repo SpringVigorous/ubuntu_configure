@@ -39,8 +39,11 @@ class file_manager(metaclass=abc.ABCMeta):
             return [ get_df(name)  for  name in sheet_names]
             
     def _save_df_xlsx_imp(self,dfs:list[pd.DataFrame],xlsx_path:str):
+        if not dfs: return
         
         logger=self.logger
+        dfs=list(filter(lambda x:not df_empty(x),dfs))
+        if not dfs: return
         with self.lock:
             with pd.ExcelWriter(xlsx_path,mode="w") as w:
                 for df in dfs:

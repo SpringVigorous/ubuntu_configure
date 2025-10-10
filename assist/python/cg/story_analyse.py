@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import numpy as np
-
+import re
 
 root_path=Path(__file__).parent.parent.resolve()
 sys.path.append(str(root_path ))
@@ -25,6 +25,18 @@ def handle_df(df):
     df.drop_duplicates(subset=["url","num","title"],keep="last",inplace=True)
     return df
 
+def query_thread_pattern():
+
+
+    # 正则表达式模式（同时匹配线程名和文件路径）
+    # 线程名：ThreadPoolExecutor-数字_数字
+    # 文件路径：temp/后面的路径（如0b0155e0/0012.ts）
+    pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}).*?Thread ID: (\d+)-NAME: ThreadPoolExecutor-(\d+)_(\d+).*?【(\S+)】-【(\S+)】详情.*?temp/([0-9a-fA-F]+)/(\d+\.ts)?"
+
+    return pattern
+
+
+    
 
 
 if __name__=="__main__":
@@ -33,11 +45,16 @@ if __name__=="__main__":
     args=["time","num","title","url"]
     
     log_content=''
-    with open(r"\\Springflourish\f\worm_practice\logs\story_wrapper\story_wrapper-trace.log","r",encoding="utf-8-sig") as f:
+    with open(r"F:\worm_practice\logs\playlist_app\playlist_app-trace.log","r",encoding="utf-8-sig") as f:
         log_content=f.read()
     if not log_content:
         exit(0)
+    args=["time","thread_id","pool_id","index","target","status","dest","dest_id"]
 
+    thread_df=pd.DataFrame(find_all(log_content,query_thread_pattern(),args))
+    thread_df.to_excel("thread.xlsx")
+
+    exit(0)
     
     beg_df=handle_df(pd.DataFrame(find_all(log_content,start_pattern,args)))
     end_df=handle_df(pd.DataFrame(find_all(log_content,end_pattern,args)))

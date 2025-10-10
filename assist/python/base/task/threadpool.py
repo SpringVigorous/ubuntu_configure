@@ -19,11 +19,13 @@ class ThreadPool:
         self._stop_event = threading.Event()  # 停止事件
         self._threads:list[threading.Thread] = []  # 线程列表
         self._ideal_time=ideal_time
-        self._logger=logger_helper(self.__class__.__name__)
+        self._logger=logger_helper(f"{self.__class__.__name__}-{root_thread_name}")
         self._lock = threading.Lock()  # 保护线程列表的锁
         
         self._thread_index:int=1
         self._thread_name:str=root_thread_name
+        
+        self._error_lst = []  # 任务队列
       
     @property
     def thread_name(self):
@@ -134,6 +136,7 @@ class ThreadPool:
             except Exception as e:
                 logger.error("异常",f"Task execution failed: {e}",update_time_type=UpdateTimeType.STEP)
                 error=e
+                self._error_lst.append(data)
             finally:
                 # 如果有回调则执行回调
                 if callback is not None:
@@ -150,6 +153,15 @@ class ThreadPool:
 
         logger.debug("线程结束",update_time_type=UpdateTimeType.ALL)
 
+    def join_impl(self):
+        
+        for data in self._error_lst:
+            self._task_queue.put(data)
+        self._error_lst.clear()
+        self._task_queue.join()
+        
+    
+    @exception_decorator(error_state=False)
     def join(self, wait=True):
         """ 关闭线程池 """
         self._stop_event.set()  # 触发停止事件
@@ -158,9 +170,13 @@ class ThreadPool:
         self._logger.debug("进行中",update_time_type=UpdateTimeType.STAGE)
         if wait:
             self._task_queue.join()  # 等待所有任务完成
+
             for thread in self._threads:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
+                    
+
+
     @exception_decorator(error_state=False)
     def restart(self):
         """ 补充缺失的线程至目标数量 """
