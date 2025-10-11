@@ -10,11 +10,7 @@ import os
 import re
 
 
-# 获取项目根目录
-project_root = os.path.dirname(os.path.dirname(__file__))
-# 将项目根目录添加到 sys.path
-if project_root not in sys.path:
-    sys.path.append(project_root)
+
 
 from  com_log import  logger_helper
 import codecs

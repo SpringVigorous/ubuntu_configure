@@ -3,9 +3,9 @@ import os
 import codecs
 
 
-import fold_tools as fs
-import file_tools as fc
-from com_log import logger_helper,UpdateTimeType
+from base import fold_tools as fs
+from base import file_tools as fc
+from base.com_log import logger_helper,UpdateTimeType
 # 定义函数：将文件内容从源编码转换为目标编码
 def convert_file_encoding(file_path, dest_path, source_encoding, dest_encoding):
     """

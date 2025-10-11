@@ -6,10 +6,10 @@ from lxml import html
 import pandas as pd
 from pathlib import Path
 from itertools import chain
-from xml_tools import pretty_tree
-from collect_tools import unique
+from base.xml_tools import pretty_tree
+from base.collect_tools import unique
 from urllib.parse import urlparse
-from com_log import logger_helper
+from base.com_log import logger_helper
 
 def url_valid(url:str):
     parsed_url = urlparse(url)

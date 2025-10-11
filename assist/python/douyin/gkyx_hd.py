@@ -9,9 +9,9 @@ import sys
 
 from pathlib import Path
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import as_normal,logger_helper,UpdateTimeType,cur_date_str,remove_directories_and_files,merge_df,str2time,downloads_async,parallel_json_normalize,optimized_to_excel,optimized_read_excel,get_next_filename,ThreadPool,guid
 import requests

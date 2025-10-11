@@ -6,9 +6,9 @@ import re
 
 from pathlib import Path
 import sys
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import recycle_bin
 def process_file_paths(directory):

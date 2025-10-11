@@ -8,9 +8,9 @@ from typing import Callable, Any
 from collections.abc import Iterable
 
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from com_log import logger_helper,UpdateTimeType
-from com_decorator import exception_decorator
+
+from base.com_log import logger_helper,UpdateTimeType
+from base.com_decorator import exception_decorator
 
 class ThreadPool:
     def __init__(self, num_threads:int=max(os.cpu_count()*2,1),ideal_time=5,root_thread_name:str=""):

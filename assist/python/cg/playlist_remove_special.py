@@ -2,9 +2,9 @@
 import send2trash
 import sys
 from pathlib import Path
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from base import logger_helper,path_equal
 #针对视频中添加了 广告片段，根据特定 名称删除（有局限性，用时需要核对）
 #是否递归

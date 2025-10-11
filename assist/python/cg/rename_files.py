@@ -1,9 +1,9 @@
 ﻿import sys
 import os
 from pathlib import Path
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 
 from base import rename_files_with_pattern

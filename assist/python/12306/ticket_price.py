@@ -7,9 +7,7 @@ import sys
 from pathlib import Path
 
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
 
 from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,find_last_value_by_col_val,concat_dfs,unique_df
 from train_station import TrainStationManager

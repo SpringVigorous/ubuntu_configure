@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 import os
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import unique,logger_helper,UpdateTimeType
 

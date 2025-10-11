@@ -9,9 +9,9 @@ from pathlib import Path
 import sys
 import pandas as pd
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from base import find_all,arabic_numbers
 
 def get_unmatched_info(input_string):

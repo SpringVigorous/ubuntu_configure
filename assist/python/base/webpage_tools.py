@@ -1,9 +1,9 @@
 ﻿from DrissionPage import WebPage
 import threading
 import time
-from com_log import logger_helper,UpdateTimeType
-from except_tools import except_stack
-from com_decorator import exception_decorator
+from base.com_log import logger_helper,UpdateTimeType
+from base.except_tools import except_stack
+from base.com_decorator import exception_decorator
 
 
 class UrlChangeWatcher:

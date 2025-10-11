@@ -1,6 +1,6 @@
 ﻿import requests
 from requests_toolbelt import MultipartEncoder
-import __init__
+
 import argparse
 import sys
 import json

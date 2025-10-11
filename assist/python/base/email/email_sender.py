@@ -11,17 +11,13 @@ import os
 from pathlib import Path
 
 
-# 获取项目根目录
-project_root = os.path.dirname(os.path.dirname(__file__))
-# 将项目根目录添加到 sys.path
-if project_root not in sys.path:
-    sys.path.append(project_root)
+
 
 from  com_log import  logger_helper
 from  com_decorator import exception_decorator
-from file_tools import detect_encoding
-from string_tools import exe_dir,hash_text
-from path_tools import is_image_file
+from base.file_tools import detect_encoding
+from base.string_tools import exe_dir,hash_text
+from base.path_tools import is_image_file
     
 from PIL import Image
 import os

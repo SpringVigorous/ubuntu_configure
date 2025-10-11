@@ -17,9 +17,9 @@ from pathlib import Path
 import sys
 import re
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from base import get_homepage_url,is_http_or_https,logger_helper,fetch_sync,UpdateTimeType,arabic_number_tuples,sanitize_filename,chinese_num
 import pandas as pd 
 import json

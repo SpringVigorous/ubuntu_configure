@@ -3,11 +3,7 @@ import os
 import pandas as pd
 import datetime
 import time
-# 获取项目根目录
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-# 将项目根目录添加到 sys.path
-if project_root not in sys.path:
-    sys.path.append(project_root)
+
 
 from  base.clipboard import to_clipboard
 from calculate_rest_days import cur_consume_to_paydays,cur_cycle_to_paydays

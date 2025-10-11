@@ -1,8 +1,8 @@
 #小红书最终版
 from queue import Queue,Empty
 import sys
-sys.path.append("..")
-sys.path.append(".")
+
+
 
 
 import threading

@@ -5,9 +5,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
 
 from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df,recycle_bin,pkl_files,update_df
 

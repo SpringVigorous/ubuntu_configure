@@ -5,8 +5,8 @@ import sys
 import os
 from pathlib import Path
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
+
+
 
 
 from base.path_tools import get_all_files_pathlib

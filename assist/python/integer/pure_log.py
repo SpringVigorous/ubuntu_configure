@@ -3,19 +3,11 @@
 import sys
 import os
 
-# 获取当前文件的绝对路径
-current_file_path = os.path.abspath(__file__)
 
-# 获取项目根目录
-project_root = os.path.dirname(os.path.dirname(current_file_path))
-# 将项目根目录添加到 sys.path
-if project_root not in sys.path:
-    sys.path.append(project_root)
 
 # 使用绝对导入
 from base.clipboard import to_clipboard, from_clipboard
 
-# from  ..base.clipboard import to_clipboard, from_clipboard
 
 
 def pure_log(input_str):

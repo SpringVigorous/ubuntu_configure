@@ -9,7 +9,7 @@ import sys
 
 import re
 
-import __init__
+
 from base.com_log import logger as logger
 # print(sys.path)
 

@@ -6,9 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import os
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
 
 from base import exception_decorator,logger_helper,UpdateTimeType,df_empty,arabic_numbers,unique,whole_url
 from train_station import TrainStationManager

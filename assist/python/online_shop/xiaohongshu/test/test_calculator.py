@@ -3,9 +3,6 @@ import sys
 import pandas as pd
 
 
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from price_calculator import PriceCalculator
 from base.math_tools import ceil_5
 

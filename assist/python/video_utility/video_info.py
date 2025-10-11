@@ -5,9 +5,9 @@ from DrissionPage import WebPage
 import time
 import re
 import concurrent.futures
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 
 from base import  logger_helper,UpdateTimeType

@@ -1,6 +1,6 @@
 ﻿import glob
 import os
-from path_tools import windows_path
+from base.path_tools import windows_path
 def ffmpeg_path():
     # 获取环境变量 PATH 的值
     path_dirs = os.environ['PATH'].split(os.pathsep)

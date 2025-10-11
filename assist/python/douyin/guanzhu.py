@@ -2,9 +2,9 @@
 from pathlib import Path
 import os
 import sys
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 
 from base import logger_helper,UpdateTimeType,exception_decorator,convert_seconds_to_datetime

@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from price_base import PriceCalculatorBase
 symbols_dict={
     'a':"成本",

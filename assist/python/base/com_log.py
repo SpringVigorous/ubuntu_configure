@@ -4,12 +4,12 @@ from enum import Enum
 import os
 import json
 import sys
-import __init__
+
 import threading
 from time import time,sleep
 
-from custom_log import CustomLogger
-from collect_tools import Stack
+from base.custom_log import CustomLogger
+from base.collect_tools import Stack
 
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5

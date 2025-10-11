@@ -6,9 +6,9 @@ from collections.abc import Iterable
 from pathlib import Path
 import os
 from PIL import Image, ImageDraw, ImageFont
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 
 from base import OCRProcessor,ImageHelper,unique,img_files,recycle_bin,logger_helper,UpdateTimeType,ZipUtility,write_to_txt_utf8_sig,is_empty_folder,clear_folder,cur_datetime_str,write_to_txt_utf8

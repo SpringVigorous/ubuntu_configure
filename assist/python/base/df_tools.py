@@ -1,5 +1,5 @@
 ﻿import pandas as pd
-from com_log import logger_helper
+from base.com_log import logger_helper
 import os
 import concurrent.futures
 import gc

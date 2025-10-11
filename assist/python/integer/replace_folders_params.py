@@ -5,12 +5,6 @@ import os
 
 #废弃，统一用 replace_folders_files.py代替
 
-# 将当前脚本所在项目的根路径添加到sys.path
-# 将当前脚本所在项目的根路径添加到sys.path
-project_root =str(Path(__file__).resolve().parent.parent)
-for module_path in [project_root,os.path.join(project_root,"base")]:
-    if not module_path in sys.path:
-        sys.path.insert(0,module_path)
 
 
 from base import replace_files_str as rf

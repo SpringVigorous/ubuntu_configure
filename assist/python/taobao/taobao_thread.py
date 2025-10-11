@@ -3,9 +3,9 @@ from DrissionPage import WebPage
 from pathlib import Path
 import os
 import time
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from base import ThreadTask,get_param_from_url,find_last_value_by_col_val,ThreadPool,get_next_filepath,write_to_json_utf8_sig,RetryOperater,fatal_link_error,random_sleep
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator

@@ -8,9 +8,7 @@ import sys
 from pathlib import Path
 from collections.abc import Iterable
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
 
 from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,unique,find_last_value_by_col_val,format_float
 from station_config import StationConfig

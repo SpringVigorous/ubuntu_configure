@@ -1,5 +1,5 @@
 ﻿
-from collect_tools import remove_consecutive_duplicates
+from base.collect_tools import remove_consecutive_duplicates
 def chinese_to_arabic(chinese_num):
     # 基础数字映射
     char_to_digit = {

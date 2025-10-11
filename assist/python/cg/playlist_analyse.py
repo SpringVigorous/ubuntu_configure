@@ -14,9 +14,9 @@ import sys
 import asyncio
 import re
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from   base  import find_all,json_files,m3u8_files,df_empty,mp4_files,recycle_bin
 root_path=r"F:\worm_practice/player/"
 reg=re.compile(r"(.*?)-([a-f0-9]+)(?:-lost)?\.")

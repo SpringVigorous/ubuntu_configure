@@ -1,12 +1,12 @@
 ﻿from queue import Queue
-from base_task import ThreadTask
+from base.task import ThreadTask
 import threading
 import sys
 import time
 
 
-sys.path.append("..")
-sys.path.append(".")
+
+
 
 from __init__ import *
 from base.com_log import logger as logger

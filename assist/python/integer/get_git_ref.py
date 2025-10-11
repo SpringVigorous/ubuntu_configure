@@ -1,4 +1,4 @@
-﻿import __init__
+﻿
 from base.com_log import logger_helper
 from base.except_tools import except_stack
 import base.file_tools as ft

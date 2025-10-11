@@ -5,9 +5,9 @@ import os
 
 from pathlib import Path
 import sys
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import remove_directories_and_files,logger_helper,UpdateTimeType,special_files,mp4_files,recycle_bin,move_file
 from link_url import MessageManager

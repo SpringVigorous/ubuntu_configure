@@ -13,9 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 import random
 import math
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import (
     get_homepage_url, is_http_or_https, logger_helper, fetch_sync, UpdateTimeType,

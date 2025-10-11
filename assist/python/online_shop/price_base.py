@@ -3,7 +3,7 @@ import sys
 from abc import ABC, abstractmethod
 
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from base.formula_calculator import *
 
 

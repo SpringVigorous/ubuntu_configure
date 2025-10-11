@@ -1,6 +1,6 @@
 ﻿import math
 from collections.abc import Iterable
-from collect_tools import unique
+from base.collect_tools import unique
 def ceil(n, m):
     n=float(n)
     m=float(m)

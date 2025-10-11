@@ -13,9 +13,9 @@ import json
 import sys
 import asyncio
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType,AES_128
@@ -26,6 +26,8 @@ import pandas as pd
 
 
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8
+
+#此文件废弃
 def get_real_url(url:str,url_page):
     if is_http_or_https(url) :
         return url
@@ -721,6 +723,10 @@ def filter_folder(file_base_name:str):
             move_file(file,dest_dir)
     
     pass
+
+
+#此文件废弃
+
 if __name__=="__main__":
 
     # filter_folder("汪汪队立大功")

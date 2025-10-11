@@ -1,8 +1,8 @@
 ﻿# 导入所需模块
 import os
 import shutil
-from remove_special_fold import recycle_bin,is_empty_folder
-from com_log import logger_helper,UpdateTimeType
+from base.remove_special_fold import recycle_bin,is_empty_folder
+from base.com_log import logger_helper,UpdateTimeType
 
 # 定义函数：清空文件夹内容，但不删除当前文件夹
 def clear_folder(folder_path):

@@ -2,7 +2,7 @@
 import json
 import argparse
 import os
-import __init__
+
 from base.com_log import logger as logger
 import base.string_tools as st
 import sys

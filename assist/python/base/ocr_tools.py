@@ -4,12 +4,12 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import List, Tuple, Optional
 import os
 import numpy as np
-# from com_log import logger_helper,UpdateTimeType
+# from base.com_log import logger_helper,UpdateTimeType
 import cv2
 import tempfile
 from pathlib import Path
-from com_log import logger_helper,UpdateTimeType
-from image_tools import ImageHelper
+from base.com_log import logger_helper,UpdateTimeType
+from base.image_tools import ImageHelper
 def has_non_ascii(s):
     # 检查所有字符的ASCII码是否都在0-127之间
     return not all(ord(c) < 128 for c in s)

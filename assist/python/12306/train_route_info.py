@@ -10,9 +10,6 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
 
 from base import exception_decorator,logger_helper,UpdateTimeType,arabic_numbers,unique,pickle_dump,pickle_load,df_empty,singleton,find_last_value_by_col_val,find_values_by_col_val,unique_df
 from station_config import StationConfig

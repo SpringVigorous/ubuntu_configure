@@ -3,11 +3,11 @@ import shutil
 import argparse
 import send2trash
 import sys
-from com_log import logger as logger
-from collect_tools import unique
-from path_tools import is_empty_folder
+from base.com_log import logger as logger
+from base.collect_tools import unique
+from base.path_tools import is_empty_folder
 from pathlib import Path
-from com_decorator import exception_decorator
+from base.com_decorator import exception_decorator
 #判断字符串是否在列表中,忽略大小写
 def check_str_in_list(str,str_list:list=None):
     if str_list == None or len(str_list) < 1:

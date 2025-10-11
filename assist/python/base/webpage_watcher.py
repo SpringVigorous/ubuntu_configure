@@ -3,9 +3,9 @@ from DrissionPage import WebPage
 import threading
 import time
 from typing import Callable
-from com_log import logger_helper, UpdateTimeType
-from except_tools import except_stack
-from com_decorator import exception_decorator
+from base.com_log import logger_helper, UpdateTimeType
+from base.except_tools import except_stack
+from base.com_decorator import exception_decorator
 
 class WebWatcher(metaclass=ABCMeta):
     """抽象浏览器观察者基类（增强版）"""

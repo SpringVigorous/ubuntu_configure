@@ -3,7 +3,7 @@ import shutil
 import argparse
 import send2trash
 import sys
-import __init__
+
 from base.com_log import logger as logger
 
 #判断字符串是否在列表中,忽略大小写

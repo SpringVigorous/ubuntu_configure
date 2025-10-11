@@ -1,7 +1,7 @@
 ﻿
 from typing import Callable
-from com_log import logger_helper,UpdateTimeType
-from except_tools import except_stack,fatal_link_error
+from base.com_log import logger_helper,UpdateTimeType
+from base.except_tools import except_stack,fatal_link_error
 
 class RetryOperater:
     def __init__(self, retry_count, normal_func:Callable=None, failure_func:Callable=None):

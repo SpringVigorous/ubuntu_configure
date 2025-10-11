@@ -2,7 +2,7 @@
 import sys
 import re
 from pathlib import Path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from base import check_dir,special_files,mp4_files
 from typing import Callable
 #苏州水乡_001.mp4

@@ -3,9 +3,9 @@ import sys
 from pathlib import Path
 import os
 import time
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from base import ThreadTask,get_param_from_url,logger_helper,UpdateTimeType,exception_decorator,except_stack,ThreadPool
 
 from taobao_manager import tb_manager

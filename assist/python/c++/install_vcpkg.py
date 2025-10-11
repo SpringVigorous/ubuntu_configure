@@ -7,9 +7,9 @@ import re
 from pathlib import Path
 
 import sys
-__root_path__=Path(__file__).parent.parent.resolve()
-sys.path.append(str(__root_path__ ))
-sys.path.append( os.path.join(__root_path__,'base') )
+
+
+
 
 
 

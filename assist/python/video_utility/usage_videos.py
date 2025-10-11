@@ -3,9 +3,9 @@ import re
 
 from pathlib import Path
 import sys
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 from dy_utility import OrgInfo,DestInfo,dy_root
 from base import  logger_helper,UpdateTimeType,download_sync,read_content_by_encode,unique,columns_index
 from base import copy_file,fill_adjacent_rows,merge_df,sparse_columns_name,merge_all_identical_column_file

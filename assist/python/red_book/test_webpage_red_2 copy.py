@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-import __init__
+
 from base.com_log import logger as logger
 import base.setting as setting
 from collections import namedtuple

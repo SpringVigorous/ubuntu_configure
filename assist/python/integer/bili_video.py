@@ -14,7 +14,7 @@ from collections import namedtuple, OrderedDict
 from queue import Queue
 
 from lxml import etree
-import __init__
+
 from base.com_log import logger as logger
 from base.string_tools import sanitize_filename,cur_date_str
 from base.file_tools import read_write_async,read_write_sync

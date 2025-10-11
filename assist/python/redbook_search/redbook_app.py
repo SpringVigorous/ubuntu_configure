@@ -1,8 +1,8 @@
 #小红书最终版
 from queue import Queue
 import sys
-sys.path.append("..")
-sys.path.append(".")
+
+
 
 import threading
 from DrissionPage._elements.chromium_element import ChromiumElement

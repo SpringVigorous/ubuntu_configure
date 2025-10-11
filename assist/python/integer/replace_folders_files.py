@@ -7,9 +7,9 @@ import argparse
 
 from pathlib import Path
 # 将当前脚本所在项目的根路径添加到sys.path
-__root_path__=Path(__file__).parent.parent.resolve()
-sys.path.append(str(__root_path__ ))
-sys.path.append( os.path.join(__root_path__,'base') )
+
+
+
 
 
 # import base.add_sys_path as asp

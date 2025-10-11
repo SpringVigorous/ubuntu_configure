@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-import __init__
+
 # print(sys.path)
         
 import base.string_tools as st

@@ -10,9 +10,9 @@ import sys
 from pathlib import Path
 
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import df_empty,singleton,exception_decorator,logger_helper,UpdateTimeType
 from station_config import StationConfig

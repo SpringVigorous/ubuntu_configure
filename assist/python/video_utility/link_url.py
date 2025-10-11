@@ -8,9 +8,9 @@ import pandas as pd
 import asyncio
 
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import as_normal,logger_helper,UpdateTimeType,mp4_files
 from base import write_to_txt,read_content_by_encode,path_equal,unique

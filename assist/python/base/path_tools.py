@@ -1,10 +1,10 @@
 ﻿import sys
 from pathlib import Path
 import os
-import system_tools as st
-from collect_tools import unique
+from base import system_tools as st
+from base.collect_tools import unique
 import tempfile
-from string_tools import hash_text
+from base.string_tools import hash_text
 
 temp_root = Path(tempfile.gettempdir()) / "worm_practice"
 os.makedirs(temp_root, exist_ok=True)

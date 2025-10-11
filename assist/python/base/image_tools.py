@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import List, Tuple, Optional
 import os
 import numpy as np
-# from com_log import logger_helper,UpdateTimeType
+# from base.com_log import logger_helper,UpdateTimeType
 import cv2
 import tempfile
 from pathlib import Path

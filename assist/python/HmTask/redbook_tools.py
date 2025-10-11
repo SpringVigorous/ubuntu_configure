@@ -11,8 +11,8 @@ from docx.oxml.ns import qn
 
 
 import sys
-sys.path.append("..")
-sys.path.append(".")
+
+
 
 from __init__ import *
 from uuid import uuid4

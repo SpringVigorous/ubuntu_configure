@@ -2,7 +2,7 @@
 
 import sys
 from openpyxl import load_workbook
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 from base import logger_helper,UpdateTimeType,unmerge_sheet_cols,read_xlsx,delete_sheets_except,unique,get_col_index
 from openpyxl import load_workbook

@@ -2,12 +2,12 @@ import subprocess
 import os
 from pathlib import Path
 import sys
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
 from base import path_equal,guid
 from base import logger_helper,UpdateTimeType,copy_file,recycle_bin,normal_path,path_equal
-from base.video_utility.dy_utility import dy_root,OrgInfo,DestInfo
+from dy_utility import dy_root,OrgInfo,DestInfo
+
+
 import json
 
 class VideoMetadata:

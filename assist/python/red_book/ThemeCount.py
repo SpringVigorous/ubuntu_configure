@@ -10,7 +10,7 @@ from docx.shared import Inches
 from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 
-import __init__
+
 from base.com_log import logger as logger
 
 def create_dir_recursive(path):

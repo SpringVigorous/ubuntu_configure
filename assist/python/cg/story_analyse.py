@@ -7,9 +7,9 @@ import pandas as pd
 import numpy as np
 import re
 
-root_path=Path(__file__).parent.parent.resolve()
-sys.path.append(str(root_path ))
-sys.path.append( os.path.join(root_path,'base') )
+
+
+
 
 from base import (
     find_all
