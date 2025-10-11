@@ -10,7 +10,7 @@ from time import time,sleep
 
 from base.custom_log import CustomLogger
 from base.collect_tools import Stack
-
+from base.raii_tools import RAIITool,wrapper_lamda
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
@@ -228,20 +228,20 @@ class logger_helper:
             self._detail=str(detail)
 
     #为空时，仅仅是把之前的值压栈，不为空时，压栈+更新
-    def stack_target(self,targe:str=None,detail:str=None):
+    def stack_target(self,target:str=None,detail:str=None):
         
             
         if self._target or self._detail:
             self.stack.push((self._target,self._detail))
             
             
-        if not targe:
-            targe=str(self._target)
+        if not target:
+            target=str(self._target)
         if not detail:
             detail=str(self._detail)
             
-        if targe or detail:
-            self.update_target(targe,detail)
+        if target or detail:
+            self.update_target(target,detail)
     
     def pop_target(self,times=1):
         if times<1:
@@ -290,6 +290,12 @@ class logger_helper:
         else:
             pass
         
+    
+    def raii_target(self,target:str=None,detail:str=None)->RAIITool:
+
+        return RAIITool(wrapper_lamda(self.stack_target,target=target,detail=detail),
+                          wrapper_lamda(self.pop_target))    
+    
     def detail_content(self,detail_lat:str=None):
         lst=[self._detail,detail_lat]
         return ",".join(filter(lambda x: x and x.strip() , map(str,filter(lambda x:x,lst))))
