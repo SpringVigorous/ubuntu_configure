@@ -192,8 +192,7 @@ def fetch_train_routine(from_city: str, to_city: str, date: str="2025.08.26", ki
             if not cur_start_city or not cur_end_city:
                 continue
             
-            with RAIITool(wrapper_lamda(logger.stack_target,detail=f"{cur_start_city}->{cur_end_city}:{date}"),
-                          wrapper_lamda(logger.pop_target)) :
+            with logger.raii_target(detail=f"{cur_start_city}->{cur_end_city}:{date}"):
                 
                 # logger.stack_target(detail=f"{cur_start_city}->{cur_end_city}:{date}")
                 route_df=route_manager.train_route(cur_start_city, cur_end_city, date)
@@ -239,8 +238,7 @@ def find_routine(start_station,end_station,date:str,transfer_cities):
     org_routes = pickle_load(result_pkl_path)  if exist_cache else None
     if not org_routes:
         
-        with RAIITool(wrapper_lamda(logger.stack_target,detail="获取车次信息表"),
-                      wrapper_lamda(logger.pop_target)) :
+        with logger.raii_target(detail="获取车次信息表") :
 
 
             dfs=[]

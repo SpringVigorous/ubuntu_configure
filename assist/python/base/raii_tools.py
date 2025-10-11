@@ -6,14 +6,14 @@ def wrapper_lamda(func,*args,**kwargs):
 
 
 class RAIITool():
-    """RAII风格的抽象基类（虚基类），定义资源管理的接口规范"""
+    """RAII风格，定义资源管理的接口规范"""
     
     def __init__(self, acquire_func:Callable,release_func:Callable):
-        self.resource=acquire_func()
+        self._resource=acquire_func()
         self._release_func = release_func
     def __enter__(self):
         """上下文管理器进入方法，返回资源对象"""
-        return self.resource
+        return self._resource
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """上下文管理器退出方法，确保资源释放"""
