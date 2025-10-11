@@ -22,7 +22,7 @@ def process_bilibili_directories(root_dir):
             continue
             
         # 检查是否存在"哔哩哔哩视频"子目录
-        bilibili_dir = os.path.join(subdir_path, "ass")
+        bilibili_dir = os.path.join(subdir_path, "哔哩哔哩视频")
         if os.path.exists(bilibili_dir) and os.path.isdir(bilibili_dir):
             print(f"处理目录: {subdir_path}")
             

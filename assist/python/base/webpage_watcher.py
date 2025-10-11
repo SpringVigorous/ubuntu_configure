@@ -90,7 +90,7 @@ class UrlChangeMonitor(WebWatcher):
             
             time.sleep(self.poll_interval)
         except Exception as e:
-            self.logger.error("URL监控异常", except_stack())
+            self.logger.debug("URL监控异常", except_stack())
         finally:
             return True
 

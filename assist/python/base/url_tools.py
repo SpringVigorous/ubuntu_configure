@@ -9,6 +9,7 @@ from itertools import chain
 from xml_tools import pretty_tree
 from collect_tools import unique
 from urllib.parse import urlparse
+from com_log import logger_helper
 
 def url_valid(url:str):
     parsed_url = urlparse(url)
@@ -133,6 +134,8 @@ def arrange_urls(url_list:list)->list[dict]:
     del_url=[url for url,count in count_dict.items() if float(count)/total<.05]
     if del_url: 
         df=df[~df["base_url"].isin(del_url)]
+        logger=logger_helper("筛选urls")
+        logger.trace("过滤成功",f"删除{len(del_url)}个url,{del_url}")
     
     
     sum_duration=df["duration"].sum()
@@ -278,3 +281,8 @@ def whole_url(url:str,params:dict=None)->str:
 
     return full_url
 
+if __name__ == "__main__":
+
+    
+    
+    pass

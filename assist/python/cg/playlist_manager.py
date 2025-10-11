@@ -135,19 +135,36 @@ class playlist_manager(file_manager):
             
         return results
     
+    #所有的视频信息，包含未下载的，以及m3u8信息不完整的
+    @property
+    def video_infos(self)->list:
+        if  df_empty(self._video_df):
+            return []
+        results=[]
+        for index,row in self._video_df.iterrows():
+            results.append((index,VideoUrlInfo.from_dict(row)))
+            
+        return results
+    
+    @property
+    def undownloaded_pure_infos(self)->list[VideoUrlInfo]:
+        infos=self.undownloaded_infos
+        if not infos:
+            return None
+            
+        return [info for index,info in infos]
     @property
     @exception_decorator(error_state=False)
     def undownloaded_lst(self)->list:
-        infos=self.undownloaded_infos
+        infos=self.undownloaded_pure_infos
         if not infos:
             return []
         results=[]
-        for _,info in infos:
-            data=get_url_data(info.m3u8_url,info.url_path,info.m3u8_path)
+        for info in infos:
+            data=info.url_data
             if not data:
                 continue
             video_name=info.title
-            from base import base64_utf8_to_bytes
             key,iv,info_list,total_len=data
             results.append((key,iv,info_list,total_len,video_name,info.m3u8_url))
         return results

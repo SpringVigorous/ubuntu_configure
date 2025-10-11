@@ -93,8 +93,12 @@ class InteractImp():
         with self._lock:
             if not self._wp:
                 return
-            self.stop_watch()
-            self._wp.close()
+            try:
+                self.stop_watch()
+                self._wp.close()
+            except Exception as e:
+                self._logger.trace("异常",except_stack())
+                self._wp=None
             # self._wp=None
 
     def handle_loop(self):
@@ -137,7 +141,10 @@ class InteractImp():
         
         log_detail=f"收到第{self.msg_count}个消息:{url}" if  has_url else "监听url变化"
         if not has_url:
-            url=self.wp.url
+            try:
+                url=self.wp.url
+            except:
+                return
         
         
         
@@ -235,16 +242,16 @@ class HandleUrl(ThreadTask):
         if not data  or not isinstance(data,dict):
             return
 
-        url=data[url_id]
-        m3u8_url=data[m3u8_url_id]
-        video_name=data[video_title_id]       
-        m3u8_data=read_from_txt_utf8_sig(m3u8_path(video_name))
+        info=VideoUrlInfo.from_dict(data)
+        
+        m3u8_url,video_name=info.m3u8_url,info.title
+
 
         logger=self.logger
         logger.update_target(m3u8_url,video_name)
         logger.update_time(UpdateTimeType.STAGE)
         logger.trace("开始")
-        result=get_url_data(m3u8_url,url_json_path(video_name),m3u8_path(video_name))
+        result=info.url_data
         logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
         if not result:
             return

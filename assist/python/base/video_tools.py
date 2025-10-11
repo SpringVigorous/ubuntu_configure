@@ -268,6 +268,7 @@ def cover_video_pic(video_path,output_path):
     
 
 def merge_video(temp_paths,output_path):
+    #合并前，手动筛选,添加断点
     if not temp_paths or not output_path:
         return
     logger= logger_helper("合并视频",f"{temp_paths} -> {output_path}")

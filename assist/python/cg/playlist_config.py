@@ -1,6 +1,7 @@
 ﻿import os
 from base import hash_text,normal_path,sanitize_filename,read_from_json_utf8_sig,write_to_json_utf8_sig
 import re
+from playlist_kernel import *
 
 
 root_path=r"F:\worm_practice/player/"
@@ -55,7 +56,19 @@ class VideoUrlInfo:
         self._url=url
         self._m3u8_url=m3u8_url
         self._download=download
+        self._info:video_info=None
+
+    def fetch_m3u8_data(self):
+        pass
         
+    @property
+    def info(self)->video_info:
+        if self._info:
+            return self._info
+        if self.exist_m3u8_path:
+            self._info=video_info(self.m3u8_url,self.m3u8_path)
+            return self._info
+    
     @property
     def has_raw_url(self)->bool:
         return bool(self._url)
@@ -84,6 +97,29 @@ class VideoUrlInfo:
     def url_path(self):
         return url_json_path(self.title)
     
+    @property
+    def temp_dir(self):
+        return temp_video_dir(self.title)
+    
+    @property
+    def exsit_temp_dir(self)->bool:
+        return os.path.exists(self.temp_dir)
+    @property
+    def exist_m3u8_path(self)->bool:
+        return os.path.exists(self.m3u8_path)
+    @property
+    def suffix(self)->str:
+        info=self.info
+        if info:
+            return info.suffix
+        #默认值
+        return ".ts"
+    
+    @property
+    def url_data(self):
+        data=get_url_data(self.m3u8_url,self.url_path,self.m3u8_path)
+        return data
+    
     # @property
     # def m3u8_data(self):
     #     url_path=m3u8_path(self.title)
@@ -101,6 +137,7 @@ class VideoUrlInfo:
 
     #     return raw_data
 
+    
     @property
     def vaild(self)->bool:
         return self.has_raw_url or self.has_m3u8_url
