@@ -202,8 +202,8 @@ class InteractImp():
                 body=packet.response.body
                 m3u8_data=body.decode("utf-8") if body else ""
                 title=sanitize_filename(self.wp.title).replace("-","_")
-                return self.cache_url(m3u8_url,title,raw_url=cur_url,m3u8_data=m3u8_data)
-
+                info=VideoUrlInfo(title=title,url=cur_url,m3u8_url=m3u8_url,download=-1)
+                return self.cache_url(info)
             except Exception as e:
                 logger.error("异常",except_stack(),update_time_type=UpdateTimeType.STAGE)
 
