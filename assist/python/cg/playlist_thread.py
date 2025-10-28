@@ -123,9 +123,11 @@ class InteractImp():
         logger=self._logger
         logger.update_target(f"收到第{self.msg_count}个消息:{info}")
         logger.info("成功")
-
-        result=info.to_dict
-        df=self.manager.update_video_df(pd.DataFrame([result]))
+        
+        org_df=pd.DataFrame([info.to_dict])
+        df=self.manager.update_video_df(org_df)
+        if df_empty(df):
+            df=org_df
         if df_empty(df):
             return
         return df.to_dict(orient="records")
@@ -220,7 +222,7 @@ class InteractUrl(ThreadTask):
             self.stop()
             return
         #可能有多个
-        if not data or  not isinstance(data,VideoUrlInfo) or  not data.vaild:
+        if not data or  not isinstance(data,VideoUrlInfo) or  not data.valid:
             return
 
         

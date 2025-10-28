@@ -189,11 +189,8 @@ async def __fetch_async(url ,session,max_retries=3,**kwargs):
     retries = 0
     while retries < max_retries:
         try:
-           # 添加超时控制
-            timeout = aiohttp.ClientTimeout(total=30, connect=10)
-            #临时关闭 SSL 验证（不推荐生产环境） ssl=False,
-            async with httpx.AsyncClient(verify=False, timeout=timeout) as client:
-                response = await client.get(url, **kwargs)
+            async with session.get(url,**kwargs) as response:
+                # response = await client.get(url, **kwargs)
 
                 if response.status == 200:
                     content_length = int(response.headers.get('Content-Length', 0))

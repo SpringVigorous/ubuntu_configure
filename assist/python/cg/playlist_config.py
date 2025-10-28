@@ -102,7 +102,7 @@ class VideoUrlInfo:
         return temp_video_dir(self.title)
     
     @property
-    def exsit_temp_dir(self)->bool:
+    def exist_temp_dir(self)->bool:
         return os.path.exists(self.temp_dir)
     @property
     def exist_m3u8_path(self)->bool:
@@ -139,7 +139,7 @@ class VideoUrlInfo:
 
     
     @property
-    def vaild(self)->bool:
+    def valid(self)->bool:
         return self.has_raw_url or self.has_m3u8_url
     
     @staticmethod

@@ -46,13 +46,14 @@ class playlist_app:
 
 
             
+    @exception_decorator(error_state=False)
     def send_msg(self,urls:list[VideoUrlInfo]|VideoUrlInfo):
 
         if not urls:
             return
         if isinstance(urls,VideoUrlInfo):
             urls=[urls]
-        urls=list(filter(lambda x:x.vaild,urls))
+        urls=list(filter(lambda x:x.valid,urls))
         if not urls:
             return
         
@@ -64,24 +65,27 @@ class playlist_app:
             logger.trace(f"消息入队",url,update_time_type=UpdateTimeType.STEP)
 
     
+    @exception_decorator(error_state=False)
     def continue_download(self):
         for item in self.manager.undownloaded_lst:
             if not item:
                 continue
             self.download_queue.put(item)
-    def continue_nom3u8(self):
-        lst=self.manager.no_m3u8_url_lst
-        if not lst:
+    @exception_decorator(error_state=False)
+    def continue_handle_url(self):
+        msg=self.manager.undownloaded_pure_infos
+        if not msg:
             return
-        msg=[VideoUrlInfo(url=item) for item in lst]
+
         self.send_msg(msg)
 
+    @exception_decorator(error_state=False)
     def continue_merge(self):
-        infos=self.manager.video_infos
+        infos=self.manager.undownloaded_pure_infos
         if not infos:
             return
 
-        for info in filter(lambda x:x.exsit_temp_dir and x.vaild ,infos):
+        for info in filter(lambda x: x and x.exist_temp_dir and x.valid ,infos):
             file_paths=spceial_suffix_files(info.temp_dir,[info.suffix],False)
             if not file_paths:
                 continue
@@ -119,16 +123,17 @@ def main():
 
    
     m3u8_urls=[
-        VideoUrlInfo(m3u8_url='https://v.cdnlz19.com/20240327/24474_34f63808/2000k/hls/mixed.m3u8', title='神奇汉字星球_01'),
+        VideoUrlInfo(m3u8_url='https://v1.qrssuv.com/wjv1/202308/19/pWujuxMMY62/video/1000k_720/hls/index.m3u8', title='我的23岁'),
+
     ]
 
-    # app.send_msg(m3u8_urls) #直接提供m3u8_url
+    # app.send_msg(m3u8_urls) #直接提供m3u8_urlK
     # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
-    # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
+    app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
     
-    # app.continue_nom3u8() #继续交互
+    # app.continue_handle_url() #继续交互
 
     # app.continue_download() #继续下载
     
@@ -141,5 +146,8 @@ def main():
 
 
 if  __name__ == '__main__':
+
+
+    
 
     main()

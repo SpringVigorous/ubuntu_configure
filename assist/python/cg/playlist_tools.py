@@ -150,7 +150,10 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
     while True:
         play_logger.update_target(detail=f"第{download_time}次")
         play_logger.debug("开始", update_time_type=UpdateTimeType.ALL)
-        success = handle_playlist(urls, temp_paths, key, iv)
+        
+        success = handle_playlist_async(urls, temp_paths, key, iv)    #异步方式
+        # success = handle_playlist(urls, temp_paths, key, iv)    #同步方式
+
         play_logger.debug("完成", update_time_type=UpdateTimeType.ALL)
         download_time+=1
         

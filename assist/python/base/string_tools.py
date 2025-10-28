@@ -187,7 +187,20 @@ def convert_seconds_to_datetime(seconds:int):
     
     return formatted_date
     
-
+# 定义转换函数
+def convert_seconds_to_time_str(t):
+    # 处理总秒数（整数部分）和毫秒（小数部分）
+    total_seconds = int(t)
+    milliseconds = int(round((t - total_seconds) * 1000, 0))  # 四舍五入保留3位毫秒
+    
+    # 转换为小时、分钟、秒
+    hours = total_seconds // 3600
+    remaining_seconds = total_seconds % 3600
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
+    
+    # 格式化字符串（HH:MM:SS.sss）
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 def replace_punctuation_with_newline(text):
     # 使用正则表达式匹配一个或多个连续的标点符号
     result = re.sub(r'[^\w\s]', '\n', text)
