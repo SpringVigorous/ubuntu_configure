@@ -125,6 +125,16 @@ class InteractImp():
         logger.info("成功")
         
         org_df=pd.DataFrame([info.to_dict])
+        # return
+        # if self.manager.has_downloaded_by_m3u8_hash(info.m3u8_hash):  # 已下载
+        
+        exist_df=self.manager.sub_df_by_m3u8_hash(info.m3u8_hash)
+        
+        if not df_empty(exist_df):  # 已下载
+            exist_info=str(exist_df.tail(1).to_dict(orient="records")[0])
+            logger.info("忽略",f"m3u8信息已下载,m3u8_hash信息重复\n{info}\n已有信息为：{exist_info}")
+            return
+        
         df=self.manager.update_video_df(org_df)
         if df_empty(df):
             df=org_df
@@ -202,7 +212,8 @@ class InteractImp():
                 body=packet.response.body
                 m3u8_data=body.decode("utf-8") if body else ""
                 title=sanitize_filename(self.wp.title).replace("-","_")
-                info=VideoUrlInfo(title=title,url=cur_url,m3u8_url=m3u8_url,download=-1)
+                info=VideoUrlInfo(title=title,url=cur_url,m3u8_url=m3u8_url,download=-1,m3u8_hash=hash_text(m3u8_data,max_length=128))
+                # logger.trace("m3u8_hash",info.m3u8_hash)
                 return self.cache_url(info)
             except Exception as e:
                 logger.error("异常",except_stack(),update_time_type=UpdateTimeType.STAGE)
@@ -247,7 +258,7 @@ class HandleUrl(ThreadTask):
         info=VideoUrlInfo.from_dict(data)
         
         m3u8_url,video_name=info.m3u8_url,info.title
-
+        
 
         logger=self.logger
         logger.update_target(m3u8_url,video_name)
@@ -311,21 +322,25 @@ class DownloadVideo(ThreadTask):
         key,iv,info_list,total_len,video_name,m3u8_url=data
         logger=logger_helper("下载视频...",f"{video_name}")
         
-        if self.manager.has_downloaded(video_name):
+        m3u8_hash=None
+        if self.manager.has_downloaded_by_name(video_name) or self.manager.has_downloaded_by_m3u8_url(m3u8_url) or self.manager.has_downloaded_by_m3u8_hash(m3u8_hash):
             logger.debug(f"已下载过{video_name}","忽略此下载项")
             return
         
+        # return
         
-        url_list=[get_real_url(urls[2],m3u8_url)  for urls in info_list]
-        logger.debug(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
+        url_lst_org=[(urls[0],get_real_url(urls[2],m3u8_url))  for urls in info_list]
+        index_lst,url_lst=zip(*url_lst_org)
+        
+        logger.debug(f"总时长:{total_len}s,共{len(url_lst)}个",update_time_type=UpdateTimeType.STAGE)
         temp_hash_name=video_hash_name(video_name)
 
 
         
-        temp_path_list=temp_video_paths(len(url_list),temp_video_dir(video_name),postfix(url_list[0]))
+        temp_path_list=temp_video_paths_by_prefix_index(index_lst,temp_video_dir(video_name),postfix(url_lst[0]))
         logger.update_time(UpdateTimeType.STAGE)
         logger.debug("开始")
-        result= process_playlist(url_list, temp_path_list, key, iv, root_path, video_name, temp_hash_name)
+        result= process_playlist(url_lst, temp_path_list, key, iv, root_path, video_name, temp_hash_name)
         if not result:
             return
         
@@ -344,29 +359,43 @@ class MergeVideo(ThreadTask):
 
         self.set_thread_name(class_name)
 
-        self.logger.update_target("文字识别")
+        self.logger.update_target("合并视频")
         self.manager:playlist_manager=playlist_manager()
+        self._pool:ThreadPool=None
+        self._success_lst:list[bool]=[]
+        
+    def _final_run_after(self):
+        self.pool.join()
+        lst=self._success_lst
+        success_count=len(list(filter(lambda x:x,lst)))
+        self.logger.info("完成",f"成功{success_count}/{len(lst)}",update_time_type=UpdateTimeType.STAGE)
+        
+    # @property
+    # def logger(self):
+    @property
+    def pool(self):
+        if not self._pool:
+            #重置时间
+            self.logger.update_time(UpdateTimeType.STAGE)
+            self._pool=ThreadPool(root_thread_name=self.thread_name,num_threads=max(os.cpu_count(),1))
+        return self._pool   
     @exception_decorator()
     def _handle_data(self,data):
         if not data :
             return
-        
-        return self._merge_video(data)
-        
-
-
-
+        @exception_decorator()
+        def callback(result, error):
+            self._success_lst.append(result or not error)
+        self.pool.submit(self._merge_video,data,callback=callback)
     @exception_decorator(error_state=False)
     def _merge_video(self,data):
        
         lost_count,success_paths,video_name=data
-        
         temp_hash_name=video_hash_name(video_name)
         temp_root_dir=temp_video_dir(video_name)
         temp_video_path=normal_path(os.path.join(temp_root_dir,f"{temp_hash_name}.mp4"))
         dest_video=normal_path(dest_video_path(video_name))
-        logger=self.logger
-        logger.update_target("合并视频",temp_video_path)
+        logger=logger_helper("合并视频",temp_video_path)
         logger.update_time(UpdateTimeType.STAGE)
         
         logger.debug("开始","合并",update_time_type=UpdateTimeType.STEP)

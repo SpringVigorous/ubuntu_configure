@@ -1,4 +1,4 @@
-﻿from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
+﻿from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file,hash_text
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType
 from base import arrange_urls,postfix
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8,ThreadPool,AES_128
@@ -26,7 +26,7 @@ class video_info:
         self.method=None
         self.uri=None
         self.iv=None
-        
+        self._m3u8_path=m3u8_path
         self.playlist=None
         self.org_playlist=None
         
@@ -68,7 +68,7 @@ class video_info:
             open(m3u8_path,"w",encoding="utf-8-sig").write(content)
             
             
-        self.m3u8=content
+        self._m3u8=content
         try:
             header=content.split('#EXTINF:')[0].replace(",","\n")
 
@@ -79,7 +79,14 @@ class video_info:
         # 正则表达式模式
         self._init_urls(content)
         self._init_keys(content)
-
+    @property
+    def m3u8(self)->str:
+        if not self._m3u8:
+            self._m3u8=self._m3u8_path
+        return self._m3u8
+    @property
+    def m3u8_hash(self)->str:
+        return hash_text(self.m3u8,max_length=128)
     @exception_decorator(error_state=False)
     def _init_urls(self,content):
         pattern = re.compile(r'#EXTINF:(.*?),\s*(\S+)\s')
@@ -94,7 +101,7 @@ class video_info:
         
         arrage_lst= arrange_urls(playlist)   
             
-        dest_list=[[index,seg["duration"],seg["url"]]    for index,seg in enumerate(arrage_lst)]
+        dest_list=[[index,seg["duration"],seg["url"]]    for index,seg in enumerate(arrage_lst) if seg["valid"]]
         
         self.playlist=dest_list
         self.org_playlist=[[index,*seg]   for index,seg in enumerate(playlist)  ]

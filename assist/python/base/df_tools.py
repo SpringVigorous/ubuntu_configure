@@ -4,7 +4,7 @@ import os
 import concurrent.futures
 import gc
 from collections.abc import Iterable
-
+from base.com_decorator import exception_decorator
 def find_rows_by_col_val(df, col_name,val,default_val=pd.DataFrame()):
 
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找【{val}】")
@@ -25,8 +25,12 @@ def find_values_by_col_val(df, col_name,val,dest_name,default_val=pd.Series()):
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")
     try:
         matches=df[col_name] == val
-        results= df.loc[matches, dest_name]
-
+        match_df=find_sub_df_by_col_val(results,col_name,val)
+        if df_empty(match_df):
+            log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
+            return default_val
+        
+        results= df[dest_name]
         if results.empty:
             log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
             return default_val
@@ -35,7 +39,12 @@ def find_values_by_col_val(df, col_name,val,dest_name,default_val=pd.Series()):
         log.error("异常",f"没有找到匹配的值，返回默认值{default_val}")
         return default_val
 
-
+@exception_decorator(error_state=False)
+def find_sub_df_by_col_val(df, col_name,val):
+    matches=df[col_name] == val
+    return df[matches]
+        
+        
 def matches_by_col_val_contains(df, col_name,val,default_val=pd.Series()):
 
     # 创建一个日志记录器，用于记录匹配操作的日志信息
@@ -361,8 +370,9 @@ def get_attr(df:pd.DataFrame,attr_name:str)->str:
     if df is None:
         return None
     return df.attrs.get(attr_name)
+@exception_decorator(error_state=False)
 def df_empty(df:pd.DataFrame)->bool:
-    return df is None or df.empty
+    return df is None or (isinstance(df,pd.DataFrame) and df.empty) 
 
 
 def add_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[str]=None)->pd.DataFrame:

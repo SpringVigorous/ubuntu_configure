@@ -36,12 +36,13 @@ def m3u8_path(vieo_name:str):
 def cache_name(video_name:str):
     return f"{video_name}-{video_hash_name(video_name)}"
 
-listent_shop_api=["hls/index.m3u8","hls/mixed.m3u8","index.m3u8","master.m3u8","*/master.m3u8*"]
+listent_shop_api=["hls/index.m3u8","hls/mixed.m3u8","index.m3u8","master.m3u8","*/master.m3u8*","mixed.m3u8"]
 # 
 # listent_shop_api=["*/index.m3u8"]
 
 url_id="url"
 m3u8_url_id="m3u8_url"
+m3u8_hash_id="m3u8_hash"
 video_title_id="title"
 video_name_id=video_title_id
 hash_id="hash"
@@ -51,11 +52,12 @@ video_sheet_name="video"
 
 
 class VideoUrlInfo:
-    def __init__(self,title:str=None,url:str=None,m3u8_url:str=None,download:int=-1):
-        self._title=sanitize_filename(title).replace("-","_")
+    def __init__(self,title:str=None,url:str=None,m3u8_url:str=None,download:int=-1,m3u8_hash:str=None):
+        self._title:str=title
         self._url=url
         self._m3u8_url=m3u8_url
         self._download=download
+        self._m3u8_hash:str=m3u8_hash
         self._info:video_info=None
 
     def fetch_m3u8_data(self):
@@ -70,6 +72,14 @@ class VideoUrlInfo:
             return self._info
     
     @property
+    def m3u8_hash(self)->str:
+        if self._m3u8_hash:
+            return self._m3u8_hash
+        if self.info:
+            self._m3u8_hash=self.info.m3u8_hash
+            return self._m3u8_hash
+    
+    @property
     def has_raw_url(self)->bool:
         return bool(self._url)
     @property
@@ -80,7 +90,19 @@ class VideoUrlInfo:
         return self._download>=0
     @property
     def title(self)->str:
-        return self._title
+        
+        name=self._title
+        if not name:
+            return ""
+        if "《" in name and "》" in name:
+            pattern = r'《([^《》]+)》'
+            match = re.search(pattern, name)
+            if match:
+                name=match.group(1)
+
+
+        return sanitize_filename(name).replace("-","_")
+
 
     @property
     def url(self)->str:
@@ -144,15 +166,16 @@ class VideoUrlInfo:
     
     @staticmethod
     def from_dict(data:dict)->"VideoUrlInfo":
-        return VideoUrlInfo(data.get(video_title_id),data.get(url_id),data.get(m3u8_url_id),data.get(download_status_id))
+        return VideoUrlInfo(data.get(video_title_id),data.get(url_id),data.get(m3u8_url_id),data.get(download_status_id),data.get(m3u8_hash_id))
     @property
     def to_dict(self)->dict:
         return {
             video_title_id:self.title,
             url_id:self.url,
             m3u8_url_id:self.m3u8_url,
-            download_status_id:self._download
+            download_status_id:self._download,
+            m3u8_hash_id:self.m3u8_hash
         }
     def __repr__(self) -> str:
         
-        return f"title:{self._title} url:{self._url} m3u8_url:{self._m3u8_url} download:{self._download}"
+        return f"title:{self.title} url:{self.url} m3u8_url:{self.m3u8_url} download:{self._download} m3u8_hash:{self.m3u8_hash}"

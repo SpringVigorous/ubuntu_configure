@@ -128,18 +128,24 @@ def arrange_urls(url_list:list)->list[dict]:
               "url":url} for duration,url in url_list]
     df=pd.json_normalize(lst)
     # df=pd.json_normalize(lst).drop_duplicates(subset="url").reset_index()
-    df["base_url"]=df["url"].apply(lambda url: Path(split_url(url)["base_url"]).parent)
+    df["base_url"]=df["url"].apply(lambda url: str(Path(split_url(url)["base_url"]).parent))
+    df["valid"]=True
     count_dict = df['base_url'].value_counts().to_dict()
     total=len(url_list)
-    del_url=[url for url,count in count_dict.items() if float(count)/total<.05]
+    del_url=[str(url) for url,count in count_dict.items() if float(count)/total<.05]
     if del_url: 
-        df=df[~df["base_url"].isin(del_url)]
+        df["valid"]=df["base_url"].apply(lambda url: url not in del_url)
+        
+        patten=df["valid"]==False
+        
+        filter_df=df[patten]
         logger=logger_helper("筛选urls")
-        logger.trace("过滤成功",f"删除{len(del_url)}个url,{del_url}")
-    
-    
-    sum_duration=df["duration"].sum()
-    return df[["url","duration"]].to_dict(orient="records",index=True)
+        detail="\n\t".join([ f'{key},共{group.shape[0]}个,详细如下：\n\t\t{"\n\t\t".join(group["url"].tolist())}' for key,group in filter_df.groupby("base_url")])
+        logger.trace("过滤成功",f"删除{len(del_url)}个url文件夹\n\t{detail}")
+        
+        
+
+    return df[["url","duration","valid"]].to_dict(orient="records",index=True)
     
     keys_param= [key  for key in lst[0].keys() if key not in ["base_url","start","end","duration_fake_id"]]
     if not keys_param:

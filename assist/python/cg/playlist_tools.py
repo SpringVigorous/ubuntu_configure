@@ -142,8 +142,8 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
     success =False
 
     
-    urls=url_list.copy()
-    temp_paths=all_path_list.copy()
+    urls=url_list[:]
+    temp_paths=all_path_list[:]
     success_paths=[]
     last_lost_count=0
     
@@ -187,8 +187,17 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
     success_paths=[item for item in all_path_list if item not in lost_path]
     return lost_count,success_paths
             
-def temp_video_paths(count,temp_dir,postfix=".mp4"):
-    return [normal_path(os.path.join(temp_dir, f"{index:04}{postfix}"))    for index in range(count)]
+def temp_video_paths_by_count(count,temp_dir,postfix=".mp4"):
+    prefix_lst=[f"{index:04}" for index in range(count)]
+    return temp_video_paths_by_prefix( prefix_lst,temp_dir,postfix=postfix)
+
+
+def temp_video_paths_by_prefix(pre_lst:list,temp_dir,postfix=".mp4"):
+    return [normal_path(os.path.join(temp_dir, f"{index}{postfix}"))    for index in pre_lst]
+
+def temp_video_paths_by_prefix_index(pre_lst:list[int],temp_dir,postfix=".mp4"):
+    prefix_lst=[f"{index:04}" for index in pre_lst ]
+    return temp_video_paths_by_prefix( prefix_lst,temp_dir,postfix=postfix)
 
 
 def decryp_video(org_path,dest_path,key,iv):
@@ -251,7 +260,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     play_logger.debug(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
 
     
-    temp_path_list=temp_video_paths(len(url_list),temp_dir,postfix(url_list[0]))
+    temp_path_list=temp_video_paths_by_count(len(url_list),temp_dir,postfix(url_list[0]))
     
     play_logger.debug("开始","下载",update_time_type=UpdateTimeType.STAGE)
 

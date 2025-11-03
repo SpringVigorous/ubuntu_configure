@@ -81,26 +81,28 @@ class playlist_manager(file_manager):
             return
         with self.lock:
             self._video_df=dfs[0]
+            self._video_df.fillna("",inplace=True)
         logger.debug("完成",update_time_type=UpdateTimeType.STAGE)
         
     @exception_decorator(error_state=False)
     def save_xlsx_df(self):
         logger=self.logger
         logger.update_time(UpdateTimeType.STAGE)
-        logger.trace("开始")
-        self.update_status()
-        def _save_imp(xlsx_path:str):
-            logger.update_target("保存数据",xlsx_path)
-            self._save_df_xlsx_imp([self.video_df],xlsx_path)
-        try:
-            _save_imp(video_xlsx)
-        except:
-            xlsx_path=sequence_num_file_path(video_xlsx)
-            logger.error("失败",f"备份到{xlsx_path},具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
-            logger.update_time(UpdateTimeType.STAGE)
-            _save_imp(xlsx_path)
+        with logger.raii_target("保存数据","输出到xlsx文件"):
+            logger.trace("开始")
+            self.update_status()
+            def _save_imp(xlsx_path:str):
+                logger.update_target(detail=xlsx_path)
+                self._save_df_xlsx_imp([self.video_df],xlsx_path)
+            try:
+                _save_imp(video_xlsx)
+            except:
+                xlsx_path=sequence_num_file_path(video_xlsx)
+                logger.error("失败",f"备份到{xlsx_path},具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
+                logger.update_time(UpdateTimeType.STAGE)
+                _save_imp(xlsx_path)
 
-        logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
+            logger.trace("完成",update_time_type=UpdateTimeType.STAGE)
         
     @exception_decorator(error_state=False)
     def update_video_df(self,new_df:pd.DataFrame)->pd.DataFrame:
@@ -193,7 +195,7 @@ class playlist_manager(file_manager):
             
         return unique(results)
     @exception_decorator(error_state=False)
-    def has_downloaded(self,video_name:str)->bool:
+    def has_downloaded_by_name(self,video_name:str)->bool:
         df=None
         with self.lock:
             df=self._video_df.copy()
@@ -202,24 +204,68 @@ class playlist_manager(file_manager):
             return False
         
         from base.df_tools import  find_last_value_by_col_val
-        
-        return find_last_value_by_col_val(df,video_name_id,video_name,download_status_id)>0
+        val=find_last_value_by_col_val(df,video_name_id,video_name,download_status_id)
+        return val>0 if val is not None else False
     
+    @exception_decorator(error_state=False)
+    def has_downloaded_by_m3u8_url(self,m3u8_url:str)->bool:
+        df=None
+        with self.lock:
+            df=self._video_df.copy()
+        
+        if df_empty(df):
+            return False
+        
+        from base.df_tools import  find_last_value_by_col_val
+        val=find_last_value_by_col_val(df,m3u8_url_id,m3u8_url,download_status_id,-1)
+        return val>0 if val is not None else False
+
+    @exception_decorator(error_state=False)
+    def has_downloaded_by_m3u8_hash(self,m3u8_hash:str)->bool:
+        if not m3u8_hash: 
+            return False
+        
+        df=None
+        with self.lock:
+            df=self._video_df.copy()
+        
+        if df_empty(df):
+            return False
+        
+        from base.df_tools import  find_last_value_by_col_val
+        val=find_last_value_by_col_val(df,m3u8_hash_id,m3u8_hash,download_status_id)
+        return val>0 if val is not None else False
+    
+    @exception_decorator(error_state=False)
+    def sub_df_by_m3u8_hash(self,m3u8_hash:str)->pd.DataFrame:
+        if not m3u8_hash: 
+            return 
+        
+        df:pd.DataFrame=None
+        with self.lock:
+            df=self._video_df.copy()
+        
+        if df_empty(df):
+            return 
+        
+        from base.df_tools import  find_last_value_by_col_val,find_sub_df_by_col_val
+        df=find_sub_df_by_col_val(df,m3u8_hash_id,m3u8_hash)
+        return df.reset_index(drop=True)
     
     @exception_decorator(error_state=False)
     def set_downloaded(self,video_name:str,status:int=1)->bool:
         logger=self.logger
-        logger.update_target("更新下载状态",video_name)
-        with self.lock:
-            df=self._video_df
-            if df_empty(df):
-                return False
-            mask=df[video_name_id]==video_name
-            if not mask.any():
-                return False
-            df.loc[mask, download_status_id] = status
-            logger.debug("已下载" if status>0 else "未下载",update_time_type=UpdateTimeType.STAGE)
-            return True
+        with logger.raii_target("更新下载状态",video_name) :
+            with self.lock:
+                df=self._video_df
+                if df_empty(df):
+                    return False
+                mask=df[video_name_id]==video_name
+                if not mask.any():
+                    return False
+                df.loc[mask, download_status_id] = status
+                logger.debug("已下载" if status>0 else "未下载",update_time_type=UpdateTimeType.STAGE)
+                return True
     @exception_decorator(error_state=False)
     def update_status(self):
         for file in mp4_files(video_dir):

@@ -128,10 +128,7 @@ def analyse_log(log_path:str):
         
     return log_df
     
-    
-if __name__ == "__main__":
-    
-
+def handle_urls():
     # log_df=dir_log_data(r"F:\worm_practice\logs\playlist")
     
     url_path = r"F:\worm_practice\player\urls"
@@ -169,6 +166,77 @@ if __name__ == "__main__":
     merge_df.sort_values(by="len",ascending=True,inplace=True)
     merge_df.to_excel(os.path.join(url_path,"merge_urls.xlsx"))
     
+def handle_info_from_log(log_path:str):
+    lst=[]
+    data=None
+    with open(log_path, 'r', encoding='utf-8') as file:
+        data = file.read()
+        
+    # 正则表达式模式
+    pattern=r"【收到第\d+个消息:title:(.*?) url:(.*?) m3u8_url:(.*?) download:-1 m3u8_hash:(.*?)】"
+    matches = re.findall(pattern, data)
+    
+    for match in matches:
+        if not match:
+            continue
+        title=match[0]
+        url = match[1]
+        m3u8_url=match[2]
+        m3u8_hash=match[3]
+        lst.append({"title": title, "url": url, "m3u8_url": m3u8_url, "m3u8_hash": m3u8_hash, 'download':-1})
+    log_df=pd.json_normalize(lst) 
+    pattern=r"【更新下载状态】-【已下载】详情：(.*?),耗时"
+    matches = re.findall(pattern, data)
+    
+    result_lst=[]
+    for match in matches:
+        if not match:
+            continue
+        title=match
+        result_lst.append(title)
+
+        
+    pattern=r"【下载视频...】-【完成】详情：(.*?),耗时"
+    already_download_lst=[]
+    matches = re.findall(pattern, data)
+    for match in matches:
+        if not match:
+            continue
+        title=match
+        already_download_lst.append(title)
+        
+    patial_download_lst=[]
+    pattern=r"【下载视频...】-【开始】详情：(.*?)"
+    matches = re.findall(pattern, data)
+    for match in matches:
+        if not match:
+            continue
+        title=match
+        if title in already_download_lst:
+            continue
+        patial_download_lst.append(title)
+        
+        
+    log_df["download"]=log_df["title"].apply(lambda x:1 if x in result_lst else -1)
+    log_df.drop_duplicates(subset=["title"], keep="last",inplace=True)
+    
+    org_path=Path(log_path)
+    log_df.to_excel(org_path.parent.joinpath(org_path.stem+"_info.xlsx"))
+    return log_df
+        
+    
+if __name__ == "__main__":
+    df=handle_info_from_log(r"F:\worm_practice\logs\playlist_app\playlist_app-trace.log")
+    
+    xlsx_path=r"F:\worm_practice\player\video.xlsx"
+    org_df=pd.read_excel(xlsx_path,sheet_name="video")
+    from base import concat_dfs
+    dest_df=concat_dfs([org_df,df])
+    dest_df.drop_duplicates(subset=["title"], keep="last",inplace=True)
+    
+    dest_df.to_excel(xlsx_path,sheet_name="video")
+    pass
+
     
     
     

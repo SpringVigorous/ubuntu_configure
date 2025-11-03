@@ -118,19 +118,18 @@ def main():
     app=playlist_app()
 
     raw_urls=[
-        # VideoUrlInfo(url="http://www.enmoedu.com/nowplay/40158-0-51.html"),
+        # VideoUrlInfo(url="https://www.laihuashow.com/hot/972606.html"),
         ]
 
    
     m3u8_urls=[
-        VideoUrlInfo(m3u8_url='https://v1.qrssuv.com/wjv1/202308/19/pWujuxMMY62/video/1000k_720/hls/index.m3u8', title='我的23岁'),
-
+        VideoUrlInfo(m3u8_url='https://hd.ijycnd.com/play/vbmYN4nb/index.m3u8', title='妈妈'),
     ]
 
-    # app.send_msg(m3u8_urls) #直接提供m3u8_urlK
+    # app.send_msg(m3u8_urls) #直接提供m3u8_url
     # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
-    app.continue_merge() # 继续合并,前提是 已删除 加入的片段
+    # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
     
     # app.continue_handle_url() #继续交互
@@ -146,8 +145,4 @@ def main():
 
 
 if  __name__ == '__main__':
-
-
-    
-
     main()

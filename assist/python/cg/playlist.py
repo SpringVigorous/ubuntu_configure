@@ -144,7 +144,7 @@ class video_info:
         
         arrage_lst= arrange_urls(playlist)   
             
-        dest_list=[[index,seg["duration"],seg["url"]]    for index,seg in enumerate(arrage_lst)]
+        dest_list=[[index,seg["duration"],seg["url"]]    for index,seg in enumerate(arrage_lst) if seg["valid"]]
         
         self.playlist=dest_list
         self.org_playlist=[[index,*seg]   for index,seg in enumerate(playlist)  ]
@@ -330,11 +330,17 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
     lost_path=[temp_path   for item in losts for _,temp_path in item.items()]  
     success_paths=[item for item in all_path_list if item not in lost_path]
     return lost_count,success_paths
-            
-def temp_video_paths(count,temp_dir,postfix=".mp4"):
-    return [normal_path(os.path.join(temp_dir, f"{index:04}{postfix}"))    for index in range(count)]
+def temp_video_paths_by_count(count,temp_dir,postfix=".mp4"):
+    prefix_lst=[f"{index:04}" for index in range(count)]
+    return temp_video_paths_by_prefix( prefix_lst,temp_dir,postfix=postfix)
 
 
+def temp_video_paths_by_prefix(pre_lst:list,temp_dir,postfix=".mp4"):
+    return [normal_path(os.path.join(temp_dir, f"{index}{postfix}"))    for index in pre_lst]
+
+def temp_video_paths_by_prefix_index(pre_lst:list[int],temp_dir,postfix=".mp4"):
+    prefix_lst=[f"{index:04}" for index in pre_lst ]
+    return temp_video_paths_by_prefix( prefix_lst,temp_dir,postfix=postfix)
 def decryp_video(org_path,dest_path,key,iv):
     data=None
     with open(org_path,"rb") as f:
@@ -477,15 +483,19 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     key,iv,info_list,total_len=result
     # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
-    url_list=[get_real_url(urls[2],url)  for urls in info_list]
-    play_logger.info(f"总时长:{total_len}s,共{len(url_list)}个",update_time_type=UpdateTimeType.STAGE)
+
+    url_lst_org=[(urls[0],get_real_url(urls[2],url))  for urls in info_list]
+    index_lst,url_lst=zip(*url_lst_org)
+    
+    
+    play_logger.info(f"总时长:{total_len}s,共{len(url_lst)}个",update_time_type=UpdateTimeType.STAGE)
 
     
-    temp_path_list=temp_video_paths(len(url_list),temp_dir,postfix(url_list[0]))
+    temp_path_list=temp_video_paths_by_prefix_index(url_lst,temp_dir,postfix(url_lst[0]))
     
     play_logger.info("开始","下载",update_time_type=UpdateTimeType.STAGE)
 
-    lost_count,success_paths=process_playlist(url_list, temp_path_list, key, iv, root_path, dest_name, dest_hash)
+    lost_count,success_paths=process_playlist(url_lst, temp_path_list, key, iv, root_path, dest_name, dest_hash)
 
     # decryp_video(org_path,dest_path,key,iv)
     

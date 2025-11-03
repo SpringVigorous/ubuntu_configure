@@ -561,14 +561,65 @@ def rename_file_only_spell_szj(filename:str):
     new_filename = f"{int(episode_num):02d}_{title}"
     return new_filename
 
+#'正在播放爆笑虫子：荒岛求生记第01集全集___动漫___星辰剧集网.mp4' -> '荒岛求生记_01.mp4'
+def rename_file_only_bxcz(filename:str):
+    # 匹配规则解析：
+    # ^(\d+)\s+：开头的序号（如01）+ 空格（捕获序号）
+    # .*?—：中间的冗余内容（如"01.自然拼读Lesson 1"）+ "—"（非贪婪匹配，直到第一个"—"）
+    # (.*?)\.mp4$："—"后面的目标字符（如ab）+ .mp4（捕获目标字符）
+    # 注意：原文件名中的"—"是中文破折号，正则中需准确匹配
+    pattern = r'正在播放爆笑虫子：(.*?)第(\d+)集'
+    match = re.search(pattern, filename)
+    
+    if not match:
+        print(f"文件名格式不匹配，跳过：{filename}")
+        return
+
+    
+    # 提取序号（如01）和标题（如ABC Song 字母歌）
+    title = match.group(1)        # 第二个分组：标题（ABC Song 字母歌）
+    episode_num = match.group(2)  # 第一个分组：序号（01）
+    
+    # 处理可能的空标题（防止异常）
+    if not title.strip():
+        return
+    # 构建新文件名：序号_标题.mp4
+    new_filename = f"{title}_{int(episode_num):02d}{Path(filename).suffix}"
+    return new_filename
+
+
 def rename_file_special_only(filename:str):
+
     cur_path=Path(filename)
     if cur_path.stem=="01 磨耳朵单词课，500个核心单词，469个常用句子，28幅导图，每天5分钟，轻松学词汇。适合3—12岁儿童。":
         return f"01_磨耳朵单词课，500个核心单词，469个常用句子，28幅导图，每天5分钟，轻松学词汇。适合3—12岁儿童{cur_path.suffix}"
 
+def rename_file_only_quote(filename:str):
+    pattern = r'《([^《》 ]+)》'
+    match = re.search(pattern, filename)
+    
+    if not match:
+        print(f"文件名格式不匹配，跳过：{filename}")
+        return
 
+    
+    # 提取序号（如01）和标题（如ABC Song 字母歌）
+
+    title = match.group(1)        # 第二个分组：标题（ABC Song 字母歌）
+    title=title.strip() if title else ""
+    # 处理可能的空标题（防止异常）
+    if not title:
+        return
+
+    new_filename = f"{title}{Path(filename).suffix}"
+    return new_filename
 
 if __name__ == "__main__":
+    rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_bxcz,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    exit()
+    rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_quote,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    exit()
+    
     rename_files_in_folder(r"E:\旭尧\磨耳朵单词课",rename_file_special_only,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     # rename_files_in_folder(r"E:\旭尧\磨耳朵单词课",rename_file_only_spell_med,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
