@@ -28,9 +28,80 @@ import pandas as pd
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8,ThreadPool,AES_128
 from concurrent.futures import ThreadPoolExecutor
 from playlist_kernel import *
+from playlist_config import async_type
+import aiofiles
+import asyncio
+@exception_decorator(error_state=False)
+def decode_playlist_async(temp_paths,key,iv):
+    if not temp_paths or not key or not iv:
+        return False
+    
+
+    playlist_logger= logger_helper("文件编码转换",Path(temp_paths[0]).parent)
+
+    playlist_logger.trace("开始")
+    # 定义协程函数（async def 标记）
+    async def read_video_async(logger,video_path):
+        """异步读取视频文件（协程操作）"""
+        with logger.raii_target("异步读取"):
+            try:
+                # 异步上下文管理器：async with（替代同步 with）
+                async with aiofiles.open(video_path, "rb") as f:
+                    # 异步读取：await 等待读取完成（不阻塞事件循环）
+                    encrypted_data = await f.read()
+                return encrypted_data  # 返回读取的二进制数据
+            except Exception as e:
+                    logger.error("失败",f"{e}")
+                    return None
+    # ---------------------- 异步写入（核心新增逻辑）----------------------
+    async def write_file_async(logger,video_path, data):
+        """
+        异步写入文件
+        :param file_path: 目标文件路径
+        :param data: 待写入数据（二进制/文本字符串）
+        :param mode: 写入模式（wb=覆盖写入，ab=追加写入，w=文本覆盖，a=文本追加）
+        """
+        
+        with logger.raii_target("异步写入"):
+            try:
+                async with aiofiles.open(video_path, "wb") as f:
+                    await f.write(data)  # 异步写入，不阻塞事件循环
+                logger.trace("成功")
+                return True
+            except Exception as e:
+                logger.error("失败",f"{e}")
+                return False
+
+    async def decode_video(semaphore,args:list|tuple):
+        async with semaphore:
+            video_path=args
+            
+            logger=logger_helper("解密文件",video_path)
+            
+            video_content= await read_video_async(logger,video_path) 
+            if not video_content:
+                return
+            
+            result=  decrypt_aes_128_from_key(key,iv,video_content) 
+            return await write_file_async(logger,video_path, result)
+
+    multi_thread_coroutine = MultiThreadCoroutine(decode_video,temp_paths)
+    try:
+        asyncio.run(multi_thread_coroutine.run_tasks()) 
+        success=multi_thread_coroutine.success
+        if not success:
+            info=[multi_thread_coroutine.fail_infos,except_stack()]
+            info_str="\n".join(info)
+            playlist_logger.error("异常",f"\n{info_str}\n",update_time_type=UpdateTimeType.ALL)
+        print(multi_thread_coroutine.result)
+        
+        return multi_thread_coroutine.success
+    except Exception as e:
+        playlist_logger.error("异常",except_stack(),update_time_type=UpdateTimeType.ALL)
+        return False
 
 
-@exception_decorator()
+@exception_decorator(error_state=False)
 def handle_playlist_async(url_list,temp_paths,key,iv):
     if not url_list or not temp_paths:
         return False
@@ -81,7 +152,7 @@ def handle_playlist_async(url_list,temp_paths,key,iv):
         return False
 
 #同步方式下载
-@exception_decorator()
+@exception_decorator(error_state=False)
 def handle_playlist(url_list,temp_paths,key,iv):
     if not url_list or not temp_paths:
         return False
@@ -151,8 +222,10 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
         play_logger.update_target(detail=f"第{download_time}次")
         play_logger.debug("开始", update_time_type=UpdateTimeType.ALL)
         
-        success = handle_playlist_async(urls, temp_paths, key, iv)    #异步方式
-        # success = handle_playlist(urls, temp_paths, key, iv)    #同步方式
+        if async_type:
+            success = handle_playlist_async(urls, temp_paths, key, iv)    #异步方式
+        else:
+            success = handle_playlist(urls, temp_paths, key, iv)    #同步方式
 
         play_logger.debug("完成", update_time_type=UpdateTimeType.ALL)
         download_time+=1
@@ -235,7 +308,7 @@ def decryp_videos(org_paths,dest_dir,key,iv):
     
     
 
-@exception_decorator()
+@exception_decorator(error_state=False)
 def main(url,dest_name,dest_dir:str=None,force_merge=False):
     root_path=r"F:\worm_practice/player/"
     dest_hash=hash_text(dest_name)
@@ -253,7 +326,7 @@ def main(url,dest_name,dest_dir:str=None,force_merge=False):
     
     url_json_path=os.path.join(root_path,"urls",f"{cache_name}.json")
     m3u8_path=os.path.join(root_path,"m3u8",f"{cache_name}.m3u8")
-    key,iv,info_list,total_len=get_url_data(url,url_json_path,m3u8_path)
+    key,iv,info_list,total_len,*latter=get_url_data(url,url_json_path,m3u8_path)
     # key=None
     # url_list=[get_real_url(urls[2],url)  for urls in info_list]
     url_list=[get_real_url(urls[2],url)  for urls in info_list]

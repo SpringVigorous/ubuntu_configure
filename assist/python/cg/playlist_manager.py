@@ -157,19 +157,43 @@ class playlist_manager(file_manager):
         return [info for index,info in infos]
     @property
     @exception_decorator(error_state=False)
-    def undownloaded_lst(self)->list:
+    def whole_undownloaded_lst(self)->tuple[list,list]:
+        
+        no_download_lst=[]
+        re_decode_lst=[]
+        
         infos=self.undownloaded_pure_infos
         if not infos:
             return []
         results=[]
         for info in infos:
+            key=info.key
             data=info.url_data
             if not data:
                 continue
             video_name=info.title
-            key,iv,info_list,total_len=data
-            results.append((key,iv,info_list,total_len,video_name,info.m3u8_url))
-        return results
+            key,iv,info_list,total_len,re_decode=data
+            #没有的话，则需要重新解密
+            if re_decode and not key:
+                re_decode=False
+            
+            lst=re_decode_lst if re_decode else no_download_lst
+            lst.append((key,iv,info_list,total_len,video_name,info.m3u8_url))
+        return (no_download_lst,re_decode_lst)
+    @property
+    @exception_decorator(error_state=False)
+    def undownloaded_lst(self)->list:
+        
+        result=self.whole_undownloaded_lst
+        
+        return result[0] if result else []
+    
+    @property
+    @exception_decorator(error_state=False)
+    def undownloaded_decode_lst(self)->list:
+        result=self.whole_undownloaded_lst
+        
+        return result[1] if result else []
     @property
     @exception_decorator(error_state=False)
     def no_m3u8_lst(self)->list:

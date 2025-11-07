@@ -543,11 +543,12 @@ def rename_ts(dir_path,postfix=".jpeg"):
      
     
     
-def force_merge(dir_path,dest_path):
-    temp_path_list=get_all_files_pathlib(dir_path,[".ts"])
+def force_merge(dir_path,dest_path,suffix_lst=[".ts"]):
+    temp_path_list=get_all_files_pathlib(dir_path,suffix_lst)
     temp_path=f"F:/worm_practice/player/temp/{hash_text(dest_path)}.mp4"
+    temp_path=dest_path
     merge_video(temp_path_list,temp_path)
-    move_file(temp_path,dest_path)
+    # move_file(temp_path,dest_path)
     recycle_bin(dir_path)
 def shut_down(time:10):
     os.system(f"shutdown /s /t {time}")
@@ -739,6 +740,10 @@ def filter_folder(file_base_name:str):
 
 if __name__=="__main__":
 
+
+    force_merge(r"E:\临时\20251030",r"E:\旭尧\拼音练习\20251030-2.mp4",[".mp4"])
+    exit()
+
     # filter_folder("汪汪队立大功")
     # rename_videos("汪汪队立大功")
     # exit(0)
@@ -808,3 +813,4 @@ if __name__=="__main__":
     # dest_path=r"F:\worm_practice\player\temp\feb6b940\1.mp4"
     
     # decryp_video(org_path,dest_path,key,iv)
+    # D:/Tool/ffmpeg/bin/ffmpeg.exe -y -f concat -safe 0 -i E:\\Temp\\20251030\\file_list.txt -c copy E:/旭尧/拼音练习/298b6c58.mp4

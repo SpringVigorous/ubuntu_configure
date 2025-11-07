@@ -3,6 +3,25 @@ import threading
 import sys
 from .routine_task import RoutineTask
 
+class envent_sequence:
+    def __init__(self):
+        self._thread_event:list[threading.Event]=[]
+        
+    def add_envent(self,event:threading.Event):
+        if not event or (event in self._thread_event):
+            return
+        self._thread_event.append(event)
+        
+    def set(self):
+        for event in self._thread_event:
+            event.set()
+
+    def clear(self):
+        for event in self._thread_event:
+            event.clear()
+            
+    def is_set(self)->bool:
+        return all(event.is_set() for event in self._thread_event)
 
 #线程任务
 class ThreadTask(RoutineTask, threading.Thread,metaclass=abc.ABCMeta):

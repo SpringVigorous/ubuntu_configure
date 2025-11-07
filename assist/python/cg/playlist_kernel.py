@@ -2,6 +2,7 @@
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType
 from base import arrange_urls,postfix
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8,ThreadPool,AES_128
+from base import read_from_txt_utf8_sig,write_to_txt_utf8_sig,read_from_bin
 from pathlib import Path
 import requests
 import os
@@ -17,18 +18,24 @@ def get_real_url(url:str,url_page):
         org_path=Path(url_page)
         name=org_path.name
         return url_page.replace(name,url)
-
+#去掉 -hash值
+def title(path_stem:str):
+    pattern=r"(.*)-[0-9a-z]{8}(.*)"
+    match=re.match(pattern,path_stem)
+    if match:
+        return f"{match.group(1)}{match.group(2)}"
 
 class video_info:
-    def __init__(self,url,m3u8_path) -> None:
-        self.url=url
-        self.logger=logger_helper("解析m3u8",f"{self.url}")
+    def __init__(self,m3u8_url,m3u8_path) -> None:
+        self.m3u8_url=m3u8_url
+        self.logger=logger_helper("解析m3u8",f"{self.m3u8_url}")
         self.method=None
         self.uri=None
         self.iv=None
         self._m3u8_path=m3u8_path
         self.playlist=None
         self.org_playlist=None
+        self._key:bytes=None
         
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
@@ -49,17 +56,18 @@ class video_info:
         except:
             pass
         if not content:
-            response=requests.get(url, headers=headers,verify=False)
-            self.logger=logger_helper("解析m3u8",f"{self.url}")
+            response=requests.get(m3u8_url, headers=headers,verify=False)
+            self.logger=logger_helper("解析m3u8",f"{self.m3u8_url}")
             content=response.text
             
+        # handle_data=video_info.handle_m3u8_data(url,content)    
         if "#EXT-X-STREAM-INF" in content:
             rows=[data for data in content.split("\n") if data]
             data=rows[-1]
-            url=get_real_url(data.strip(),url)
-            self.url=url
-            response=requests.get(url, headers=headers,verify=False)
-            self.logger=logger_helper("解析m3u8",f"{self.url}")
+            m3u8_url=get_real_url(data.strip(),m3u8_url)
+            self.m3u8_url=m3u8_url
+            response=requests.get(m3u8_url, headers=headers,verify=False)
+            self.logger=logger_helper("解析m3u8",f"{self.m3u8_url}")
             content=response.text
             has_already=False
             
@@ -79,6 +87,20 @@ class video_info:
         # 正则表达式模式
         self._init_urls(content)
         self._init_keys(content)
+        
+    @property
+    def key_valid(self)->bool:
+        return bool(self.key)== bool(self.iv)
+    
+    
+    @staticmethod
+    def handle_m3u8_data(raw_m3u8_data,m3u8_url):
+        if "#EXT-X-STREAM-INF" in raw_m3u8_data:
+            rows=[data for data in raw_m3u8_data.split("\n") if data]
+            data=rows[-1]
+            rows[-1]=get_real_url(data.strip(),m3u8_url)
+            return "\n".join(rows)
+        return raw_m3u8_data
     @property
     def m3u8(self)->str:
         if not self._m3u8:
@@ -97,7 +119,7 @@ class video_info:
         playlist=[]
         for val in matches :
             duration, ts_file =val
-            playlist.append([float(duration),get_real_url(ts_file,self.url)])
+            playlist.append([float(duration),get_real_url(ts_file,self.m3u8_url)])
         
         arrage_lst= arrange_urls(playlist)   
             
@@ -139,29 +161,72 @@ class video_info:
     def key(self):
         if not self.uri:
             return None
-        url=self.uri
-        if not is_http_or_https(url):
-            org_path=Path(self.url)
-            name=org_path.name
-            url=self.url.replace(name,self.uri)
-        key=fetch_sync(url)
-        self.logger.debug("加密信息",f"\nmethod:{self.method},\nuri:{self.uri},\niv:{self.iv},\nkey:{key}")
-        # print(len(self.iv))
-        # print(len(key))
-        return key
+        if self._key:
+            return self._key[1]
+        key_data=None
+        if os.path.exists(self.key_path):
+            key_data=read_from_txt_utf8_sig(self.key_path)
+        if not key_data:
+            if os.path.exists(self.key_temp_path):
+                key_data=read_from_bin(self.key_temp_path)
+            # if key_data:
+            #     write_to_txt_utf8_sig(self.key_path,key_data)
+        if key_data:
+            return key_data
+        if not key_data:
+            url=self.uri
+            if not is_http_or_https(url):
+                org_path=Path(self.m3u8_url)
+                name=org_path.name
+                url=self.m3u8_url.replace(name,self.uri)
+                
+            #获取enc.key_data时添加的头    
+            headers = {
+                'authority': 'vv.jisuzyv.com',
+                'accept': '*/*',
+                'accept-language': 'zh-CN,zh;q=0.9',
+                'origin': 'https://yenchuang.com',
+                'referer': 'https://yenchuang.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36',
+            }
+                
+            key_data=fetch_sync(url,max_retries=1,timeout=2,headers=headers,verify=False)
+            if key_data:
+                write_to_txt_utf8_sig(self.key_path,key_data)
+            self._key=True,key_data
+            
+        self.logger.debug("加密信息",f"\nmethod:{self.method},\nuri:{url},\niv:{self.iv},\nkey_data:{key_data}\nerror:{url and not key_data}")
+        return key_data
 
     @property
     def domain(self):
-        return get_homepage_url(self.url)
+        return get_homepage_url(self.m3u8_url)
     @property
     def suffix(self)->str:
         if self.playlist:
             return postfix(self.playlist[0][2])
         return ".ts"
 
+    @property
+    def key_path(self)->str:
+        raw_path=Path( self._m3u8_path)
+        cur_path=raw_path.parent.parent/"key"/f"{raw_path.stem}_enc.key"
+        return str(cur_path)
 
-@exception_decorator()
-def load_url_data(url_json_path):
+    @property
+    def key_temp_path(self)->str:
+        raw_path=Path( self.key_path)
+        cur_path=raw_path.parent.parent/"keys"/title(raw_path.name)
+        return str(cur_path)
+
+@exception_decorator(error_state=False)
+def load_url_data(url_json_path)->dict:
     if  not os.path.exists(url_json_path):
         return
     with open(url_json_path,"r",encoding="utf-8-sig") as f:
@@ -169,7 +234,7 @@ def load_url_data(url_json_path):
         return data
     return None
     
-@exception_decorator()
+@exception_decorator(error_state=False)
 def save_url_data(url_json_path,data):
     with open(url_json_path,"w",encoding="utf-8-sig") as f:
         json.dump(data,f,ensure_ascii=False,indent=4)
@@ -183,10 +248,27 @@ def load_m3u8_data(m3u8_path):
     with open(m3u8_path,"r",encoding="utf-8-sig") as f:
         return f.read()
 
-@exception_decorator()
-def get_url_data(url,url_json_path,m3u8_path):
+@exception_decorator(error_state=False)
+def get_url_data(url,url_json_path,m3u8_path)->dict:
+    info=get_url_info(url,url_json_path,m3u8_path)
+
+    try:    
+        key=info.get("key","")
+        iv=info.get("iv","")
+        if key:
+            key=base64_utf8_to_bytes(key)
+        if iv:
+            iv=base64_utf8_to_bytes(iv)
+        # return None,None,info.get("playlist",[]),info.get("total_len",0)
+        return key,iv,info.get("playlist",[]),info.get("total_len",0),info.get("re_decode",False)
+    except:
+        return None,None,info.get("playlist",[]),info.get("total_len",0),False
+        
+@exception_decorator(error_state=False)
+def get_url_info(url,url_json_path,m3u8_path)->dict:
     info=load_url_data(url_json_path)
-    if not info:
+    info_valid=info and( bool(info.get("key")) == bool( info.get("iv")))
+    if not info or not info_valid:
         video=video_info(url,m3u8_path)
         key= video.key
         iv=video.iv
@@ -208,20 +290,19 @@ def get_url_data(url,url_json_path,m3u8_path):
         if video.has_raw_list:
             info["org_playlist"]=video.org_playlist
         
+        info["re_decode"]=True if not info_valid else False
+        
         
         #保存
         save_url_data(url_json_path,info)
 
-    try:    
-        key=info.get("key","")
-        iv=info.get("iv","")
-        if key:
-            key=base64_utf8_to_bytes(key)
-        if iv:
-            iv=base64_utf8_to_bytes(iv)
-        # return None,None,info.get("playlist",[]),info.get("total_len",0)
-        return key,iv,info.get("playlist",[]),info.get("total_len",0)
-    except:
-        return None,None,info.get("playlist",[]),info.get("total_len",0)
-        
+    return info
     
+if __name__ == "__main__":
+    url="https://vv.jisuzyv.com/play/nelLE2ge/index.m3u8"
+
+    
+    url_json_path=r"F:\worm_practice\player\urls\宝宝巴士之神奇简笔画_01-97db3c6d.json"
+    m3u8_path=r"F:\worm_practice\player\m3u8\宝宝巴士之神奇简笔画_01-97db3c6d.m3u8"
+    data=get_url_data(url,url_json_path,m3u8_path)
+    print(data)

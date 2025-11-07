@@ -242,6 +242,8 @@ class logger_helper:
             
         if target or detail:
             self.update_target(target,detail)
+            
+        return self
     
     def pop_target(self,times=1):
         if times<1:

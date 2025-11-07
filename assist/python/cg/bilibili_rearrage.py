@@ -613,8 +613,26 @@ def rename_file_only_quote(filename:str):
 
     new_filename = f"{title}{Path(filename).suffix}"
     return new_filename
+def rename_file_only_bbbs(filename:str):
+    pattern = r'宝宝巴士之神奇简笔画_(\d+)'
+    match = re.search(pattern, filename)
+    
+    if not match:
+        print(f"文件名格式不匹配，跳过：{filename}")
+        return
+
+    
+    # 提取序号（如01）和标题（如ABC Song 字母歌）
+
+    title = match.group(1)        # 第二个分组：标题（ABC Song 字母歌）
+
+
+    new_filename = f"宝宝巴士之神奇简笔画_1_{title.zfill(2)}{Path(filename).suffix}"
+    return new_filename
 
 if __name__ == "__main__":
+    rename_files_in_folder(r"E:\旭尧\宝宝巴士\宝宝巴士之神奇简笔画_第一季",rename_file_only_bbbs,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    exit()
     rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_bxcz,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
     rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_quote,recursive=True,real_replace=True) #重命名文件    # 根目录路径

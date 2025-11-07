@@ -294,6 +294,8 @@ def merge_video(temp_paths,output_path):
         command.extend(['-c'])
     command.extend(['copy', output_path])
     
+    #创建文件夹
+    os.makedirs(Path(output_path).parent, exist_ok=True)
     
     merge_logger.update_target(detail=" ".join(command))
     merge_logger.trace("参数")
