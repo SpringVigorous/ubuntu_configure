@@ -42,7 +42,7 @@ def file_valid(file_path: str) -> bool | None:
             return None
         
         # 3. 判断文件大小是否为 0
-        return os.path.getsize(file_path) == 0
+        return os.path.getsize(file_path) > 0
     
     except PermissionError:
         detect_logger.debug("错误","无访问权限")
@@ -461,11 +461,11 @@ def copy_folder(src, dst,filter_func:Callable=None,overwrite=False):
 
 def copy_file(source_file:str|list[str],destination_file:str|list[str],override=True):
 
-    if isinstance(source_file,str):
-        source_file=[source_file]
+    if isinstance(source_file,str|Path):
+        source_file=[str(source_file)]
 
-    if isinstance(destination_file,str):
-        destination_file=[destination_file]*len(source_file)
+    if isinstance(destination_file,str|Path):
+        destination_file=[str(destination_file)]*len(source_file)
     logger= logger_helper("拷贝参数",f"\n{"\n".join(unique(source_file))}\n -> \n{"\n".join(unique(destination_file))}\n")
     logger.trace("开始")
     for file,dest in zip(source_file,destination_file):

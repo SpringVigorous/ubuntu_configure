@@ -614,7 +614,7 @@ def rename_file_only_quote(filename:str):
     new_filename = f"{title}{Path(filename).suffix}"
     return new_filename
 def rename_file_only_bbbs(filename:str):
-    pattern = r'(.*)_第(\d+)集'
+    pattern = r'：(.*)'
     match = re.search(pattern, filename)
     
     if not match:
@@ -625,10 +625,9 @@ def rename_file_only_bbbs(filename:str):
     # 提取序号（如01）和标题（如ABC Song 字母歌）
 
     title = match.group(1)        # 第二个分组：标题（ABC Song 字母歌）
-    num=match.group(2)
 
 
-    new_filename = f"{title}_{num.zfill(2)}{Path(filename).suffix}"
+    new_filename = f"{title}"
     return new_filename
 
 if __name__ == "__main__":

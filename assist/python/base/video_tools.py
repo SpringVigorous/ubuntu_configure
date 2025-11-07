@@ -14,6 +14,7 @@ from base.string_tools import hash_text
 from base.remove_special_fold import recycle_bin
 from base.file_tools import move_file
 from base.path_tools import cache_temp_path
+from base.chinese_tools import has_chinese
 import json
 import ffmpeg
 
@@ -271,6 +272,7 @@ def merge_video(temp_paths,output_path):
     #合并前，手动筛选,添加断点
     if not temp_paths or not output_path:
         return
+    output_path=str(output_path)
     logger= logger_helper("合并视频",f"{temp_paths} -> {output_path}")
     temp_file= windows_path(os.path.join(Path(temp_paths[0]).parent,'file_list.txt'))
     logger.trace(temp_file)
@@ -318,6 +320,32 @@ def merge_video(temp_paths,output_path):
         merge_logger.error("失败",f"\n{stderr}\n",update_time_type=UpdateTimeType.ALL)
     if stdout:
         merge_logger.debug("成功",f"\n{stdout}\n",update_time_type=UpdateTimeType.ALL)
+
+
+def force_merge(src_dir_path,dest_path,suffix_lst=[".ts"]):
+    file_lst=get_all_files_pathlib(src_dir_path,suffix_lst)
+    if not file_lst:
+        return
+    temp_dirs=[src_dir_path]
+    if has_chinese(src_dir_path):
+        temp_dir=Path(f"F:/worm_practice/player/temp/{hash_text(dest_path)}")
+        os.makedirs(temp_dir, exist_ok=True)
+        from base import copy_file
+        for index,file in enumerate(file_lst):
+            cur_src_path=Path(file)
+            cur_dest_path=temp_dir/f"{index:03}{cur_src_path.suffix}"
+            copy_file(file,cur_dest_path,override=False)
+
+        
+        file_lst=get_all_files_pathlib(temp_dir,suffix_lst)
+        temp_dirs.append(temp_dir)
+
+    merge_video(file_lst,dest_path)
+
+    for cur_dir in temp_dirs:
+        recycle_bin(cur_dir)
+
+
 
 #转换文件
 def convert_video_to_mp4(video_path,output_path=None):

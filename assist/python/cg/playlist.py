@@ -21,7 +21,7 @@ import asyncio
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType,AES_128
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
-from base import arrange_urls,postfix,codec_base64,codec_base
+from base import arrange_urls,postfix,codec_base64,codec_base,has_chinese
 import pandas as pd
 
 
@@ -543,13 +543,29 @@ def rename_ts(dir_path,postfix=".jpeg"):
      
     
     
-def force_merge(dir_path,dest_path,suffix_lst=[".ts"]):
-    temp_path_list=get_all_files_pathlib(dir_path,suffix_lst)
-    temp_path=f"F:/worm_practice/player/temp/{hash_text(dest_path)}.mp4"
-    temp_path=dest_path
-    merge_video(temp_path_list,temp_path)
-    # move_file(temp_path,dest_path)
-    recycle_bin(dir_path)
+def force_merge(src_dir_path,dest_path,suffix_lst=[".ts"]):
+    file_lst=get_all_files_pathlib(src_dir_path,suffix_lst)
+    if not file_lst:
+        return
+    temp_dirs=[src_dir_path]
+    if has_chinese(src_dir_path):
+        temp_dir=Path(f"F:/worm_practice/player/temp/{hash_text(dest_path)}")
+        os.makedirs(temp_dir, exist_ok=True)
+        from base import copy_file
+        for index,file in enumerate(file_lst):
+            cur_src_path=Path(file)
+            cur_dest_path=temp_dir/f"{index:03}{cur_src_path.suffix}"
+            copy_file(file,cur_dest_path,override=False)
+
+        
+        file_lst=get_all_files_pathlib(temp_dir,suffix_lst)
+        temp_dirs.append(temp_dir)
+
+    merge_video(file_lst,dest_path)
+
+    for cur_dir in temp_dirs:
+        recycle_bin(cur_dir)
+
 def shut_down(time:10):
     os.system(f"shutdown /s /t {time}")
     
@@ -741,7 +757,7 @@ def filter_folder(file_base_name:str):
 if __name__=="__main__":
 
 
-    force_merge(r"E:\临时\20251030",r"E:\旭尧\拼音练习\20251030-2.mp4",[".mp4"])
+    force_merge(r"E:\旭尧\拼音练习\1",r"E:\旭尧\拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
     exit()
 
     # filter_folder("汪汪队立大功")

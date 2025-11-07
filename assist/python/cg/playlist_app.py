@@ -8,7 +8,7 @@ import os
 
 
 
-from base import ThreadTask,get_param_from_url,logger_helper,UpdateTimeType,exception_decorator,except_stack,df_empty,spceial_suffix_files,envent_sequence
+from base import ThreadTask,get_param_from_url,logger_helper,UpdateTimeType,exception_decorator,except_stack,df_empty,spceial_suffix_files,envent_sequence,force_merge
 
 from playlist_thread import *
 from playlist_manager import playlist_manager
@@ -155,6 +155,9 @@ class playlist_app:
         pass
 
 
+
+
+
 def main():
     app=playlist_app()
 
@@ -190,6 +193,13 @@ VideoUrlInfo(m3u8_url='https://pcvideoydott.titan.mgtv.com/c1/2025/05/14_0/228FA
     app.save_df()
     pass
 
+def forece_merge_test():
+    force_merge(r"E:\旭尧\拼音练习\1",r"E:\旭尧\拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
 
 if  __name__ == '__main__':
+    
+    
+    forece_merge_test()
+    exit()
+    
     main()

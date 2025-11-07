@@ -1,5 +1,23 @@
 ﻿
 from base.collect_tools import remove_consecutive_duplicates
+
+from pathlib import Path
+
+def has_chinese(path: str | Path) -> bool:
+    """
+    精准判断路径是否包含汉字（排除其他非 ASCII 字符）
+    
+    参数：
+        path: 路径（字符串或 Path 对象）
+    返回：
+        True: 含汉字；False: 不含汉字
+    """
+    path_str = str(path)
+    for char in path_str:
+        # 汉字的 Unicode 编码范围：0x4E00 ~ 0x9FFF
+        if 0x4E00 <= ord(char) <= 0x9FFF:
+            return True
+    return False
 def chinese_to_arabic(chinese_num):
     # 基础数字映射
     char_to_digit = {

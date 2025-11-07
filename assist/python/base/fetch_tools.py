@@ -12,12 +12,12 @@ class TinyFetch():
     def __init__(self,url=None,local_path=None,headers:dict=base_headers,write_func:Callable[[str|Path,Any],Any]=write_to_bin,read_func:Callable[[str|Path],Any]=read_from_bin) -> None:
         self._data=None
         self._headers=base_headers
-        self.set_url(url)
         self.set_local_path(local_path)
         self.set_write_func(write_func)
         self.set_read_func(read_func)
         self.set_headers(headers)
         self._url_success:bool=True
+        self.set_url(url)
         self._logger=logger_helper()
         
     @property
@@ -27,6 +27,8 @@ class TinyFetch():
         
         return self._logger
     def set_url(self,url):
+        if not self._url_success:
+            self._url_success=True
         self._url=url
         
     def set_local_path(self,local_path):
@@ -99,7 +101,8 @@ class TinyFetch():
         if not self._url_success:
             self.logger.debug("返回空","原因是上次url获取失败")
             return
-
+        if not self.url_valid:
+            return
         result= fetch_sync(self._url,max_retries=1,timeout=2,headers=self._headers,verify=False)
         if result is None:
             self.logger.error("url获取失败","后续再次通过url获取时，直接返回空")
@@ -127,15 +130,16 @@ class TinyFetch():
         if self.data_valid:
             return self._data
 
-        self.set_data(self._read_from_file())
-        if self.data_valid: 
-            self.logger.trace("local获取成功")
-            return self._data
-
-        self.set_data(self._from_url())
-        if self.data_valid and  self.local_path_valid and not self.local_valid:
-            self._write_to_file()
-            self.logger.trace("url获取成功","输出到local")
+        if self.local_valid:
+            self.set_data(self._read_from_file())
+            if self.data_valid: 
+                self.logger.trace("local获取成功")
+                return self._data
+        if self.url_valid:
+            self.set_data(self._from_url())
+            if self.data_valid and  self.local_path_valid and not self.local_valid:
+                self._write_to_file()
+                self.logger.trace("url获取成功","输出到local")
 
         return self._data
     
