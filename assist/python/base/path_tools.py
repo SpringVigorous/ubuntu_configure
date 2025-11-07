@@ -84,7 +84,9 @@ def path_equal(path1:str,path2:str)->bool:
 
 
 def normal_path(path:str)->str:
-    return os.path.normpath(path).replace("\\","/")
+    if not path:
+        return ""
+    return os.path.normpath(str(path)).replace("\\","/")
 
 
 def windows_path(path:str)->str:

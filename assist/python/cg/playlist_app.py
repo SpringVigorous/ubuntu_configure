@@ -173,14 +173,14 @@ VideoUrlInfo(m3u8_url='https://pcvideoydott.titan.mgtv.com/c1/2025/05/14_0/228FA
     # app.send_msg(m3u8_urls) #直接提供m3u8_url
     # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
-    # app.continue_decode() # 继续解码,前提是确保编码未处理
+    app.continue_decode() # 继续解码,前提是确保编码未处理
     
     # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
     
     # app.continue_handle_url() #继续交互
 
-    app.continue_download() #继续下载
+    # app.continue_download() #继续下载
     
     # app.stop_merge_event.set() #关闭合并功能，手动删除多余片段后，再开启
     

@@ -112,6 +112,9 @@ class VideoUrlInfo:
         #写入文件中，方便下载时，直接获取
         key_file=key_path(self.title)  
         if result and not os.path.exists(key_file):  # 已下载
+            from base import bytes_to_base64_utf8
+            if isinstance(result,bytes):  # bytes
+                result=bytes_to_base64_utf8(result)
             write_to_txt_utf8_sig(key_file,result)
         return result
     @property

@@ -20,7 +20,7 @@ import pickle
 import shutil
 from typing import Callable
 import httpx
-
+from base.df_tools import df_empty
 
 
 def file_valid(file_path: str) -> bool | None:
@@ -507,6 +507,9 @@ def write_dataframe_excel(file_path,data,sheet_name=None):
 
     if not isinstance(data,pd.DataFrame):
         data=pd.DataFrame(data)
+    if df_empty(data):
+        return    
+        
     if sheet_name:
         return data.to_excel(file_path,sheet_name=sheet_name)
 
@@ -536,8 +539,8 @@ def read_from_json_utf8_sig(file_path)->dict:
 
 @exception_decorator(error_state=False)
 def write_to_txt(file_path,data,**file_kwargs):
-    if isinstance(data,bytes):
-        data=data.decode("utf-8")
+    if not data:
+        return
     with open(file_path,"w",**file_kwargs) as f:
         return f.write(data)
 
@@ -560,7 +563,8 @@ def read_from_bin(file_path):
 
 @exception_decorator(error_state=False)
 def write_to_bin(file_path,data):
-
+    if not data:
+        return 
     with open(file_path,"wb") as f:
         return f.write(data)
 

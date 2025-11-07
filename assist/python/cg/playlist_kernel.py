@@ -3,6 +3,7 @@ from base import exception_decorator,logger_helper,except_stack,normal_path,fetc
 from base import arrange_urls,postfix
 from base import exception_decorator,base64_utf8_to_bytes,bytes_to_base64_utf8,ThreadPool,AES_128
 from base import read_from_txt_utf8_sig,write_to_txt_utf8_sig,read_from_bin
+from base import TinyFetch,TinyCache
 from pathlib import Path
 import requests
 import os
@@ -35,7 +36,7 @@ class video_info:
         self._m3u8_path=m3u8_path
         self.playlist=None
         self.org_playlist=None
-        self._key:bytes=None
+        self._key:TinyFetch=None
         
         # https://live80976.vod.bjmantis.net/cb9fc2e3vodsh1500015158/b78d41a31397757896585883263/playlist_eof.m3u8?t=67882F57&us=6658sy3vu3&sign=86f52ae9c6bd64c87db0ac9937096df9
         headers = {
@@ -158,51 +159,38 @@ class video_info:
 
             
     @property
-    def key(self):
+    def key(self)->bytes:
         if not self.uri:
             return None
-        if self._key:
-            return self._key[1]
-        key_data=None
-        if os.path.exists(self.key_path):
-            key_data=read_from_txt_utf8_sig(self.key_path)
-        if not key_data:
-            if os.path.exists(self.key_temp_path):
-                key_data=read_from_bin(self.key_temp_path)
-            # if key_data:
-            #     write_to_txt_utf8_sig(self.key_path,key_data)
-        if key_data:
-            return key_data
-        if not key_data:
-            url=self.uri
-            if not is_http_or_https(url):
-                org_path=Path(self.m3u8_url)
-                name=org_path.name
-                url=self.m3u8_url.replace(name,self.uri)
-                
-            #获取enc.key_data时添加的头    
-            headers = {
-                'authority': 'vv.jisuzyv.com',
-                'accept': '*/*',
-                'accept-language': 'zh-CN,zh;q=0.9',
-                'origin': 'https://yenchuang.com',
-                'referer': 'https://yenchuang.com/',
-                'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'cross-site',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36',
-            }
-                
-            key_data=fetch_sync(url,max_retries=1,timeout=2,headers=headers,verify=False)
-            if key_data:
-                write_to_txt_utf8_sig(self.key_path,key_data)
-            self._key=True,key_data
+        if self._key and self._key.data_valid:
+            return self._key.data
+        #二进制文件
+        self._key=TinyFetch(local_path=self.key_temp_path)
+        data=self._key.data
+        if self._key.data_valid:
+            return data
+        
+        #utf-8-sig文件 
+        self._key.set_read_func(read_from_txt_utf8_sig)
+        self._key.set_write_func(write_to_txt_utf8_sig)
+        self._key.set_local_path(self.key_path)
+
+        #通过url下载
+        url=self.uri
+        if not is_http_or_https(url):
+            org_path=Path(self.m3u8_url)
+            name=org_path.name
+            url=self.m3u8_url.replace(name,self.uri)
+        self._key.set_url(url)
+        data=self._key.data
+        if self._key.data_valid:
+            return data
             
-        self.logger.debug("加密信息",f"\nmethod:{self.method},\nuri:{url},\niv:{self.iv},\nkey_data:{key_data}\nerror:{url and not key_data}")
-        return key_data
+
+        
+        
+        
+        return 
 
     @property
     def domain(self):

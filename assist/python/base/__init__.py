@@ -49,5 +49,5 @@ from .replace_files_str import *
 from .finder import *
 from .raii_tools import *
 from .format_tool import f_safe_format
-from .fetch_tools import CacheFetchData
+from .fetch_tools import TinyCache,TinyFetch
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]
