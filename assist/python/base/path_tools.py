@@ -180,7 +180,8 @@ def ts_files(dest_dir,is_recurse=True)->list[str]:
 def m3u8_files(dest_dir,is_recurse=True)->list[str]:
     return spceial_suffix_files(dest_dir,".m3u8",is_recurse=is_recurse)
 
-
+def xml_files(dest_dir,is_recurse=True)->list[str]:
+    return spceial_suffix_files(dest_dir,".xml",is_recurse=is_recurse)
 
 
 def is_empty_folder(path):
