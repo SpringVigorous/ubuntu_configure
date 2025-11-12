@@ -1,8 +1,23 @@
-﻿from base import download_sync,xml_tools,xml_files,xml_files,read_from_txt_utf8_sig,exception_decorator
+﻿from base import download_sync,xml_tools,xml_files,xml_files,read_from_txt_utf8_sig,exception_decorator,format_count
 from pathlib import Path
 from lxml import etree
 import pandas as pd
 import re
+
+
+downloaded_id="downloaded"
+href_id="href"
+album_id="album"
+name_id="name"
+num_id="num"
+url_id="url"
+dest_path_id="dest_path"
+album_name_id="专辑名称"
+title_id="音频标题"
+duration_id="时长"
+view_coount_id="播放量"
+release_time_id="发布时间"
+local_path_id="local_path"
 #喜马拉雅睡前故事
 def download_mp3():
     headers = {
@@ -26,7 +41,7 @@ def download_mp3():
     success= download_sync(url,dest_path,headers=headers)
     print(success)
 
-def fetch_mp3_list_imp(xml_content)->dict:
+def fetch_mp3_list_imp(xml_content)->list:
     # 2. 解析 XML/HTML
     tree = etree.HTML(xml_content)  # 用 etree.HTML 解析（兼容 HTML 格式）
 
@@ -48,34 +63,53 @@ def fetch_mp3_list_imp(xml_content)->dict:
         # 存入结果列表
         result.append({
             "序号": num,
-            "音频标题": title,
+            title_id: title,
             "href": href,
         })
 
     return result
 
 
-def get_name(name:str):
-    pattern=r"\d+(.*)"
-    match=re.search(pattern,name)
+def get_title_name(name:str):
+    num_pattern=r"^\d+(.*)"
+    match=re.search(num_pattern,name)
     if match:
-        name=match.group(1)
+        name=match.group(1).strip()
         
+    prefix_pattern=r"^【.*?】(.*?)【.*】$"
+    match=re.search(prefix_pattern,name)
+    if match:
+        name=match.group(1).strip()
         
+    suffix_pattern=r"(.*)【.*】$"
+    match=re.search(suffix_pattern,name)
+    if match:
+        name=match.group(1).strip()
+    
     return name.replace(" ","").replace(".","").replace("讲|","")
     
-    pass
+def get_album_name(album_name:str):
+    if not album_name:
+        return ""
+    pattern = r'[|｜]'
+    
+    lst=re.split(pattern, album_name)
+    return lst[0].strip() if len(lst)>0 else album_name
 
 @exception_decorator(error_state=False)
 def get_audio_imp(root):
  # ---------------------- 提取第1组信息：o-hidden a_D 的文本 + 子元素href ----------------------
+ 
+        target_root=root.xpath('.//div[@class="o-hidden a_D"]')[0]
+
         # 定位目标div（class="o-hidden a_D"），取其下的<a>标签
-        target_div = root.xpath('.//div[@class="o-hidden a_D"]/a')[0]
+        target_div = target_root.xpath('./a')[0]
         # 文本内容（音频标题）
         o_hidden_text = target_div.xpath('text()')[0].strip()
         # a标签的href属性
         a_href = target_div.xpath('@href')[0].strip()
-
+        #时间 <div class="fr gray-9 a_D">2019-04</div>
+        date_val=target_root.xpath('.//div[@class="fr gray-9 a_D"]/text()')[0].strip()
 
         # ---------------------- 提取第2组信息：p-t-5 p-b-15 a_D 下的 gray-6 a_D 文本 ----------------------
         # 定位div，再找子级span（避免匹配其他span.gray-6）
@@ -97,23 +131,15 @@ def get_audio_imp(root):
         
         # 存入结果
         return {
-            "音频标题": o_hidden_text,
-            "href": a_href,
-            "专辑名称": gray6_text,
-            "时长":duration_text,
-            "播放量": gray9_text,
+            title_id: o_hidden_text,
+            href_id: f"https://www.ximalaya.com{a_href}",
+            album_name_id: gray6_text,
+            duration_id:duration_text,
+            view_coount_id: gray9_text,
+            release_time_id:date_val,
         }
-
-
-def get_album_lst():
-    
-    
-    
-    cur_dir=Path(r"E:\旭尧\睡前故事")
-    xml_path=cur_dir/r"晓北姐姐讲故事.xml"
-    html_content=read_from_txt_utf8_sig(xml_path)
-        
-        
+@exception_decorator(error_state=False)
+def get_album_lst_from_content(html_content)->pd.DataFrame:
         # 2. 解析HTML
     tree = etree.HTML(html_content)
 
@@ -130,31 +156,34 @@ def get_album_lst():
     # 5. 格式化输出结果
     df=pd.DataFrame(reversed( results))
     
-    df["num"]=  df.groupby("专辑名称",sorted=True).cumcount()+1
-    df["name"]=df.apply(lambda x:   f'{x["num"]:02}_{get_name(x["音频标题"])}',axis=1)
     
-    df.to_excel(xml_path.with_suffix(".xlsx"),sheet_name="audio",index=False)
+    df[album_id]=df.apply(lambda x: get_album_name(x[album_name_id]),axis=1)
+    groups=df.groupby(album_id,sort=True)
+    df[num_id]=  groups.cumcount()+1
+    count_dict={}
+    for name,group in groups:
+        count_dict[name]=format_count(len(group) )
     
-def fetch_mp3_list():
+    def real_name(x):
+        zj_name=x[album_id]
+        count=count_dict.get(zj_name,3)
+        return f'{x[num_id]:0{str(count)}}_{get_title_name(x[title_id])}'
     
-    results=[]
-    cur_dir=Path(r"F:\worm_practice\player\audio")
-    for xml_file_path in xml_files(cur_dir):
-        xml_content = read_from_txt_utf8_sig(xml_file_path)
-        result=fetch_mp3_list_imp(xml_content)
-        if result:
-            results.extend(result)
-            
-    if not results:
-        return
-    df=pd.DataFrame(results)
+    df[name_id]=df.apply(real_name ,axis=1)
+
+    df.sort_values(by=[album_id,name_id],inplace=True, ascending=True)
+    # 重置索引（可选，让索引连续）
+    df.reset_index(drop=True, inplace=True)
+    return df
+
     
-    df["name"]=df.apply(lambda x:f'{x["序号"].zfill(3)}_{get_name(x["音频标题"])}',axis=1)
-    
-    # df["name"]=df["序号"]+"_"+get_name(df["音频标题"])
-    df.to_excel(cur_dir/"audio.xlsx",sheet_name="audio",index=False)
+
 
 
 if __name__ == '__main__':
-    # fetch_mp3_list()
-    get_album_lst()
+
+    cur_dir=Path(r"E:\旭尧\睡前故事")
+    xml_path=cur_dir/r"晓北姐姐讲故事.xml"
+    html_content=read_from_txt_utf8_sig(xml_path)
+        
+    get_album_lst_from_content(html_content,xml_path.with_suffix(".xlsx"))

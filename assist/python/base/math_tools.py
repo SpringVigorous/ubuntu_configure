@@ -9,7 +9,9 @@ def ceil(n, m):
 def ceil_5(n):
     return ceil(n,5)
 
-
+#用于获取最少的数字位数
+def format_count(count:int):
+    return math.ceil(math.log10(count))
 def split_singles(start:int|float,end:int|float,splits:Iterable[int|float]|int|float)->list[int:float]:
     if not isinstance(splits,Iterable):
         splits=[splits]

@@ -567,9 +567,40 @@ def write_to_bin(file_path,data):
         return 
     with open(file_path,"wb") as f:
         return f.write(data)
-
-
-
+#保存失败时，尝试备份到同目录下
+@exception_decorator(error_state=False)
+def backup_file(file_path,data,save_func=Callable[[str,any],any],force_overwrite=True):
+    logger=logger_helper("保存文件",file_path)
+    try: 
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    except Exception as e:
+        logger.error("失败",except_stack())
+        return
+   
+    
+    if not force_overwrite and os.path.exists(file_path):
+        file_path=sequence_num_file_path(file_path)
+        logger.update_target(detail=file_path)
+    
+    if not save_func:
+        logger.error("失败","未指定保存函数")
+        return file_path
+    try: 
+        save_func(file_path,data)
+    except Exception as e:
+        file_path=sequence_num_file_path(file_path)
+        logger.warn(f"备份{file_path}",f"具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
+        save_func(file_path)
+        logger.error("失败",except_stack())
+        
+        
+    return file_path
+    
+@exception_decorator(error_state=False)
+def backup_xlsx(file_path,data,sheet_name=None,force_overwrite=True):
+    return backup_file(file_path,data,save_func=lambda file_path,data:write_dataframe_excel(file_path=file_path,data=data,sheet_name=sheet_name),force_overwrite=force_overwrite)
+    
+    
 def write_to_txt_utf8_sig(file_path,data):
   return write_to_txt(file_path,data,encoding="utf-8-sig")
 
