@@ -9,7 +9,8 @@ from itertools import chain
 from base.xml_tools import pretty_tree
 from base.collect_tools import unique
 from urllib.parse import urlparse
-from base.com_log import logger_helper
+from base.com_log import logger_helper,global_logger
+from base.com_decorator import exception_decorator
 
 def url_valid(url:str):
     parsed_url = urlparse(url)
@@ -59,6 +60,9 @@ def is_http_or_https(url):
     return bool(match)
 
 def fill_url(url,domain):
+    
+    domain=get_homepage_url(domain)
+    
     if not is_http_or_https(url):
         return f"{domain}{url}"
     return url
@@ -85,14 +89,21 @@ def content_tree(url,logger=None,**kargs):
         return
     tree = html.fromstring(content)
     return tree
-
-def postfix(url):
+@exception_decorator(error_state=False)
+def postfix(url,default_postfix=".mp4"):
+    
+    result=default_postfix
+    try:
         # 解析 URL
-    parsed_url = urlparse(url)
-
-    # 提取网址部分
-    cur_path=Path(parsed_url.path)
-    return cur_path.suffix
+        parsed_url = urlparse(url)
+        # 提取网址部分
+        cur_path=Path(parsed_url.path)
+        result=cur_path.suffix
+    except Exception as e:
+        with global_logger().raii_target("获取url后缀",url) as logger:
+            logger.error("失败",f"使用默认值:{default_postfix}")
+    
+    return result
 
 def split_url(url):
 

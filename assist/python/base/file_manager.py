@@ -1,4 +1,4 @@
-﻿from typing import Callable
+﻿from typing import Callable,Any
 import abc
 from base.com_decorator import exception_decorator
 from base.com_log import logger_helper,UpdateTimeType
@@ -14,6 +14,7 @@ from base.except_tools import except_stack
 #最好是作为单例
 class file_manager(metaclass=abc.ABCMeta):
     sheet_name_flag="name"
+    xlsx_path_flag="xlsx_path"
     def __init__(self) -> None:
         self.logger=logger_helper(self.__class__.__name__)
         self.lock = threading.Lock()
@@ -47,12 +48,16 @@ class file_manager(metaclass=abc.ABCMeta):
         with self.lock:
             with pd.ExcelWriter(xlsx_path,mode="w") as w:
                 for df in dfs:
-                    if not df_empty(df):
-                        df.to_excel(w, sheet_name=self._get_df_name(df), index=False)
+                    if  df_empty(df):
+                        continue
+                    df.to_excel(w, sheet_name=self._get_df_name(df), index=False)
 
         
         
         pass
+    
+    
+    
     def __del__(self):
 
         # 清理资源（如关闭文件、释放网络连接等）
@@ -69,11 +74,22 @@ class file_manager(metaclass=abc.ABCMeta):
         
         
         pass
+    #设置df的sheet_name
+    def set_df_info(self,df:pd.DataFrame,name:Any):
+        return set_attr(df,file_manager.sheet_name_flag,name)
+
+    @exception_decorator(error_state=False)
+    def get_df_info(self,df:pd.DataFrame)->Any:
+        return get_attr(df,file_manager.sheet_name_flag)
+    
     
     #设置df的sheet_name
+    @abc.abstractmethod
     def _set_df_name(self,df:pd.DataFrame,name:str):
         return set_attr(df,file_manager.sheet_name_flag,name)
 
+    @exception_decorator(error_state=False)
+    @abc.abstractmethod
     def _get_df_name(self,df:pd.DataFrame)->str:
         return get_attr(df,file_manager.sheet_name_flag)
     
@@ -102,8 +118,7 @@ class file_manager(metaclass=abc.ABCMeta):
             cut_df=sub_df(result_df,org_df,keys)
 
         logger.debug("完成",f"新增{len(cut_df)}条记录",update_time_type=UpdateTimeType.STAGE)
-        
-        
+
         if new_data_func and not cut_df.empty:
             logger.update_target("处理新增数据",f"共{len(cut_df)}行")
             logger.trace("开始",update_time_type=UpdateTimeType.STAGE)

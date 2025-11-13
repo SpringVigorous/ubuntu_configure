@@ -511,7 +511,7 @@ def write_dataframe_excel(file_path,data,sheet_name=None):
         return    
         
     if sheet_name:
-        return data.to_excel(file_path,sheet_name=sheet_name)
+        return data.to_excel(file_path,sheet_name=sheet_name,index=False)
 
     return data.to_excel(file_path)
 
@@ -590,7 +590,7 @@ def backup_file(file_path,data,save_func=Callable[[str,any],any],force_overwrite
     except Exception as e:
         file_path=sequence_num_file_path(file_path)
         logger.warn(f"备份{file_path}",f"具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
-        save_func(file_path)
+        save_func(file_path,data)
         logger.error("失败",except_stack())
         
         

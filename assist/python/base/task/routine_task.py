@@ -68,7 +68,23 @@ class RoutineTask(TaskBase,metaclass=abc.ABCMeta):
         self._each_run_after(output_data)
 
     def clear_input(self):
-        return clear_queue(self.input_queue)
+        lst=clear_queue(self.input_queue)
+        count=len(lst)
+        
+        
+        def __info_str(lst):
+            return "\n".join(map(str,lst))
+        
+        info:str=''
+        if count>6:
+            info=f"{__info_str(lst[:3])}\n...\n{__info_str(lst[-3:])}"
+        else:
+            info=__info_str(lst)
+
+            
+        self.logger.info("强制清除输入队列",f'共{len(lst)}个\n{info}\n')
+        
+        return lst
         
     #真正的运行逻辑
     @exception_decorator()

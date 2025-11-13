@@ -1,8 +1,25 @@
-﻿from base import download_sync,xml_tools,xml_files,xml_files,read_from_txt_utf8_sig,exception_decorator,format_count
-from pathlib import Path
-from lxml import etree
-import pandas as pd
+﻿# 1. 标准库（按字母顺序排列，内置库在前，模块导入在后）
 import re
+from pathlib import Path
+
+# 2. 第三方库（按字母顺序排列，统一导入风格）
+import pandas as pd
+from lxml import etree
+
+# 3. 自定义库（去重冗余、按字母顺序拆分排列，用括号包裹多行）
+from base import (
+    arabic_numbers,
+    download_sync,
+    exception_decorator,
+    format_count,
+    is_http_or_https,
+    logger_helper,
+    read_from_txt_utf8,
+    xml_files,  # 去重重复的 xml_files 导入
+    xml_tools,
+    df_empty,
+    TaskStatus
+)
 
 
 downloaded_id="downloaded"
@@ -15,9 +32,24 @@ dest_path_id="dest_path"
 album_name_id="专辑名称"
 title_id="音频标题"
 duration_id="时长"
-view_coount_id="播放量"
+view_count_id="播放量"
 release_time_id="发布时间"
 local_path_id="local_path"
+episode_count_id="集数"
+downloaded_count_id="已下载数"
+
+cur_xlsx_path_id="cur_xlsx_path"
+cur_sheet_name_id="cur_sheet_name"
+
+
+xlsx_path_id="xlsx_path"
+sheet_name_id="sheet_name"
+
+audio_sheet_name="audio"
+album_sheet_name="album"
+
+base_suffix=".m4a"
+
 #喜马拉雅睡前故事
 def download_mp3():
     headers = {
@@ -41,7 +73,7 @@ def download_mp3():
     success= download_sync(url,dest_path,headers=headers)
     print(success)
 
-def fetch_mp3_list_imp(xml_content)->list:
+def sound_by_album_content(xml_content)->list:
     # 2. 解析 XML/HTML
     tree = etree.HTML(xml_content)  # 用 etree.HTML 解析（兼容 HTML 格式）
 
@@ -60,11 +92,21 @@ def fetch_mp3_list_imp(xml_content)->list:
         # 提取 <span class="title _nO"> 的文本（音频标题）
         title = item.xpath('.//span[@class="title _nO"]/text()')[0]
         
+        
+        #<span class="count _nO"><i class="xuicon xuicon-erji1 _nO"></i>89.9万</span>
+        view_coount=item.xpath('.//span[@class="count _nO"]/text()')[0]
+        
+        
+        #<span class="time _nO">2023-06</span>
+        release_time=item.xpath('.//span[@class="time _nO"]/text()')[0]
         # 存入结果列表
         result.append({
-            "序号": num,
             title_id: title,
-            "href": href,
+            href_id: href,
+            view_count_id: view_coount,
+            release_time_id:release_time,
+            num_id:int(num),
+            downloaded_id:TaskStatus.UNDOWNLOADED
         })
 
     return result
@@ -88,6 +130,10 @@ def get_title_name(name:str):
     
     return name.replace(" ","").replace(".","").replace("讲|","")
     
+def dest_title_name(num:int,title:str,total_count:int):
+    count=format_count(total_count)
+    return f'{num:0{str(count)}}_{get_title_name(title)}'    
+    
 def get_album_name(album_name:str):
     if not album_name:
         return ""
@@ -97,7 +143,7 @@ def get_album_name(album_name:str):
     return lst[0].strip() if len(lst)>0 else album_name
 
 @exception_decorator(error_state=False)
-def get_audio_imp(root):
+def _get_audio_imp(root):
  # ---------------------- 提取第1组信息：o-hidden a_D 的文本 + 子元素href ----------------------
  
         target_root=root.xpath('.//div[@class="o-hidden a_D"]')[0]
@@ -135,11 +181,12 @@ def get_audio_imp(root):
             href_id: f"https://www.ximalaya.com{a_href}",
             album_name_id: gray6_text,
             duration_id:duration_text,
-            view_coount_id: gray9_text,
+            view_count_id: gray9_text,
             release_time_id:date_val,
+            downloaded_id:TaskStatus.UNDOWNLOADED.value
         }
 @exception_decorator(error_state=False)
-def get_album_lst_from_content(html_content)->pd.DataFrame:
+def sound_lst_from_author_content(html_content)->list[dict]:
         # 2. 解析HTML
     tree = etree.HTML(html_content)
 
@@ -150,13 +197,21 @@ def get_album_lst_from_content(html_content)->pd.DataFrame:
     results = []
     for root in audio_roots:
         
-        if (result:=get_audio_imp(root)):
+        if (result:=_get_audio_imp(root)):
             results.append(result)
 
+    return list(reversed( results))
+    
+
+
+
+@exception_decorator(error_state=False)
+def author_sound_df_latter(df:pd.DataFrame)->pd.DataFrame:
+    if df_empty(df):
+        return df
+    
+    
     # 5. 格式化输出结果
-    df=pd.DataFrame(reversed( results))
-    
-    
     df[album_id]=df.apply(lambda x: get_album_name(x[album_name_id]),axis=1)
     groups=df.groupby(album_id,sort=True)
     df[num_id]=  groups.cumcount()+1
@@ -176,14 +231,66 @@ def get_album_lst_from_content(html_content)->pd.DataFrame:
     df.reset_index(drop=True, inplace=True)
     return df
 
+
+
+@exception_decorator(error_state=False)
+def _get_album_impl(root)->dict:
     
+    href,title,episode_count,play_count=[None]*4
+    
+    logger=logger_helper("解析专辑信息")
+    try:
+        # 2. 用 XPath 提取目标信息（XPath 表达式精准定位元素）
+        # 获取 href 属性：匹配 class 为 "anchor-user-album-title v-m dL_" 的 a 标签，提取 href 属性
+        href = root.xpath('.//a[@class="anchor-user-album-title v-m dL_"]/@href')[0]  # [0] 取列表第一个元素（唯一匹配）
+
+        # 获取标题：匹配 class 为 "v-m text-bold dL_" 的 span 标签，提取文本
+        title = root.xpath('.//span[@class="v-m text-bold dL_"]/text()')[0].strip()  # strip() 去除多余空格/换行
+
+        info = root.xpath('.//div[@class="anchor-user-album-counter o-hidden dL_"]')
+        if len(info)>0:
+            info=info[0]
+            
+            
+            
+            
+        # 1. 提取 260集（无索引，基于 i 标签特征）
+        episode_xpath = './div/i[@class="xuicon xuicon-sound-n gray-9 p-r-5 dL_"]/following-sibling::span[1]/text()'
+        episode_count = info.xpath(episode_xpath)[0].strip() if info.xpath(episode_xpath) else "未找到"
+
+        # 2. 提取 12.41亿（无索引，基于 i 标签特征）
+        play_count_xpath = './div/i[@class="xuicon xuicon-erji1 gray-9 p-r-5 dL_"]/following-sibling::span[1]/text()'
+        play_count = info.xpath(play_count_xpath)[0].strip() if info.xpath(play_count_xpath) else "未找到"
+        
+
+    except:
+        logger.error(f"失败",f'\n{etree.tostring(root, method="html", pretty_print=True, encoding="utf-8").decode("utf-8")}\n')
+        
+        return 
+    
+    if episode_count:
+        episode_count=arabic_numbers(episode_count)[0]
+    if play_count:
+        play_count=arabic_numbers(play_count)[0]
+    
+    
+    return {href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value}
 
 
-
+@exception_decorator(error_state=False)
+def album_lst_from_content(html_content)->list[dict]:
+    # 2. 解析HTML
+    tree = etree.HTML(html_content)
+    roots = tree.xpath('//div[@class="anchor-user-album-box dL_"]')
+    results = []
+    for root in roots:
+        if (result:=_get_album_impl(root)):
+            results.append(result)
+    return  results
 if __name__ == '__main__':
 
-    cur_dir=Path(r"E:\旭尧\睡前故事")
-    xml_path=cur_dir/r"晓北姐姐讲故事.xml"
-    html_content=read_from_txt_utf8_sig(xml_path)
+    html_path=r"E:\旭尧\有声读物\宝宝巴士_album.html"
+    html_content=read_from_txt_utf8(html_path)
         
-    get_album_lst_from_content(html_content,xml_path.with_suffix(".xlsx"))
+    df=album_lst_from_content(html_content)
+    print(0)

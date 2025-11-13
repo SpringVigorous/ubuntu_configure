@@ -313,7 +313,8 @@ class logger_helper:
         return record_detail_usage(self._target,status,self.detail_content(detail_lat),cur_time)
     
     def _log_impl(self,mfunc,status:str,details:str=None,update_time_type=None):
-        
+        if details is not None and  not isinstance(details,str):
+            details=str(details)
         state=UpdateTimeType.from_update(update_time_type)
         pfunc=self.content_useage if not state.is_none() else self.content
         info=pfunc(status,details,state)
@@ -338,6 +339,12 @@ class logger_helper:
         self._log_impl(trace,status,details,update_time_type)
     
     
+__global_logger_:logger_helper=None
+def global_logger():
+    global __global_logger_
+    if __global_logger_ is None:
+        __global_logger_=logger_helper()
+    return __global_logger_
     
 
         

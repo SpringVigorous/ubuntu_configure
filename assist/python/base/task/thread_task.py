@@ -4,9 +4,10 @@ import sys
 from .routine_task import RoutineTask
 
 class envent_sequence:
-    def __init__(self):
+    def __init__(self,events:list[threading.Event]=[]):
         self._thread_event:list[threading.Event]=[]
-        
+        for event in events:
+            self.add_envent(event)
     def add_envent(self,event:threading.Event):
         if not event or (event in self._thread_event):
             return

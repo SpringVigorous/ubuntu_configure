@@ -8,6 +8,9 @@ from base.com_decorator import exception_decorator
 import hashlib
 import os
 import uuid
+import math
+from base.math_tools import float_to_int_if_approx
+
 #根据原始的大小写情况，替换成目标的大小写
 def replace_pattern(match, replacement):
     original = match.group(0)
@@ -239,6 +242,8 @@ def rename_files_with_pattern(directory):
 chinese_num = r'零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰兆'
 chinese_num_pattern = re.compile(f'[{chinese_num}]+')
 
+
+
 # 大写数字到阿拉伯数字的映射
 chinese_to_arabic = {
     '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
@@ -257,7 +262,15 @@ def extract_chinese_numbers(text):
     """
     matches = chinese_num_pattern.findall(text)
     return matches
+def _extract_chinese_numbers_iter(text):
+    """
+    提取字符串中的大写数字部分。
 
+    :param text: 输入字符串
+    :return: 包含所有大写数字部分的列表
+    """
+    matches = chinese_num_pattern.finditer(text)
+    return matches
 
 def chinese_to_arabic_number(chinese_num):
    
@@ -286,16 +299,65 @@ def chinese_to_arabic_number(chinese_num):
 
     return num
 
-def arabic_number_tuples(str_val):
-    org=extract_chinese_numbers(str_val)
-    vals=list(map(chinese_to_arabic_number,  org))
+
+
+
+def _merge_reg_vals(B,A):
+        # 初始化第一组（第一个元素）
+
+    current_group = []
+
+    merged_result=[]
+    # 遍历B中剩余元素，判断是否需要合并
+    for index,element in enumerate(B):
+        item=element[0]
+        if index==0:
+            current_group = [element]
+        else:
+            pre_item=current_group[-1][0]
+
+            # 核心判断：前一个元素的结束索引 == 当前元素的起始索引（A中首尾衔接）
+            if pre_item.end() == item.start():
+                # 加入当前组，更新组的结束索引
+                current_group.append(element)
+            else:
+                merged_result.append(current_group)
+                # 重置当前组为当前元素
+                current_group = [element]
+        if index+1 == len(B):
+            merged_result.append(current_group)
+
+    results=[]
+    for item in merged_result:
+        reg_items,vals=zip(*item)
+        org="".join(map(lambda x:x.group(), reg_items))
+        num=float_to_int_if_approx(math.prod(vals),1e-6)
+
+
+        results.append((org,num))
+
+    return results
+    
+    
+    
+
+def arabic_number_tuples(str_val:str):
+    org=list(chinese_num_pattern.finditer(str_val))
+    vals=list(map(lambda x:chinese_to_arabic_number(x.group()),  org))
 
     # 提取数字
-    num_org=re.findall(r'\d+',str_val)
+    num_org=list(re.finditer(r"[-+]?\d*\.?\d+",str_val))
     if num_org:
         org.extend(num_org)
-        vals.extend(map(int,num_org))
-    return list(zip(org,vals)) if vals else []
+        vals.extend(map(lambda x:float(x.group()),num_org))
+    
+    temp=list(zip(org,vals)) if vals else []
+
+    results=_merge_reg_vals(sorted(temp, key=lambda x: x[0].start()),str_val)
+    #合并操作    
+ 
+    return results
+
 
 def arabic_numbers(str_val):
     if isinstance(str_val,Number):
@@ -356,7 +418,7 @@ def format_float(num):
 if __name__ == '__main__':
 
     # 测试
-    print(chinese_to_arabic_number("二百零三"))  # 输出: 203
+    print(arabic_number_tuples("15.1亿播放量3.5万"))  # 输出: 203
     
 
     exit(0)

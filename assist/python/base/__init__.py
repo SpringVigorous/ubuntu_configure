@@ -8,7 +8,7 @@ from .task.process_task import ProcessTask
 from .task.coroutine_task import CoroutineTask
 from .task.threadpool import *
 from .com_decorator import *
-from .com_log import logger_helper,UpdateTimeType,record_detail,record_detail_usage
+from .com_log import logger_helper,UpdateTimeType,record_detail,record_detail_usage,global_logger
 from .except_tools import except_stack
 from .output_agent import OutputAgent
 from .except_tools import *
@@ -51,4 +51,7 @@ from .raii_tools import *
 from .format_tool import f_safe_format
 from .fetch_tools import TinyCache,TinyFetch
 from .chinese_tools import *
+from .com_status import TaskStatus 
+
+from .xlsx_manager import xlsx_manager
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]

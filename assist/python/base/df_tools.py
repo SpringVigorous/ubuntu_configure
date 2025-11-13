@@ -395,3 +395,16 @@ def update_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[
     if unique_cols :
         dest_df=unique_df_last(dest_df,keys=unique_cols)
     return dest_df
+
+
+
+#获取所有的dfs
+def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
+    results={}
+    with pd.ExcelFile(xlsx_path) as reader:
+        for name in reader.sheet_names:
+            df=reader.parse(name)
+            if df_empty(df):
+                continue
+            results[name]=df   
+    return results
