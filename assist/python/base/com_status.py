@@ -20,12 +20,16 @@ class TaskStatus(IntFlag):
     FETCH_ERROR = 0b100000      # 32: 获取网页信息失败
     CONVERT_ERROR = 0b1000000   # 64： 网页信息转换失败
     
-    
+    @staticmethod
+    def CoreMask():
+        return TaskStatus.UNDOWNLOADED | TaskStatus.INCOMPLETED | TaskStatus.SUCCESS 
     
     @staticmethod
     def FullMask():
-        return TaskStatus.UNDOWNLOADED | TaskStatus.INCOMPLETED | TaskStatus.SUCCESS | TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR
+        return TaskStatus.CoreMask() | TaskStatus.ReaseMask()
         
+    def ReaseMask():
+        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR
     
     @classmethod
     def from_value(cls, value: Union[int, str, 'TaskStatus']) -> 'TaskStatus':
@@ -110,6 +114,11 @@ class TaskStatus(IntFlag):
         """第七位：是否网页信息转换失败（私有属性）"""
         return bool(self.value & TaskStatus.CONVERT_ERROR)
     
+    @property
+    def has_reaseon(self)->bool:
+        return self.value & TaskStatus.ReaseMask() > 0
+
+    
     
     # 前两位状态的公共属性
     @property
@@ -182,7 +191,7 @@ class TaskStatus(IntFlag):
         """清除获取网页信息失败状态"""
         return TaskStatus(self.value & ~TaskStatus.FETCH_ERROR)
     
-    @propert
+    @property
     def clear_convert_error(self) -> 'TaskStatus':
         """清除网页信息转换失败状态"""
         return TaskStatus(self.value & ~TaskStatus.CONVERT_ERROR)
@@ -250,6 +259,17 @@ class TaskStatus(IntFlag):
         return (f"TaskStatus(value=0b{self.value:05b}'{base_desc}'{flags_desc}, 原始值={self.value})")
         
     __str__ = __repr__
+    
+    
+def Undownloaded()->TaskStatus:
+    return TaskStatus.UNDOWNLOADED
+    
+def Success()->TaskStatus:
+    return TaskStatus.SUCCESS
+
+def Incompleted()->TaskStatus:
+    return TaskStatus.INCOMPLETED
+    
 if __name__=="__main__":   
     
     val=TaskStatus.create(TaskStatus.UNDOWNLOADED, error=True, charged=False, not_found=True)

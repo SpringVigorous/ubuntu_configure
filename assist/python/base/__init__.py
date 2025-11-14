@@ -51,7 +51,7 @@ from .raii_tools import *
 from .format_tool import f_safe_format
 from .fetch_tools import TinyCache,TinyFetch
 from .chinese_tools import *
-from .com_status import TaskStatus 
+from .com_status import * 
 
 from .xlsx_manager import xlsx_manager
 __all__ = ['ThreadTask', 'ProcessTask', 'CoroutineTask',"logger_helper","UpdateTimeType","record_detail","record_detail_usage","except_stack","OutputAgent"]

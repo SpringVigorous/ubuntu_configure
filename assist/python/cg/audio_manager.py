@@ -1,5 +1,5 @@
 ﻿
-from base import xlsx_manager,singleton,df_empty,exception_decorator,TaskStatus,find_rows_by_col_val
+from base import xlsx_manager,singleton,df_empty,exception_decorator,TaskStatus,find_rows_by_col_val,global_logger
 from pathlib import Path
 import json
 import pandas as pd
@@ -76,8 +76,11 @@ class AudioManager(xlsx_manager):
         if not mask.any():
             return df
         def update_flag(row):
-            return TaskStatus.SUCCESS.value if  os.path.exists(row[local_path_id]) else row[downloaded_id]
-
+            try:
+                return TaskStatus.SUCCESS.value if  os.path.exists(row[local_path_id]) else row[downloaded_id]
+            except:
+                global_logger().error("标志位错误", "|".join(map(str, row.index)))
+                return row[downloaded_id]
         # 仅对掩码为 True 的行应用赋值（axis=1 表示按行处理）
         df.loc[mask, downloaded_id] = df.loc[mask].apply( update_flag,
             axis=1

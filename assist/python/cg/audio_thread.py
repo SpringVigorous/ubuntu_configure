@@ -30,7 +30,7 @@ from base import (
     write_to_txt_utf8,
     singleton,
     postfix,
-    TaskStatus
+    TaskStatus,Success,Undownloaded,Incompleted
 )
 
 
@@ -135,7 +135,7 @@ class InteractImp():
     
     #是否有问题，状态信息
     @property
-    def web_error(self)->tuple:
+    def web_error(self)->tuple[bool,TaskStatus]:
         status:TaskStatus=web_status(self.wp.html)
         has_error=status.is_error or status.is_not_found or status.is_charged
         return (has_error,status)
@@ -163,7 +163,7 @@ class InteractImp():
             return self.title
         
     @exception_decorator(error_state=False)
-    def _handle_audio_url(self, url,audio_path):
+    def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus]:
         body=None
         self._msg_count+=1
         suffix=None
@@ -185,7 +185,7 @@ class InteractImp():
                 error,status=self.web_error
                 if error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return status,suffix
+                    return suffix,status
                 
                 
                 #获取播放按钮，并单击
@@ -201,7 +201,7 @@ class InteractImp():
                     if buy_button:
                         self._buy_lst.append(param_dict)
                     
-                    return fail_status.set_error ,suffix
+                    return suffix,fail_status.set_error
                 play_button.click()
                 
                 packet = self.wp.listen.wait(timeout=40)
@@ -217,10 +217,10 @@ class InteractImp():
 
             write_to_bin(audio_path,body)
             logger.info("成功",audio_path,update_time_type=UpdateTimeType.STAGE)
-            return TaskStatus.SUCCESS,suffix
+            return suffix,TaskStatus.SUCCESS
 
     @exception_decorator(error_state=False)
-    def _handle_bozhu_url(self, url)->str: #html
+    def _handle_bozhu_url(self, url)->tuple[str,TaskStatus]: #html
         
         content=None
         self._msg_count+=1
@@ -229,11 +229,8 @@ class InteractImp():
                 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return
-                error,status=self.web_error
-                if error:
-                    logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return
+                    return content,Undownloaded().set_error
+
                 # logger.update_time(UpdateTimeType.STAGE)
                 logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
                 #<i class="xuicon xuicon-sound-n v-m"></i>
@@ -243,12 +240,22 @@ class InteractImp():
                     time.sleep(.5)
                 
                 
-                #<span style="cursor: pointer;">加载更多</span>
-                more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=3)
+
                 scoll_time=0
                 
                 try:
-                    while more_button and more_button.text:
+                    while True:
+                        
+                        #缓存结果，避免失败后，导致数据丢失（至少还能返回上次结果）
+                        content=self.wp.html
+                        error,status=self.web_error
+                        if error:
+                            logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
+                            return content,status
+                        #<span style="cursor: pointer;">加载更多</span>
+                        more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=5)
+                        if not (more_button and more_button.text):
+                            break
                         scoll_time+=1
                         
                         # 滚动到可见区域并点击
@@ -257,10 +264,8 @@ class InteractImp():
                         logger.trace("滚动成功",f"第{scoll_time}次",update_time_type=UpdateTimeType.STEP)
                         more_button.click()
                         time.sleep(.5)
-                        #再次赋值
-                        more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=10)
-                        #缓存结果，避免失败后，导致数据丢失（至少还能返回上次结果）
-                        content=self.wp.html
+
+
                 except Exception as e:
                     logger.error("失败",f"滚动失败{e}",update_time_type=UpdateTimeType.STAGE)
                     
@@ -271,9 +276,9 @@ class InteractImp():
                     logger.error("失败",f"获取html失败{e}",update_time_type=UpdateTimeType.STAGE)
 
                 
-        return content
+        return content,Success()
     @exception_decorator(error_state=False)
-    def _handle_album_url(self, url)->str: #html
+    def _handle_album_url(self, url)->tuple[str,TaskStatus]: #html
         
         content=None
         with self._lock:
@@ -282,11 +287,9 @@ class InteractImp():
                 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return
-                error,status=self.web_error
-                if error:
-                    logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return
+                    return content,Undownloaded().set_error
+
+
                 # logger.update_time(UpdateTimeType.STAGE)
                 logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
                 #<i class="xuicon xuicon-album-p v-m"></i>
@@ -298,11 +301,16 @@ class InteractImp():
                 scoll_time=0
                 try:
                     while True:
-
-
-
                         content=self.wp.html
-                        more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=3)
+                        
+                        error,status=self.web_error
+                        if error:
+                            logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
+                            return content,status
+
+                        
+                        
+                        more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=5)
                         if not( more_button and more_button.text):
                             break
                         scoll_time+=1
@@ -325,9 +333,12 @@ class InteractImp():
                     logger.error("失败",f"获取html失败{e}",update_time_type=UpdateTimeType.STAGE)
 
                 
-        return content
+        return content,Success()
+  
+    
+  
     @exception_decorator(error_state=False)
-    def _handle_sound_from_album_url(self, url)->list[dict]: #html
+    def _handle_sound_from_album_url(self, url)->tuple[list[dict],TaskStatus]: #html
         results=[]
         self._msg_count+=1
 
@@ -336,11 +347,8 @@ class InteractImp():
                 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return
-                error,status=self.web_error
-                if error:
-                    logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return
+                    return 
+
                 # logger.update_time(UpdateTimeType.STAGE)
                 logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
                 #<i class="xuicon xuicon-album-p v-m"></i>
@@ -348,8 +356,16 @@ class InteractImp():
                 time.sleep(5)
                 try:
                     while True:
+                        error,status=self.web_error
+                        if error:
+                            logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
+                            return  results,status
+                        
+                        
+                        
                         if result:=sound_by_album_content(self.wp.html):
                             results.extend(result)
+                            
                             
                         next_page_btn=self.wp.ele((By.XPATH,next_page_xpath),timeout=3)
                         if next_page_btn:
@@ -365,7 +381,7 @@ class InteractImp():
                 except Exception as e:
                     logger.error("失败",f"滚动失败{e}",update_time_type=UpdateTimeType.STAGE)
 
-        return results
+        return results,Success()
     def close(self):
         with self._lock:
             if  self.wp:
@@ -409,11 +425,12 @@ class InteractAudio(ThreadTask):
         
         #更新状态
         if success:
-            status,suffix=success
+            suffix,status=success
             self.manager.update_status_suffix(xlsx_path,sheet_name,url,status,suffix)
             self._success_count+=1
         else:
-            self.manager.update_status(xlsx_path,sheet_name,url,TaskStatus.UNDOWNLOADED)
+            pass
+            # self.manager.update_status(xlsx_path,sheet_name,url,TaskStatus.UNDOWNLOADED)
             
         
         
@@ -424,9 +441,9 @@ class InteractAudio(ThreadTask):
 
 class InteractHelper():
     def __init__(self,logger:logger_helper,
-                 interact_content_fun:Callable[[str],str]=None,
-                 interact_df_func:Callable[[str],list[dict]]=None,
-                 content_convert_func:Callable[[str],list[dict]]=None,
+                 interact_content_fun:Callable[[str],tuple[str,TaskStatus]]=None,
+                 interact_df_func:Callable[[str],tuple[list[dict],TaskStatus]]=None,
+                 content_convert_func:Callable[[str],tuple[list[dict],TaskStatus]]=None,
                  df_latter_func:Callable[[pd.DataFrame],pd.DataFrame]=None,
                  handle_row_func:Callable[[pd.Series],Any]=None
                  ) -> None:
@@ -442,7 +459,7 @@ class InteractHelper():
         
     #df,TaskStatus
     @exception_decorator(error_state=False)
-    def fetch_df(self,xlsx_path,sheet_name,url,html_path)->tuple:
+    def fetch_df(self,xlsx_path,sheet_name,url,html_path)->tuple[pd.DataFrame,TaskStatus]:
         df= self.manager.get_df(xlsx_path,sheet_name=sheet_name)
         if not df_empty(df):
             self.logger.info("忽略交互",f"直接从{xlsx_path}读取,sheetname={sheet_name}")
@@ -451,12 +468,17 @@ class InteractHelper():
         if self.interact_df_func:
             df=pd.DataFrame(self.interact_df_func(url))
         else:
-            content=self._fetch_url_content(url,html_path)
+            result=self._fetch_url_content(url,html_path)
+            if not result:
+                return None,Undownloaded().set_fetch_error
+            content,status=result
+            if not content:
+                return None,status
             if not self.content_convert_func:
-                return None,TaskStatus.UNDOWNLOADED.set_error
+                return None,Undownloaded().set_convert_error
             df=pd.DataFrame(self.content_convert_func(content))
         if df_empty(df):
-            return None,TaskStatus.UNDOWNLOADED
+            return None,Undownloaded().set_convert_error
         try:
             if self.df_latter_func:
                 df=self.df_latter_func(df)
@@ -466,36 +488,44 @@ class InteractHelper():
             self.logger.error("保存失败",f"{e}")
             
         return df,TaskStatus.SUCCESS
-    def _fetch_url_content(self,url,html_path):
+    def _fetch_url_content(self,url,html_path)->tuple[str,TaskStatus]:
         if content:=read_from_txt_utf8(html_path):
             self.logger.info("忽略交互",f"直接从{html_path}读取")
-            return content
+            return content,Success()
         
         if not self.interact_fun:
-            return
-        content=self.interact_fun(url)
+            return None,Undownloaded().set_fetch_error
+        result=self.interact_fun(url)
+        if not result:
+            return None,Undownloaded().set_fetch_error
+        
+        content,status=self.interact_fun(url)
+        if not content:
+            return None,status
+        
         if content:
             write_to_txt_utf8(html_path,content)
             self.logger.info("网页保存到本地",f"{html_path}")
-        return content
+        return content,Success()
     @exception_decorator(error_state=False)
     def handle_df(self, df:pd.DataFrame,output_queue:Queue):
         if not self.handle_row_func or df_empty(df):
             return
         audio_index=0
         for _,row in df.iterrows():
+
             msg=self.handle_row_func(row)
             if (msg):
                 output_queue.put(msg)    
                 audio_index+=1
                 self.logger.trace("加入下载队列",f"第{audio_index}个消息{msg}")
 
-    def set_interact_content_fun(self,interact_fun:Callable[[str],str]=None) -> None:
-        self.interact_fun:Callable[[str],str]=interact_fun
+    def set_interact_content_fun(self,interact_fun:Callable[[str],tuple[str,TaskStatus]]=None) -> None:
+        self.interact_fun:Callable[[str],tuple[str,TaskStatus]]=interact_fun
         
         
-    def set_content_convert_func(self,content_convert_func:Callable[[str],list[dict]]=None) -> None:
-        self.content_convert_func:Callable[[str],list[dict]]=content_convert_func
+    def set_content_convert_func(self,content_convert_func:Callable[[str],tuple[list[dict],TaskStatus]]=None) -> None:
+        self.content_convert_func:Callable[[str],tuple[list[dict],TaskStatus]]=content_convert_func
         
     def set_df_latter_func(self,df_latter_func:Callable[[pd.DataFrame],pd.DataFrame]=None) -> None:
         self.df_latter_func:Callable[[pd.DataFrame],pd.DataFrame]=df_latter_func
@@ -505,7 +535,7 @@ class InteractHelper():
         self.handle_row_func:Callable[[pd.Series],Any]=handle_row_func
 
     def set_interact_df_func(self,interact_df_func:Callable[[str],pd.DataFrame]=None) -> None:
-        self.interact_df_func:Callable[[str],list[dict]]=interact_df_func
+        self.interact_df_func:Callable[[str],tuple[list[dict],TaskStatus]]=interact_df_func
 
 
 
@@ -714,10 +744,9 @@ class InteractSoundFromAlbum(ThreadTask):
                 return AudioManager.update_df_status(df)
             self._helper.set_df_latter_func(df_latter)
             df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
-            status:TaskStatus=TaskStatus.SUCCESS
-            
+
             #更新状态
-            if status.is_error or status.is_charged or status.is_not_found:
+            if status.has_reaseon:
                 pre_xlsx_path=data.get(cur_xlsx_path_id)
                 pre_sheet_name=data.get(cur_sheet_name_id)
                 self.manager.update_status(pre_xlsx_path,pre_sheet_name,url,status)
