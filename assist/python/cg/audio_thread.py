@@ -179,7 +179,7 @@ class InteractImp():
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return fail_status.set_not_found,suffix
+                    return suffix,fail_status.set_not_found
                 error,status=self.web_error
                 if error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
@@ -206,7 +206,7 @@ class InteractImp():
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return fail_status.set_error ,suffix
+                    return suffix,fail_status.set_error 
                 response=packet.response
                 body=response.body
                 cur_url=response.url
@@ -468,7 +468,7 @@ class InteractHelper():
                 lst,status=result
                 if not lst:
                     return df,status
-                df=pd.DataFrame(result)
+                df=pd.DataFrame(lst)
             else:
                 return df,Undownloaded().set_error
         else:
@@ -689,6 +689,10 @@ class InteractAlbum(ThreadTask):
                 return msg
             
             self._helper.set_handle_row_func(row_to_msg)
+            
+            if df_empty(df):
+                return 
+            df=df[df[downloaded_id]<TaskStatus.SUCCESS.value]
             self._helper.handle_df(df.reindex(index=df.index[::-1]),self.output_queue)
 
 

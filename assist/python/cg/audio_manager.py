@@ -157,7 +157,15 @@ class AudioManager(xlsx_manager):
     #更新下载状态
     @exception_decorator(error_state=False)
     def update_status_suffix(self,xlsx_path,sheet_name,href_val:str,status:TaskStatus,suffix:str):
-        with self.logger.raii_target("更新下载状态及文件后缀",f"{xlsx_path}:{sheet_name}:{href_val}:{status}:{suffix}") as logger:
+        logger_info={
+            "xlsx_path":xlsx_path,
+            "sheet_name":sheet_name,
+            "url":href_val,
+            "status":status,
+            "suffix":suffix
+        }
+        
+        with self.logger.raii_target("更新下载状态及文件后缀",f"{logger_info}") as logger:
             df=self.get_df(xlsx_path,sheet_name)
             if df_empty(df):
                 logger.debug("忽略更新","df不存在")
@@ -167,7 +175,8 @@ class AudioManager(xlsx_manager):
                     if status is not None:
                         df.loc[index,downloaded_id]=status.value #转换为整型
                     if suffix:
-                        df.loc[index,local_path_id]=str(Path(row[local_path_id]).with_suffix(suffix))
+                        if cur_path:=row[local_path_id]:
+                            df.loc[index,local_path_id]=str(Path(cur_path).with_suffix(suffix))
                 logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)

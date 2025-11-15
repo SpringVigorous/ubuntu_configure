@@ -27,6 +27,7 @@ class TaskBase():
         
 
     def __del__(self):
+        return
         if self.task_logger:
             self.task_logger.trace("析构完成",update_time_type= UpdateTimeType.ALL)
     @property

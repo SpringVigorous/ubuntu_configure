@@ -142,6 +142,7 @@ class TaskStatus(IntFlag):
         """是否为下载成功状态"""
         return self.value & TaskStatus.SUCCESS == TaskStatus.SUCCESS
     
+    @property
     def set_error(self) -> 'TaskStatus':
         """设置错误状态（仅非SUCCESS状态有效）"""
         if not self.is_success:
