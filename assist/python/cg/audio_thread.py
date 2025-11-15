@@ -464,7 +464,13 @@ class InteractHelper():
             return df,TaskStatus.SUCCESS
         
         if self.interact_df_func:
-            df=pd.DataFrame(self.interact_df_func(url))
+            if result:=self.interact_df_func(url):
+                lst,status=result
+                if not lst:
+                    return df,status
+                df=pd.DataFrame(self.interact_df_func(url))
+            else:
+                return df,Undownloaded().set_error
         else:
             result=self._fetch_url_content(url,html_path)
             if not result:

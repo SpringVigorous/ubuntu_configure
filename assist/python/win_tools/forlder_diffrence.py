@@ -81,19 +81,19 @@ class DirectoryTree:
     def to_flat_lst(self)->list[dict]:
         """将树结构转换为flat json"""
 
-        def _to_flat_children(children:dict):
+        def _to_flat_children(root_dir,children:dict):
             results=[]
             if not children:
                 return
-            for name ,child in children.items:
+            for name ,child in children.items():
                 if child.get("type") == "file":
                     results.append({
-                        "path": name,
+                        "path": os.path.join(root_dir,name),
                         "mtime": child.get("mtime", 0),
                         "mtime_str": child.get("mtime_str", "")
                     })
                 elif child.get("type") == "directory":
-                    if result:=self.to_flat_lst(child.get("children")):
+                    if result:=_to_flat_children(child.get("children")):
                         results.extend(result)
                     
             return results
@@ -103,7 +103,39 @@ class DirectoryTree:
     
     def from_flat_lst(self, flat_lst):
         """从flat json加载树结构"""
-        self.tree = flat_lst
+        
+        def find_common_parent(paths):
+            if not paths:
+                return None
+            # 将路径转换为绝对路径
+            abs_paths = [os.path.abspath(p) for p in paths]
+            # 使用commonpath函数
+            try:
+                common_path = os.path.commonpath(abs_paths)
+            except ValueError as e:
+                # 处理异常，例如路径列表为空或混合了绝对路径和相对路径
+                print(f"Error: {e}")
+                return None
+            return common_path
+        
+        if not flat_lst:
+            return
+        
+        path_lst = [p["path"] for p in flat_lst]
+        root_dir=find_common_parent(path_lst)
+        
+        def get_childern()->dict:
+            
+            
+            pass
+        
+        children=get_childern()
+        
+        self.tree ={"root":root_dir,
+                  "type": "directory",
+                  "children":children}
+        
+
         return self.tree
     
     
