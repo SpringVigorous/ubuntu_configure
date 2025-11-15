@@ -14,13 +14,13 @@ class TaskStatus(IntFlag):
     SUCCESS = 0b00011         # 3: 下载成功
     
     # 后三位状态标志（只能在非SUCCESS状态下有效）
-    ERROR = 0b00100           # 4: 错误
-    CHARGED = 0b01000            # 8: 收费
-    NOT_FOUND = 0b10000       # 16: 网页不存在
-    FETCH_ERROR = 0b100000      # 32: 获取网页信息失败
-    CONVERT_ERROR = 0b1000000   # 64： 网页信息转换失败
-    POST_ERROR = 0b1000000   # 64： 后续处理失败
-    
+    ERROR = 1<<2           # 4: 错误
+    CHARGED = 1<<3            # 8: 收费
+    NOT_FOUND = 1<<4       # 16: 网页不存在
+    FETCH_ERROR = 1<<5      # 32: 获取网页信息失败
+    CONVERT_ERROR = 1<<6   # 64： 网页信息转换失败
+    POST_ERROR = 1<<7   # 64： 后续处理失败
+    TEMP_CANCELED = 1<<8   # 128: 临时取消
     @staticmethod
     def CoreMask():
         return TaskStatus.UNDOWNLOADED | TaskStatus.INCOMPLETED | TaskStatus.SUCCESS 
@@ -30,7 +30,7 @@ class TaskStatus(IntFlag):
         return TaskStatus.CoreMask() | TaskStatus.ReasonMask()
         
     def ReasonMask():
-        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR
+        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
     
     @classmethod
     def from_value(cls, value: Union[int, str, 'TaskStatus']) -> 'TaskStatus':
@@ -124,7 +124,9 @@ class TaskStatus(IntFlag):
     def has_reaseon(self)->bool:
         return self.value & TaskStatus.ReasonMask() > 0
 
-    
+    @property
+    def is_temp_canceled(self)->bool:
+        return self.value & TaskStatus.TEMP_CANCELED > 0
     
     # 前两位状态的公共属性
     @property
@@ -183,6 +185,11 @@ class TaskStatus(IntFlag):
             return TaskStatus(self.value | TaskStatus.POST_ERROR)
         return self
     
+    
+    @property
+    def set_temp_canceled(self)->'TaskStatus':
+        return TaskStatus(self.value | TaskStatus.TEMP_CANCELED)
+    
     @property
     def clear_error(self) -> 'TaskStatus':
         """清除错误状态"""
@@ -213,11 +220,16 @@ class TaskStatus(IntFlag):
     def clear_post_error(self) -> 'TaskStatus':
         """清除后续处理失败状态"""
         return TaskStatus(self.value & ~TaskStatus.POST_ERROR)
+    
+    @property
+    def clear_temp_canceled(self)->'TaskStatus':
+        return TaskStatus(self.value & ~TaskStatus.TEMP_CANCELED)
+    
     @classmethod
     def create(cls, base_status: 'TaskStatus', error: bool = False, 
                charged: bool = False, not_found: bool = False,
                fetch_error: bool = False, convert_error: bool = False,
-               post_error: bool = False
+               post_error: bool = False,temp_canceled:bool=False
                ) -> 'TaskStatus':
         """创建新的任务状态对象
         
@@ -245,6 +257,10 @@ class TaskStatus(IntFlag):
             status = status | cls.FETCH_ERROR
         if convert_error:
             status = status | cls.CONVERT_ERROR
+        if post_error:
+            status = status | cls.POST_ERROR
+        if temp_canceled:
+            status = status | cls.TEMP_CANCELED
             
             
         return status
@@ -270,6 +286,8 @@ class TaskStatus(IntFlag):
             flags.append("网页信息转换失败")
         if self.is_post_error:
             flags.append("后续处理失败")
+        if self.is_temp_canceled:
+            flags.append("临时取消")
             
         flags_desc = "+".join(flags) if flags else ""
         

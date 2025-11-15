@@ -134,7 +134,8 @@ def main():
     app:AudioApp= AudioApp()
 
     bz_urls=[
-        "https://www.ximalaya.com/zhubo/51763868",
+        "https://www.ximalaya.com/zhubo/235830385",
+        "https://www.ximalaya.com/zhubo/58841314"
              ]
     app.add_album_url(bz_urls)
     # app.add_bz_url(bz_urls)

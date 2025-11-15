@@ -1,367 +1,240 @@
-﻿import json
+﻿import os
+import json
 import shutil
-import os
 from pathlib import Path
 from datetime import datetime
-from base import logger_helper,exception_decorator,read_from_json_utf8_sig,write_to_json_utf8_sig,UpdateTimeType
-#文件夹差异
-class DirectoryTree:
-    """功能1：递归遍历目录，生成树形结构并输出JSON"""
+from base import logger_helper,audio_root,singleton,write_to_json_utf8_sig,read_from_json_utf8_sig,UpdateTimeType,exception_decorator
+
+@singleton
+class FileSyncUtil:
+    """
+    文件同步工具类，提供文件遍历、比较和同步功能
+    """
     
     def __init__(self):
-        self.tree = {}
-        self._logger=logger_helper("目录树")
-    @property
-    def logger(self):
-        return self._logger
-    def scan_directory(self, root_path):
-        logger=self._logger
-        logger.update_target(target=f"处理目录树{root_path}")
-        logger.update_time(UpdateTimeType.ALL)
         """
-        扫描指定目录，生成树形结构
-        root_path: 要扫描的根目录路径
+        初始化工具类
+        
+        Args:
+            logger: 日志工具实例
         """
-        root_path = Path(root_path).resolve()
-        self.tree = {
-            "root": str(root_path),
-            "type": "directory",
-            "children": self._scan_recursive(root_path, root_path)
-        }
-        logger.info("成功",update_time_type=UpdateTimeType.ALL)
-        return self.tree
+        self.logger = logger_helper(self.__class__.__name__)
     
-    def _scan_recursive(self, current_path, root_path):
-        """递归扫描目录"""
-        result = {}
-        with self._logger.raii_target(detail=f"当前目录: {current_path}") as logger:
-            try:
-                for item in current_path.iterdir():
-                    relative_path = item.relative_to(root_path)
-                    if item.is_file():
-                        # 文件节点
-                        result[str(relative_path)] = {
-                            "type": "file",
-                            "mtime": item.stat().st_mtime,
-                            "mtime_str": datetime.fromtimestamp(item.stat().st_mtime).isoformat()
-                        }
-                    elif item.is_dir():
-                        # 目录节点，递归扫描
-                        result[str(relative_path)] = {
-                            "type": "directory",
-                            "children": self._scan_recursive(item, root_path)
-                        }
-            except PermissionError:
-                logger.error("失败",f"权限不足，无法访问")
-            except Exception as e:
-                logger.error("失败",f"扫描错误: \n{e}")
+    @exception_decorator(error_state=False)
+    def scan(self, folder)-> list[dict]:
+        if not folder or not os.path.exists(folder):
+            return []
+        
+        
+        """
+        功能1: 递归扫描文件夹，获取文件相对路径和修改时间
+        
+        Args:
+            folder_path: 要扫描的文件夹路径
+            output_json_path: JSON输出路径(可选)
             
-        return result
-    
-    def to_dict(self):
-        """返回字典形式的树结构"""
-        return self.tree
-    
-    def save_to_json_file(self, output_path):
-        """将树结构保存为JSON文件"""
-        with self._logger.raii_target(detail=f"保存到{output_path}") as logger:
-            write_to_json_utf8_sig(output_path,self.tree)
-            logger.info("成功")
-    
-    def load_from_json_file(self, json_path):
-        with self._logger.raii_target(detail=f"从目录加载：{json_path}") as logger:
-            """从JSON文件加载树结构"""
-            if result := read_from_json_utf8_sig(json_path):
-                self.tree = result
-                logger.info("成功",update_time_type=UpdateTimeType.ALL)
-            else:
-                logger.error("失败",update_time_type=UpdateTimeType.ALL)
-        return self.tree
-
-    def to_flat_lst(self)->list[dict]:
-        """将树结构转换为flat json"""
-
-        def _to_flat_children(root_dir,children:dict):
-            results=[]
-            if not children:
-                return
-            for name ,child in children.items():
-                if child.get("type") == "file":
-                    results.append({
-                        "path": os.path.join(root_dir,name),
-                        "mtime": child.get("mtime", 0),
-                        "mtime_str": child.get("mtime_str", "")
-                    })
-                elif child.get("type") == "directory":
-                    if result:=_to_flat_children(child.get("children")):
-                        results.extend(result)
+        Returns:
+            list[dict]: 文件信息列表
+        """
+        self.logger.update_time(UpdateTimeType.STAGE)
+        self.logger.update_target(detail=f"扫描目录: {folder}")
+        
+        try:
+            folder = Path(folder)           
+            file_list = []
+            # 使用os.walk递归遍历目录[1,2](@ref)
+            for root, dirs, files in os.walk(folder):
+                for file in files:
+                    file_path = Path(root) / file
                     
-            return results
-
-        return _to_flat_children(self.tree.get("children"))
+                    # 获取相对路径[1](@ref)
+                    try:
+                        relative_path = file_path.relative_to(folder)
+                    except ValueError:
+                        # 处理路径计算异常
+                        continue
+                    
+                    # 获取文件修改时间[3,5](@ref)
+                    try:
+                        mod_time = os.path.getmtime(file_path)
+                        # 转换为可读格式（可选）
+                        readable_time = datetime.fromtimestamp(mod_time).isoformat()
+                    except OSError as e:
+                        self.logger.error("无法获取文件时间",f"当前文件{file_path}{e}")
+                        continue
+                    
+                    file_info = {
+                        "relative_path": str(relative_path),
+                        "mod_time": mod_time,
+                        "readable_time": readable_time
+                    }
+                    file_list.append(file_info)
+            
+            self.logger.info("扫描完成",f"找到 {len(file_list)} 个文件",update_time_type=UpdateTimeType.STAGE)
+            return file_list
+            
+        except Exception as e:
+            self.logger.error("错误",f"{e}")
+            return []
     
-    
-    def from_flat_lst(self, flat_lst):
-        """从flat json加载树结构"""
+    @exception_decorator(error_state=False)
+    def fetch_diff_results(self, list_d, list_f)->list[str]:
+        """
+        功能2: 比较两个文件列表的差异
         
-        def find_common_parent(paths):
-            if not paths:
-                return None
-            # 将路径转换为绝对路径
-            abs_paths = [os.path.abspath(p) for p in paths]
-            # 使用commonpath函数
-            try:
-                common_path = os.path.commonpath(abs_paths)
-            except ValueError as e:
-                # 处理异常，例如路径列表为空或混合了绝对路径和相对路径
-                print(f"Error: {e}")
-                return None
-            return common_path
+        Args:
+            list_d: 第一个文件列表(list[dict])
+            list_f: 第二个文件列表(list[dict])
+            
+        Returns:
+            dict: 包含差异结果
+        """
+        self.logger.update_time(UpdateTimeType.STAGE)
+        self.logger.update_target(detail="比较文件列表")
+        try:
+            
+            # 创建路径到文件信息的映射[7](@ref)
+            dict_d = {item["relative_path"]: item for item in list_d}
+            dict_f = {item["relative_path"]: item for item in list_f}
+            
+            # 找出F中有而D中没有的文件[7,8](@ref)
+            only_in_f = [dict_f[path] for path in dict_f if path not in dict_d]
+            
+            # 找出共有的且F的修改时间晚于D的文件[7,8](@ref)
+            common_newer = []
+            for path in dict_f:
+                if path in dict_d:
+                    if dict_f[path]["mod_time"] > dict_d[path]["mod_time"]:
+                        common_newer.append(dict_f[path])
+            
+            # 合并结果[7](@ref)
+            list_g = only_in_f + common_newer
+            self.logger.info("成功",f"独有的文件 {len(only_in_f)} 个, 更新的文件 {len(common_newer)} 个")
+            return [ str(i["relative_path"]) for i in  list_g]
+            
+        except Exception as e:
+            self.logger.error("错误",f"{e}")
+            return 
+    @exception_decorator(error_state=False)
+    def backup_files(self, rel_path_lst, src_dir, dest_dir):
         
-        if not flat_lst:
+        if not rel_path_lst or not src_dir or not dest_dir:
             return
         
-        path_lst = [p["path"] for p in flat_lst]
-        root_dir=find_common_parent(path_lst)
-        
-        def get_childern()->dict:
-            
-            
-            pass
-        
-        children=get_childern()
-        
-        self.tree ={"root":root_dir,
-                  "type": "directory",
-                  "children":children}
-        
-
-        return self.tree
-    
-    
-
-class TreeComparator:
-    """功能2：比较两个目录树，生成差异树"""
-    
-    def __init__(self):
-        self.differences = {}
-    
-    def compare(self, tree_d, tree_f):
         """
-        比较两个目录树D和F
-        返回: {
-            "added": E,  # F中有而D中没有的文件
-            "updated": F  # F和D共有但F更新的文件
-        }
+        功能3: 根据文件列表拷贝文件，保留目录结构
+        
+        Args:
+            file_list: 文件信息列表(list[dict])
+            source_base: 源文件基础路径H
+            target_base: 目标目录路径
         """
-        if not tree_d or not tree_f:
-            raise ValueError("输入树不能为空")
-        
-        # 确保我们在正确的根节点开始比较
-        d_children = tree_d.get("children", {}) if "children" in tree_d else tree_d
-        f_children = tree_f.get("children", {}) if "children" in tree_f else tree_f
-        
-        added = self._find_added_files(d_children, f_children, "")
-        updated = self._find_updated_files(d_children, f_children, "")
-        
-        self.differences = {
-            "added": added,
-            "updated": updated
-        }
-        
-        return self.differences
-    
-    def _find_added_files(self, d_node, f_node, current_path):
-        """查找F中有但D中没有的文件/目录"""
-        added = {}
-        
-        for name, f_item in f_node.items():
-            full_path = os.path.join(current_path, name) if current_path else name
-            
-            if name not in d_node:
-                # 完全新增的项目
-                added[name] = f_item
-            elif f_item.get("type") == "directory" and d_node[name].get("type") == "directory":
-                # 如果是目录，递归比较
-                sub_added = self._find_added_files(
-                    d_node[name].get("children", {}),
-                    f_item.get("children", {}),
-                    full_path
-                )
-                if sub_added:
-                    if "children" not in added:
-                        added[name] = {"type": "directory", "children": {}}
-                    added[name]["children"] = sub_added
-        
-        return added
-    
-    def _find_updated_files(self, d_node, f_node, current_path):
-        """查找F中比D中更新的文件"""
-        updated = {}
-        
-        for name, f_item in f_node.items():
-            if name in d_node:
-                d_item = d_node[name]
-                full_path = os.path.join(current_path, name) if current_path else name
-                
-                if (f_item.get("type") == "file" and 
-                    d_item.get("type") == "file" and
-                    f_item.get("mtime", 0) > d_item.get("mtime", 0)):
-                    # 文件且F的修改时间更晚
-                    updated[name] = f_item
-                elif (f_item.get("type") == "directory" and 
-                      d_item.get("type") == "directory"):
-                    # 目录，递归比较
-                    sub_updated = self._find_updated_files(
-                        d_item.get("children", {}),
-                        f_item.get("children", {}),
-                        full_path
-                    )
-                    if sub_updated:
-                        if "children" not in updated:
-                            updated[name] = {"type": "directory", "children": {}}
-                        updated[name]["children"] = sub_updated
-        
-        return updated
-    
-    def generate_new_tree_g(self, tree_d, tree_f):
-        """根据差异生成新的树G"""
-        differences = self.compare(tree_d, tree_f)
-        
-        # G树包含所有需要更新的内容
-        tree_g = {
-            "root": f"merged_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            "type": "directory",
-            "children": self._merge_trees(differences["added"], differences["updated"])
-        }
-        
-        return tree_g
-    
-    def _merge_trees(self, added, updated):
-        """合并新增和更新的文件"""
-        merged = added.copy()
-        
-        for name, item in updated.items():
-            if name in merged and item.get("type") == "directory":
-                # 合并子目录
-                merged_children = self._merge_trees(
-                    merged[name].get("children", {}),
-                    item.get("children", {})
-                )
-                merged[name]["children"] = merged_children
-            else:
-                merged[name] = item
-        
-        return merged
-
-
-class FileCopier:
-    """功能3：根据树G复制文件到目标目录，保留目录结构"""
-    
-    def __init__(self):
-        self.copied_files = []
-    
-    def copy_files_from_tree(self, tree_g, base_folder_h, target_folder):
-        """
-        根据树G复制文件
-        tree_g: 差异树
-        base_folder_h: 基准文件夹H
-        target_folder: 目标目录
-        """
-        base_folder_h = Path(base_folder_h)
-        target_folder = Path(target_folder)
-        
-        # 创建目标目录
-        target_folder.mkdir(parents=True, exist_ok=True)
-        
-        children = tree_g.get("children", tree_g)
-        self._copy_recursive(children, base_folder_h, target_folder, "")
-        
-        return self.copied_files
-    
-    def _copy_recursive(self, node, base_folder, target_folder, relative_path):
-        """递归复制文件和目录"""
-        for name, item in node.items():
-            current_relative_path = os.path.join(relative_path, name) if relative_path else name
-            source_path = base_folder / current_relative_path
-            
-            if item.get("type") == "file":
-                # 复制文件
-                target_path = target_folder / current_relative_path
-                self._copy_file(source_path, target_path, current_relative_path)
-            elif item.get("type") == "directory":
-                # 创建目录并递归复制
-                target_dir = target_folder / current_relative_path
-                target_dir.mkdir(parents=True, exist_ok=True)
-                
-                if "children" in item:
-                    self._copy_recursive(
-                        item["children"], 
-                        base_folder, 
-                        target_folder, 
-                        current_relative_path
-                    )
-    
-    def _copy_file(self, source_path, target_path, relative_path):
-        """复制单个文件"""
         try:
-            # 确保目标目录存在
-            target_path.parent.mkdir(parents=True, exist_ok=True)
+            self.logger.update_target(f"拷贝文件: 从 {src_dir} 到 {dest_dir}")
             
-            # 复制文件
-            shutil.copy2(source_path, target_path)
-            self.copied_files.append(str(relative_path))
-            print(f"已复制: {relative_path}")
+            src_dir = Path(src_dir)
+            dest_dir = Path(dest_dir)
             
-        except FileNotFoundError:
-            print(f"文件不存在: {source_path}")
-        except PermissionError:
-            print(f"权限不足: {source_path}")
+            # 确保目标目录存在[9](@ref)
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            
+            copied_count = 0
+            error_count = 0
+            
+            for rel_path in rel_path_lst:
+                if not rel_path:
+                    continue
+                # 构建源文件和目标文件路径[9](@ref)
+                source_file = src_dir / rel_path
+                target_file = dest_dir / rel_path
+                with self.logger.raii_target(detail=f"{source_file}->{target_file}") as logger:
+                    try:
+                        # 确保目标目录存在[9](@ref)
+                        target_file.parent.mkdir(parents=True, exist_ok=True)
+                        # 拷贝文件[10](@ref)
+                        shutil.copy2(source_file, target_file)
+                        copied_count += 1
+                        
+                        self.logger.trace(f"已拷贝: {rel_path}")
+                        
+                    except Exception as e:
+                        error_count += 1
+                        self.logger.error(f"失败",f"{e}")
+                
+            self.logger.info(f"拷贝完成: 成功 {copied_count} 个, 失败 {error_count} 个")
+            
         except Exception as e:
-            print(f"复制错误 {source_path}: {e}")
+            self.logger.error("失败",f"{e}")
+
+@exception_decorator(error_state=False)
+def scan_export_file(root_dir,json_file_path)->list[dict]:
+    utily = FileSyncUtil()
+    
+    # 扫描目录并保存结果
+    fresh_list = utily.scan(
+        folder=local_dir,
+    )
+    write_to_json_utf8_sig(json_file_path,fresh_list)
+    return fresh_list
+
+@exception_decorator(error_state=False)
+def diff_backup(src1_json_path,src2_json_path,src_dir,dest_dir):
+    
+    # 获取目录结构差异
+    lst1=read_from_json_utf8_sig(src1_json_path)
+    lst2=read_from_json_utf8_sig(src2_json_path)
+    
+    utily = FileSyncUtil()
+    diff_result = utily.fetch_diff_results(lst1,lst2)
+    
+    diff_file_path=Path(src1_json_path).with_stem("file_diff")
+    write_to_json_utf8_sig(diff_file_path,diff_result)
+    os.makedirs(dest_dir,exist_ok=True)
+    
+    #拷贝文件
+    utily.backup_files(diff_result,
+        src_dir=src_dir,
+        dest_dir=dest_dir
+    )
 
 
-# 使用示例
+#直接参考 json 文件，进行拷贝,顺便把最终结果输出到本地 cur_lst.json
+def main(local_json_path,src_dir,dest_dir):
+    lst1=read_from_json_utf8_sig(local_json_path)
+    utily = FileSyncUtil()
+    # 扫描目录并保存结果
+    lst2 = utily.scan(
+        folder=src_dir,
+    )
+    diff_result = utily.fetch_diff_results(lst1,lst2)
+    utily.backup_files(diff_result,
+        src_dir=src_dir,
+        dest_dir=dest_dir
+    )
+    path2=Path(local_json_path).with_stem("cur_lst")
+    
+    dest= utily.scan(
+        folder=src_dir,
+    )
+    write_to_json_utf8_sig(path2,dest)
+    
+    
+
+
+        
 if __name__ == "__main__":
-    from base import audio_root
-    # 示例用法
-    try:
-        # 功能1示例：扫描目录并生成JSON
-        print("=== 功能1: 扫描目录 ===")
-        scanner = DirectoryTree()
-        root_dir=audio_root
-        json_path=os.path.join(root_dir, "directory_tree.json")
-        scanner.load_from_json_file(json_path)
-        result=scanner.to_flat_lst()
-        
-        exit()
-        
-        
-        
-        
-        tree_c = scanner.scan_directory(root_dir)  # 替换为你的目录
-        scanner.save_to_json_file(json_path)
-        
-        # 功能2示例：比较两个目录树
-        print("\n=== 功能2: 比较目录树 ===")
-        comparator = TreeComparator()
-        
-        # 加载两个树进行比较（这里用同一个树示例，实际应该用不同的）
-        tree_d = scanner.to_dict()
-        tree_f = scanner.to_dict()  # 实际应用中应该是不同的树
-        
-        tree_g = comparator.generate_new_tree_g(tree_d, tree_f)
-        print("差异分析完成")
-        
-        # 功能3示例：复制文件
-        print("\n=== 功能3: 复制文件 ===")
-        copier = FileCopier()
-        copied_files = copier.copy_files_from_tree(
-            tree_g, 
-            "./source_folder",  # 基准文件夹H
-            "./target_folder"   # 目标目录
-        )
-        print(f"已复制 {len(copied_files)} 个文件")
-        
-    except Exception as e:
-        print(f"执行错误: {e}")
+    # 创建使用示例对象
+
+    
+    local_dir=audio_root
+    local_json_path=local_dir/ "file_list.json"
+    scan_export_file(local_dir,local_json_path)
+    
+    outer_json_path=local_dir/ "file_list_1.json"
+    
+    local_lst=read_from_json_utf8_sig(local_dir/"file_list_1.json")
+    
+    # 获取目录结构差异
+    dest_dir=local_dir.parent/"clone"
+    diff_backup(local_json_path,outer_json_path,local_dir,dest_dir)
+    

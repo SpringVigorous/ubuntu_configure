@@ -37,7 +37,7 @@ release_time_id="发布时间"
 local_path_id="local_path"
 episode_count_id="集数"
 downloaded_count_id="已下载数"
-
+media_url_id="media_url"
 cur_xlsx_path_id="cur_xlsx_path"
 cur_sheet_name_id="cur_sheet_name"
 

@@ -44,7 +44,7 @@ def web_status(web_content:str)->TaskStatus:
     
     if "无法访问" in web_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
-    if "开会员，免费听" in web_content:
+    if "开会员" in web_content:
         return TaskStatus.UNDOWNLOADED.set_charged
     
     return TaskStatus.SUCCESS
@@ -89,6 +89,7 @@ def row_path_to_msg(row:dict,xlsx_path:str,sheet_name:str)->dict:
 
 sound_play_xpath='//div[@class="play-btn U_s"]'
 #<i class="xuicon xuicon-web_video_btn_play_big play-btn"></i>
+
 video_play_xpath='//i[@class="xuicon xuicon-web_video_btn_play_big play-btn"]'
 
 buy_vip_xpath='//div[@class="price-btn buy-vip-btn kn_"]'
@@ -135,8 +136,7 @@ class InteractImp():
     @property
     def web_error(self)->tuple[bool,TaskStatus]:
         status:TaskStatus=web_status(self.wp.html)
-        has_error=status.is_error or status.is_not_found or status.is_charged
-        return (has_error,status)
+        return (status.has_reaseon,status)
     
     @property
     def title(self)->str:
@@ -161,10 +161,13 @@ class InteractImp():
             return self.title
         
     @exception_decorator(error_state=False)
-    def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus]:
+    def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus,str]:
         body=None
         self._msg_count+=1
         suffix=None
+        
+        media_url=""
+        
         with self._logger.raii_target(f"第{self._msg_count}个audio消息",f"{url}->{audio_path}") as logger:
             param_dict={url_id:url,dest_path_id:audio_path}
             # logger.update_time(UpdateTimeType.STAGE)
@@ -179,11 +182,11 @@ class InteractImp():
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_not_found
+                    return suffix,fail_status.set_not_found,media_url
                 error,status=self.web_error
                 if error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return suffix,status
+                    return suffix,status,media_url
                 
                 
                 #获取播放按钮，并单击
@@ -199,23 +202,23 @@ class InteractImp():
                     if buy_button:
                         self._buy_lst.append(param_dict)
                     
-                    return suffix,fail_status.set_error
+                    return suffix,fail_status.set_error,media_url
                 play_button.click()
                 
                 packet = self.wp.listen.wait(timeout=40)
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_error 
+                    return suffix,fail_status.set_error ,media_url
                 response=packet.response
                 body=response.body
-                cur_url=response.url
-                suffix=postfix(cur_url,".m4a") 
+                media_url=response.url
+                suffix=postfix(media_url,".m4a") 
                 audio_path=str(Path(audio_path).with_suffix(suffix))
 
             write_to_bin(audio_path,body)
             logger.info("成功",audio_path,update_time_type=UpdateTimeType.STAGE)
-            return suffix,TaskStatus.SUCCESS
+            return suffix,TaskStatus.SUCCESS,media_url
 
     @exception_decorator(error_state=False)
     def _handle_bozhu_url(self, url)->tuple[str,TaskStatus]: #html
@@ -345,7 +348,7 @@ class InteractImp():
                 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return 
+                    return result,Undownloaded().set_error
 
                 # logger.update_time(UpdateTimeType.STAGE)
                 logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
@@ -423,8 +426,8 @@ class InteractAudio(ThreadTask):
         
         #更新状态
         if success:
-            suffix,status=success
-            self.manager.update_status_suffix(xlsx_path,sheet_name,url,status,suffix)
+            suffix,status,media_url=success
+            self.manager.update_status_suffix_url(xlsx_path,sheet_name,url,status,suffix,media_url)
             self._success_count+=1
         else:
             pass
@@ -480,7 +483,14 @@ class InteractHelper():
                 return None,status
             if not self.content_convert_func:
                 return None,Undownloaded().set_convert_error
-            df=pd.DataFrame(self.content_convert_func(content))
+            
+            if result:=self.content_convert_func(content):
+                lst,status=result
+                if not lst:
+                    return None,status
+                df=pd.DataFrame(lst)
+            else:
+                return None,Undownloaded().set_convert_error
         if df_empty(df):
             return None,Undownloaded().set_convert_error
         try:

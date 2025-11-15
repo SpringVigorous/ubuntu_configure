@@ -69,6 +69,8 @@ class AudioManager(xlsx_manager):
             # df[downloaded_id]=df[downloaded_id].append(TaskStatus.from_value)
             pass
         
+        if media_url_id not in df.columns:
+            df[media_url_id] = ""
     #根据是否存在，更新状态
     @staticmethod
     def update_df_status(df):
@@ -79,7 +81,7 @@ class AudioManager(xlsx_manager):
             try:
                 return TaskStatus.SUCCESS.value if  os.path.exists(row[local_path_id]) else row[downloaded_id]
             except:
-                global_logger().error("标志位错误", "|".join(map(str, row.index)))
+                global_logger().error("任务状态错误", "|".join(map(str, row.index)))
                 return row[downloaded_id]
         # 仅对掩码为 True 的行应用赋值（axis=1 表示按行处理）
         df.loc[mask, downloaded_id] = df.loc[mask].apply( update_flag,
@@ -156,13 +158,14 @@ class AudioManager(xlsx_manager):
                 logger.error("更新失败",e)
     #更新下载状态
     @exception_decorator(error_state=False)
-    def update_status_suffix(self,xlsx_path,sheet_name,href_val:str,status:TaskStatus,suffix:str):
+    def update_status_suffix_url(self,xlsx_path,sheet_name,href_val:str,status:TaskStatus,suffix:str,media_url:str):
         logger_info={
             "xlsx_path":xlsx_path,
             "sheet_name":sheet_name,
             "url":href_val,
             "status":status,
-            "suffix":suffix
+            "suffix":suffix,
+            "media_url":media_url
         }
         
         with self.logger.raii_target("更新下载状态及文件后缀",f"{logger_info}") as logger:
@@ -177,6 +180,9 @@ class AudioManager(xlsx_manager):
                     if suffix:
                         if cur_path:=row[local_path_id]:
                             df.loc[index,local_path_id]=str(Path(cur_path).with_suffix(suffix))
+                    if media_url:
+                        df.loc[index,media_url_id]=media_url
+                            
                 logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)

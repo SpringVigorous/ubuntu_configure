@@ -52,7 +52,8 @@ def delete_directory(directory_path):
 def delete_files(root_dir, exclude_dirs=None, file_patterns=None):
     for root, dirs, files in os.walk(root_dir, topdown=True):
         # 排除指定目录
-        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        if exclude_dirs:
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
         
         # 遍历文件
         for file in files:
@@ -139,7 +140,11 @@ def get_directory_sizes(start_path):
 if __name__ == '__main__':
     
     
-
+    
+    delete_files(r"E:\旭尧\有声读物\听友235830385",file_patterns=".xlsx")
+    delete_files(r"E:\旭尧\有声读物\史老师讲故事",file_patterns=".xlsx")
+    
+    exit()
     results=get_directory_sizes(r"C:\Users\Administrator\AppData")
     
     import pandas as pd
