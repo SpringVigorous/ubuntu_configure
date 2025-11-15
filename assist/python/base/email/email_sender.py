@@ -249,10 +249,11 @@ def test_1():
     # receiver_email = ['1107917658@qq.com',"spring_flourish@outlook.com","spring_flourish@aliyun.com"]
     receiver_email = ['1107917658@qq.com']
     subject = '测试图文混合内容'
-
+    from base.root_config import worm_root
+    
 
     
-    cur_dir=r"F:\worm_practice\taobao\五味食养\images_prohibite"
+    cur_dir=worm_root/r"taobao\五味食养\images_prohibite"
     org_files=["微信图片_20250727225420_674.jpg",
         "微信图片_20250727225424_673.jpg",
         "微信图片_20250727225430_672.jpg",

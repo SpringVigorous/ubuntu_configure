@@ -390,12 +390,13 @@ class prohibited_app:
         
         pass
 def main(img_dir,output_dir,ocr_dir):
-    
+    from base import worm_root
+
         #清空
     # clear_folds(img_dir)
     clear_folder(output_dir)
     
-    xlsx_path=r"F:\worm_practice\taobao\违禁词\违禁词.xlsx"
+    xlsx_path=worm_root/r"taobao\违禁词\违禁词.xlsx"
    
     app=prohibited_app(xlsx_path)
     org_xlsx_path=Path(xlsx_path)
@@ -406,7 +407,7 @@ def main(img_dir,output_dir,ocr_dir):
 
 
 if __name__ == '__main__':
-    img_dir=Path(r"F:\worm_practice\taobao\五味食养\images")
+    img_dir=Path(worm_root/r"taobao\五味食养\images")
     name=img_dir.name
     
     output_dir= str(img_dir.with_name(f"{name}_prohibite"))

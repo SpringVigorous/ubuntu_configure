@@ -42,14 +42,15 @@ def get_unmatched_info_from_dir(dir_path):
     return df
  
 if __name__ == "__main__":
+    from base import worm_root
 
-    df=get_unmatched_info_from_dir(r"F:\worm_practice\logs\story")
+    df=get_unmatched_info_from_dir(worm_root/r"logs\story")
     
     
     
     df["num"]=df["chapter"].apply(lambda x: arabic_numbers(x)[0] if arabic_numbers(x) else 0)
     
-    df.to_excel(r"F:\worm_practice\logs\story\unmatched_info.xlsx",index=True)
+    df.to_excel(worm_root/r"logs\story\unmatched_info.xlsx",index=True)
     
     exit(0)
     

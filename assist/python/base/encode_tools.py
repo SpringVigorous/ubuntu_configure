@@ -1,5 +1,5 @@
 import base64
-
+from base import worm_root
 
 def to_bytes(data:str):
     if isinstance(data,bytes):
@@ -55,6 +55,6 @@ if __name__ == '__main__':
 
     from base import read_from_bin
     
-    data=read_from_bin(r"F:\worm_practice\player\keys\宝宝巴士之神奇简笔画_2_01_enc.key")
+    data=read_from_bin(worm_root/r"player\keys\宝宝巴士之神奇简笔画_2_01_enc.key")
     print(data)
 

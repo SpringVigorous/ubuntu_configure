@@ -190,4 +190,8 @@ def handle_data(data,file_path):
 if __name__ == '__main__':
     key="CAD"
     data=get_job_datas(key,(5,10),0,"020",10)
-    handle_data(data,os.path.join(r"F:\worm_practice\liepin",f"dest_jobs-{key}.xlsx"))
+    
+    from base import worm_root
+
+    
+    handle_data(data,os.path.join(worm_root/r"liepin",f"dest_jobs-{key}.xlsx"))

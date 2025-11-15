@@ -221,7 +221,9 @@ def redbook_info(url,driver_path,xls_path):
 
             
 if __name__ == '__main__':
+    from base import worm_root
+
     url='https://www.xiaohongshu.com/explore/66cdaabd000000001f01f16e?xsec_token=ABegm4vPSBdyhgubz1i7dTbPRbj35Sp_tuHPan2Dp2pYA=&xsec_source=pc_feed'
     drive_path=r"D:\Tool\chromedriver-win64\chromedriver.exe"
-    xls_path=r"F:\worm_practice\red_book"
+    xls_path=worm_root/r"red_book"
     redbook_info(url,drive_path,xls_path)

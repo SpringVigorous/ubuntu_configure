@@ -1,7 +1,7 @@
 ﻿
 from audio_thread import *
 from audio_kenel import *
-from base import exception_decorator,backup_xlsx,unique,envent_sequence,read_from_txt_utf8_sig
+from base import exception_decorator,backup_xlsx,unique,envent_sequence,read_from_txt_utf8_sig,audio_root
 from audio_manager import AudioManager
 class AudioApp():
     def __init__(self) -> None:
@@ -140,8 +140,8 @@ def main():
     # app.add_bz_url(bz_urls)
     # app.add_audio_url(msgs_from_xlsx(xlsx_path,sheet_name))
     
-    # app.continue_audio(r"E:\旭尧\有声读物\宝宝巴士.xlsx",audio_sheet_name)
-    # app.continue_audio(r"E:\旭尧\有声读物\米小圈.xlsx",audio_sheet_name)
+    # app.continue_audio(audio_root/r"宝宝巴士.xlsx",audio_sheet_name)
+    # app.continue_audio(audio_root/r"米小圈.xlsx",audio_sheet_name)
     app.run()
     
     
@@ -153,9 +153,11 @@ if __name__ == "__main__":
     # os.system(f"shutdown /s /t {5}")
     
     exit()
-    xmlx_path=r"E:\旭尧\有声读物\晓北姐姐讲故事.xlsx"
+    
+    from base import worm_root,audio_root
+    xmlx_path=audio_root/r"晓北姐姐讲故事.xlsx"
     sheet_name=audio_sheet_name
-    log_path=r"F:\worm_practice\logs\xmly_thread\xmly_thread-trace.log.2025-11-11.log"
+    log_path=worm_root/r"logs\xmly_thread\xmly_thread-trace.log.2025-11-11.log"
     
     
     

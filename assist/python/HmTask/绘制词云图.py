@@ -88,8 +88,9 @@ thumbup_flag="thumb_count"
 
 
 if __name__=='__main__':
+    from base import worm_root
 
-    data = pd.read_csv(r'F:\worm_practice\red_book\notes\健脾养胃\评论-健脾养胃.csv',encoding="utf-8-sig") # 读取评论文件,修改成对应的文件名
+    data = pd.read_csv(worm_root/r'red_book\notes\健脾养胃\评论-健脾养胃.csv',encoding="utf-8-sig") # 读取评论文件,修改成对应的文件名
     comments = data[comment_flag]#评论内容
     location = data[city_flag]#IP属地
     like_count = data[thumbup_flag]#点赞数量

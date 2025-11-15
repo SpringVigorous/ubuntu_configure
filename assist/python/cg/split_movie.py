@@ -10,7 +10,7 @@ root_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.extend([root_dir,os.path.join(root_dir,"base")])
 
 
-from base.video_utility.video_tools import merge_video
+from base import merge_video,worm_root
 from base.com_log import logger_helper,UpdateTimeType
 from base.except_tools import except_stack
 
@@ -300,7 +300,7 @@ if __name__=="__main__":
 
              ]
     
-    cur_dir=r"F:\worm_practice\player"
+    cur_dir=worm_root/r"player"
     for name,time_seg in params:
         clip_times=[(time_to_seconds(start),time_to_seconds(end))  for start,end in time_seg]
         split_movie(os.path.join(cur_dir,name), clip_times)

@@ -89,10 +89,10 @@ def srt_to_txt(srt_path, txt_path):
 # 示例用法
 if __name__ == "__main__":
     
-    from base import srt_files,logger_helper
+    from base import srt_files,logger_helper,kid_root
     from pathlib import Path
     import os
-    for srt_file in srt_files(r"E:\旭尧"):
+    for srt_file in srt_files(kid_root):
         org_path = Path(srt_file)    # 替换为你的.srt路径
         txt_file = org_path.parent.parent / f"srt_txt_{org_path.parent.stem}" / f"{org_path.stem}.txt" # 输出的.txt路径
         os.makedirs(txt_file.parent, exist_ok=True)

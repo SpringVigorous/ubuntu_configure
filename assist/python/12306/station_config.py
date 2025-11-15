@@ -7,13 +7,13 @@ import pandas as pd
 
 
 
-from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df,recycle_bin,pkl_files,update_df
+from base import exception_decorator,logger_helper,UpdateTimeType,get_consecutive_elements_info,singleton,df_empty,add_df,recycle_bin,pkl_files,update_df,worm_root
 
 
 @singleton
 class StationConfig:
     def __init__(self,path:str=None,max_transfers:int=2,) -> None:
-        self._default_root=r"F:\worm_practice\train_ticket"
+        self._default_root=worm_root/r"train_ticket"
         self.logger=logger_helper()
         self.set_root(path)
         self.set_max_transfers(max_transfers)

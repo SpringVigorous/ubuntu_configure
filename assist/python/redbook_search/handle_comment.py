@@ -95,7 +95,9 @@ class NoteCommentWriter:
 
         
 if __name__ == "__main__":
-    dir_path=r"F:\worm_practice\red_book\notes\健脾养胃"
+    from base import worm_root
+
+    dir_path=worm_root/r"red_book\notes\健脾养胃"
     html_path=os.path.join(dir_path,"pack_0.html")
     with open(html_path,"r",encoding="utf-8-sig") as f:
         html_data=f.read()

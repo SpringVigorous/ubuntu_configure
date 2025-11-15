@@ -110,7 +110,9 @@ def handle_data(url,params,headers,flag,root_dir):
         json.dump(raw_datas,open(os.path.join(root_dir,f"{flag}.json"),"w",encoding="utf-8"),ensure_ascii=False,indent=4)
 
 if __name__=="__main__":
-    root_dir=r"F:\worm_practice\douyin\account"
+    from base import worm_root
+
+    root_dir=worm_root/r"douyin\account"
     headers = {
     'authority': 'www.douyin.com',
     'accept': 'application/json, text/plain, */*',

@@ -417,11 +417,12 @@ if __name__ == "__main__":
     processor = OCRProcessor(lang='ch')
     
     
-    
+    from base.root_config import worm_root
+        
     
     # 处理单张图片
     processor.process_image(
-        img_path=r"F:\worm_practice\taobao\图片\2.jpg",
-        output_path=r"F:\worm_practice\taobao\图片\2-识别.jpg",
+        img_path=worm_root/r"taobao\图片\2.jpg",
+        output_path=worm_root/r"taobao\图片\2-识别.jpg",
         font_path='simhei.ttf'
     )

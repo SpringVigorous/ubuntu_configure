@@ -1,6 +1,7 @@
 ﻿import  os
+from base import worm_root
 
-root_dir=r"F:\worm_practice\taobao"
+root_dir=worm_root/r"taobao"
 desc_dir=os.path.join(root_dir,"详图")
 main_dir=os.path.join(root_dir,"主图")
 cache_dir=os.path.join(root_dir,"cache")

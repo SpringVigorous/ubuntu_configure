@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 
-from base import pickle_load,logger_helper,UpdateTimeType
+from base import pickle_load,logger_helper,UpdateTimeType,worm_root
 import math
 import matplotlib.transforms as mtransforms
 from matplotlib.text import Text
@@ -327,7 +327,7 @@ class TrainRouteVisualizer:
 
 if __name__ == "__main__":
     
-    routes=pickle_load(r"F:\worm_practice\train_ticket\result\上海-西峡_routes.pkl")
+    routes=pickle_load(worm_root/r"train_ticket\result\上海-西峡_routes.pkl")
     start_station = "上海"
     end_station = "西峡"
     # 可视化路线

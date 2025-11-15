@@ -3,7 +3,7 @@
 # 提供一个爬取网页内容的方法：
 # 首先打开网址：https://www.nlxs.org/115/115666/，获取 /html/body/div[7]/ul/ 下的所有 /li 的 a节点的 href属性及/a节点的文本内容，保存到列表中（元素为tuple，即 （url,标题））
 # 遍历上述列表，进行如下操作：
-# 取出url，定义缓存列表，由于 可能会有分页内容，分页的地址是上述url的路径名除去 点和后缀名后，和数字 1、2、3……的拼接，如：115666.html、115666_2.html、115666_3.html，所以需要循环遍历，直到获取的网页为空为止。每次再根据拼接的url获取网页内容，根据xpath 获取 html 子节点下的 节点<div class="txt" id="txt">，取出 节点下 所有<b></b>节点的文本内容，保存到缓存列表中；最终将上述的缓存列表合并成一个字符串，并保存到本地 目录F:\worm_practice\storys\下，文件名为上述标题.txt，如：115666.txt
+# 取出url，定义缓存列表，由于 可能会有分页内容，分页的地址是上述url的路径名除去 点和后缀名后，和数字 1、2、3……的拼接，如：115666.html、115666_2.html、115666_3.html，所以需要循环遍历，直到获取的网页为空为止。每次再根据拼接的url获取网页内容，根据xpath 获取 html 子节点下的 节点<div class="txt" id="txt">，取出 节点下 所有<b></b>节点的文本内容，保存到缓存列表中；最终将上述的缓存列表合并成一个字符串，并保存到本地 目录worm_root/storys\下，文件名为上述标题.txt，如：115666.txt
 
 import os
 import os.path
@@ -750,8 +750,9 @@ def reset_json_order(json_path):
 
 if __name__ == "__main__":
      
+    from base import worm_root
 
-    root_dir = r'F:\worm_practice\storys'
+    root_dir =worm_root/r'storys'
     dest_dir=os.path.join(root_dir,'dest')
     temp_dir=os.path.join(root_dir,'temp')
 

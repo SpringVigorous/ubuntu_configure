@@ -47,6 +47,7 @@ def move_numeric_files_to_recycle(root_dir,min_num=74,max_num=80,is_recursive=Fa
 
 if __name__ == "__main__":
     # 目标根目录
-    target_directory = r"F:\worm_practice\player\temp"
+    from base import worm_root
+    target_directory =worm_root/r"player\temp"
     move_numeric_files_to_recycle(target_directory,74,80)
 

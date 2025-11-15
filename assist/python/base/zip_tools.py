@@ -113,12 +113,13 @@ class ZipUtility:
 if __name__ == "__main__":
     
 
-    
+    from base.root_config import worm_root
+
     
     zipper = ZipUtility()
     
     # 单文件压缩（默认输出路径）
-    # zipper.compress(r"F:\worm_practice\taobao\五味食养\images_prohibite")
+    # zipper.compress(worm_root/r"taobao\五味食养\images_prohibite")
     
     # # 文件夹分卷压缩（200MB分卷）
     zipper.compress(r"F:\数据库\数据库-002.db", volume_size=200 * 1024 * 1024)

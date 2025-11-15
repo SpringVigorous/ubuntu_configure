@@ -18,11 +18,11 @@ import requests
 from datetime import datetime
 from collections.abc import Callable
 from queue import Queue
-from base  import ThreadTask
+from base  import ThreadTask,worm_root
 import threading
 
 
-dest_dir=r"F:\worm_practice\gkyx\hd"
+dest_dir=worm_root/r"gkyx\hd"
 
 import requests
 

@@ -441,7 +441,10 @@ class DeliverPrice:
     
     
 if __name__=="__main__":
-    root_dir=r"F:\worm_practice\red_book\deliver"
+    
+    from base import worm_root
+
+    root_dir=worm_root/r"red_book\deliver"
 
     manager= DeliverPrice(os.path.join(root_dir,"dest"))
     manager.show_tab(root_dir)
@@ -454,7 +457,7 @@ if __name__=="__main__":
 
 
     wp=WebPage()
-    root_dir=r"F:\worm_practice\red_book\deliver"
+    root_dir=worm_root/r"red_book\deliver"
     info_obj=DeliverInfo(wp,root_dir,"快递价格")
     deliver=info_obj.handle_info()
 

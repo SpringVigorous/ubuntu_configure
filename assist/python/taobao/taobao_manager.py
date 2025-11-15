@@ -632,7 +632,8 @@ class tb_manager():
                 
 if __name__=="__main__":
     manager=tb_manager()
-    
+    from base import worm_root
+
     manager.clear_cache()
     exit()
     
@@ -646,7 +647,7 @@ if __name__=="__main__":
     pic_df[item_id]=pic_df[item_id].astype(str)
     pic_df1[item_id]=pic_df1[item_id].astype(str)
     
-    shop_json_path=r"F:\worm_practice\taobao\店铺\shop_293825603_1.json"
+    shop_json_path=worm_root/r"taobao\店铺\shop_293825603_1.json"
 
     shop_dict=org_shop_dict_from_product(read_from_json_utf8_sig(shop_json_path))
     if shop_dict:

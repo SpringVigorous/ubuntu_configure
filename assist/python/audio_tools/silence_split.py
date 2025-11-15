@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+from base import worm_root
 # 基于短时能量
 def detect_silence_energy_zcr(audio_path, frame_length=2048, hop_length=512, energy_threshold=0.01, zcr_threshold=5):
     """
@@ -91,7 +92,7 @@ def srt_times(silence_times,duration):
 
 # 示例调用
 if __name__ == "__main__":
-    audio_path = r"F:\worm_practice\audio\8月5日.MP3"  # 替换为你的音频文件
+    audio_path =worm_root/r"audio\8月5日.MP3"  # 替换为你的音频文件
     silences,duration = detect_silence_energy_zcr(
         audio_path,
         frame_length=2048,  # 约50ms（按44.1kHz采样率）

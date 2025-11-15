@@ -1,6 +1,7 @@
 ﻿from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from base import worm_root
 
 
 def create_docx():
@@ -30,7 +31,7 @@ def create_docx():
 
     # 添加图片
     pic_paragraph = document.add_paragraph()
-    with open(r'F:\worm_practice\red_book\notes\1\1\images\1.jpg',mode='rb') as f:
+    with open(worm_root/r'red_book\notes\1\1\images\1.jpg',mode='rb') as f:
         
         pic=pic_paragraph.add_run().add_picture(f, width=Inches(1.25)) #, width=Inches(1.25)
     pic_paragraph.alignment=WD_PARAGRAPH_ALIGNMENT.CENTER

@@ -3,7 +3,7 @@ from Crypto.Util.Padding import unpad ,pad
 import os
 from pathlib import Path
 import threading
-
+from base.root_config import worm_root
 def encrypt_aes_128(cipher:AES, data):
     if not cipher:
         return data
@@ -83,11 +83,11 @@ if __name__ == '__main__':
 
     key=b'G5gn3dZxP5ErztBB'
     iv=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    decrypt_dir_aes_128(key, iv,r"F:\worm_practice\player\temp-1\67f6ba6e")
+    decrypt_dir_aes_128(key, iv,worm_root/r"player\temp-1\67f6ba6e")
     
     exit(0)
 
-    file_path=r"F:\worm_practice\player\temp-1\67f6ba6e\0067.ts" 
+    file_path=worm_root/r"player\temp-1\67f6ba6e\0067.ts" 
     with open(file_path,"rb") as f:
        data= f.read()
     print(bool(iv))

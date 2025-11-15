@@ -17,8 +17,8 @@ import re
 
 
 
-from   base  import find_all,json_files,m3u8_files,df_empty,mp4_files,recycle_bin
-root_path=r"F:\worm_practice/player/"
+from   base  import find_all,json_files,m3u8_files,df_empty,mp4_files,recycle_bin,worm_root
+root_path=worm_root/r"player/"
 reg=re.compile(r"(.*?)-([a-f0-9]+)(?:-lost)?\.")
 
 import pandas as pd

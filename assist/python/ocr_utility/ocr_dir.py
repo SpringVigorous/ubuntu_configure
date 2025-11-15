@@ -51,11 +51,13 @@ def main(org_dir):
         ocr_results_to_word(ocr_results=results,output_path=str(dest_text_path),img_width=result_image.width,img_height=result_image.height)
 
 if __name__ == '__main__':
-    org_dir=r"F:\worm_practice\taobao\五味食养\广告法"
+    from base import worm_root
+
+    org_dir=worm_root/r"taobao\五味食养\广告法"
 
     main(org_dir)
     
-    # json_path=r"F:\worm_practice\taobao\五味食养\广告法_result\2caab56e-9ed4-4a0e-bdbc-86ec936d356b.json"
+    # json_path=worm_root/r"taobao\五味食养\广告法_result\2caab56e-9ed4-4a0e-bdbc-86ec936d356b.json"
     
     # results= json.load(open(json_path,"r",encoding="utf-8"))
     # ocr_results_to_word(ocr_results=results,output_path=Path(json_path).with_suffix(".docx"),img_width=960,img_height=5412)

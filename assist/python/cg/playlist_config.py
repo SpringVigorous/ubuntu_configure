@@ -1,10 +1,10 @@
 ﻿import os
-from base import hash_text,normal_path,sanitize_filename,read_from_json_utf8_sig,write_to_json_utf8_sig,write_to_bin,read_from_bin
+from base import hash_text,normal_path,sanitize_filename,read_from_json_utf8_sig,write_to_json_utf8_sig,write_to_bin,read_from_bin,worm_root
 import re
 from playlist_kernel import *
 
 
-root_path=r"F:\worm_practice/player/"
+root_path=worm_root/r"player/"
 root_temp_dir= os.path.join(root_path,"temp")
 video_dir= os.path.join(root_path,"video")
 url_dir= os.path.join(root_path,"urls")

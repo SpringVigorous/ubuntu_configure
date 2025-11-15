@@ -21,7 +21,7 @@ import asyncio
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType,AES_128
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine,recycle_bin,delete_directory,arabic_numbers,mp4_files
-from base import arrange_urls,postfix,codec_base64,codec_base,has_chinese
+from base import arrange_urls,postfix,codec_base64,codec_base,has_chinese,worm_root
 import pandas as pd
 
 
@@ -446,7 +446,7 @@ def get_url_data(url,url_json_path,m3u8_path):
     
 @exception_decorator()
 def main(url,dest_name,dest_dir:str=None,force_merge=False):
-    root_path=r"F:\worm_practice/player/"
+    root_path=worm_root/r"player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
@@ -571,9 +571,9 @@ def shut_down(time:10):
     
 #根据 hash_path.xlsx 中的hash_path(文件夹路径),合并视频文件,参考 hash_path.xlsx 中的name,合并到dest_path
 def force_merges():
-    raw_df=pd.read_excel(r"F:\worm_practice\player\urls\log_urls.xlsx",index_col=1,sheet_name="原始表")
-    already_df=pd.read_excel(r"F:\worm_practice\player\urls\hash_path.xlsx")
-    dest_dir=r"F:\worm_practice\player\video"
+    raw_df=pd.read_excel(worm_root/r"player\urls\log_urls.xlsx",index_col=1,sheet_name="原始表")
+    already_df=pd.read_excel(worm_root/r"player\urls\hash_path.xlsx")
+    dest_dir=worm_root/r"player\video"
     
     already_df["hash"]=already_df["hash_path"].apply(lambda x:Path(x).name)
     merge_df=pd.merge(already_df,raw_df,on="hash",how="left")
@@ -597,7 +597,7 @@ def force_merges():
 def series_movies_info(name:str):
     from base  import json_files,read_from_json_utf8_sig
     lst=[]
-    for file in filter(lambda x: name in Path(x).stem, json_files(r"F:\worm_practice\player\urls")):
+    for file in filter(lambda x: name in Path(x).stem, json_files(worm_root/r"player\urls")):
         if not os.path.exists(file): continue
         if "-lost" in Path(file).stem: 
             os.remove(file)
@@ -622,7 +622,7 @@ def series_movies(name:str):
 def merge_series_movies(name:str):
     collect_dir=None
     logger=logger_helper("合并系列视频",name)
-    temp_root=r"F:\worm_practice\player\temp"
+    temp_root=worm_root/r"player\temp"
     for index,json_data in enumerate(series_movies_info(name)):
         cur_hash=json_data["hash"]
 
@@ -663,15 +663,15 @@ def merge_series_movies(name:str):
     return
             
     logger.trace("合并目录",update_time_type=UpdateTimeType.STAGE)
-    dest_dir=os.path.join(r"F:\worm_practice\player\video", f"{name}.mp4")
+    dest_dir=os.path.join(worm_root/r"player\video", f"{name}.mp4")
     force_merge(collect_dir,  dest_dir )
     logger.trace("合并视频",update_time_type=UpdateTimeType.STAGE)
     logger.trace("完成",update_time_type=UpdateTimeType.ALL)
 #系列视频 单独合并
 def series_movies_per_merge(name:str):
     logger=logger_helper("合并系列视频",name)
-    temp_root=r"F:\worm_practice\player\temp"
-    cache_root=r"F:\worm_practice\player\cache"
+    temp_root=worm_root/r"player\temp"
+    cache_root=worm_root/r"player\cache"
     cur_cache_dir=os.path.join(cache_root, name)
     os.makedirs(cur_cache_dir,exist_ok=True)
     temp_dirs=[]
@@ -705,7 +705,7 @@ def series_movies_per_merge(name:str):
     
     
     for index,cur_dir in enumerate(temp_dirs):
-        dest_video=os.path.join(r"F:\worm_practice\player\video", f"{name}_{index+1:02}.mp4")
+        dest_video=os.path.join(worm_root/r"player\video", f"{name}_{index+1:02}.mp4")
         logger.update_target("合并目录",f"{cur_dir}->{dest_video}")
         force_merge(cur_dir,  dest_video )
         logger.trace("合并视频",update_time_type=UpdateTimeType.STAGE)
@@ -719,7 +719,7 @@ def rename_video(org_name:str):
     return result
 
 def rename_videos(file_base_name:str):
-    for file in mp4_files(r"F:\worm_practice\player\video"):
+    for file in mp4_files(worm_root/r"player\video"):
         cur_path=Path(file)
         name=cur_path.stem
         if file_base_name not in name: continue
@@ -733,7 +733,7 @@ def filter_folder(file_base_name:str):
     
     pattern = f"^{file_base_name}" + r'_第(\d{2})季_(\d{2})$'
     
-    for file in mp4_files(r"F:\worm_practice\player\video"):
+    for file in mp4_files(worm_root/r"player\video"):
         cur_path=Path(file)
         name=cur_path.stem
         if match := re.match(pattern, name):
@@ -756,8 +756,8 @@ def filter_folder(file_base_name:str):
 
 if __name__=="__main__":
 
-
-    force_merge(r"E:\旭尧\拼音练习\1",r"E:\旭尧\拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
+    from base import kid_root
+    force_merge(kid_root\r"拼音练习\1",kid_root\r"拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
     exit()
 
     # filter_folder("汪汪队立大功")
@@ -777,22 +777,22 @@ if __name__=="__main__":
     # force_merges()
     # exit(0)
     
-    # val=rename_postfix(r"F:\worm_practice\player\temp\46256563\0000.jpeg",".ts")
+    # val=rename_postfix(worm_root/r"player\temp\46256563\0000.jpeg",".ts")
     # print(val)
     # exit(0)
-    # temp_dir=r"F:\worm_practice\player\temp\67f6ba6e"
+    # temp_dir=worm_root/r"player\temp\67f6ba6e"
     # # rename_ts(temp_dir,".jpeg")
     # # exit(0)
-    # force_merge(temp_dir,r"F:\worm_practice\player\video\哪吒之魔童闹海.mp4")
+    # force_merge(temp_dir,worm_root/r"player\video\哪吒之魔童闹海.mp4")
     # exit(0)
 
     
-    # temp_dir=r"F:\worm_practice\player\temp\6e94ef53"
+    # temp_dir=worm_root/r"player\temp\6e94ef53"
     # suffix=[".ts"]
     # # # convert_video_to_mp4_from_src_dir(temp_dir,suffix)
 
     # temp_path_list=get_all_files_pathlib(temp_dir,suffix)
-    # dest_dir=r"F:\worm_practice\player"
+    # dest_dir=worm_root/r"player"
     # temp_name="1111.mp4"
     # dest_name="美味姐妹群欢.mp4"
     # temp_path=f"{dest_dir}/{temp_name}"
@@ -825,8 +825,8 @@ if __name__=="__main__":
 
     # # val=video_info("https://hd.ijycnd.com/play/Le32QD9d/index.m3u8")
     
-    # org_path=r"F:\worm_practice\player\temp\feb6b940-1\1.mp4"
-    # dest_path=r"F:\worm_practice\player\temp\feb6b940\1.mp4"
+    # org_path=worm_root/r"player\temp\feb6b940-1\1.mp4"
+    # dest_path=worm_root/r"player\temp\feb6b940\1.mp4"
     
     # decryp_video(org_path,dest_path,key,iv)
     # D:/Tool/ffmpeg/bin/ffmpeg.exe -y -f concat -safe 0 -i E:\\Temp\\20251030\\file_list.txt -c copy E:/旭尧/拼音练习/298b6c58.mp4

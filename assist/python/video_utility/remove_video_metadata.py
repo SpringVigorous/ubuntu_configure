@@ -226,12 +226,13 @@ if __name__ == "__main__":
     # 输入输出路径（可修改为批量处理）
     input_file = "input.mp4"
     output_file = "output.mp4"
-    
+    from base import worm_root
+
     # 执行写入操作
 
-    VideoCleaner.write_video_metadata(r"F:\worm_practice\douyin\素材\create\鼋头渚晚樱.mp4",r"F:\worm_practice\douyin\素材\create\鼋头渚晚樱_4.mp4", metadata)
+    VideoCleaner.write_video_metadata(worm_root/r"douyin\素材\create\鼋头渚晚樱.mp4",worm_root/r"douyin\素材\create\鼋头渚晚樱_4.mp4", metadata)
     
-    # VideoCleaner.has_metadata_flag(r"F:\worm_practice\douyin\素材\create\鼋头渚晚樱.mp4")
+    # VideoCleaner.has_metadata_flag(worm_root/r"douyin\素材\create\鼋头渚晚樱.mp4")
     
     # exit()
     
@@ -247,7 +248,7 @@ if __name__ == "__main__":
     # 批量处理目录
     manager=VideoCleaner() 
     
-    # manager.clean_metadata(r"F:\worm_practice\douyin\素材\create\鼋头渚晚樱.mp4")
+    # manager.clean_metadata(worm_root/r"douyin\素材\create\鼋头渚晚樱.mp4")
     # exit()
     # manager.batch_clean_metadata(input_dir,output_dir)
     manager.batch_clean_metadata(input_dir)

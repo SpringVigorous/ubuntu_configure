@@ -585,7 +585,9 @@ class OcrPics(ThreadTask):
             logger.pop_target()
         
 if __name__ == "__main__":
-    org_path=r"F:\worm_practice\taobao\数据/微信图片_20250726085047_626.jpg"
+    from base import worm_root
+
+    org_path=worm_root/r"taobao\数据/微信图片_20250726085047_626.jpg"
 
     
     texts=None

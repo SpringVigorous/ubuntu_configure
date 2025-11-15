@@ -289,8 +289,8 @@ def get_url_info(url,url_json_path,m3u8_path)->dict:
 if __name__ == "__main__":
     url="https://vv.jisuzyv.com/play/nelLE2ge/index.m3u8"
 
-    
-    url_json_path=r"F:\worm_practice\player\urls\宝宝巴士之神奇简笔画_01-97db3c6d.json"
-    m3u8_path=r"F:\worm_practice\player\m3u8\宝宝巴士之神奇简笔画_01-97db3c6d.m3u8"
+    from base import worm_root
+    url_json_path=worm_root/r"player\urls\宝宝巴士之神奇简笔画_01-97db3c6d.json"
+    m3u8_path=worm_root/r"player\m3u8\宝宝巴士之神奇简笔画_01-97db3c6d.m3u8"
     data=get_url_data(url,url_json_path,m3u8_path)
     print(data)

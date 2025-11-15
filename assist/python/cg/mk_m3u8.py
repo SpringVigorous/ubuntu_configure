@@ -12,7 +12,8 @@ def sec_str(durations:list,sec=10):
 if __name__ == "__main__":
     
     
+    from base import worm_root
     durations=[11.733,18.833]
-    with open(r"F:\worm_practice\player\m3u8/durations.txt","w") as f:
+    with open(worm_root/r"player\m3u8/durations.txt","w") as f:
         while durations[-1]<8640:
             f.write(sec_str(durations,10)+"\n")

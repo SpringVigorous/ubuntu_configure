@@ -119,4 +119,4 @@ if __name__ == '__main__':
 #当前目录 cd F:/test/ubuntu_configure/assist/python/
 # red_book/remove_special_fold.py -r  F:/test/ubuntu_configure/assist/python/ -d logs,exe,log,build -f .spec,.log
 
-#python red_book/remove_special_fold.py -r  F:\worm_practice\player\urls/  -f .json -i lost
+#python red_book/remove_special_fold.py -r  worm_root/player\urls/  -f .json -i lost

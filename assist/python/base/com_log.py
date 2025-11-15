@@ -11,6 +11,7 @@ from time import time,sleep
 from base.custom_log import CustomLogger
 from base.collect_tools import Stack
 from base.raii_tools import RAIITool,wrapper_lamda
+from base.root_config import worm_root
 # 定义TRACE等级
 TRACE_LEVEL_NUM = logging.DEBUG - 5
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
@@ -84,7 +85,7 @@ def create_logger(logger_name:str ,level:str="debug",log_level:str="trace",conso
 
         # 创建文件Handler并设置日志级别与格式
 
-        root_dir=r"F:\worm_practice"
+        root_dir=worm_root
         if not os.path.exists(root_dir):
             root_dir=os.getcwd()
         

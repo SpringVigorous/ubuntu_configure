@@ -1,4 +1,4 @@
-﻿from base import exception_decorator,fetch_sync,read_from_bin,write_to_bin,singleton,f_safe_format,file_valid,normal_path,path_equal,logger_helper
+﻿from base import exception_decorator,fetch_sync,read_from_bin,write_to_bin,singleton,f_safe_format,file_valid,normal_path,path_equal,logger_helper ,worm_root
 import os
 from typing import Callable,Any
 from pathlib import Path
@@ -273,16 +273,16 @@ if __name__=="__main__":
     
     manager=TinyCache()
     
-    manager.cache(url="https://hn.bfvvs.com/play/Rb4QDm2d/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_35.m3u8")
-    manager.cache(url="https://hn.bfvvs.com/play/Yer8NZwb/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_36.m3u8")
-    manager.cache(url="https://hn.bfvvs.com/play/YaOMoYgd/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_37.m3u8")
+    manager.cache(url="https://hn.bfvvs.com/play/Rb4QDm2d/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_35.m3u8")
+    manager.cache(url="https://hn.bfvvs.com/play/Yer8NZwb/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_36.m3u8")
+    manager.cache(url="https://hn.bfvvs.com/play/YaOMoYgd/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_37.m3u8")
     manager.cache(url="https://hn.bfvvs.com/play/yb8172ld/index.m3u8",local_path=r"")
-    manager.cache(url="",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_39.m3u8")
-    manager.cache(url="https://vv.jisuzyv.com/play/QdJAWNJb/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_20.m3u8")
+    manager.cache(url="",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_39.m3u8")
+    manager.cache(url="https://vv.jisuzyv.com/play/QdJAWNJb/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_20.m3u8")
 
 
-    manager.cache(url="https://hn.bfvvs.com/play/yb8172ld/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_38.m3u8")
-    manager.cache(url="https://hn.bfvvs.com/play/lejZVRze/index.m3u8",local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_2_39.m3u8")
-    manager.cache(local_path=r"F:\worm_practice\player\temp\宝宝巴士之神奇简笔画_20.m3u8")
+    manager.cache(url="https://hn.bfvvs.com/play/yb8172ld/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_38.m3u8")
+    manager.cache(url="https://hn.bfvvs.com/play/lejZVRze/index.m3u8",local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_2_39.m3u8")
+    manager.cache(local_path=worm_root/r"player\temp\宝宝巴士之神奇简笔画_20.m3u8")
     
     print(manager)

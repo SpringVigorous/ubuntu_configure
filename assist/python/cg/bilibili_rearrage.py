@@ -1,6 +1,6 @@
 ﻿import os
 import shutil
-from base import logger_helper
+from base import logger_helper,worm_root,kid_root
 import re
 from pathlib import Path
 def rename_file_basic(filename,num_len=2):
@@ -362,7 +362,7 @@ def correct_suffix_error(df:pd.DataFrame):
 
 def correct_lose_prefix(df):
     logger=logger_helper("回滚——重命名删除前缀错误")
-    prefix_df=df[df["org_path"].str.contains(r"E:\旭尧\英语_儿童日常对话",regex=False)]
+    prefix_df=df[df["org_path"].str.contains(kid_root\r"英语_儿童日常对话",regex=False)]
     if  df_empty(prefix_df):
         return 
     for index, row in prefix_df.iterrows():
@@ -631,45 +631,45 @@ def rename_file_only_bbbs(filename:str):
     return new_filename
 
 if __name__ == "__main__":
-    rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_bbbs,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(worm_root/r"player\video",rename_file_only_bbbs,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_bxcz,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(worm_root/r"player\video",rename_file_only_bxcz,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"F:\worm_practice\player\video",rename_file_only_quote,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(worm_root/r"player\video",rename_file_only_quote,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
     
-    rename_files_in_folder(r"E:\旭尧\磨耳朵单词课",rename_file_special_only,recursive=True,real_replace=True) #重命名文件    # 根目录路径
-    # rename_files_in_folder(r"E:\旭尧\磨耳朵单词课",rename_file_only_spell_med,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"磨耳朵单词课",rename_file_special_only,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    # rename_files_in_folder(kid_root\r"磨耳朵单词课",rename_file_only_spell_med,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"E:\旭尧\三字经",rename_file_only_spell_szj,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"三字经",rename_file_only_spell_szj,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
 
-    rename_files_in_folder(r"E:\旭尧\自然拼读26个字母发音",rename_file_only_spell_fy,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"自然拼读26个字母发音",rename_file_only_spell_fy,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
     
-    rename_files_in_folder(r"E:\旭尧\幼小阶段看动画背单词磨耳朵",rename_file_only_spell_dh,recursive=True,real_replace=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"幼小阶段看动画背单词磨耳朵",rename_file_only_spell_dh,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"E:\旭尧\Hello Carrie 阶段一 26个字母的自然发音",rename_file_only_spell_rjb,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"Hello Carrie 阶段一 26个字母的自然发音",rename_file_only_spell_rjb,recursive=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"E:\旭尧\英语_自然拼读动画",rename_file_double_num_prefix,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"英语_自然拼读动画",rename_file_double_num_prefix,recursive=True) #重命名文件    # 根目录路径
     
     exit()
     
     
-    # df=fetch_from_log(r"F:\worm_practice\logs\bilibili_rearrage\bilibili_rearrage-trace.log")
+    # df=fetch_from_log(worm_root/r"logs\bilibili_rearrage\bilibili_rearrage-trace.log")
     
-    # correct_file_name(r"F:\worm_practice\logs\bilibili_rearrage\bilibili_rearrage-trace.xlsx")
+    # correct_file_name(worm_root/r"logs\bilibili_rearrage\bilibili_rearrage-trace.xlsx")
 
-    rename_files_in_folder(r"E:\旭尧\英语_儿童日常对话",rename_file_easy_dialog,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"英语_儿童日常对话",rename_file_easy_dialog,recursive=True) #重命名文件    # 根目录路径
     exit()
-    rename_files_in_folder(r"E:\旭尧\2025版_幼儿入门级自然拼读",rename_file_only_spell,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"2025版_幼儿入门级自然拼读",rename_file_only_spell,recursive=True) #重命名文件    # 根目录路径
     
 
     
-    rename_files_in_folder(r"E:\旭尧\英语儿歌",rename_file_only_english,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"英语儿歌",rename_file_only_english,recursive=True) #重命名文件    # 根目录路径
     
     exit()
-    rename_files_in_folder(r"E:\旭尧\怪物数学小分队",rename_file_only_math,recursive=True) #重命名文件    # 根目录路径
+    rename_files_in_folder(kid_root\r"怪物数学小分队",rename_file_only_math,recursive=True) #重命名文件    # 根目录路径
     
     
     
@@ -677,7 +677,7 @@ if __name__ == "__main__":
     
     exit()
     
-    root_directory = r"E:\旭尧"
+    root_directory = kid_root
     process_bilibili_directories(root_directory) #拆分 MP4 、srt 整理文件
     def rename_num_count_fun(name:str):
         return rename_file_basic(name,2)
@@ -685,7 +685,7 @@ if __name__ == "__main__":
     
     exit()
     
-    root_directory = r"E:\旭尧\叫叫识字大冒险"
+    root_directory = kid_root\r"叫叫识字大冒险"
     # rename_files_in_folder(root_directory,rename_file_remove_pre_num,recursive=True) #重命名文件
     
     def rename_remove_size_flag(name:str):

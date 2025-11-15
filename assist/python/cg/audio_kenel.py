@@ -5,7 +5,7 @@ from pathlib import Path
 # 2. 第三方库（按字母顺序排列，统一导入风格）
 import pandas as pd
 from lxml import etree
-
+from base import worm_root,audio_root
 # 3. 自定义库（去重冗余、按字母顺序拆分排列，用括号包裹多行）
 from base import (
     arabic_numbers,
@@ -66,7 +66,7 @@ def download_mp3():
     'sec-fetch-site': 'cross-site',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',  
     }
-    dest_dir=Path(r"F:\worm_practice\player\audio")
+    dest_dir=Path(worm_root/r"player\audio")
     # url="https://a.xmcdn.com/storages/268c-audiofreehighqps/45/12/GKwRIJIHQNpWACCcTAHGoowt-aacv2-48K.m4a?sign=9b9177ef3a2756b20dcad70aaf633604&buy_key=www2_a8c13baa-134401591:494220481&timestamp=1762851689194000&token=5747&duration=263"
     url="https://a.xmcdn.com/storages/268c-audiofreehighqps/45/12/GKwRIJIHQNpWACCcTAHGoowt-aacv2-48K.m4a?sign=9b9177ef3a2756b20dcad70aaf633604&buy_key=www2_a8c13baa-134401591:494220481"
     dest_path=dest_dir/"97_蚂蚁的力量.mp3"
@@ -289,7 +289,7 @@ def album_lst_from_content(html_content)->list[dict]:
     return  results
 if __name__ == '__main__':
 
-    html_path=r"E:\旭尧\有声读物\宝宝巴士_album.html"
+    html_path=audio_root/r"宝宝巴士_album.html"
     html_content=read_from_txt_utf8(html_path)
         
     df=album_lst_from_content(html_content)

@@ -194,7 +194,9 @@ VideoUrlInfo(m3u8_url='https://pcvideoydott.titan.mgtv.com/c1/2025/05/14_0/228FA
     pass
 
 def forece_merge_test():
-    force_merge(r"E:\旭尧\拼音练习\1",r"E:\旭尧\拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
+    
+    from base import kid_root
+    force_merge(kid_root\r"拼音练习\1",kid_root\r"拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
 
 if  __name__ == '__main__':
     

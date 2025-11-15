@@ -181,13 +181,14 @@ class DYRootDir:
         return [file for file in files if DestInfo(file).org_name == name]
 
     
+from base import worm_root
 
     
     
-dy_root=DYRootDir(r"F:\worm_practice\douyin")
+dy_root=DYRootDir(worm_root/r"douyin")
 
 if __name__=="__main__":
-    # dest_path=r"F:\worm_practice\douyin\素材\org\顾村公园樱花_001-1080x1920_001.mp4"
+    # dest_path=worm_root/r"douyin\素材\org\顾村公园樱花_001-1080x1920_001.mp4"
     dest_path=r"顾村公园樱花_001-1080x1920_001"
     
     

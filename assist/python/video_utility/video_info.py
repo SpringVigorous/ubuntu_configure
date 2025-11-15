@@ -259,7 +259,9 @@ if __name__=="__main__":
     # print(short_url(urls[0]))
     # exit(0)
     wp=WebPage()
-    root_dir=r"F:\worm_practice\douyin\videos"
+    from base import worm_root
+
+    root_dir=worm_root/r"douyin\videos"
     info_obj=VideoInfo(wp,root_dir,"景区")
     result=info_obj.get_video_infos(urls)
     info_obj.export()

@@ -129,13 +129,14 @@ def analyse_log(log_path:str):
     return log_df
     
 def handle_urls():
-    # log_df=dir_log_data(r"F:\worm_practice\logs\playlist")
+    # log_df=dir_log_data(worm_root/r"logs\playlist")
+    from base import worm_root
     
-    url_path = r"F:\worm_practice\player\urls"
+    url_path =worm_root/r"player\urls"
     # log_df.to_excel(os.path.join(url_path,"log_urls.xlsx"))
     # exit(0)
     
-    # analyse_df=analyse_log(r"F:\worm_practice\logs\playlist\playlist-trace.log")
+    # analyse_df=analyse_log(worm_root/r"logs\playlist\playlist-trace.log")
     # analyse_df.to_excel(os.path.join(url_path,"analyse_log.xlsx"))
     
     # exit(0)
@@ -146,7 +147,7 @@ def handle_urls():
     url_df.to_excel(os.path.join(url_path,"log_urls.xlsx"))
     exit(0)
     
-    player_df=dir_video_datas(r"F:\worm_practice\player\video")
+    player_df=dir_video_datas(worm_root/r"player\video")
     db_df=dir_video_datas(r"F:\数据库")
     mp4_df=pd.concat([player_df,db_df],axis=0)
     # print(mp4_df)
@@ -226,9 +227,9 @@ def handle_info_from_log(log_path:str):
         
     
 if __name__ == "__main__":
-    df=handle_info_from_log(r"F:\worm_practice\logs\playlist_app\playlist_app-trace.log")
+    df=handle_info_from_log(worm_root/r"logs\playlist_app\playlist_app-trace.log")
     
-    xlsx_path=r"F:\worm_practice\player\video.xlsx"
+    xlsx_path=worm_root/r"player\video.xlsx"
     org_df=pd.read_excel(xlsx_path,sheet_name="video")
     from base import concat_dfs
     dest_df=concat_dfs([org_df,df])

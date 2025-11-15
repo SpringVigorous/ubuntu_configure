@@ -1,8 +1,8 @@
 ﻿from DrissionPage import WebPage
 import json
 import os
-
-__cookies_dir=r"F:\worm_practice\cookies"
+from base import worm_root
+__cookies_dir=worm_root/r"cookies"
 os.makedirs(__cookies_dir, exist_ok=True)
 
 def url_to_filename(url):

@@ -577,8 +577,9 @@ class InteractBase():
 
 
 if __name__ == '__main__':
-    
+    from base import worm_root
+
     data=None
-    with open(r"F:\worm_practice\red_book\notes\祛湿url\祛湿url_urls.json","r",encoding="utf-8-sig") as f:
+    with open(worm_root/r"red_book\notes\祛湿url\祛湿url_urls.json","r",encoding="utf-8-sig") as f:
         data= json.load(f) 
     print(data)

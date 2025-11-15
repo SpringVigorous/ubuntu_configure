@@ -1,8 +1,0 @@
-﻿1.创建	
-python -m venv myenv
-
-2.激活
-win: myenv\Scripts\activate
-
-mac/linux: source myenv/bin/activate
-

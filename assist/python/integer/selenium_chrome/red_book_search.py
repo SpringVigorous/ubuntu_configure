@@ -187,7 +187,9 @@ def douyin_info(url,driver_path,xls_path):
 
             
 if __name__ == '__main__':
+    from base import worm_root
+
     url='https://www.xiaohongshu.com/'
     drive_path=r"D:\Tool\chromedriver-win64\chromedriver.exe"
-    xls_path=r"F:\worm_practice\red_book"
+    xls_path=worm_root/r"red_book"
     douyin_info(url,drive_path,xls_path)

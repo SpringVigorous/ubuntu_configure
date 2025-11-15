@@ -30,7 +30,8 @@ from base import (
     write_to_txt_utf8,
     singleton,
     postfix,
-    TaskStatus,Success,Undownloaded,Incompleted
+    TaskStatus,Success,Undownloaded,Incompleted,
+    audio_root
 )
 
 
@@ -50,9 +51,6 @@ def web_status(web_content:str)->TaskStatus:
     
 
 
-
-audio_root=Path(r"E:\旭尧\有声读物")
-    
 @exception_decorator(error_state=False)
 def dest_path(dest_dir:Path,album:str,name:str)->str:
     if not dest_dir:
@@ -482,6 +480,8 @@ class InteractHelper():
         try:
             if self.df_latter_func:
                 df=self.df_latter_func(df)
+            if df_empty(df):
+                return None,Undownloaded().set_post_error
             if xlsx_path:=backup_xlsx(xlsx_path,df,sheet_name=sheet_name):
                 self.logger.info("保存成功",f"{xlsx_path}")
         except Exception as e:

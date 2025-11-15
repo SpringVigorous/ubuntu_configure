@@ -43,9 +43,10 @@ if __name__=="__main__":
     start_pattern =get_pattern("开始")
     end_pattern = get_pattern("完成")
     args=["time","num","title","url"]
-    
+    from base import worm_root
+
     log_content=''
-    with open(r"F:\worm_practice\logs\playlist_app\playlist_app-trace.log","r",encoding="utf-8-sig") as f:
+    with open(worm_root/r"logs\playlist_app\playlist_app-trace.log","r",encoding="utf-8-sig") as f:
         log_content=f.read()
     if not log_content:
         exit(0)

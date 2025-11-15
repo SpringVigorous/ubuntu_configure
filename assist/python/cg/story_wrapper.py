@@ -19,7 +19,7 @@ import math
 
 from base import (
     get_homepage_url, is_http_or_https, logger_helper, fetch_sync, UpdateTimeType,
-    arabic_number_tuples, sanitize_filename, chinese_num, exception_decorator,
+    arabic_number_tuples, sanitize_filename, chinese_num, exception_decorator,worm_root,
     except_stack, hash_text, MultiThreadCoroutine,ReturnState,content_tree,
     remove_html_entity,get_node_text,split_flag_to_dict,dict_val,get_node_attr,fill_url,
     pretty_tree, unique,priority_read_excel_by_pandas,priority_read_json,get_node_sub_hrefs,write_dataframe_excel
@@ -247,7 +247,7 @@ def get_chapter_page_lst(tree,domain,logger):
 
 
 class StoryScraper:
-    def __init__(self, root_dir=r'F:\worm_practice\storys'):
+    def __init__(self, root_dir=worm_root/r'storys'):
         self.root_dir = Path(root_dir)
         self.dest_dir = self.root_dir / 'dest'
         self.temp_dir = self.root_dir / 'temp'
@@ -624,7 +624,7 @@ class StoryScraper:
         infos_df.to_excel(self.base_url_xlsx, index=False)
         
 if __name__== "__main__":
-    wrapper=StoryScraper(r'F:\worm_practice\storys')
+    wrapper=StoryScraper(worm_root/r'storys')
     wrapper.run()
     
     pass

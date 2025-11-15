@@ -21,7 +21,7 @@ import asyncio
 from base import exception_decorator,logger_helper,except_stack,normal_path,fetch_sync,decrypt_aes_128_from_key,get_folder_path_by_rel,UpdateTimeType
 from base import download_async,download_sync,move_file,get_homepage_url,is_http_or_https,hash_text,delete_directory,merge_video,convert_video_to_mp4_from_src_dir,convert_video_to_mp4,get_all_files_pathlib,move_file
 from base import as_normal,MultiThreadCoroutine
-from base import arrange_urls,postfix
+from base import arrange_urls,postfix,worm_root
 import pandas as pd
 
 
@@ -310,7 +310,7 @@ def decryp_videos(org_paths,dest_dir,key,iv):
 
 @exception_decorator(error_state=False)
 def main(url,dest_name,dest_dir:str=None,force_merge=False):
-    root_path=r"F:\worm_practice/player/"
+    root_path=worm_root/r"player/"
     dest_hash=hash_text(dest_name)
     temp_dir= os.path.join(root_path,"temp",dest_hash) 
     temp_path=normal_path(os.path.join(temp_dir,f"{dest_hash}.mp4")) 
@@ -396,9 +396,9 @@ def shut_down(time:10):
     
 #根据 hash_path.xlsx 中的hash_path(文件夹路径),合并视频文件,参考 hash_path.xlsx 中的name,合并到dest_path
 def force_merges():
-    raw_df=pd.read_excel(r"F:\worm_practice\player\urls\log_urls.xlsx",index_col=1,sheet_name="原始表")
-    already_df=pd.read_excel(r"F:\worm_practice\player\urls\hash_path.xlsx")
-    dest_dir=r"F:\worm_practice\player\video"
+    raw_df=pd.read_excel(worm_root/r"player\urls\log_urls.xlsx",index_col=1,sheet_name="原始表")
+    already_df=pd.read_excel(worm_root/r"player\urls\hash_path.xlsx")
+    dest_dir=worm_root/r"player\video"
     
     already_df["hash"]=already_df["hash_path"].apply(lambda x:Path(x).name)
     merge_df=pd.merge(already_df,raw_df,on="hash",how="left")
@@ -474,7 +474,7 @@ def split_info_to_srt(url_json_path:str,temp_dir:str,dest_srt_path:str):
     pass
  
 if __name__=="__main__":
-    split_info_to_srt(r"F:\worm_practice\player\urls\《爆笑虫子_第一季》HD中字高清资源免费在线观看_动画片_555电影网-3a7c8a7f.json",
-               r"F:\worm_practice\player\temp\3a7c8a7f",
-               r"F:\worm_practice\player\video\爆笑虫子_01.srt")
+    split_info_to_srt(worm_root/r"player\urls\《爆笑虫子_第一季》HD中字高清资源免费在线观看_动画片_555电影网-3a7c8a7f.json",
+              worm_root/r"player\temp\3a7c8a7f",
+              worm_root/r"player\video\爆笑虫子_01.srt")
     pass
