@@ -7,8 +7,11 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "python": "myenv/Scripts/python.exe",
+      "justMyCode": false , // 确保这行存在，可以进入系统库代码
       // "args": " -r F:/test  -r F:/test  -p joy_project -m data -f data.student -t"
-      "args": "-o F:/test/joy_project/test/test/test_cerel -d F:/test/joy_project/test/test/test_cerel -r assist/replace_params_animal.json"
+      "args": "-o F:/test/joy_project/test/test/test_cerel -d F:/test/joy_project/test/test/test_cerel -r assist/replace_params_animal.json",
+      "stopOnEntry": false,
+      "showReturnValue": true
     },
     {
       "name": "C/C++ Runner: Debug Session",

@@ -468,7 +468,7 @@ class InteractHelper():
                 lst,status=result
                 if not lst:
                     return df,status
-                df=pd.DataFrame(self.interact_df_func(url))
+                df=pd.DataFrame(result)
             else:
                 return df,Undownloaded().set_error
         else:
@@ -689,7 +689,7 @@ class InteractAlbum(ThreadTask):
                 return msg
             
             self._helper.set_handle_row_func(row_to_msg)
-            self._helper.handle_df(df,self.output_queue)
+            self._helper.handle_df(df.reindex(index=df.index[::-1]),self.output_queue)
 
 
         
