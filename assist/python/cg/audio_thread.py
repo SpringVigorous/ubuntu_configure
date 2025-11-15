@@ -46,7 +46,8 @@ def web_status(web_content:str)->TaskStatus:
         return TaskStatus.UNDOWNLOADED.set_not_found
     if "开会员" in web_content:
         return TaskStatus.UNDOWNLOADED.set_charged
-    
+    if "下架" in web_content:
+        return TaskStatus.UNDOWNLOADED.set_not_found
     return TaskStatus.SUCCESS
     
 
