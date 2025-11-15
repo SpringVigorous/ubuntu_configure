@@ -773,7 +773,10 @@ class InteractSoundFromAlbum(ThreadTask):
             
 
             self._helper.set_handle_row_func(lambda x: row_path_to_msg(x,xlsx_path,audio_sheet_name))
-            self._output_count+=self._helper.handle_df(df,self.output_queue)
+            
+            if result:=self._helper.handle_df(df,self.output_queue):
+            
+                self._output_count+=result
             
         #不要搞得太多，只处理这么多
         if self._output_count>200:

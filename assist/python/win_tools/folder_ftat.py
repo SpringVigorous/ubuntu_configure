@@ -73,8 +73,8 @@ class FileSyncUtil:
             # 输出到JSON文件[1](@ref)
             if output_json_path:
                 try:
-                    with open(output_json_path, 'w', encoding='utf-8') as f:
-                        json.dump(file_list, f, indent=2, ensure_ascii=False)
+                    write_to_json_utf8_sig(output_json_path,file_list)    
+                        
                     self.logger.info(f"文件列表已保存到: {output_json_path}")
                 except Exception as e:
                     self.logger.error(f"保存JSON文件失败: {e}")
@@ -197,11 +197,7 @@ class FolderUsage:
         """功能2使用示例"""
 
         result = self.sync_util.compare_file_lists(list_d, list_f)
-        
-        # 保存结果G到JSON
-        with open(json_path, 'w') as f:
-            json.dump(result["merged_list"], f, indent=2)
-        
+        write_to_json_utf8_sig(json_path,result)        
         return result
     
     def clone_files(self,list_g,root_dir,dest_dir):
