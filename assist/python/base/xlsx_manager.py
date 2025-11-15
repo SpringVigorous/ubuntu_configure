@@ -64,6 +64,9 @@ class xlsx_manager(metaclass=abc.ABCMeta):
                 dfs=dict(filter(lambda item: not df_empty(item[1]),dfs.items())  )
                 if not dfs: 
                     return True
+                #先创建文件夹
+                os.makedirs(os.path.dirname(xlsx_path),exist_ok=True)
+
                 with pd.ExcelWriter(xlsx_path,mode="w") as w:                        
                     for sheet_name,df in dfs.items():
                         if  df_empty(df) or not sheet_name:

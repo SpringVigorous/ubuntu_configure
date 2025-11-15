@@ -164,8 +164,10 @@ class AudioManager(xlsx_manager):
                 return
             try:
                 for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
-                    df.loc[index,downloaded_id]=status.value #转换为整型
-                    df.loc[index,local_path_id]=str(Path(row[local_path_id]).with_suffix(suffix))
+                    if status is not None:
+                        df.loc[index,downloaded_id]=status.value #转换为整型
+                    if suffix:
+                        df.loc[index,local_path_id]=str(Path(row[local_path_id]).with_suffix(suffix))
                 logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)

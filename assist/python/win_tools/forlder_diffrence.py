@@ -1,9 +1,10 @@
-﻿import os
-import json
+﻿import json
 import shutil
+import os
 from pathlib import Path
 from datetime import datetime
 from base import logger_helper,exception_decorator,read_from_json_utf8_sig,write_to_json_utf8_sig,UpdateTimeType
+#文件夹差异
 class DirectoryTree:
     """功能1：递归遍历目录，生成树形结构并输出JSON"""
     
@@ -72,11 +73,40 @@ class DirectoryTree:
             """从JSON文件加载树结构"""
             if result := read_from_json_utf8_sig(json_path):
                 self.tree = result
-                self.logger.info("成功",update_time_type=UpdateTimeType.ALL)
+                logger.info("成功",update_time_type=UpdateTimeType.ALL)
             else:
-                self.logger.error("失败",update_time_type=UpdateTimeType.ALL)
+                logger.error("失败",update_time_type=UpdateTimeType.ALL)
         return self.tree
 
+    def to_flat_lst(self)->list[dict]:
+        """将树结构转换为flat json"""
+
+        def _to_flat_children(children:dict):
+            results=[]
+            if not children:
+                return
+            for name ,child in children.items:
+                if child.get("type") == "file":
+                    results.append({
+                        "path": name,
+                        "mtime": child.get("mtime", 0),
+                        "mtime_str": child.get("mtime_str", "")
+                    })
+                elif child.get("type") == "directory":
+                    if result:=self.to_flat_lst(child.get("children")):
+                        results.extend(result)
+                    
+            return results
+
+        return _to_flat_children(self.tree.get("children"))
+    
+    
+    def from_flat_lst(self, flat_lst):
+        """从flat json加载树结构"""
+        self.tree = flat_lst
+        return self.tree
+    
+    
 
 class TreeComparator:
     """功能2：比较两个目录树，生成差异树"""
@@ -269,6 +299,13 @@ if __name__ == "__main__":
         scanner = DirectoryTree()
         root_dir=audio_root
         json_path=os.path.join(root_dir, "directory_tree.json")
+        scanner.load_from_json_file(json_path)
+        result=scanner.to_flat_lst()
+        
+        exit()
+        
+        
+        
         
         tree_c = scanner.scan_directory(root_dir)  # 替换为你的目录
         scanner.save_to_json_file(json_path)

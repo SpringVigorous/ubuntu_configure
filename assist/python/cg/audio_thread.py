@@ -508,7 +508,7 @@ class InteractHelper():
             self.logger.info("网页保存到本地",f"{html_path}")
         return content,Success()
     @exception_decorator(error_state=False)
-    def handle_df(self, df:pd.DataFrame,output_queue:Queue):
+    def handle_df(self, df:pd.DataFrame,output_queue:Queue)->int:
         if not self.handle_row_func or df_empty(df):
             return
         audio_index=0
@@ -519,6 +519,8 @@ class InteractHelper():
                 output_queue.put(msg)    
                 audio_index+=1
                 self.logger.trace("加入下载队列",f"第{audio_index}个消息{msg}")
+                
+        return audio_index
 
     def set_interact_content_fun(self,interact_fun:Callable[[str],tuple[str,TaskStatus]]=None) -> None:
         self.interact_fun:Callable[[str],tuple[str,TaskStatus]]=interact_fun
@@ -707,7 +709,7 @@ class InteractSoundFromAlbum(ThreadTask):
                                     # df_latter_func=AudioManager.update_df_status,
                                     handle_row_func=row_dict_to_msg
                                     )
-
+        self._output_count:int=0
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
         url=data.get(href_id)
@@ -765,7 +767,11 @@ class InteractSoundFromAlbum(ThreadTask):
             
 
             self._helper.set_handle_row_func(lambda x: row_path_to_msg(x,xlsx_path,audio_sheet_name))
-            self._helper.handle_df(df,self.output_queue)
+            self._output_count+=self._helper.handle_df(df,self.output_queue)
+            
+        #不要搞得太多，只处理这么多
+        if self._output_count>200:
+            self.clear_input()
             
             
 

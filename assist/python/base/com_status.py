@@ -19,6 +19,7 @@ class TaskStatus(IntFlag):
     NOT_FOUND = 0b10000       # 16: 网页不存在
     FETCH_ERROR = 0b100000      # 32: 获取网页信息失败
     CONVERT_ERROR = 0b1000000   # 64： 网页信息转换失败
+    POST_ERROR = 0b1000000   # 64： 后续处理失败
     
     @staticmethod
     def CoreMask():
@@ -26,10 +27,10 @@ class TaskStatus(IntFlag):
     
     @staticmethod
     def FullMask():
-        return TaskStatus.CoreMask() | TaskStatus.ReaseMask()
+        return TaskStatus.CoreMask() | TaskStatus.ReasonMask()
         
-    def ReaseMask():
-        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR
+    def ReasonMask():
+        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR
     
     @classmethod
     def from_value(cls, value: Union[int, str, 'TaskStatus']) -> 'TaskStatus':
@@ -115,8 +116,13 @@ class TaskStatus(IntFlag):
         return bool(self.value & TaskStatus.CONVERT_ERROR)
     
     @property
+    def is_post_error(self) -> bool:
+        """第八位：是否后续处理失败（私有属性）"""
+        return bool(self.value & TaskStatus.POST_ERROR)
+    
+    @property
     def has_reaseon(self)->bool:
-        return self.value & TaskStatus.ReaseMask() > 0
+        return self.value & TaskStatus.ReasonMask() > 0
 
     
     
@@ -169,7 +175,12 @@ class TaskStatus(IntFlag):
         if not self.is_success:
             return TaskStatus(self.value | TaskStatus.CONVERT_ERROR)
         return self
-    
+    @property
+    def set_post_error(self) -> 'TaskStatus':
+        """设置后续处理失败状态（仅非SUCCESS状态有效）"""
+        if not self.is_success:
+            return TaskStatus(self.value | TaskStatus.POST_ERROR)
+        return self
     
     @property
     def clear_error(self) -> 'TaskStatus':
@@ -196,11 +207,16 @@ class TaskStatus(IntFlag):
         """清除网页信息转换失败状态"""
         return TaskStatus(self.value & ~TaskStatus.CONVERT_ERROR)
     
+
+    @property
+    def clear_post_error(self) -> 'TaskStatus':
+        """清除后续处理失败状态"""
+        return TaskStatus(self.value & ~TaskStatus.POST_ERROR)
     @classmethod
     def create(cls, base_status: 'TaskStatus', error: bool = False, 
                charged: bool = False, not_found: bool = False,
-               fetch_error: bool = False, convert_error: bool = False
-               
+               fetch_error: bool = False, convert_error: bool = False,
+               post_error: bool = False
                ) -> 'TaskStatus':
         """创建新的任务状态对象
         
@@ -251,6 +267,8 @@ class TaskStatus(IntFlag):
             flags.append("获取网页信息失败")
         if self.is_convert_error:
             flags.append("网页信息转换失败")
+        if self.is_post_error:
+            flags.append("后续处理失败")
             
         flags_desc = "+".join(flags) if flags else ""
         
