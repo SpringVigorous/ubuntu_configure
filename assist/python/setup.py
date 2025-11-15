@@ -24,6 +24,9 @@ setup(
 #     version="0.1",
 #     packages=find_packages()  # 自动发现 task 和 task1 包
 # )
+
+
+
 # 然后在 parent_dir 下运行安装命令（开发模式，修改代码无需重新安装）：
 # bash
 # pip install -e .
