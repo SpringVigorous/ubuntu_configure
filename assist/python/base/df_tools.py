@@ -372,7 +372,18 @@ def get_attr(df:pd.DataFrame,attr_name:str)->str:
     return df.attrs.get(attr_name)
 @exception_decorator(error_state=False)
 def df_empty(df:pd.DataFrame)->bool:
-    return df is None or (isinstance(df,pd.DataFrame) and df.empty) 
+    if not is_df(df):
+        return True
+    
+    return df.empty
+
+@exception_decorator(error_state=False)
+def is_df(df:pd.DataFrame)->bool:
+    if df is None:
+        return False
+    
+    return isinstance(df,pd.DataFrame)
+
 
 
 def add_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[str]=None)->pd.DataFrame:

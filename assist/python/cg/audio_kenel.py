@@ -44,6 +44,9 @@ media_url_id="media_url"
 cur_xlsx_path_id="cur_xlsx_path"
 cur_sheet_name_id="cur_sheet_name"
 
+author_id="author"
+album_count_id="专辑数"
+
 
 xlsx_path_id="xlsx_path"
 sheet_name_id="sheet_name"

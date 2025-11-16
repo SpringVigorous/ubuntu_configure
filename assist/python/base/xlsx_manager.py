@@ -5,7 +5,7 @@ from base.com_log import logger_helper,UpdateTimeType
 import threading
 import pandas as pd
 import os
-from base.df_tools import get_attr,concat_unique,sub_df,content_same,df_empty,set_attr,read_xlsx_dfs
+from base.df_tools import get_attr,concat_unique,sub_df,content_same,df_empty,set_attr,read_xlsx_dfs,is_df
 from base.except_tools import except_stack
 from base.file_tools import sequence_num_file_path
 
@@ -42,7 +42,10 @@ class xlsx_manager(metaclass=abc.ABCMeta):
         
     # 还可以覆盖
     def cache_df(self,xlsx_path:str,sheet_name:str,df:pd.DataFrame):
-        if not xlsx_path or not sheet_name or df_empty( df): return
+        xlsx_path=str(xlsx_path)
+        if not xlsx_path or not sheet_name or not is_df(df): 
+            return
+        # if not xlsx_path or not sheet_name or df_empty( df): return
         df=xlsx_manager.set_sheet_name(df,sheet_name) 
         df=xlsx_manager.set_xlsx_path(df,xlsx_path)  
         with self.lock:
@@ -90,6 +93,11 @@ class xlsx_manager(metaclass=abc.ABCMeta):
                     self.logger.error("失败","备份失败",backup_file_path)
             return success
 
+    @abc.abstractmethod
+    def before_save(self)->bool:
+        return True
+    
+    
     @exception_decorator(error_state=False)
     def save(self,):
         for xlsx_path,dfs in self._df_dict.items():
@@ -100,7 +108,7 @@ class xlsx_manager(metaclass=abc.ABCMeta):
     @staticmethod
     #设置df的sheet_name
     def set_xlsx_path(df:pd.DataFrame,name:Any)->pd.DataFrame:
-        return set_attr(df,xlsx_manager.xlsx_path_flag,name)
+        return set_attr(df,xlsx_manager.xlsx_path_flag,str(name))
 
     @staticmethod
     @exception_decorator(error_state=False)
@@ -131,8 +139,6 @@ class xlsx_manager(metaclass=abc.ABCMeta):
     @exception_decorator(error_state=False)
     def get_sheet_name(df:pd.DataFrame)->str:
         return get_attr(df,xlsx_manager.sheet_name_flag)
-    
-    
 
     
     

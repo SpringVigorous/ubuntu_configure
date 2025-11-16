@@ -151,6 +151,11 @@ class InteractImp():
         return name
     @exception_decorator(error_state=False)
     def url_title(self,url:str):
+        
+        if title:= AudioManager().author_from_catalog(url):
+            return title
+
+        
         with self._lock:
             if not self.wp.get(url):
                 return 
@@ -623,27 +628,6 @@ class InteractBoZhu(ThreadTask):
 
 
 
-    @exception_decorator(error_state=False)
-    def _handle_data(self, url:str):
-        self._msg_count+=1
-        with self.logger.raii_target(f"第{self._msg_count}个博主消息",f"{url}") as logger:
-            title=self._impl.url_title(url)
-            html_path=audio_root/f"{title}.html"
-            xlsx_path=html_path.with_suffix(".xlsx")
-            cur_dir=audio_root/title
-            
-            df,status=self.fetch_df(xlsx_path,url,html_path,cur_dir)
-            if df_empty(df):
-                return
-            self._success_count+=1
-            self._handle_df(df)
-
-    def _final_run_after(self):
-        # self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个")
-
-
-
 class InteractAlbum(ThreadTask):
     
     def __init__(self,input_queue,output_queue,stop_envent,out_stop_event) -> None:
@@ -662,62 +646,86 @@ class InteractAlbum(ThreadTask):
                                     # df_latter_func=self.manager.update_album_df,
                                     # handle_row_func=row_dict_to_msg
                                     )
-        
-        
+            
     @exception_decorator(error_state=False)
-    def _handle_data(self, url:str):
-        df=None
-        self._msg_count+=1
-        with self.logger.raii_target(f"第{self._msg_count}个博主消息",f"{url}") as logger:
-            title=self._impl.url_title(url)
+    def _cache_catalog(self,url,author,count=0):
+        #缓存当前博主信息
+        xlsx_path,sheet_name,catalog_df= self.manager.catalog_df
+        if df_empty (catalog_df):
+            catalog_result=[
+                    {
+                        href_id:url,
+                        author_id:author,
+                        downloaded_id:TaskStatus.UNDOWNLOADED.value,
+                        local_path_id:str(xlsx_path),
+                        album_count_id:count,
+                        downloaded_count_id:0
+                    }
+                ]
+            self.manager.cache_catalog_df(xlsx_path, sheet_name, pd.DataFrame(catalog_result))
+        
+        
+            
+    @exception_decorator(error_state=False)
+    def _handle_data(self, url: str):
+        df = None
+        self._msg_count += 1
+        with self.logger.raii_target(f"第{self._msg_count}个博主消息", f"{url}") as logger:
+            title = self._impl.url_title(url)
+            # 1. 使用提前返回处理边界情况
             if not title:
                 return
-            
-            
-            
-            html_path=audio_root/f"{title}_album.html"
-            xlsx_path=html_path.with_suffix(".xlsx")
-            cur_dir=audio_root/title
-            def df_latter(df:pd.DataFrame)->pd.DataFrame:
-                df[href_id]=df[href_id].apply(lambda x:fill_url(x,url))
-                if not downloaded_id in df.columns:
-                    df[downloaded_id]=TaskStatus.UNDOWNLOADED.value
-                    
-                def dest_path(title):
-                    name= get_album_name(title)
-                    return cur_dir/name/f"{name}_album.xlsx"
-                    
-                df[local_path_id]=df[title_id].apply(dest_path)
-                
-                return self.manager.update_album_df(df)
-            self._helper.set_df_latter_func(df_latter)
-            df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
-            
-            #临时添加值
-            # df=df_latter(df)
-            # df.to_excel(xlsx_path,sheet_name=audio_sheet_name,index=False)
-            
-            if not df_empty(df):
-                # self._xlsx_lsts.append((xlsx_path,audio_sheet_name))
-                self._success_count+=1
-                #缓存
-                self.manager.cache_albumn_df(xlsx_path,audio_sheet_name,df)
-            def row_to_msg(row:dict)->dict:
-                if row[downloaded_id]==TaskStatus.SUCCESS.value:
-                    return
-                msg=row.to_dict()
-                #当前博主所有的专辑，本地路径
-                msg[cur_xlsx_path_id]=xlsx_path
-                msg[cur_sheet_name_id]=audio_sheet_name
-                return msg
-            
-            self._helper.set_handle_row_func(row_to_msg)
-            
-            if df_empty(df):
-                return 
-            df=df[df[downloaded_id]<TaskStatus.SUCCESS.value]
-            self._helper.handle_df(df.reindex(index=df.index[::-1]),self.output_queue)
 
+
+            
+            
+            
+            html_path = audio_root / f"{title}_album.html"
+            xlsx_path = html_path.with_suffix(".xlsx")
+            cur_dir = audio_root / title
+
+            def df_latter(df: pd.DataFrame) -> pd.DataFrame:
+                df[href_id] = df[href_id].apply(lambda x: fill_url(x, url))
+                # 2. 使用更Pythonic的 `not in` 语法
+                if downloaded_id not in df.columns:
+                    df[downloaded_id] = TaskStatus.UNDOWNLOADED.value
+
+                def dest_path(title):
+                    name = get_album_name(title)
+                    return cur_dir / name / f"{name}_album.xlsx"
+
+                df[local_path_id] = df[title_id].apply(dest_path)
+                return self.manager.update_summary_df(df)
+
+            self._helper.set_df_latter_func(df_latter)
+            df, status = self._helper.fetch_df(xlsx_path, audio_sheet_name, url, html_path)
+
+            
+            # 3. 合并重复的条件判断：先统一处理DataFrame为空的情况并提前返回
+            if df_empty(df):
+                return
+
+            #缓存当前博主信息
+            self._cache_catalog(url,title,df.shape[0])
+            
+            # 主流程：当df不为空时才执行以下操作
+            self._success_count += 1
+            self.manager.cache_albumn_df(xlsx_path, audio_sheet_name, df)
+
+            def row_to_msg(row: dict) -> dict:
+                # 4. 优化条件表达式，直接返回None或消息字典
+                if row.get(downloaded_id) == TaskStatus.SUCCESS.value:
+                    return None
+                msg = row.to_dict()
+                msg[cur_xlsx_path_id] = xlsx_path
+                msg[cur_sheet_name_id] = audio_sheet_name
+                return msg
+
+            self._helper.set_handle_row_func(row_to_msg)
+
+            # 处理需要下载的数据
+            df = df[df[downloaded_id] < TaskStatus.SUCCESS.value]
+            self._helper.handle_df(df.reindex(index=df.index[::-1]), self.output_queue)
 
         
     def _final_run_after(self):

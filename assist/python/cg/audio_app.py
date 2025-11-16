@@ -119,12 +119,6 @@ class AudioApp():
         
     @exception_decorator(error_state=False)
     def save_xlsx(self):
-
-
-        #保存前，更新专辑信息
-        for xlsx_path,sheet_name,df in self.manager.album_dfs:
-            df=self.manager.update_album_df(df)
-            self.manager.cache_df(xlsx_path,sheet_name,df)
         self.manager.save()
 
 

@@ -1,49 +1,100 @@
 ﻿
-from base import xlsx_manager,singleton,df_empty,exception_decorator,TaskStatus,find_rows_by_col_val,global_logger
+from base import xlsx_manager,singleton,df_empty,exception_decorator,TaskStatus,find_rows_by_col_val,global_logger,audio_root,find_last_value_by_col_val,is_df
 from pathlib import Path
 import json
 import pandas as pd
 from audio_kenel import *
 import os
+from enum import IntFlag
+
+class DfType(IntFlag):
+    ALBUM=0
+    AUDIO=1
+    CATALOG=2
+    
+    @property
+    def is_album(self)->bool:
+        return self==DfType.ALBUM
+    
+    @property
+    def is_audio(self)->bool:
+        return self==DfType.AUDIO
+    
+    @property
+    def is_catalog(self)->bool:
+        return self==DfType.CATALOG
+
+
+
 @singleton
 class AudioManager(xlsx_manager):
     def __init__(self) -> None:
         super().__init__()
         self.logger.update_target(detail="音频文件管理")
         self._df_flags={}
+        self._init_catalog()
+
+    def _init_catalog(self):
+        if DfType.CATALOG not in self._df_flags.values():
+            xlsx_path,sheet_name=audio_root/"catalog.xlsx","catalog"
+            df=self.get_df(xlsx_path,sheet_name)
+            if not is_df(df): 
         
-    def _filter_dfs(self,is_audio=True)->list[tuple]:
+                df=pd.DataFrame(columns=[     
+                        href_id,
+                        author_id,
+                        downloaded_id,
+                        local_path_id,
+                        album_count_id,
+                        downloaded_count_id,
+                        ])
+                
+
+            self.cache_catalog_df(xlsx_path,sheet_name,df)
+
+    @exception_decorator(error_state=False,error_return=None)
+    def _filter_dfs(self,df_type:DfType)->list[tuple[str,str,pd.DataFrame]]:
         results=[]
         
         for (xlsx_path,sheet_name),audio_ in self._df_flags.items():
-            if is_audio !=audio_:
+            if df_type !=audio_:
                 continue
             df=self.get_df(xlsx_path,sheet_name)
-            if not df_empty(df): 
+            if  not df is None and isinstance(df,pd.DataFrame): 
                 results.append((xlsx_path,sheet_name,df))
         return results
     
     @property
-    def audio_dfs(self):
-        return self._filter_dfs(is_audio=True)
+    def audio_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
+        return self._filter_dfs(df_type=DfType.AUDIO)
     
     @property
-    def album_dfs(self):
-        return self._filter_dfs(is_audio=False)
+    def album_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
+        return self._filter_dfs(df_type=DfType.ALBUM)
     
+    @property
+    def catalog_df(self)->tuple[str,str,pd.DataFrame]:
+        if results:=self._filter_dfs(df_type=DfType.CATALOG):
+            return results[0]
+        return (None,None,None)
     
     def cache_audio_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
         AudioManager.init_df_status(df)
         df=AudioManager.update_df_status(df)
         self.cache_df(xlsx_path,sheet_name,df)
-        self._df_flags[(xlsx_path,sheet_name)]=True
+        self._df_flags[(xlsx_path,sheet_name)]=DfType.AUDIO
         
     def cache_albumn_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
         AudioManager.init_df_status(df)
-        df=self.update_album_df(df)
+        df=self.update_summary_df(df)
         self.cache_df(xlsx_path,sheet_name,df)
-        self._df_flags[(xlsx_path,sheet_name)]=False
+        self._df_flags[(xlsx_path,sheet_name)]=DfType.ALBUM
     
+    def cache_catalog_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
+        # AudioManager.init_df_status(df)
+
+        self.cache_df(xlsx_path,sheet_name,df)
+        self._df_flags[(xlsx_path,sheet_name)]=DfType.CATALOG
     #初始化
     @staticmethod
     def init_df_status(df):
@@ -91,11 +142,9 @@ class AudioManager(xlsx_manager):
         return df
     #更新专辑状态及已下载数
     @exception_decorator(error_state=False)
-    def update_album_df(self,df:pd.DataFrame)->pd.DataFrame:
+    def update_summary_df(self,df:pd.DataFrame)->pd.DataFrame:
         if not isinstance(df,pd.DataFrame):
             return 
-        
-        
         if local_path_id not in df.columns:
             return df
         for index,row in df.iterrows():
@@ -122,6 +171,7 @@ class AudioManager(xlsx_manager):
             df.loc[index,downloaded_id]=new_status.value
         
         return df
+
 
 
     #更新下载状态
@@ -188,4 +238,25 @@ class AudioManager(xlsx_manager):
                 logger.error("更新失败",e)
             
     
-            
+    
+    @exception_decorator(error_state=False)
+    def author_from_catalog(self,url)->str:
+        xlsx_path,sheet_name,catalog_df= self.catalog_df
+        if df_empty(catalog_df): 
+            return 
+        return find_last_value_by_col_val(catalog_df,href_id,url,author_id)
+    
+    @exception_decorator(error_state=False)
+    def before_save(self)->bool:
+        def _update_df_status(xlsx_path,sheet_name,df):
+            if df_empty(df): return
+            df=self.update_summary_df(df)
+            self.cache_df(xlsx_path,sheet_name,df)
+        
+        #保存前，更新专辑信息
+        if album_dfs:=self.album_dfs:
+            for xlsx_path,sheet_name,df in album_dfs:
+                _update_df_status(xlsx_path,sheet_name,df)
+        if catalog_result:=self.catalog_df:
+            xlsx_path,sheet_name,df=catalog_result
+            _update_df_status(xlsx_path,sheet_name,df)
