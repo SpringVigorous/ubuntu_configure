@@ -460,70 +460,82 @@ class InteractHelper():
         self.manager=AudioManager()
         
     #df,TaskStatus
-    @exception_decorator(error_state=False)
-    def fetch_df(self,xlsx_path,sheet_name,url,html_path)->tuple[pd.DataFrame,TaskStatus]:
-        df= self.manager.get_df(xlsx_path,sheet_name=sheet_name)
+    @exception_decorator(error_state=False,error_return=(None,Undownloaded().set_error))
+    def fetch_df(self, xlsx_path, sheet_name, url, html_path) -> tuple[pd.DataFrame, TaskStatus]:
+        # 尝试从缓存读取
+        df = self.manager.get_df(xlsx_path, sheet_name=sheet_name)
         if not df_empty(df):
-            self.logger.info("忽略交互",f"直接从{xlsx_path}读取,sheetname={sheet_name}")
-            return df,TaskStatus.SUCCESS
-        
+            self.logger.info("忽略交互", f"直接从{xlsx_path}读取,sheetname={sheet_name}")
+            return df, TaskStatus.SUCCESS
+
+        # 获取数据
         if self.interact_df_func:
-            if result:=self.interact_df_func(url):
-                lst,status=result
-                if not lst:
-                    return df,status
-                df=pd.DataFrame(lst)
-            else:
-                return df,Undownloaded().set_error
+            interact_result = self.interact_df_func(url)
+            if not interact_result :
+                return df, Undownloaded().set_error
+            lst, status = interact_result
+            if not lst:
+                return df, status
+            df = pd.DataFrame(lst)
         else:
-            result=self._fetch_url_content(url,html_path)
-            if not result:
-                return None,Undownloaded().set_fetch_error
-            content,status=result
+            # 非交互模式：下载并转换内容
+            fetch_result = self._fetch_url_content(url, html_path)
+            if not fetch_result :
+                return None, Undownloaded().set_fetch_error
+            content, status = fetch_result
             if not content:
-                return None,status
+                return None, status
             if not self.content_convert_func:
-                return None,Undownloaded().set_convert_error
-            
-            if result:=self.content_convert_func(content):
-                lst,status=result
-                if not lst:
-                    return None,status
-                df=pd.DataFrame(lst)
-            else:
-                return None,Undownloaded().set_convert_error
+                return None, Undownloaded().set_convert_error
+            convert_result = self.content_convert_func(content)
+            if not convert_result:
+                return None, Undownloaded().set_convert_error
+            lst, status = convert_result
+            if not lst:
+                return None, status
+            df = pd.DataFrame(lst)
+
+        # 验证数据
         if df_empty(df):
-            return None,Undownloaded().set_convert_error
+            return None, Undownloaded().set_convert_error
+
+        # 后处理
         try:
             if self.df_latter_func:
-                df=self.df_latter_func(df)
+                df = self.df_latter_func(df)
             if df_empty(df):
-                return None,Undownloaded().set_post_error
-            if xlsx_path:=backup_xlsx(xlsx_path,df,sheet_name=sheet_name):
-                self.logger.info("保存成功",f"{xlsx_path}")
-        except Exception as e:
-            self.logger.error("保存失败",f"{e}")
+                return None, Undownloaded().set_post_error
             
-        return df,TaskStatus.SUCCESS
-    def _fetch_url_content(self,url,html_path)->tuple[str,TaskStatus]:
-        if content:=read_from_txt_utf8(html_path):
-            self.logger.info("忽略交互",f"直接从{html_path}读取")
-            return content,Success()
+            if backup_xlsx(xlsx_path, df, sheet_name=sheet_name):
+                self.logger.info("保存成功", f"{xlsx_path}")
+        except Exception as e:
+            self.logger.error("保存失败", f"{e}")
+
+        return df, TaskStatus.SUCCESS
+    @exception_decorator(error_state=False,error_return=(None,Undownloaded().set_error))
+    def _fetch_url_content(self, url, html_path) -> tuple[str, TaskStatus]:
+        # 尝试从缓存读取
+        if content := read_from_txt_utf8(html_path):
+            self.logger.info("忽略交互", f"直接从{html_path}读取")
+            return content, Success()
         
+        # 检查交互函数
         if not self.interact_fun:
-            return None,Undownloaded().set_fetch_error
-        result=self.interact_fun(url)
+            return None, Undownloaded().set_fetch_error
+        
+        # 获取内容
+        result = self.interact_fun(url)
         if not result:
-            return None,Undownloaded().set_fetch_error
+            return None, Undownloaded().set_fetch_error
         
-        content,status=self.interact_fun(url)
+        content, status = result
         if not content:
-            return None,status
+            return None, status
         
-        if content:
-            write_to_txt_utf8(html_path,content)
-            self.logger.info("网页保存到本地",f"{html_path}")
-        return content,Success()
+        # 保存内容
+        write_to_txt_utf8(html_path, content)
+        self.logger.info("网页保存到本地", f"{html_path}")
+        return content, Success()
     @exception_decorator(error_state=False)
     def handle_df(self, df:pd.DataFrame,output_queue:Queue)->int:
         if not self.handle_row_func or df_empty(df):

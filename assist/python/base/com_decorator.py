@@ -23,7 +23,7 @@ def timer_decorator(func):
 
     
 # 定义一个装饰器
-def exception_decorator(error_callback:callable=None,error_state=True):
+def exception_decorator(error_callback:callable=None,error_state=True,error_return=None):
 
     def decorator(func):
         @wraps(func)
@@ -44,8 +44,7 @@ def exception_decorator(error_callback:callable=None,error_state=True):
                 #卸载代理
                     # agent.uninstall()
                 #异常时 返回空值
-                return ReturnState.EXCEPT if error_state else None
-
+                return ReturnState.EXCEPT if error_state else error_return
 
 
         return wrapper

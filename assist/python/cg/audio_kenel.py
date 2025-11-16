@@ -18,7 +18,10 @@ from base import (
     xml_files,  # 去重重复的 xml_files 导入
     xml_tools,
     df_empty,
-    TaskStatus
+    TaskStatus,
+    Success,
+    Undownloaded,
+    Incompleted
 )
 
 
@@ -277,8 +280,8 @@ def _get_album_impl(root)->dict:
     return {href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value}
 
 
-@exception_decorator(error_state=False)
-def album_lst_from_content(html_content)->list[dict]:
+@exception_decorator(error_state=False,error_return=[None,Undownloaded().set_convert_error])
+def album_lst_from_content(html_content)->tuple[list[dict],TaskStatus]:
     # 2. 解析HTML
     tree = etree.HTML(html_content)
     roots = tree.xpath('//div[@class="anchor-user-album-box dL_"]')
@@ -286,7 +289,7 @@ def album_lst_from_content(html_content)->list[dict]:
     for root in roots:
         if (result:=_get_album_impl(root)):
             results.append(result)
-    return  results
+    return  results,Success()
 if __name__ == '__main__':
 
     html_path=audio_root/r"宝宝巴士_album.html"
