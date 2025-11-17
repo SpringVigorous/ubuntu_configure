@@ -10,6 +10,10 @@ import os
 import uuid
 import math
 from base.math_tools import float_to_int_if_approx
+import getpass
+def current_user():
+    return getpass.getuser()
+
 
 #根据原始的大小写情况，替换成目标的大小写
 def replace_pattern(match, replacement):

@@ -3,7 +3,7 @@ import json
 import shutil
 from pathlib import Path
 from datetime import datetime
-from base import logger_helper,audio_root,singleton,write_to_json_utf8_sig,read_from_json_utf8_sig,UpdateTimeType,exception_decorator
+from base import logger_helper,audio_root,singleton,write_to_json_utf8_sig,read_from_json_utf8_sig,UpdateTimeType,exception_decorator,current_user
 
 @singleton
 class FileSyncUtil:
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
     
     local_dir=audio_root
-    local_json_path=local_dir/ "file_list.json"
+    local_json_path=local_dir/ f"{current_user()}_file_list.json"
     scan_export_file(local_dir,local_json_path)
     
     outer_json_path=local_dir/ "file_list_1.json"
