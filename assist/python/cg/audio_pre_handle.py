@@ -29,10 +29,9 @@ def handle_catalog(xlsx_file,sheet_name):
     return True
 @exception_decorator(error_state=False)
 def handle_author(xlsx_file,sheet_name):
-    df=None
-    try:
-        df=get_df(xlsx_file,sheet_name=sheet_name)
-    except:
+    df=get_df(xlsx_file,sheet_name=sheet_name)
+
+    if df_empty(df): 
         df=get_df(xlsx_file,sheet_name="audio")
     if df_empty(df): 
         return

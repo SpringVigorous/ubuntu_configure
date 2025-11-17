@@ -139,8 +139,8 @@ def preview_directory_structure(directory):
 # 使用示例
 if __name__ == "__main__":
     # 设置源目录和目标目录
-    source_directory = "/path/to/source/folder/A"  # 请替换为实际的源目录路径
-    destination_directory = "/path/to/destination/folder/B"  # 请替换为实际的目标目录路径
+    source_directory = r"E:\旭尧\clone"  # 请替换为实际的源目录路径
+    destination_directory = r"E:\旭尧\有声读物"  # 请替换为实际的目标目录路径
     
     print("=== 目录结构预览 ===")
     print("源目录结构:")
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     print("="*50)
     
     # 先进行模拟运行（不实际执行）
-    print("=== 模拟运行 ===")
+    '''    print("=== 模拟运行 ===")
     simulated_operations = copy_directory_with_excel_merge(
         source_directory, 
         destination_directory, 
@@ -163,10 +163,10 @@ if __name__ == "__main__":
     )
     
     for op in simulated_operations:
-        print(op)
+        print(op)'''
     
     # 用户确认后执行实际操作（取消注释以下代码）
-    '''
+    
     print("\n" + "="*50)
     print("开始实际文件操作")
     print("="*50)
@@ -181,4 +181,4 @@ if __name__ == "__main__":
         print(op)
     
     print("\n操作完成！")
-    '''
+    

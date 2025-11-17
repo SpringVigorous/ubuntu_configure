@@ -410,6 +410,7 @@ def update_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[
 
 
 #获取所有的dfs
+@exception_decorator(error_state=False)
 def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
     results={}
     with pd.ExcelFile(xlsx_path) as reader:
@@ -421,5 +422,6 @@ def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
     return results
 
 
+@exception_decorator(error_state=False)
 def get_df(xlsx_path:str,sheet_name:str)->pd.DataFrame:
     return read_xlsx_dfs(xlsx_path).get(sheet_name,None)
