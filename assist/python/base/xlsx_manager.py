@@ -35,7 +35,8 @@ class xlsx_manager(metaclass=abc.ABCMeta):
             
             for name,df in temp_dict.items():
                 self.cache_df(xlsx_path,name,df)
-                
+                logger.trace("完成",f'sheet_name:{"|".join(temp_dict.keys())}' ,update_time_type=UpdateTimeType.STAGE)
+            
                 
             if xlsx_path in self._df_dict:
                 return self._df_dict[xlsx_path]

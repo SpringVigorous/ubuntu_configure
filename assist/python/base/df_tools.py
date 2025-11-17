@@ -419,3 +419,7 @@ def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
                 continue
             results[name]=df   
     return results
+
+
+def get_df(xlsx_path:str,sheet_name:str)->pd.DataFrame:
+    return read_xlsx_dfs(xlsx_path).get(sheet_name,None)

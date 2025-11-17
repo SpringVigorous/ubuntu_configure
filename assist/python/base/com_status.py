@@ -121,9 +121,12 @@ class TaskStatus(IntFlag):
         return bool(self.value & TaskStatus.POST_ERROR)
     
     @property
-    def has_reaseon(self)->bool:
+    def has_reason(self)->bool:
         return self.value & TaskStatus.ReasonMask() > 0
 
+    @property
+    def can_download(self)->bool:
+        return not (self.is_success or self.has_reason)
     @property
     def is_temp_canceled(self)->bool:
         return self.value & TaskStatus.TEMP_CANCELED > 0
@@ -182,13 +185,13 @@ class TaskStatus(IntFlag):
     def set_post_error(self) -> 'TaskStatus':
         """设置后续处理失败状态（仅非SUCCESS状态有效）"""
         if not self.is_success:
-            return TaskStatus(self.value | TaskStatus.POST_ERROR)
+            return TaskStatus(self.value | TaskStatus.POST_ERROR) if not self.is_success else self
         return self
     
     
     @property
     def set_temp_canceled(self)->'TaskStatus':
-        return TaskStatus(self.value | TaskStatus.TEMP_CANCELED)
+        return TaskStatus(self.value | TaskStatus.TEMP_CANCELED) if not self.is_success else self
     
     @property
     def clear_error(self) -> 'TaskStatus':
@@ -306,6 +309,10 @@ def Success()->TaskStatus:
 
 def Incompleted()->TaskStatus:
     return TaskStatus.INCOMPLETED
+
+
+def TempCanceled()->TaskStatus:
+    return Undownloaded() | TaskStatus.TEMP_CANCELED 
     
 if __name__=="__main__":   
     

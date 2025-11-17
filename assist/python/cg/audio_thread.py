@@ -30,8 +30,10 @@ from base import (
     write_to_txt_utf8,
     singleton,
     postfix,
-    TaskStatus,Success,Undownloaded,Incompleted,
-    audio_root
+    TaskStatus,Success,Undownloaded,Incompleted,TempCanceled,
+    audio_root,
+    sanitize_filename,
+
 )
 
 
@@ -65,9 +67,10 @@ def dest_path(dest_dir:Path,album:str,name:str)->str:
 @exception_decorator(error_state=False)
 def row_dict_to_msg(row:dict)->dict:
     url,dest_file=row[href_id],row[local_path_id]
-    downloaded=row[downloaded_id] == TaskStatus.SUCCESS.value
-    if downloaded or os.path.exists(dest_file):
+    cur_statas:TaskStatus=TaskStatus.from_value(row[downloaded_id])
+    if not cur_statas.can_download or os.path.exists(dest_file):
         return
+
     if not is_http_or_https(url):
         url=f"https://www.ximalaya.com{url}"
     
@@ -137,7 +140,7 @@ class InteractImp():
     @property
     def web_error(self)->tuple[bool,TaskStatus]:
         status:TaskStatus=web_status(self.wp.html)
-        return (status.has_reaseon,status)
+        return (status.has_reason,status)
     
     @property
     def title(self)->str:
@@ -148,11 +151,11 @@ class InteractImp():
         if match:=pattern.match(name):
             name= match.group(1)
         
-        return name
+        return sanitize_filename(name)
     @exception_decorator(error_state=False)
     def url_title(self,url:str):
         
-        if title:= AudioManager().author_from_catalog(url):
+        if title:= AudioManager().author_name_from_catalog(url):
             return title
 
         
@@ -165,7 +168,12 @@ class InteractImp():
             #等待标题改变
             self.wp.wait.title_change("个人主页",exclude=False,timeout=10)
             return self.title
-        
+    @exception_decorator(error_state=False)
+    def author_info(self,url:str):
+        if info:= AudioManager().author_info(url):
+            return info
+
+
     @exception_decorator(error_state=False)
     def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus,str]:
         body=None
@@ -226,64 +234,7 @@ class InteractImp():
             logger.info("成功",audio_path,update_time_type=UpdateTimeType.STAGE)
             return suffix,TaskStatus.SUCCESS,media_url
 
-    @exception_decorator(error_state=False)
-    def _handle_bozhu_url(self, url)->tuple[str,TaskStatus]: #html
-        
-        content=None
-        self._msg_count+=1
-        with self._lock:
-            with self._logger.raii_target(f"收到博主声音消息",f"{url}") as logger:
-                
-                if not self.wp.get(url):
-                    logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return content,Undownloaded().set_error
 
-                # logger.update_time(UpdateTimeType.STAGE)
-                logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
-                #<i class="xuicon xuicon-sound-n v-m"></i>
-                sound_btn=self.wp.ele((By.XPATH,title_sound_xpath),timeout=3)
-                if sound_btn:
-                    sound_btn.click()
-                    time.sleep(.5)
-                
-                
-
-                scoll_time=0
-                
-                try:
-                    while True:
-                        
-                        #缓存结果，避免失败后，导致数据丢失（至少还能返回上次结果）
-                        content=self.wp.html
-                        error,status=self.web_error
-                        if error:
-                            logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                            return content,status
-                        #<span style="cursor: pointer;">加载更多</span>
-                        more_button=self.wp.ele((By.XPATH,load_more_xpath),timeout=5)
-                        if not (more_button and more_button.text):
-                            break
-                        scoll_time+=1
-                        
-                        # 滚动到可见区域并点击
-                        # self.wp.scroll.to_see(more_flag.parent)
-                        self.wp.scroll.to_bottom()
-                        logger.trace("滚动成功",f"第{scoll_time}次",update_time_type=UpdateTimeType.STEP)
-                        more_button.click()
-                        time.sleep(.5)
-
-
-                except Exception as e:
-                    logger.error("失败",f"滚动失败{e}",update_time_type=UpdateTimeType.STAGE)
-                    
-                    
-                try:
-                    content=self.wp.html
-                except Exception as e:
-                    logger.error("失败",f"获取html失败{e}",update_time_type=UpdateTimeType.STAGE)
-
-                
-        return content,Success()
     @exception_decorator(error_state=False)
     def _handle_album_url(self, url)->tuple[str,TaskStatus]: #html
         
@@ -416,6 +367,15 @@ class InteractAudio(ThreadTask):
     def buy_param_lst(self):
         return self._impl._buy_lst
     
+    """
+    data:dict={
+        url_id:str,
+        dest_path_id:str,
+        xlsx_path_id:str,
+        sheet_name_id:str
+    }
+
+    """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
         url=data.get(url_id)
@@ -511,6 +471,9 @@ class InteractHelper():
             if df_empty(df):
                 return None, Undownloaded().set_post_error
             
+            
+
+
             if backup_xlsx(xlsx_path, df, sheet_name=sheet_name):
                 self.logger.info("保存成功", f"{xlsx_path}")
         except Exception as e:
@@ -547,7 +510,8 @@ class InteractHelper():
             return
         audio_index=0
         for _,row in df.iterrows():
-
+            if row.empty:
+                continue
             msg=self.handle_row_func(row)
             if (msg):
                 output_queue.put(msg)    
@@ -576,59 +540,10 @@ class InteractHelper():
 
 
 
+
+
+
 class InteractBoZhu(ThreadTask):
-    
-    def __init__(self,input_queue,output_queue,stop_envent,out_stop_event) -> None:
-        super().__init__(input_queue,output_queue=output_queue,stop_event=stop_envent,out_stop_event=out_stop_event)
-        self._impl:InteractImp=InteractImp()
-
-        self.set_thread_name(self.__class__.__name__)
-        self._success_count=0
-        self._msg_count=0
-        self._logger.update_target(self.__class__.__name__,"交互获取博主所有音频地址")
-        self._xlsx_lsts=[]
-        self._helper=InteractHelper(self.logger,
-                                    interact_content_fun=self._impl._handle_bozhu_url,
-                                    content_convert_func=sound_lst_from_author_content,
-                                    # df_latter_func=update_df,
-                                    handle_row_func=row_dict_to_msg
-                                    )
-        
-
-        
-        
-
-    @exception_decorator(error_state=False)
-    def _handle_data(self, url:str):
-        self._msg_count+=1
-        with self.logger.raii_target(f"第{self._msg_count}个博主消息",f"{url}") as logger:
-            title=self._impl.url_title(url)
-            html_path=audio_root/f"{title}.html"
-            xlsx_path=html_path.with_suffix(".xml")
-
-            #博主所有的音频
-            cur_dir=audio_root/title
-            #赋值
-            
-            def df_latter(df:pd.DataFrame)->pd.DataFrame:
-                return AudioManager.update_df_status(author_sound_df_latter(df))
-            self._helper.set_df_latter_func(df_latter)
-            
-            df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
-            if not df_empty(df):
-                self._success_count+=1
-                self._xlsx_lsts.append(xlsx_path,audio_sheet_name)
-
-            self._helper.handle_df(df,self.output_queue)
-
-    def _final_run_after(self):
-        # self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个")
-
-
-
-
-class InteractAlbum(ThreadTask):
     
     def __init__(self,input_queue,output_queue,stop_envent,out_stop_event) -> None:
         super().__init__(input_queue,output_queue=output_queue,stop_event=stop_envent,out_stop_event=out_stop_event)
@@ -648,84 +563,116 @@ class InteractAlbum(ThreadTask):
                                     )
             
     @exception_decorator(error_state=False)
-    def _cache_catalog(self,url,author,count=0):
+    def _cache_catalog(self,url,author,local_path:str,count=0)->dict:
         #缓存当前博主信息
         xlsx_path,sheet_name,catalog_df= self.manager.catalog_df
-        if df_empty (catalog_df):
-            catalog_result=[
-                    {
-                        href_id:url,
-                        author_id:author,
-                        downloaded_id:TaskStatus.UNDOWNLOADED.value,
-                        local_path_id:str(xlsx_path),
-                        album_count_id:count,
-                        downloaded_count_id:0
-                    }
-                ]
+        
+        
+        status=  TempCanceled()  if self.manager.ignore_album else TaskStatus.UNDOWNLOADED
+        catalog_result=[
+                {
+                    href_id:url,
+                    author_id:author,
+                    downloaded_id: status. value,
+                    local_path_id:local_path,
+                    album_count_id:count,
+                    downloaded_count_id:0
+                }
+            ]
+        
+        cur_df=pd.DataFrame(catalog_result)
+        
+        if df_empty(catalog_df):
             self.manager.cache_catalog_df(xlsx_path, sheet_name, pd.DataFrame(catalog_result))
-        
-        
+        else:
+            
+            result_df,cut_df= self.manager.update_df(catalog_df,cur_df,keys=[href_id])
+            if not df_empty(result_df): 
+                self.manager.cache_catalog_df(xlsx_path, sheet_name, result_df)
+
+        return self._impl.author_info(url)
             
     @exception_decorator(error_state=False)
     def _handle_data(self, url: str):
         df = None
         self._msg_count += 1
         with self.logger.raii_target(f"第{self._msg_count}个博主消息", f"{url}") as logger:
-            title = self._impl.url_title(url)
+            info= self._impl.author_info(url)
+            info_valid=bool(info)
+            if not info_valid:
+                author_name = self._impl.url_title(url)
+            else:
+                author_name = info.get(author_id)
+            
+            
             # 1. 使用提前返回处理边界情况
-            if not title:
+            if not author_name:
                 return
-
-
             
-            
-            
-            html_path = audio_root / f"{title}_album.html"
-            xlsx_path = html_path.with_suffix(".xlsx")
-            cur_dir = audio_root / title
+            xlsx_path,sheet_name = AudioManager.author_xlsx_info(author_name)
+            #缓冲作者信息
+            if not info_valid:
+                self._cache_catalog(url, author_name,xlsx_path,0)
 
+            html_path = AudioManager.author_html_path(author_name)
             def df_latter(df: pd.DataFrame) -> pd.DataFrame:
                 df[href_id] = df[href_id].apply(lambda x: fill_url(x, url))
                 # 2. 使用更Pythonic的 `not in` 语法
                 if downloaded_id not in df.columns:
                     df[downloaded_id] = TaskStatus.UNDOWNLOADED.value
 
+                df[album_id]=df[title_id].apply(get_album_name)
                 def dest_path(title):
-                    name = get_album_name(title)
-                    return cur_dir / name / f"{name}_album.xlsx"
+                    cur_path,_=AudioManager.album_xlsx_info(author_name,title)
+                    
+                    return cur_path
 
-                df[local_path_id] = df[title_id].apply(dest_path)
+                df[local_path_id] =df.apply(lambda row: dest_path(row[album_id]),axis=1)
                 return self.manager.update_summary_df(df)
 
             self._helper.set_df_latter_func(df_latter)
-            df, status = self._helper.fetch_df(xlsx_path, audio_sheet_name, url, html_path)
+            df, status = self._helper.fetch_df(xlsx_path, sheet_name, url, html_path)
 
             
             # 3. 合并重复的条件判断：先统一处理DataFrame为空的情况并提前返回
             if df_empty(df):
                 return
 
-            #缓存当前博主信息
-            self._cache_catalog(url,title,df.shape[0])
-            
+            #更新博主专辑数
+            self.manager.update_author_album_count(url,df.shape[0])
+
             # 主流程：当df不为空时才执行以下操作
             self._success_count += 1
-            self.manager.cache_albumn_df(xlsx_path, audio_sheet_name, df)
+            self.manager.cache_albumn_df(xlsx_path, sheet_name, df)
 
             def row_to_msg(row: dict) -> dict:
-                # 4. 优化条件表达式，直接返回None或消息字典
-                if row.get(downloaded_id) == TaskStatus.SUCCESS.value:
+                # 筛选消息
+                status:TaskStatus=TaskStatus.from_value(row[downloaded_id])
+                
+                # if not status.can_download :
+                #     return None
+                if status.is_success:
                     return None
+                
+                
                 msg = row.to_dict()
-                msg[cur_xlsx_path_id] = xlsx_path
-                msg[cur_sheet_name_id] = audio_sheet_name
+                msg[parent_xlsx_path_id] = xlsx_path
+                msg[parent_sheet_name_id] = sheet_name
+                
+                #附加信息
+                msg[author_id]=author_name
+                
+                # 专辑名
+                msg[album_id]=get_album_name(row[title_id])
+                
                 return msg
 
             self._helper.set_handle_row_func(row_to_msg)
 
             # 处理需要下载的数据
             df = df[df[downloaded_id] < TaskStatus.SUCCESS.value]
-            self._helper.handle_df(df.reindex(index=df.index[::-1]), self.output_queue)
+            # df=df.reindex(index=df.index[::-1])
+            self._helper.handle_df(df, self.output_queue)
 
         
     def _final_run_after(self):
@@ -734,7 +681,7 @@ class InteractAlbum(ThreadTask):
         
         
         
-class InteractSoundFromAlbum(ThreadTask):
+class InteractAlbum(ThreadTask):
     def __init__(self,input_queue,output_queue,stop_envent,out_stop_event) -> None:
         super().__init__(input_queue,output_queue=output_queue,stop_event=stop_envent,out_stop_event=out_stop_event)
         self._impl:InteractImp=InteractImp()
@@ -751,18 +698,29 @@ class InteractSoundFromAlbum(ThreadTask):
                                     handle_row_func=row_dict_to_msg
                                     )
         self._output_count:int=0
+        
+        """
+        data:dict={           
+            href_id:"",
+            album_id:"",
+            local_path_id:"",
+            parent_xlsx_path_id:"",
+            parent_sheet_name_id:"",
+        }
+        
+        """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
         url=data.get(href_id)
-        album= get_album_name( data.get(title_id))
+        album_name= data.get(album_id) or get_album_name( data.get(title_id))
         xlsx_path=data.get(local_path_id)
-        
 
-        
-        
         if not url or not xlsx_path:
             return
-        cur_dir=Path(xlsx_path).parent
+        
+        xlsx_path=Path(xlsx_path)
+        author_name=data.get(author_id)
+
         html_path=""
         df=None
         self._msg_count+=1
@@ -773,7 +731,7 @@ class InteractSoundFromAlbum(ThreadTask):
                 df.drop_duplicates(subset=[title_id,num_id],inplace=True)
                 df[href_id]=df[href_id].apply(lambda x:fill_url(x,url))
                 total=len(df)
-
+                df[title_id]=df[title_id].apply(lambda x: sanitize_filename(x))
                 df[name_id]=df.apply(
                     lambda row:dest_title_name(
                         row[num_id],
@@ -782,17 +740,24 @@ class InteractSoundFromAlbum(ThreadTask):
                         ),
                     axis=1
                     )
-                df[local_path_id]=df[name_id].apply(lambda x:str(cur_dir/f"{x}.m4a"))
-                df[album_name_id]=album
-                return AudioManager.update_df_status(df)
+                df[local_path_id]=df[name_id].apply(lambda x:str(AudioManager.file_path(file_name=f"{x}.m4a",author_name=author_name,album_name=album_name) ))
+                df[album_name_id]=album_name
+                
+                # 强制忽略(只针对新增的)
+                if self.manager.force_ignore_sound:
+                    df[downloaded_id]=(TaskStatus.UNDOWNLOADED | TaskStatus.TEMP_CANCELED) .value
+                    self.logger.info("强制忽略","忽略新增的音频消息")
+                    
+                return df
+
             self._helper.set_df_latter_func(df_latter)
             df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
 
             #更新状态
-            if status.has_reaseon:
-                pre_xlsx_path=data.get(cur_xlsx_path_id)
-                pre_sheet_name=data.get(cur_sheet_name_id)
-                self.manager.update_status(pre_xlsx_path,pre_sheet_name,url,status)
+            if status.has_reason:
+                parent_xlsx_path=data.get(parent_xlsx_path_id)
+                parent_sheet_name=data.get(parent_sheet_name_id)
+                self.manager.update_status(parent_xlsx_path,parent_sheet_name,url,status)
             
             
             
@@ -806,10 +771,13 @@ class InteractSoundFromAlbum(ThreadTask):
             else:
                 pass
             
+            # if self.manager.force_ignore_sound:
+            #     self.logger.info("强制忽略","忽略所有音频消息")
+            #     return
 
             self._helper.set_handle_row_func(lambda x: row_path_to_msg(x,xlsx_path,audio_sheet_name))
-            
-            if result:=self._helper.handle_df(df,self.output_queue):
+            filter_df=self.manager.filter_can_download_df(df)
+            if result:=self._helper.handle_df(filter_df,self.output_queue):
             
                 self._output_count+=result
             

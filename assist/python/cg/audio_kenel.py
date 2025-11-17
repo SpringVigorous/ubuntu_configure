@@ -21,7 +21,8 @@ from base import (
     TaskStatus,
     Success,
     Undownloaded,
-    Incompleted
+    Incompleted,
+    sanitize_filename,
 )
 
 
@@ -41,8 +42,8 @@ local_path_id="local_path"
 episode_count_id="集数"
 downloaded_count_id="已下载数"
 media_url_id="media_url"
-cur_xlsx_path_id="cur_xlsx_path"
-cur_sheet_name_id="cur_sheet_name"
+parent_xlsx_path_id="parent_xlsx_path"
+parent_sheet_name_id="parent_sheet_name"
 
 author_id="author"
 album_count_id="专辑数"
@@ -146,7 +147,10 @@ def get_album_name(album_name:str):
     pattern = r'[|｜]'
     
     lst=re.split(pattern, album_name)
-    return lst[0].strip() if len(lst)>0 else album_name
+    result= lst[0].strip() if len(lst)>0 else album_name
+    
+    
+    return sanitize_filename(result)
 
 @exception_decorator(error_state=False)
 def _get_audio_imp(root):
