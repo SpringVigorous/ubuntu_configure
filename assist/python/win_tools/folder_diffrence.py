@@ -219,6 +219,8 @@ def main(local_json_path,src_dir,dest_dir):
     write_to_json_utf8_sig(path2,dest)
     
     
+    
+    
 
 
         
@@ -230,11 +232,9 @@ if __name__ == "__main__":
     local_json_path=local_dir/ f"{current_user()}_file_list.json"
     scan_export_file(local_dir,local_json_path)
     
-    outer_json_path=local_dir/ "file_list_1.json"
-    
-    local_lst=read_from_json_utf8_sig(local_dir/"file_list_1.json")
     
     # 获取目录结构差异
+    outer_json_path=local_dir/ "book_file_list.json"
     dest_dir=local_dir.parent/"clone"
-    diff_backup(local_json_path,outer_json_path,local_dir,dest_dir)
+    diff_backup(outer_json_path,local_json_path,local_dir,dest_dir)
     
