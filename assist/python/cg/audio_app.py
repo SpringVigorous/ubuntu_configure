@@ -72,12 +72,24 @@ class AudioApp():
     @exception_decorator(error_state=False)
     def continue_audio(self):
         
-        for xlsx_path,name,df in self.manager.audio_dfs:
-            if df_empty(df) :
+        xlsx_path,name,catalog_df=self.manager.catalog_df
+        if df_empty(catalog_df) :
+            return
+        
+        for _,row in catalog_df.iterrows():
+            author_path= row[local_path_id]
+            author_df=self.manager.get_df(author_path,album_id)
+            if df_empty(author_df) :
                 continue
-            self.continue_audio(xlsx_path,name)
             
-            pass
+            for _,row in author_df.iterrows():
+                album_path= row[local_path_id]
+                # album_df=self.manager.get_df(album_path,audio_sheet_name)
+                # if df_empty(album_df) :
+                #     continue
+
+                self.continue_audio(album_path,audio_sheet_name)
+
 
 
     def run(self):
