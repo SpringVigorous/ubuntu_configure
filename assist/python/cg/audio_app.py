@@ -57,17 +57,26 @@ class AudioApp():
                 self.audio_url_queue.put(url)
                 logger.trace("成功","加入下载队")
     @exception_decorator(error_state=False)
-    def continue_audio(self,xlsx_path,sheet_name):
+    def continue_audio_impl(self,xlsx_path,sheet_name):
         
         df=self.manager.get_df(xlsx_path,sheet_name)
+        if df_empty(df):
+            return
+        
+        
         self.manager.cache_audio_df(xlsx_path,sheet_name,df)
-        cur_df=df[df[downloaded_id]!=TaskStatus.SUCCESS]
+        cur_df=df[df[downloaded_id]!=TaskStatus.SUCCESS.value]
         if df_empty(cur_df):
             return
         
         msg_lst=[]
-        for _,row in cur_df.iterrows():
-            msg_lst.append(row_path_to_msg(row,xlsx_path,sheet_name))
+        for index,row in cur_df.iterrows():
+            status=TaskStatus.from_value( row[downloaded_id])
+            if status.is_temp_canceled:
+               cur_df.loc[index,downloaded_id] =status.clear_temp_canceled.value
+            if msg:=row_path_to_msg(row,xlsx_path,sheet_name):
+                msg_lst.append(msg)
+        return msg_lst
 
     @exception_decorator(error_state=False)
     def continue_audio(self):
@@ -75,21 +84,37 @@ class AudioApp():
         xlsx_path,name,catalog_df=self.manager.catalog_df
         if df_empty(catalog_df) :
             return
-        
+        msg_lst=[]
         for _,row in catalog_df.iterrows():
             author_path= row[local_path_id]
             author_df=self.manager.get_df(author_path,album_id)
             if df_empty(author_df) :
                 continue
-            
-            for _,row in author_df.iterrows():
+            self.manager.cache_audio_df(author_path,album_id,author_df)
+            for index,row in author_df.iterrows():
                 album_path= row[local_path_id]
+                
+                #修正路径问题（遗留+）
+                cur_path=Path(album_path)
+                if cur_path.stem.replace("_album","")==cur_path.parent.stem:
+                    album_path=str(cur_path.parent.parent /cur_path.name)
+                    author_df.loc[index,local_path_id]=album_path
+                
+                
+                
                 # album_df=self.manager.get_df(album_path,audio_sheet_name)
                 # if df_empty(album_df) :
                 #     continue
 
-                self.continue_audio(album_path,audio_sheet_name)
+                if lst:=self.continue_audio_impl(album_path,audio_sheet_name):
+                    msg_lst.extend(lst)
 
+        if not msg_lst:
+            return 
+        for index,msg in enumerate(msg_lst):
+            with self.logger.raii_target(f"添加音频消息",f"第{index+1}个{msg}") as logger:
+                self.audio_url_queue.put(msg)
+                logger.trace("发送消息")
 
 
     def run(self):
@@ -114,12 +139,12 @@ class AudioApp():
     def save_xlsx(self):
         self.manager.save()
 
-    def force_init_ignore_sound(self):
-        self.manager.set_ignore_sound(True)
+    def force_init_ignore_sound(self,ignore=True):
+        self.manager.set_ignore_sound(ignore)
         
         
-    def force_init_ignore_album(self):
-        self.manager.set_ignore_album(True)    
+    def force_init_ignore_album(self,ignore=True):
+        self.manager.set_ignore_album(ignore)    
 def main():
     
     
@@ -141,7 +166,7 @@ def main():
     # app.force_init_ignore_album()
     
     #筛选sound
-    app.force_init_ignore_sound()
+    app.force_init_ignore_sound(False)
     app.continue_audio()
     app.run()
     

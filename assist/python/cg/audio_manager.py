@@ -237,6 +237,11 @@ class AudioManager(xlsx_manager):
     #根据是否存在，更新状态
     @staticmethod
     def update_df_status(df):
+        if df_empty(df):
+            return
+        
+        
+        
         mask = df[downloaded_id] !=TaskStatus.SUCCESS.value
         if not mask.any():
             return df
