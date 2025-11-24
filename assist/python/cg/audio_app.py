@@ -69,7 +69,16 @@ class AudioApp():
         for _,row in cur_df.iterrows():
             msg_lst.append(row_path_to_msg(row,xlsx_path,sheet_name))
 
+    @exception_decorator(error_state=False)
+    def continue_audio(self):
+        
+        for xlsx_path,name,df in self.manager.audio_dfs:
+            if df_empty(df) :
+                continue
+            self.continue_audio(xlsx_path,name)
             
+            pass
+
 
     def run(self):
         self.bz_stop_envent.set()
@@ -113,7 +122,7 @@ def main():
         "https://www.ximalaya.com/zhubo/163605621",
 
              ]
-    app.add_bz_url(bz_urls)
+    # app.add_bz_url(bz_urls)
     # app.add_bz_url(bz_urls)
     # app.add_audio_url(msgs_from_xlsx(xlsx_path,sheet_name))
     #筛选album
@@ -121,7 +130,7 @@ def main():
     
     #筛选sound
     app.force_init_ignore_sound()
-
+    app.continue_audio()
     app.run()
     
     

@@ -165,6 +165,35 @@ class FileSyncUtil:
             
         except Exception as e:
             self.logger.error("失败",f"{e}")
+            
+            
+    @exception_decorator(error_state=False)
+    def merge_folders(self, src_dir, dest_dir):
+        
+        
+        def file_lst(list_dir:str):
+            list_dict=self.scan(folder=list_dir)
+            if not list_dict: return []
+            return [file_dict["relative_path"] for file_dict in list_dict]
+        
+        lst1=file_lst(src_dir)
+        lst2=file_lst(dest_dir)
+        
+        
+        for file in lst1:
+            src_file=Path(src_dir)/file
+            if src_file.suffix==".xlsx":
+                continue
+            
+            
+            
+        
+        
+        
+        
+        
+        
+        pass
 
 @exception_decorator(error_state=False)
 def scan_export_file(root_dir,json_file_path)->list[dict]:
