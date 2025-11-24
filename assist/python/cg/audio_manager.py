@@ -65,7 +65,7 @@ class AudioManager(xlsx_manager):
             return df
         
         for index,row in df.iterrows():
-            df.iloc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).clear_temp_canceled.value
+            df.loc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).clear_temp_canceled.value
 
         #条件筛选
         return df
@@ -74,7 +74,7 @@ class AudioManager(xlsx_manager):
             return df
         
         for index,row in df.iterrows():
-            df.iloc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).set_temp_canceled.value
+            df.loc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).set_temp_canceled.value
 
         #条件筛选
         return df
@@ -168,7 +168,7 @@ class AudioManager(xlsx_manager):
     def _filter_dfs(self,df_type:SheetType)->list[tuple[str,str,pd.DataFrame]]:
         results=[]
         
-        for (xlsx_path,sheet_name),audio_ in self._df_flags.items():
+        for (xlsx_path,sheet_name),audio_ in list(self._df_flags.items()):
             if df_type !=audio_:
                 continue
             df=self.get_df(xlsx_path,sheet_name)
@@ -305,8 +305,8 @@ class AudioManager(xlsx_manager):
                 if df_empty(result_df): 
                     logger.debug("忽略更新","查找的href不存在")
                     return
-                for index,row in result_df:
-                    df.iloc[index,downloaded_id]=status.value
+                for index,row in result_df.iterrows():
+                    df.loc[index,downloaded_id]=status.value
                     logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)
@@ -323,7 +323,7 @@ class AudioManager(xlsx_manager):
                 return
             try:
             
-                for index,row in find_rows_by_col_val(df,href_id,href_val).items():
+                for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
                     df.loc[index,local_path_id]=str(Path(row[local_path_id]).with_suffix(suffix))
                 logger.trace("成功")
             except Exception as e:
