@@ -219,7 +219,7 @@ class InteractImp():
                     return suffix,fail_status.set_error,media_url
                 play_button.click()
                 
-                packet = self.wp.listen.wait(timeout=40)
+                packet = self.wp.listen.wait(timeout=20)
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
@@ -391,13 +391,14 @@ class InteractAudio(ThreadTask):
         os.makedirs(os.path.dirname(dest_path),exist_ok=True)
         
         self._msg_count+=1
-        success=self._impl._handle_audio_url(url,dest_path)
         
         #更新状态
-        if success:
+        if success:=self._impl._handle_audio_url(url,dest_path):
             suffix,status,media_url=success
             self.manager.update_status_suffix_url(xlsx_path,sheet_name,url,status,suffix,media_url)
-            self._success_count+=1
+            #判断是否成功
+            if media_url:
+                self._success_count+=1
         else:
             pass
             # self.manager.update_status(xlsx_path,sheet_name,url,TaskStatus.UNDOWNLOADED)
