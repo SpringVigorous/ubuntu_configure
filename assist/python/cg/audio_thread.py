@@ -189,7 +189,7 @@ class InteractImp():
             listent_shop_api=[".m4a",".mp4"]
             
             fail_status:TaskStatus= TaskStatus.UNDOWNLOADED
-            
+            logger_detail_str:str=""
             with self._lock:
                 # self.wp.listen.stop()# 操作完成后释放资源
                 self.wp.listen.start(listent_shop_api)
@@ -228,10 +228,13 @@ class InteractImp():
                 body=response.body
                 media_url=response.url
                 suffix=postfix(media_url,".m4a") 
-                audio_path=str(Path(audio_path).with_suffix(suffix))
+                dest_path=Path(audio_path)
+                if dest_path.suffix !=suffix:
+                    audio_path=str(dest_path.with_suffix(suffix))
+                    logger_detail_str=f"修改最终路径：\n{audio_path}\n"
 
             write_to_bin(audio_path,body)
-            logger.info("成功",audio_path,update_time_type=UpdateTimeType.STAGE)
+            logger.info("成功",logger_detail_str,update_time_type=UpdateTimeType.STAGE)
             return suffix,TaskStatus.SUCCESS,media_url
 
 

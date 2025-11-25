@@ -87,6 +87,10 @@ class AudioApp():
         msg_lst=[]
         for _,row in catalog_df.iterrows():
             author_path= row[local_path_id]
+            author_status=TaskStatus.from_value(row[downloaded_id])
+            if author_status.is_success or not author_status.clear_temp_canceled.can_download:
+                continue
+            
             author_df=self.manager.get_df(author_path,album_id)
             if df_empty(author_df) :
                 continue
@@ -99,22 +103,19 @@ class AudioApp():
                 if cur_path.stem.replace("_album","")==cur_path.parent.stem:
                     album_path=str(cur_path.parent.parent /cur_path.name)
                     author_df.loc[index,local_path_id]=album_path
-                
-                
-                
-                # album_df=self.manager.get_df(album_path,audio_sheet_name)
-                # if df_empty(album_df) :
-                #     continue
+
 
                 if lst:=self.continue_audio_impl(album_path,audio_sheet_name):
                     msg_lst.extend(lst)
 
         if not msg_lst:
             return 
-        for index,msg in enumerate(msg_lst):
-            with self.logger.raii_target(f"添加音频消息",f"第{index+1}个{msg}") as logger:
-                self.audio_url_queue.put(msg)
-                logger.trace("发送消息")
+        with self.logger.raii_target(f"添加音频消息",f"共{len(msg_lst)}个消息") as out_logger:
+            for index,msg in enumerate(msg_lst):
+                with self.logger.raii_target(detail=f"第{index+1}个{msg}") as logger:
+                    self.audio_url_queue.put(msg)
+                    logger.trace("发送消息")
+            out_logger.info("成功")
 
 
     def run(self):
