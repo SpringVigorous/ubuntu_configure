@@ -115,6 +115,9 @@ class xlsx_manager(metaclass=abc.ABCMeta):
     
     @exception_decorator(error_state=False)
     def save(self,):
+        #保存前处理
+        self.before_save()
+        
         for xlsx_path,dfs in self._df_dict.items():
             if not dfs: 
                 continue

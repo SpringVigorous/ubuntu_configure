@@ -159,6 +159,8 @@ class AudioManager(xlsx_manager):
                         local_path_id,
                         album_count_id,
                         downloaded_count_id,
+                        status_id,
+                        
                         ])
                 
 
@@ -323,7 +325,7 @@ class AudioManager(xlsx_manager):
                     return
                 for index,row in result_df.iterrows():
                     df.loc[index,downloaded_id]=status.value
-                    logger.info("成功")
+                logger.info("成功")
             except Exception as e:
                 logger.error("更新失败",e)
     #更新本地文件后缀名
