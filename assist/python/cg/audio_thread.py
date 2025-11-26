@@ -46,7 +46,7 @@ def web_status(web_content:str)->TaskStatus:
     
     if "无法访问" in web_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
-    if "开会员" in web_content:
+    if "开会员" in web_content or "VIP仅" in web_content:
         return TaskStatus.UNDOWNLOADED.set_charged
     if "下架" in web_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
@@ -720,6 +720,7 @@ class InteractBoZhu(ThreadTask):
                 msg = row.to_dict()
                 msg[parent_xlsx_path_id] = xlsx_path
                 msg[parent_sheet_name_id] = sheet_name
+                msg[parent_url_id]=url
                 
                 #附加信息
                 msg[author_id]=author_name
@@ -822,7 +823,8 @@ class InteractAlbum(ThreadTask):
             if status.has_reason:
                 parent_xlsx_path=data.get(parent_xlsx_path_id)
                 parent_sheet_name=data.get(parent_sheet_name_id)
-                self.manager.update_status(parent_xlsx_path,parent_sheet_name,url,status)
+                parent_url=data.get(parent_url_id)
+                self.manager.update_status(parent_xlsx_path,parent_sheet_name,parent_url,status)
             
             
             

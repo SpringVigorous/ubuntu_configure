@@ -31,30 +31,64 @@ class AudioApp():
         
         self.manager=AudioManager()
         
+        
+        self.author_msg_index:int=0
+        self.album_msg_index:int=0
+        self.audio_msg_index:int=0
+        
     @exception_decorator(error_state=False)
-    def add_bz_url(self,urls:str|list[str]):
+    def add_bz_msg(self,urls:str|list[str]):
+        if not urls: return
+        
+        self.author_msg_index+=1
+        
         if isinstance(urls,str):
             urls=[urls]
         for index,url in enumerate(urls):
-            with self.logger.raii_target(f"添加博主消息",f"第{index+1}个{url}") as logger:
+            with self.logger.raii_target(f"添加博主消息",f"第{self.author_msg_index}：{index+1}个{url}") as logger:
                 self.bz_url_queue.put(url)
 
+    """
+    data:dict={           
+        href_id:"",
+        album_id:"",
+        local_path_id:"",
+        parent_xlsx_path_id:"",
+        parent_sheet_name_id:"",
+    }
+    
+    """
     @exception_decorator(error_state=False)
-    def add_album_url(self,urls:str|list[str]):
-        if isinstance(urls,str):
-            urls=[urls]
-        for index,url in enumerate(urls):
-            with self.logger.raii_target(f"添加专辑消息",f"第{index+1}个{url}") as logger:
-                self.album_url_queue.put(url)
+    def add_album_msg(self,msg_lst:dict|list[dict]):
+        if not msg_lst: return
+        self.album_msg_index+=1
+        if isinstance(msg_lst,dict):
+            msg_lst=[msg_lst]
+        for index,msg in enumerate(msg_lst):
+            with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：{index+1}个{msg}") as logger:
+                self.album_url_queue.put(msg)
         
+    """
+    data:dict={
+        url_id:str,
+        dest_path_id:str,
+        xlsx_path_id:str,
+        sheet_name_id:str
+    }
+
+    """
+
     @exception_decorator(error_state=False)
-    def add_audio_url(self,urls:dict|list[dict]):   
-        if isinstance(urls,dict):
-            urls=[urls]
+    def add_audio_msg(self,msg_lst:dict|list[dict]):   
+        if not msg_lst: return
+        self.audio_msg_index+=1
         
-        for index,url in enumerate(urls):
-            with self.logger.raii_target(f"添加音频消息",f"第{index+1}个{url}") as logger:
-                self.audio_url_queue.put(url)
+        if isinstance(msg_lst,dict):
+            msg_lst=[msg_lst]
+        
+        for index,msg in enumerate(msg_lst):
+            with self.logger.raii_target(f"添加音频消息",f"第{self.audio_msg_index}：{index+1}个{msg}") as logger:
+                self.audio_url_queue.put(msg)
                 logger.trace("成功","加入下载队")
     @exception_decorator(error_state=False)
     def continue_audio_impl(self,xlsx_path,sheet_name):
@@ -77,7 +111,75 @@ class AudioApp():
             if msg:=row_path_to_msg(row,xlsx_path,sheet_name):
                 msg_lst.append(msg)
         return msg_lst
+    @exception_decorator(error_state=False)
+    def continue_author(self):
+        xlsx_path,name,catalog_df=self.manager.catalog_df
+        if df_empty(catalog_df) :
+            return
+        self.logger.update_time(UpdateTimeType.STAGE)
+        
+        
+        for _,catalog_row in catalog_df.iterrows():
+            author_path= catalog_row[local_path_id]
+            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
+            if not author_status.can_download:
+                continue
+            
+            if url:=catalog_row[href_id]:
+                self.add_bz_msg(url)
 
+            
+            
+            
+
+
+    @exception_decorator(error_state=False)
+    def continue_album(self):
+        catalog_xlsx_path,catalog_name,catalog_df=self.manager.catalog_df
+        if df_empty(catalog_df) :
+            return
+        self.logger.update_time(UpdateTimeType.STAGE)
+        
+        msg_lst=[]
+        for _,catalog_row in catalog_df.iterrows():
+            author_path= catalog_row[local_path_id]
+            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
+            if not author_status.can_download:
+                continue
+            
+            author_df=self.manager.get_df(author_path,album_id)
+            if df_empty(author_df) :
+                continue
+            self.manager.cache_author_df(author_path,album_id,author_df)
+            for author_index,author_row in author_df.iterrows():
+                album_path= author_row[local_path_id]
+                if not isinstance(album_path,str) or not album_path:
+                    continue
+                
+                album_status=TaskStatus.from_value(author_row[downloaded_id])
+                if not album_status.can_download:
+                    continue              
+                msg={
+                    href_id:author_row[href_id],
+                    local_path_id:author_row[local_path_id],
+                    title_id:author_row[title_id],
+                    
+                    parent_xlsx_path_id:catalog_xlsx_path,
+                    parent_sheet_name_id:catalog_name,
+                    parent_url_id:catalog_row[href_id],
+                    
+                }
+                if album_name:=author_row.get(album_id,None):
+                    msg[album_id]=album_name
+                
+                
+                msg_lst.append(msg)
+
+        if not msg_lst:
+            return 
+        
+        self.add_album_msg(msg_lst)
+        
     @exception_decorator(error_state=False)
     def continue_audio(self):
         
@@ -116,14 +218,11 @@ class AudioApp():
 
         if not msg_lst:
             return 
-        with self.logger.raii_target(f"添加音频消息",f"共{len(msg_lst)}个消息") as out_logger:
-            
-            
-            for author_index,msg in enumerate(msg_lst):
-                with self.logger.raii_target(detail=f"第{author_index+1}个{msg}") as logger:
-                    self.audio_url_queue.put(msg)
-                    logger.trace("发送消息")
-            out_logger.info("成功", update_time_type=UpdateTimeType.STAGE)
+        
+        
+        self.add_audio_msg(msg_lst)
+        
+
 
 
     def run(self):
@@ -175,8 +274,10 @@ def main():
     # app.force_init_ignore_album()
     
     #筛选sound
-    app.force_init_ignore_sound(False)
-    app.continue_audio()
+    app.force_init_ignore_sound(True)
+    # app.continue_author()
+    app.continue_album()
+    # app.continue_audio()
     app.run()
     
     

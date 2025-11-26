@@ -44,6 +44,7 @@ downloaded_count_id="已下载数"
 media_url_id="media_url"
 parent_xlsx_path_id="parent_xlsx_path"
 parent_sheet_name_id="parent_sheet_name"
+parent_url_id="parent_url"
 
 author_id="author"
 album_count_id="专辑数"
