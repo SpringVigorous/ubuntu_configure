@@ -161,12 +161,12 @@ class AudioApp():
                     continue              
                 msg={
                     href_id:author_row[href_id],
-                    local_path_id:author_row[local_path_id],
+                    local_path_id:album_path,
                     title_id:author_row[title_id],
                     
-                    parent_xlsx_path_id:catalog_xlsx_path,
-                    parent_sheet_name_id:catalog_name,
-                    parent_url_id:catalog_row[href_id],
+                    parent_xlsx_path_id:author_path,
+                    parent_sheet_name_id:album_id,
+
                     
                 }
                 if album_name:=author_row.get(album_id,None):

@@ -823,8 +823,8 @@ class InteractAlbum(ThreadTask):
             if status.has_reason:
                 parent_xlsx_path=data.get(parent_xlsx_path_id)
                 parent_sheet_name=data.get(parent_sheet_name_id)
-                parent_url=data.get(parent_url_id)
-                self.manager.update_status(parent_xlsx_path,parent_sheet_name,parent_url,status)
+
+                self.manager.update_status(parent_xlsx_path,parent_sheet_name,url,status)
             
             
             
