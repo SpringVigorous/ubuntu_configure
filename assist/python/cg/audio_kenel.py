@@ -4,7 +4,7 @@ from pathlib import Path
 
 # 2. 第三方库（按字母顺序排列，统一导入风格）
 import pandas as pd
-from lxml import etree
+from lxml import etree,html
 from base import worm_root,audio_root
 # 3. 自定义库（去重冗余、按字母顺序拆分排列，用括号包裹多行）
 from base import (
@@ -47,6 +47,7 @@ parent_sheet_name_id="parent_sheet_name"
 
 author_id="author"
 album_count_id="专辑数"
+
 
 
 xlsx_path_id="xlsx_path"
@@ -297,6 +298,37 @@ def album_lst_from_content(html_content)->tuple[list[dict],TaskStatus]:
         if (result:=_get_album_impl(root)):
             results.append(result)
     return  results,Success()
+
+
+@exception_decorator(error_state=False)
+def extract_audio_info(html_content):
+    tree = html.fromstring(html_content)
+    
+    # 获取所有包含数据的span元素
+    data_spans = tree.xpath('//div[contains(@class, "category_kn")]//span')
+    
+    result = {}
+    
+    for span in data_spans:
+        span_class = span.get('class', '')
+        text_content = ''.join(span.itertext()).strip()
+        
+        # 匹配日期时间（包含时间格式的文本）
+        if 'time' in span_class and ':' in text_content and '-' in text_content:
+            result['datetime'] = text_content
+        
+        # 匹配时长（包含时间格式且较短的文本）
+        elif 'count' in span_class and ':' in text_content and len(text_content) <= 8:
+            result['duration'] = text_content
+        
+        # 匹配播放量（包含"万"字或数字的文本）
+        elif 'count' in span_class and ('万' in text_content or any(char.isdigit() for char in text_content)):
+            # 过滤掉纯图标的文本
+            if not any(keyword in text_content for keyword in ['xuicon', 'kn_']):
+                result['views'] = text_content.strip()
+    
+    return result
+
 if __name__ == '__main__':
 
     html_path=audio_root/r"宝宝巴士_album.html"

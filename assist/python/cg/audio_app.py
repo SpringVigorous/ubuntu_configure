@@ -84,6 +84,8 @@ class AudioApp():
         xlsx_path,name,catalog_df=self.manager.catalog_df
         if df_empty(catalog_df) :
             return
+        self.logger.update_time(UpdateTimeType.STAGE)
+        
         msg_lst=[]
         for _,row in catalog_df.iterrows():
             author_path= row[local_path_id]
@@ -111,11 +113,13 @@ class AudioApp():
         if not msg_lst:
             return 
         with self.logger.raii_target(f"添加音频消息",f"共{len(msg_lst)}个消息") as out_logger:
+            
+            
             for index,msg in enumerate(msg_lst):
                 with self.logger.raii_target(detail=f"第{index+1}个{msg}") as logger:
                     self.audio_url_queue.put(msg)
                     logger.trace("发送消息")
-            out_logger.info("成功")
+            out_logger.info("成功", update_time_type=UpdateTimeType.STAGE)
 
 
     def run(self):

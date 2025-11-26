@@ -174,6 +174,44 @@ class InteractImp():
             return info
 
 
+
+    @property
+    def audio_info(self):
+        
+        wp=self.wp
+        # 获取所有包含数据的span元素
+        root_div=wp.ele((By.XPATH,'//div[@class="info  kn_"]'))
+        if not root_div:
+            return
+        span =wp.ele((By.XPATH,'//div[contains(@class, "category kn")]//span'))
+        if not span:
+            return
+        
+        
+        result = {}
+        
+
+        span_class = span.get('class', '')
+        text_content = ''.join(span.itertext()).strip()
+        
+        # 匹配日期时间（包含时间格式的文本）
+        if 'time' in span_class and ':' in text_content and '-' in text_content:
+            result['datetime'] = text_content
+        
+        # 匹配时长（包含时间格式且较短的文本）
+        elif 'count' in span_class and ':' in text_content and len(text_content) <= 8:
+            result['duration'] = text_content
+        
+        # 匹配播放量（包含"万"字或数字的文本）
+        elif 'count' in span_class and ('万' in text_content or any(char.isdigit() for char in text_content)):
+            # 过滤掉纯图标的文本
+            if not any(keyword in text_content for keyword in ['xuicon', 'kn_']):
+                result['views'] = text_content.strip()
+    
+        return result
+    
+        
+    
     @exception_decorator(error_state=False)
     def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus,str]:
         body=None
@@ -181,7 +219,7 @@ class InteractImp():
         suffix=None
         
         media_url=""
-        
+
         with self._logger.raii_target(f"第{self._msg_count}个audio消息",f"{url}->{audio_path}") as logger:
             param_dict={url_id:url,dest_path_id:audio_path}
             # logger.update_time(UpdateTimeType.STAGE)
@@ -201,12 +239,12 @@ class InteractImp():
                 if error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                     return suffix,status,media_url
-                
+
                 
                 #获取播放按钮，并单击
-                play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=3)
+                play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=10)
                 if not play_button:
-                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=3)
+                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=10)
                 if not play_button:
                     logger.error("失败","找不到播放按钮",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
@@ -235,6 +273,11 @@ class InteractImp():
 
             write_to_bin(audio_path,body)
             logger.info("成功",logger_detail_str,update_time_type=UpdateTimeType.STAGE)
+            
+            #获取时长、发布时间、点赞数
+            
+            # cur_info= self.audio_info
+            
             return suffix,TaskStatus.SUCCESS,media_url
 
 
