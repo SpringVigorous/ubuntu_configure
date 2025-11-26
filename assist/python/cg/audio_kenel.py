@@ -49,7 +49,7 @@ parent_url_id="parent_url"
 author_id="author"
 album_count_id="专辑数"
 suffix_id="suffix"
-
+status_id="status"
 
 xlsx_path_id="xlsx_path"
 sheet_name_id="sheet_name"

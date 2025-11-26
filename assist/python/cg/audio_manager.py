@@ -176,6 +176,10 @@ class AudioManager(xlsx_manager):
                 results.append((xlsx_path,sheet_name,df))
         return results
     
+    
+    
+    
+    
     @property
     def album_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
         return self._filter_dfs(df_type=SheetType.AUDIO)
@@ -455,3 +459,9 @@ class AudioManager(xlsx_manager):
         if catalog_result:=self.catalog_df:
             xlsx_path,sheet_name,df=catalog_result
             _update_df_status(xlsx_path,sheet_name,df)
+            
+            
+        #更新状态名称
+        for xlsx_path,sheet_name,df in self.df_lst:
+            df[status_id]= df[downloaded_id].apply( lambda x: str(TaskStatus.from_value(x)))
+            self.cache_df(xlsx_path,sheet_name,df)

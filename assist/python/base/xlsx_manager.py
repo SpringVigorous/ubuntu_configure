@@ -41,6 +41,20 @@ class xlsx_manager(metaclass=abc.ABCMeta):
             if xlsx_path in self._df_dict:
                 return self._df_dict[xlsx_path]
         
+        
+    @property
+    def df_lst(self)->list[tuple[str,str,pd.DataFrame]]:
+        
+        
+        results=[]
+        for xlsx_path,df_dict in self._df_dict.items():
+            for name,df in df_dict.items():
+                results.append((xlsx_path,name,df))
+        return results
+    
+    
+    
+    
     # 还可以覆盖
     def cache_df(self,xlsx_path:str,sheet_name:str,df:pd.DataFrame):
         xlsx_path=str(xlsx_path)
