@@ -64,7 +64,7 @@ class AudioApp():
             return
         
         
-        self.manager.cache_audio_df(xlsx_path,sheet_name,df)
+        self.manager.cache_album_df(xlsx_path,sheet_name,df)
         cur_df=df[df[downloaded_id]!=TaskStatus.SUCCESS.value]
         if df_empty(cur_df):
             return
@@ -87,25 +87,29 @@ class AudioApp():
         self.logger.update_time(UpdateTimeType.STAGE)
         
         msg_lst=[]
-        for _,row in catalog_df.iterrows():
-            author_path= row[local_path_id]
-            author_status=TaskStatus.from_value(row[downloaded_id])
-            if author_status.is_success or not author_status.clear_temp_canceled.can_download:
+        for _,catalog_row in catalog_df.iterrows():
+            author_path= catalog_row[local_path_id]
+            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
+            if not author_status.can_download:
                 continue
             
             author_df=self.manager.get_df(author_path,album_id)
             if df_empty(author_df) :
                 continue
-            self.manager.cache_audio_df(author_path,album_id,author_df)
-            for index,row in author_df.iterrows():
-                album_path= row[local_path_id]
+            self.manager.cache_author_df(author_path,album_id,author_df)
+            for author_index,author_row in author_df.iterrows():
+                album_path= author_row[local_path_id]
+                if not isinstance(album_path,str) or not album_path:
+                    continue
                 
+                album_status=TaskStatus.from_value(author_row[downloaded_id])
+                if not album_status.can_download:
+                    continue
                 #修正路径问题（遗留+）
                 cur_path=Path(album_path)
                 if cur_path.stem.replace("_album","")==cur_path.parent.stem:
                     album_path=str(cur_path.parent.parent /cur_path.name)
-                    author_df.loc[index,local_path_id]=album_path
-
+                    author_df.loc[author_index,local_path_id]=album_path
 
                 if lst:=self.continue_audio_impl(album_path,audio_sheet_name):
                     msg_lst.extend(lst)
@@ -115,8 +119,8 @@ class AudioApp():
         with self.logger.raii_target(f"添加音频消息",f"共{len(msg_lst)}个消息") as out_logger:
             
             
-            for index,msg in enumerate(msg_lst):
-                with self.logger.raii_target(detail=f"第{index+1}个{msg}") as logger:
+            for author_index,msg in enumerate(msg_lst):
+                with self.logger.raii_target(detail=f"第{author_index+1}个{msg}") as logger:
                     self.audio_url_queue.put(msg)
                     logger.trace("发送消息")
             out_logger.info("成功", update_time_type=UpdateTimeType.STAGE)

@@ -47,7 +47,7 @@ parent_sheet_name_id="parent_sheet_name"
 
 author_id="author"
 album_count_id="专辑数"
-
+suffix_id="suffix"
 
 
 xlsx_path_id="xlsx_path"
@@ -300,12 +300,28 @@ def album_lst_from_content(html_content)->tuple[list[dict],TaskStatus]:
     return  results,Success()
 
 
+"""
+    <div class="info  kn_"> 
+    <h1 class="title-wrapper kn_">高山流水</h1>  
+    <div class="category kn_"> 
+        <span class="time kn_">2016-04-06 09:39:15</span>  
+        <span class="count kn_"> 
+        <i class="xuicon xuicon-wode-yuansu-shichang kn_"/>03:03
+        </span>  
+        <span class="count kn_"> 
+        <i class="xuicon xuicon-erji1 kn_"/> 11.2万
+        </span> 
+    </div>  
+    <div class="to-seo hidden kn_"/>
+    </div>
+"""
 @exception_decorator(error_state=False)
 def extract_audio_info(html_content):
     tree = html.fromstring(html_content)
-    
+    info=tree.xpath('//div[@class="info  kn_"]')
+    if not info: return None
     # 获取所有包含数据的span元素
-    data_spans = tree.xpath('//div[contains(@class, "category_kn")]//span')
+    data_spans = info[0].xpath('./div[@class="category kn_"]//span')
     
     result = {}
     
@@ -315,17 +331,17 @@ def extract_audio_info(html_content):
         
         # 匹配日期时间（包含时间格式的文本）
         if 'time' in span_class and ':' in text_content and '-' in text_content:
-            result['datetime'] = text_content
+            result[release_time_id] = text_content
         
         # 匹配时长（包含时间格式且较短的文本）
         elif 'count' in span_class and ':' in text_content and len(text_content) <= 8:
-            result['duration'] = text_content
+            result[duration_id] = text_content
         
         # 匹配播放量（包含"万"字或数字的文本）
-        elif 'count' in span_class and ('万' in text_content or any(char.isdigit() for char in text_content)):
+        elif 'count' in span_class and ( any(char.isdigit() for char in text_content)):
             # 过滤掉纯图标的文本
             if not any(keyword in text_content for keyword in ['xuicon', 'kn_']):
-                result['views'] = text_content.strip()
+                result[view_count_id] = text_content.strip()
     
     return result
 

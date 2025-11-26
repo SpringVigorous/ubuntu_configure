@@ -6,7 +6,7 @@ import pandas as pd
 from audio_kenel import *
 import os
 from enum import IntFlag
-
+from audio_message import AlbumUpdateMsg
 class SheetType(IntFlag):
     ALBUM=0
     AUDIO=1
@@ -177,11 +177,11 @@ class AudioManager(xlsx_manager):
         return results
     
     @property
-    def audio_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
+    def album_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
         return self._filter_dfs(df_type=SheetType.AUDIO)
     
     @property
-    def album_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
+    def author_dfs(self)->list[tuple[str,str,pd.DataFrame]]:
         return self._filter_dfs(df_type=SheetType.ALBUM)
     
     @property
@@ -190,13 +190,19 @@ class AudioManager(xlsx_manager):
             return results[0]
         return (None,None,None)
     
-    def cache_audio_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
+    def cache_album_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
         AudioManager.init_df_status(df)
         df=AudioManager.update_df_status(df)
+        column_names= df.columns
+        if view_count_id not in column_names:
+            df[view_count_id]=-1
+        if duration_id not in column_names:
+            df[duration_id]=-1
+
         self.cache_df(xlsx_path,sheet_name,df)
         self._df_flags[(xlsx_path,sheet_name)]=SheetType.AUDIO
         
-    def cache_albumn_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
+    def cache_author_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
         AudioManager.init_df_status(df)
         df=self.update_summary_df(df)
         self.cache_df(xlsx_path,sheet_name,df)
@@ -247,7 +253,8 @@ class AudioManager(xlsx_manager):
             return df
         def update_flag(row):
             try:
-                return TaskStatus.SUCCESS.value if  os.path.exists(row[local_path_id]) else row[downloaded_id]
+                cur_path=row[local_path_id]
+                return TaskStatus.SUCCESS.value if isinstance(cur_path,str) and os.path.exists(cur_path) else row[downloaded_id]
             except:
                 global_logger().error("任务状态错误", "|".join(map(str, row.index)))
                 return row[downloaded_id]
@@ -363,7 +370,39 @@ class AudioManager(xlsx_manager):
                 logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)
-            
+    #更新下载状态
+    @exception_decorator(error_state=False)
+    def update_album_df(self,info:AlbumUpdateMsg):
+        if not info or not isinstance(info,AlbumUpdateMsg) or not info.valid: 
+            return
+        status=info.status
+        suffix=info.suffix
+
+        
+        with self.logger.raii_target("更新下载状态及文件后缀",f"{info}") as logger:
+            df=self.get_df(info.xlsx_path,info.sheet_name)
+            if df_empty(df):
+                logger.debug("忽略更新","df不存在")
+                return
+            try:
+                for index,row in find_rows_by_col_val(df,href_id,info.sound_url).iterrows():
+                    if status is not None:
+                        df.loc[index,downloaded_id]=status.value #转换为整型
+                    if suffix:
+                        if cur_path:=row[local_path_id]:
+                            df.loc[index,local_path_id]=str(Path(cur_path).with_suffix(suffix))
+                    if info.media_url_valid:
+                        df.loc[index,media_url_id]=info.media_url
+                    if info.duration_valid:
+                        df.loc[index,duration_id]=info.duration
+                    if info.relase_time_valid:
+                        df.loc[index,release_time_id]=info.release_time
+                    if info.view_count_valid:
+                        df.loc[index,view_count_id]=info.view_count
+                            
+                logger.trace("成功")
+            except Exception as e:
+                logger.error("更新失败",e)
     #更新博主专辑数
     @exception_decorator(error_state=False)
     def update_author_album_count(self,href_val:str,count:int):
@@ -410,7 +449,7 @@ class AudioManager(xlsx_manager):
             self.cache_df(xlsx_path,sheet_name,df)
         
         #保存前，更新专辑信息
-        if album_dfs:=self.album_dfs:
+        if album_dfs:=self.author_dfs:
             for xlsx_path,sheet_name,df in album_dfs:
                 _update_df_status(xlsx_path,sheet_name,df)
         if catalog_result:=self.catalog_df:

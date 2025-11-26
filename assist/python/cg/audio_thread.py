@@ -41,7 +41,7 @@ from base import (
 # cg 模块：明确导入所需函数（移除通配符 *，避免命名空间污染）
 from cg.audio_kenel import *
 from audio_manager import AudioManager
-
+from audio_message import *
 def web_status(web_content:str)->TaskStatus:
     
     if "无法访问" in web_content:
@@ -213,13 +213,13 @@ class InteractImp():
         
     
     @exception_decorator(error_state=False)
-    def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus,str]:
+    def _handle_audio_url(self, url,audio_path)->tuple[str,TaskStatus,str,dict]:
         body=None
         self._msg_count+=1
         suffix=None
         
         media_url=""
-
+        info={}
         with self._logger.raii_target(f"第{self._msg_count}个audio消息",f"{url}->{audio_path}") as logger:
             param_dict={url_id:url,dest_path_id:audio_path}
             # logger.update_time(UpdateTimeType.STAGE)
@@ -234,11 +234,11 @@ class InteractImp():
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_not_found,media_url
+                    return suffix,fail_status.set_not_found,media_url,info
                 error,status=self.web_error
                 if error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return suffix,status,media_url
+                    return suffix,status,media_url,info
 
                 
                 #获取播放按钮，并单击
@@ -254,14 +254,17 @@ class InteractImp():
                     if buy_button:
                         self._buy_lst.append(param_dict)
                     
-                    return suffix,fail_status.set_error,media_url
+                    return suffix,fail_status.set_error,media_url,info
                 play_button.click()
+                
+                info=extract_audio_info(self.wp.html)
+                
                 
                 packet = self.wp.listen.wait(timeout=20)
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_error ,media_url
+                    return suffix,fail_status.set_error ,media_url,info
                 response=packet.response
                 body=response.body
                 media_url=response.url
@@ -278,7 +281,7 @@ class InteractImp():
             
             # cur_info= self.audio_info
             
-            return suffix,TaskStatus.SUCCESS,media_url
+            return suffix,TaskStatus.SUCCESS,media_url,info
 
 
     @exception_decorator(error_state=False)
@@ -437,8 +440,20 @@ class InteractAudio(ThreadTask):
         
         #更新状态
         if success:=self._impl._handle_audio_url(url,dest_path):
-            suffix,status,media_url=success
-            self.manager.update_status_suffix_url(xlsx_path,sheet_name,url,status,suffix,media_url)
+            suffix,status,media_url,info=success
+            info.update({
+                href_id:url,
+                downloaded_id:status,
+                suffix_id:suffix,
+                media_url_id:media_url
+            })
+            
+            
+            
+            msg=AlbumUpdateMsg(xlsx_path,sheet_name,url,status,suffix,info.get(duration_id),info.get(release_time_id),info.get(view_count_id),media_url)
+            
+            self.manager.update_album_df(msg)
+            # self.manager.update_status_suffix_url(xlsx_path,sheet_name,url,status,suffix,media_url)
             #判断是否成功
             if media_url:
                 self._success_count+=1
@@ -690,7 +705,7 @@ class InteractBoZhu(ThreadTask):
 
             # 主流程：当df不为空时才执行以下操作
             self._success_count += 1
-            self.manager.cache_albumn_df(xlsx_path, sheet_name, df)
+            self.manager.cache_author_df(xlsx_path, sheet_name, df)
 
             def row_to_msg(row: dict) -> dict:
                 # 筛选消息
@@ -789,6 +804,9 @@ class InteractAlbum(ThreadTask):
                     )
                 df[local_path_id]=df[name_id].apply(lambda x:str(AudioManager.file_path(file_name=f"{x}.m4a",author_name=author_name,album_name=album_name) ))
                 df[album_name_id]=album_name
+                df[view_count_id]=-1
+                df[duration_id]=-1
+                
                 
                 # 强制忽略(只针对新增的)
                 if self.manager.force_ignore_sound:
@@ -812,7 +830,7 @@ class InteractAlbum(ThreadTask):
             if not df_empty(df):
                 # self._xlsx_lsts.append((xlsx_path,audio_sheet_name))
                 #缓存
-                self.manager.cache_audio_df(xlsx_path,audio_sheet_name,df)
+                self.manager.cache_album_df(xlsx_path,audio_sheet_name,df)
                 
                 self._success_count+=1
             else:
