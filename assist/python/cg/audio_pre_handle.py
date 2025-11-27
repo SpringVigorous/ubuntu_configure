@@ -1,4 +1,4 @@
-﻿from base import xlsx_files,df_empty,logger_helper,exception_decorator,recycle_bin,path_equal,get_df
+﻿from base import xlsx_files,df_empty,logger_helper,exception_decorator,recycle_bin,path_equal,get_df,normal_path
 from pathlib import Path
 import os
 import pandas as pd
@@ -6,11 +6,12 @@ import pandas as pd
 
 def rename_imp(cur_path:str,root_name):
     
-    old_path=r"E:\旭尧\有声读物"
+    old_path=normal_path(r"E:\旭尧\有声读物")
     
     new_path=cur_path
-    if root_name not in cur_path:
-        new_path=cur_path.replace(old_path,f"{old_path}/{root_name}")
+    if not root_name  in str(Path(cur_path).parent):
+        
+        new_path=normal_path(cur_path).replace(old_path,f"{old_path}/{root_name}")
     
     return new_path
 
@@ -46,11 +47,12 @@ def handle_author(xlsx_file,sheet_name):
         
         
         
-        dest= cur_path.parent.parent /cur_path.name
-        return str(dest)
+        # dest= cur_path.parent.parent /cur_path.name
+        return str(cur_path)
     
     
     df.dropna(subset=["href"],inplace=True)
+
     df["local_path"]=df["local_path"].apply(dest_func)
     df.to_excel(xlsx_file,sheet_name=sheet_name,index=False)
     return True
@@ -81,11 +83,14 @@ def rename_sheet_name(xlsx_dir):
         cur_path=Path(xlsx_file)
         name=cur_path.stem
         if name =="catalog":
-           result= handle_catalog(xlsx_file,sheet_name="catalog")
+        #    result= handle_catalog(xlsx_file,sheet_name="catalog")
+           pass
         elif "_album" not in name:
             result= handle_author(xlsx_file,sheet_name="album")
+            pass
         else:
-            result= handle_album(xlsx_file,sheet_name="audio")
+            # result= handle_album(xlsx_file,sheet_name="audio")
+            pass
 
         if not result: 
             logger.error("失败")

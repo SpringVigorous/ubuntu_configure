@@ -441,6 +441,8 @@ class InteractAudio(ThreadTask):
         #更新状态
         if success:=self._impl._handle_audio_url(url,dest_path):
             suffix,status,media_url,info=success
+            if not info:
+                info={}
             info.update({
                 href_id:url,
                 downloaded_id:status,
@@ -575,10 +577,11 @@ class InteractHelper():
             if row.empty:
                 continue
             msg=self.handle_row_func(row)
-            if (msg):
-                output_queue.put(msg)    
-                audio_index+=1
-                self.logger.trace("加入下载队列",f"第{audio_index}个消息{msg}")
+            if not msg:
+                continue
+            output_queue.put(msg)    
+            audio_index+=1
+            self.logger.trace("加入下载队列",f"第{audio_index}个消息{msg}")
                 
         return audio_index
 
