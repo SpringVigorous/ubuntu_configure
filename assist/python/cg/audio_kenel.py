@@ -45,7 +45,7 @@ media_url_id="media_url"
 parent_xlsx_path_id="parent_xlsx_path"
 parent_sheet_name_id="parent_sheet_name"
 parent_url_id="parent_url"
-
+album_path_id="album_path"
 author_id="author"
 album_count_id="专辑数"
 suffix_id="suffix"
@@ -371,13 +371,13 @@ def _audio_info_content(html_content)->str:
 
 
 def web_status(web_content:str)->TaskStatus:
-    web_content=_audio_info_content(web_content)
+    info_content=_audio_info_content(web_content)
         
-    if "无法访问" in web_content:
+    if "无法访问" in info_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
-    if "开会员" in web_content or "VIP" in web_content or "购买" in web_content:
+    if "开会员" in info_content or "VIP" in info_content or "购买" in info_content:
         return TaskStatus.UNDOWNLOADED.set_charged
-    if "下架" in web_content:
+    if "下架" in info_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
     return TaskStatus.SUCCESS
 
@@ -386,5 +386,5 @@ if __name__ == '__main__':
     html_path=audio_root/r"宝宝巴士_album.html"
     html_content=read_from_txt_utf8(html_path)
         
-    df=album_lst_from_content(html_content)
+    summary_df=album_lst_from_content(html_content)
     print(0)

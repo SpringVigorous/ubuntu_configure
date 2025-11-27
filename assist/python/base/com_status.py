@@ -19,8 +19,8 @@ class TaskStatus(IntFlag):
     NOT_FOUND = 1<<4       # 16: 网页不存在
     FETCH_ERROR = 1<<5      # 32: 获取网页信息失败
     CONVERT_ERROR = 1<<6   # 64： 网页信息转换失败
-    POST_ERROR = 1<<7   # 64： 后续处理失败
-    TEMP_CANCELED = 1<<8   # 128: 临时取消
+    POST_ERROR = 1<<7   # 128： 后续处理失败
+    TEMP_CANCELED = 1<<8   # 256 临时取消
     @staticmethod
     def CoreMask():
         return TaskStatus.UNDOWNLOADED | TaskStatus.INCOMPLETED | TaskStatus.SUCCESS 
