@@ -466,4 +466,6 @@ class AudioManager(xlsx_manager):
         #更新状态名称
         for xlsx_path,sheet_name,df in self.df_lst:
             df[status_id]= df[downloaded_id].apply( lambda x: str(TaskStatus.from_value(x)))
+            #去重
+            df.drop_duplicates(subset=[href_id],inplace=True)
             self.cache_df(xlsx_path,sheet_name,df)

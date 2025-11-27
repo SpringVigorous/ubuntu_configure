@@ -42,15 +42,7 @@ from base import (
 from cg.audio_kenel import *
 from audio_manager import AudioManager
 from audio_message import *
-def web_status(web_content:str)->TaskStatus:
-    
-    if "无法访问" in web_content:
-        return TaskStatus.UNDOWNLOADED.set_not_found
-    if "开会员" in web_content or "VIP" in web_content or "购买" in web_content:
-        return TaskStatus.UNDOWNLOADED.set_charged
-    if "下架" in web_content:
-        return TaskStatus.UNDOWNLOADED.set_not_found
-    return TaskStatus.SUCCESS
+
     
 
 
@@ -130,6 +122,15 @@ class InteractImp():
         self._msg_count:int=0
         self._failed_lst=[]
         self._buy_lst=[]
+
+    @property
+    def has_closed(self):
+        try:
+            self.wp.html
+            return False
+        except:
+            return True
+    
     @property
     def wp(self):      
         if not self._wp:
@@ -427,6 +428,11 @@ class InteractAudio(ThreadTask):
     """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
+        if self._impl.has_closed:
+            self.clear_input()
+            return
+        
+        
         url=data.get(url_id)
         dest_path=data.get(dest_path_id)
         xlsx_path=data.get(xlsx_path_id)
@@ -659,6 +665,10 @@ class InteractBoZhu(ThreadTask):
             
     @exception_decorator(error_state=False)
     def _handle_data(self, url: str):
+        if self._impl.has_closed:
+            self.clear_input()
+            return
+        
         df = None
         self._msg_count += 1
         with self.logger.raii_target(f"第{self._msg_count}个博主消息", f"{url}") as logger:
@@ -777,6 +787,11 @@ class InteractAlbum(ThreadTask):
         """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
+        if self._impl.has_closed:
+            self.clear_input()
+            return
+        
+        
         url=data.get(href_id)
         album_name= data.get(album_id) or get_album_name( data.get(title_id))
         xlsx_path=data.get(local_path_id)
@@ -852,8 +867,8 @@ class InteractAlbum(ThreadTask):
                 self._output_count+=result
             
         #不要搞得太多，只处理这么多
-        if self._output_count>200:
-            self.clear_input()
+        # if self._output_count>200:
+        #     self.clear_input()
             
             
 

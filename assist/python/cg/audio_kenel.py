@@ -346,6 +346,41 @@ def extract_audio_info(html_content):
     
     return result
 
+
+def _audio_info_content(html_content)->str:
+    try:
+        tree = html.fromstring(html_content)
+        #<div class="detail-wrapper z_i">
+        info=tree.xpath('//div[@class="detail-wrapper z_i"]')
+        #<div class="sound-container kn_">
+        if not info:
+            info=tree.xpath('//div[@class="sound-container kn_"]')
+        #<div class="album-info clearfix z_i">
+        if not info:
+            info=tree.xpath('//div[@class="album-info clearfix z_i"]')
+            
+        #<div class="sound-info clearfix kn_">
+        if not info:
+            info=tree.xpath('//div[@class="sound-info clearfix kn_"]')
+        
+        if not info:
+            return html_content
+        return etree.tostring(info[0], encoding='unicode', pretty_print=True)
+    except:
+        return html_content
+
+
+def web_status(web_content:str)->TaskStatus:
+    web_content=_audio_info_content(web_content)
+        
+    if "无法访问" in web_content:
+        return TaskStatus.UNDOWNLOADED.set_not_found
+    if "开会员" in web_content or "VIP" in web_content or "购买" in web_content:
+        return TaskStatus.UNDOWNLOADED.set_charged
+    if "下架" in web_content:
+        return TaskStatus.UNDOWNLOADED.set_not_found
+    return TaskStatus.SUCCESS
+
 if __name__ == '__main__':
 
     html_path=audio_root/r"宝宝巴士_album.html"
