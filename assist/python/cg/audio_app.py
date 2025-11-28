@@ -64,9 +64,15 @@ class AudioApp():
         self.album_msg_index+=1
         if isinstance(msg_lst,dict):
             msg_lst=[msg_lst]
-        for index,msg in enumerate(msg_lst):
-            with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：{index+1}个{msg}") as logger:
-                self.album_url_queue.put(msg)
+            
+        self.logger.update_time(UpdateTimeType.STAGE)
+        with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：共{len(msg_lst)}个") as outer_logger:
+            for index,msg in enumerate(msg_lst):
+                with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：{index+1}个{msg}") as inner_logger:
+                    self.album_url_queue.put(msg)
+                    inner_logger.trace("成功",update_time_type=UpdateTimeType.STEP)
+            outer_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
+            
         
     """
     data:dict={
@@ -144,8 +150,8 @@ class AudioApp():
         for _,catalog_row in catalog_df.iterrows():
             author_path= catalog_row[local_path_id]
             author_status=TaskStatus.from_value(catalog_row[downloaded_id])
-            if not author_status.can_download:
-                continue
+            # if not author_status.can_download:
+            #     continue
             
             author_df=self.manager.get_df(author_path,album_id)
             if df_empty(author_df) :
@@ -156,7 +162,7 @@ class AudioApp():
                 if not isinstance(album_path,str) or not album_path:
                     continue
                 
-                album_status=TaskStatus.from_value(author_row[downloaded_id])
+                album_status=TaskStatus.from_value(author_row[downloaded_id]).clear_temp_canceled.clear_error
                 if not album_status.can_download:
                     continue              
                 msg={

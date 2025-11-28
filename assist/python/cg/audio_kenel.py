@@ -103,7 +103,7 @@ def sound_by_album_content(xml_content)->list:
         
         
         #<span class="count _nO"><i class="xuicon xuicon-erji1 _nO"></i>89.9万</span>
-        view_coount=item.xpath('.//span[@class="count _nO"]/text()')[0]
+        view_count=item.xpath('.//span[@class="count _nO"]/text()')[0]
         
         
         #<span class="time _nO">2023-06</span>
@@ -112,7 +112,7 @@ def sound_by_album_content(xml_content)->list:
         result.append({
             title_id: title,
             href_id: href,
-            view_count_id: view_coount,
+            view_count_id: view_count,
             release_time_id:release_time,
             num_id:int(num),
             downloaded_id:TaskStatus.UNDOWNLOADED

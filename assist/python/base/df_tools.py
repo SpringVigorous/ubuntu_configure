@@ -13,7 +13,7 @@ def find_rows_by_col_val(df, col_name,val,default_val=pd.DataFrame()):
         results= df[matches]
 
         if results.empty:
-            log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
+            log.warn("失败",f"没有找到匹配的值，返回默认值{default_val}")
             return default_val
         return results
     except:

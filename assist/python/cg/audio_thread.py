@@ -507,26 +507,33 @@ class InteractHelper():
         if self.interact_df_func:
             interact_result = self.interact_df_func(url)
             if not interact_result :
+                self.logger.error("失败", f"self.interact_df_func()异常")
                 return df, Undownloaded().set_error
             lst, status = interact_result
             if not lst:
+                self.logger.error("失败", f"self.interact_df_func()无结果")
                 return df, status
             df = pd.DataFrame(lst)
         else:
             # 非交互模式：下载并转换内容
             fetch_result = self._fetch_url_content(url, html_path)
             if not fetch_result :
+                self.logger.error("失败", f"self._fetch_url_content()异常")
                 return None, Undownloaded().set_fetch_error
             content, status = fetch_result
             if not content:
+                self.logger.error("失败", f"self._fetch_url_content()无结果")
                 return None, status
             if not self.content_convert_func:
+                self.logger.error("失败", f"self.content_convert_func 未赋值")
                 return None, Undownloaded().set_convert_error
             convert_result = self.content_convert_func(content)
             if not convert_result:
+                self.logger.error("失败", f"self.content_convert_func()异常")
                 return None, Undownloaded().set_convert_error
             lst, status = convert_result
             if not lst:
+                self.logger.error("失败", f"self.content_convert_func()无结果")
                 return None, status
             df = pd.DataFrame(lst)
 
@@ -539,6 +546,7 @@ class InteractHelper():
             if self.df_latter_func:
                 df = self.df_latter_func(df)
             if df_empty(df):
+                self.logger.warn("失败", f"df为空")
                 return None, Undownloaded().set_post_error
             
             

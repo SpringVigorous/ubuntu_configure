@@ -116,13 +116,19 @@ class xlsx_manager(metaclass=abc.ABCMeta):
     @exception_decorator(error_state=False)
     def save(self,):
         #保存前处理
-        self.before_save()
-        
-        for xlsx_path,dfs in self._df_dict.items():
-            if not dfs: 
-                continue
-            self.save_dfs(xlsx_path,dfs)
+        self.logger.update_time(UpdateTimeType.STAGE)
+        with self.logger.raii_target("保存前处理") as logger:
+            self.before_save()
+            logger.info("完成",update_time_type=UpdateTimeType.STAGE)
 
+
+
+        with self.logger.raii_target("保存",f"共{len(self._df_dict)}个表") as logger:
+            for xlsx_path,dfs in self._df_dict.items():
+                if not dfs: 
+                    continue
+                self.save_dfs(xlsx_path,dfs)
+            logger.info("完成",update_time_type=UpdateTimeType.STAGE)
     @staticmethod
     #设置df的sheet_name
     def set_xlsx_path(df:pd.DataFrame,name:Any)->pd.DataFrame:
