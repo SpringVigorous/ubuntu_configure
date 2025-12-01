@@ -1,6 +1,7 @@
 ﻿
 from pathlib import Path
 import json
+import os
 
 from base import (
     # 核心工具
@@ -77,7 +78,9 @@ class AudioManager(xlsx_manager):
         if df_empty(df):
             return df
         
-        mask=df[downloaded_id].apply(lambda x: TaskStatus.from_value(x).can_download)
+        mask=df.apply(lambda row: TaskStatus.from_value(row[downloaded_id]).can_download or os.path.exists(row[local_path_id]),axis=1)
+        
+        # mask=df[downloaded_id].apply(lambda x: TaskStatus.from_value(x).can_download)
         #条件筛选
         return df[mask]
 
@@ -575,6 +578,9 @@ class AudioManager(xlsx_manager):
                 
                 result_df=find_rows_by_col_val(album_df,href_id,url)
                 if df_empty(result_df):
+                    
+                    
+                    
                     continue
                 for album_index,row in result_df.iterrows():
                     album_df.loc[album_index,local_path_id]=dest_path
@@ -623,6 +629,9 @@ class AudioManager(xlsx_manager):
             # #修改 album_df 的状态
             album_result_df=find_rows_by_col_val(album_df,href_id,url)
             if df_empty(album_result_df):
+                self.logger.debug("修改 album_df 的状态失败")
+                
+                
                 continue
             for index,result_row in album_result_df.iterrows():
                 album_df.loc[index,downloaded_id]=status.clear_temp_canceled.value
@@ -638,10 +647,12 @@ class AudioManager(xlsx_manager):
         #修改 author_df 的状态
         album_path_lst=filter_df[album_path_id].drop_duplicates().tolist()
         for album_xlsx_path in  album_path_lst:
+            album_xlsx_path=str(album_xlsx_path)
             author_xlsx_path=_get_author_path(album_xlsx_path)
             author_df=self.get_df(author_xlsx_path,album_id)
             author_result_df=find_rows_by_col_val(author_df,local_path_id,album_xlsx_path)
             if df_empty(author_result_df):
+                self.logger.debug("修改 author_df 的状态失败",f"author_xlsx_path:{author_xlsx_path}")
                 continue
             for author_index,author_row in author_result_df.iterrows():
                 author_status=TaskStatus.from_value(author_row[downloaded_id])

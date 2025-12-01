@@ -631,6 +631,10 @@ def rename_file_only_bbbs(filename:str):
     return new_filename
 
 if __name__ == "__main__":
+    
+
+    
+    
     rename_files_in_folder(worm_root/r"player\video",rename_file_only_bbbs,recursive=True,real_replace=True) #重命名文件    # 根目录路径
     exit()
     rename_files_in_folder(worm_root/r"player\video",rename_file_only_bxcz,recursive=True,real_replace=True) #重命名文件    # 根目录路径

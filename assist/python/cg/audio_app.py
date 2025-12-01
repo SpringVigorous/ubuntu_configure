@@ -281,8 +281,8 @@ def main():
     
     #筛选sound
     app.force_init_ignore_sound(True)
-    # app.continue_author()
-    app.continue_album()
+    app.continue_author()
+    # app.continue_album()
     # app.continue_audio()
     app.run()
     

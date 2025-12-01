@@ -39,7 +39,7 @@ from base import (
 
 # 3. 自定义库（按模块分组，拆分过长导入，避免通配符）
 # cg 模块：明确导入所需函数（移除通配符 *，避免命名空间污染）
-from cg.audio_kenel import *
+from audio_kenel import *
 from audio_manager import AudioManager
 from audio_message import *
 
@@ -428,7 +428,7 @@ class InteractAudio(ThreadTask):
     """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
-        if self._impl.has_closed:
+        if self._impl.has_closed or self._msg_count>210:
             self.clear_input()
             return
         
@@ -586,18 +586,31 @@ class InteractHelper():
     def handle_df(self, df:pd.DataFrame,output_queue:Queue)->int:
         if not self.handle_row_func or df_empty(df):
             return
-        audio_index=0
+        self.logger.update_time(UpdateTimeType.STAGE)
+
+        msg_lst=[]
+        
+        
         for _,row in df.iterrows():
             if row.empty:
                 continue
             msg=self.handle_row_func(row)
             if not msg:
                 continue
+            msg_lst.append(msg)
+        if not msg_lst:
+            return len(msg_lst)    
+        
+        
+        
+        for index,msg in enumerate(msg_lst):
             output_queue.put(msg)    
-            audio_index+=1
-            self.logger.trace("加入下载队列",f"第{audio_index}个消息{msg}")
+            self.logger.trace("加入下载队列",f"第{index}个消息{msg}")
                 
-        return audio_index
+        msg_count=len(msg_lst)
+        self.logger.info("发送消息成功",f"共{msg_count}个消息",update_time_type=UpdateTimeType.STAGE)
+        return msg_count    
+
 
     def set_interact_content_fun(self,interact_fun:Callable[[str],tuple[str,TaskStatus]]=None) -> None:
         self.interact_fun:Callable[[str],tuple[str,TaskStatus]]=interact_fun
