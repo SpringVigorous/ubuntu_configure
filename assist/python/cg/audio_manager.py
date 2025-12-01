@@ -560,7 +560,9 @@ class AudioManager(xlsx_manager):
     def before_save(self)->bool:
         def _update_df_status(xlsx_path,sheet_name,df):
             if df_empty(df): return
-            df=self.update_summary_df(df)
+            df:pd.DataFrame=self.update_summary_df(df)
+            df.drop_duplicates(subset=[href_id],inplace=True)
+            
             self.cache_df(xlsx_path,sheet_name,df)
         
         #保存前，更新专辑信息

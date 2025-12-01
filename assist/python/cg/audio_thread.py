@@ -98,10 +98,11 @@ title_album_xpath='//span[@class="v-m p-l-5" and text()="专辑"]'
 # load_more_xpath='//span[@style="cursor: pointer;"]'
 load_more_xpath='//span[@style="cursor: pointer;" and text()="加载更多"]'
 
-# <li class="page-item N_t"><a href="javascript:;" class="page-link N_t"><span>8</span></a></li>
 #<li class="page-next page-item N_t"><a class="page-link N_t" href="javascript:;"></a></li>
+
 # next_page_xpath='//li[@class="page-next page-item N_t"]'
-next_page_xpath='//li[a[@class="page-item N_t"]'
+
+next_page_xpath='//li[@class="page-next page-item N_t"]'
 
 
 #<input type="number" placeholder="请输入页码" step="1" min="1" max="9" class="control-input N_t" value="">
@@ -358,7 +359,7 @@ class InteractImp():
     
   
     @exception_decorator(error_state=False)
-    def _handle_sound_from_album_url(self, url)->tuple[list[dict],TaskStatus]: #html
+    def _handle_album_url(self, url)->tuple[list[dict],TaskStatus]: #html
         results=[]
         self._msg_count+=1
 
@@ -802,7 +803,7 @@ class InteractAlbum(ThreadTask):
         self._xlsx_lsts=[]
         self.manager=AudioManager()
         self._helper=InteractHelper(self.logger,
-                                    interact_df_func=self._impl._handle_sound_from_album_url,
+                                    interact_df_func=self._impl._handle_album_url,
                                     # df_latter_func=AudioManager.update_df_status,
                                     handle_row_func=row_dict_to_msg
                                     )
@@ -840,7 +841,7 @@ class InteractAlbum(ThreadTask):
         self._msg_count+=1
         
         with self.logger.raii_target(f"第{self._msg_count}个专辑消息",f"{url}") as logger:
-            
+            @exception_decorator(error_state=False)
             def df_latter(df:pd.DataFrame)->pd.DataFrame:
                 df.drop_duplicates(subset=[title_id,num_id],inplace=True)
                 df[href_id]=df[href_id].apply(lambda x:fill_url(x,url))

@@ -91,32 +91,39 @@ def sound_by_album_content(xml_content)->list:
 
     # 4. 遍历每个音频项，提取目标数据
     result = []
-    for item in audio_items:
-        # 提取 <span class="num _nO"> 的文本（序号）
-        num = item.xpath('.//span[@class="num _nO"]/text()')[0]  # .// 表示在当前 <li> 下查找
+    for index,item in enumerate(audio_items):
         
-        # 提取 <div class="text _nO"> 下 <a> 标签的 href 属性
-        href = item.xpath('.//div[@class="text _nO"]/a/@href')[0]
-        
-        # 提取 <span class="title _nO"> 的文本（音频标题）
-        title = item.xpath('.//span[@class="title _nO"]/text()')[0]
-        
-        
-        #<span class="count _nO"><i class="xuicon xuicon-erji1 _nO"></i>89.9万</span>
-        view_count=item.xpath('.//span[@class="count _nO"]/text()')[0]
-        
-        
-        #<span class="time _nO">2023-06</span>
-        release_time=item.xpath('.//span[@class="time _nO"]/text()')[0]
-        # 存入结果列表
-        result.append({
-            title_id: title,
-            href_id: href,
-            view_count_id: view_count,
-            release_time_id:release_time,
-            num_id:int(num),
-            downloaded_id:TaskStatus.UNDOWNLOADED
-        })
+        try:
+            # 提取 <span class="num _nO"> 的文本（序号）
+            
+            num_items=item.xpath('.//span[@class="num _nO"]/text()')
+            
+            num = num_items[0] if num_items else index+1 # .// 表示在当前 <li> 下查找
+            
+            # 提取 <div class="text _nO"> 下 <a> 标签的 href 属性
+            href = item.xpath('.//div[@class="text _nO"]/a/@href')[0]
+            
+            # 提取 <span class="title _nO"> 的文本（音频标题）
+            title = item.xpath('.//span[@class="title _nO"]/text()')[0]
+            
+            
+            #<span class="count _nO"><i class="xuicon xuicon-erji1 _nO"></i>89.9万</span>
+            view_count=item.xpath('.//span[@class="count _nO"]/text()')[0]
+            
+            
+            #<span class="time _nO">2023-06</span>
+            release_time=item.xpath('.//span[@class="time _nO"]/text()')[0]
+            # 存入结果列表
+            result.append({
+                title_id: title,
+                href_id: href,
+                view_count_id: view_count,
+                release_time_id:release_time,
+                num_id:int(num),
+                downloaded_id:TaskStatus.UNDOWNLOADED
+            })
+        except Exception as e:
+            pass
 
     return result
 
