@@ -13,7 +13,7 @@ from typing import Callable,Any
 import pandas as pd
 from DrissionPage import WebPage
 from selenium.webdriver.common.by import By
-
+import math
 # base 模块：拆分长导入（用括号包裹，无需反斜杠，PEP8 推荐）
 from base import (
     backup_xlsx,
@@ -33,7 +33,7 @@ from base import (
     TaskStatus,Success,Undownloaded,Incompleted,TempCanceled,
     audio_root,
     sanitize_filename,
-
+    convert_time_str_to_seconds,
 )
 
 
@@ -98,9 +98,10 @@ title_album_xpath='//span[@class="v-m p-l-5" and text()="专辑"]'
 # load_more_xpath='//span[@style="cursor: pointer;"]'
 load_more_xpath='//span[@style="cursor: pointer;" and text()="加载更多"]'
 
-
+# <li class="page-item N_t"><a href="javascript:;" class="page-link N_t"><span>8</span></a></li>
 #<li class="page-next page-item N_t"><a class="page-link N_t" href="javascript:;"></a></li>
-next_page_xpath='//li[@class="page-next page-item N_t"]'
+# next_page_xpath='//li[@class="page-next page-item N_t"]'
+next_page_xpath='//li[a[@class="page-item N_t"]'
 
 
 #<input type="number" placeholder="请输入页码" step="1" min="1" max="9" class="control-input N_t" value="">
@@ -142,7 +143,10 @@ class InteractImp():
     def web_error(self)->tuple[bool,TaskStatus]:
         status:TaskStatus=web_status(self.wp.html)
         return (status.has_reason,status)
-    
+    @property
+    def web_error_ignore_charged(self)->tuple[bool,TaskStatus]:
+        status:TaskStatus=web_status(self.wp.html)
+        return (status.clear_charged.has_reason,status)
     @property
     def title(self)->str:
         name=self.wp.title
@@ -225,13 +229,13 @@ class InteractImp():
             param_dict={url_id:url,dest_path_id:audio_path}
             # logger.update_time(UpdateTimeType.STAGE)
             logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
-            listent_shop_api=[".m4a",".mp4"]
+            listent_shop_api=AudioManager.media_suffix()
             
             fail_status:TaskStatus= TaskStatus.UNDOWNLOADED
             logger_detail_str:str=""
             with self._lock:
                 # self.wp.listen.stop()# 操作完成后释放资源
-                self.wp.listen.start(listent_shop_api)
+
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
@@ -244,6 +248,7 @@ class InteractImp():
                 
                 #获取播放按钮，并单击
                 play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=10)
+                
                 if not play_button:
                     play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=10)
                 if not play_button:
@@ -258,10 +263,17 @@ class InteractImp():
                     return suffix,fail_status.set_error,media_url,info
                 play_button.click()
                 
+                #监听
+                self.wp.listen.start(listent_shop_api)
+                
+                audio_wait_time=20
                 info=extract_audio_info(self.wp.html)
+                if info :
+                    if duration:=info.get(duration_id):
+                        seconds=  convert_time_str_to_seconds(duration)
+                        audio_wait_time=min(4,max(1,math.ceil(seconds/180.0)))*audio_wait_time
                 
-                
-                packet = self.wp.listen.wait(timeout=20)
+                packet = self.wp.listen.wait(timeout=audio_wait_time)
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
@@ -286,7 +298,7 @@ class InteractImp():
 
 
     @exception_decorator(error_state=False)
-    def _handle_album_url(self, url)->tuple[str,TaskStatus]: #html
+    def _handle_author_url(self, url)->tuple[str,TaskStatus]: #html
         
         content=None
         with self._lock:
@@ -311,7 +323,7 @@ class InteractImp():
                     while True:
                         content=self.wp.html
                         
-                        error,status=self.web_error
+                        error,status=self.web_error_ignore_charged
                         if error:
                             logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                             return content,status
@@ -364,7 +376,7 @@ class InteractImp():
                 time.sleep(5)
                 try:
                     while True:
-                        error,status=self.web_error
+                        error,status=self.web_error_ignore_charged
                         if error:
                             logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                             return  results,status
@@ -473,7 +485,7 @@ class InteractAudio(ThreadTask):
         
     def _final_run_after(self):
         self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个")
+        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
 
 
 class InteractHelper():
@@ -648,7 +660,7 @@ class InteractBoZhu(ThreadTask):
         self._xlsx_lsts=[]
         self.manager=AudioManager()
         self._helper=InteractHelper(self.logger,
-                                    interact_content_fun=self._impl._handle_album_url,
+                                    interact_content_fun=self._impl._handle_author_url,
                                     content_convert_func=album_lst_from_content,
                                     # df_latter_func=self.manager.update_album_df,
                                     # handle_row_func=row_dict_to_msg
@@ -774,7 +786,7 @@ class InteractBoZhu(ThreadTask):
         
     def _final_run_after(self):
         # self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个")
+        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
         
         
         
@@ -895,4 +907,4 @@ class InteractAlbum(ThreadTask):
 
     def _final_run_after(self):
         # self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个")
+        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)

@@ -373,7 +373,7 @@ def _audio_info_content(html_content)->str:
 def web_status(web_content:str)->TaskStatus:
     info_content=_audio_info_content(web_content)
         
-    if "无法访问" in info_content:
+    if "无法访问" in info_content or "下架" in info_content:
         return TaskStatus.UNDOWNLOADED.set_not_found
     if "开会员" in info_content or "VIP" in info_content or "购买" in info_content:
         return TaskStatus.UNDOWNLOADED.set_charged

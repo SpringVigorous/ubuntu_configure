@@ -96,138 +96,80 @@ class AudioApp():
             with self.logger.raii_target(f"添加音频消息",f"第{self.audio_msg_index}：{index+1}个{msg}") as logger:
                 self.audio_url_queue.put(msg)
                 logger.trace("成功","加入下载队")
-    @exception_decorator(error_state=False)
-    def continue_audio_impl(self,xlsx_path,sheet_name):
+    @staticmethod
+
+    def continue_audio_impl(album_df,album_xlsx_path,audio_sheet_name):
         
-        df=self.manager.get_df(xlsx_path,sheet_name)
-        if df_empty(df):
+
+        if df_empty(album_df):
             return
-        
-        
-        self.manager.cache_album_df(xlsx_path,sheet_name,df)
-        cur_df=df[df[downloaded_id]!=TaskStatus.SUCCESS.value]
-        if df_empty(cur_df):
-            return
-        
         msg_lst=[]
-        for index,row in cur_df.iterrows():
+        for index,row in album_df.iterrows():
             status=TaskStatus.from_value( row[downloaded_id])
             if status.is_temp_canceled:
-               cur_df.loc[index,downloaded_id] =status.clear_temp_canceled.value
-            if msg:=row_path_to_msg(row,xlsx_path,sheet_name):
+               album_df.loc[index,downloaded_id] =status.clear_temp_canceled.value
+            if msg:=row_path_to_msg(row,album_xlsx_path,audio_sheet_name):
                 msg_lst.append(msg)
         return msg_lst
     @exception_decorator(error_state=False)
     def continue_author(self):
-        xlsx_path,name,catalog_df=self.manager.catalog_df
+        xlsx_path,name,catalog_df=self.manager.filter_catalog_df
         if df_empty(catalog_df) :
             return
+        urls=list(filter(lambda x:x ,catalog_df[href_id]))
+        
         self.logger.update_time(UpdateTimeType.STAGE)
-        
-        
-        for _,catalog_row in catalog_df.iterrows():
-            author_path= catalog_row[local_path_id]
-            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
-            if not author_status.can_download:
+        with self.logger.raii_target("添加Author消息",f"共{len(urls)}个") as logger:
+            for index,url in enumerate(urls):
+                self.add_bz_msg(url)
+                logger.trace("成功",f"第{index}个：{url}")
+
+            logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
+            
+            
+    @staticmethod
+
+    def continue_album_impl(author_xlsx_path,author_name,author_df):
+
+        msg_lst=[]
+        for author_index,author_row in author_df.iterrows():
+            album_path= author_row[local_path_id]
+            if not isinstance(album_path,str) or not album_path:
                 continue
             
-            if url:=catalog_row[href_id]:
-                self.add_bz_msg(url)
+ 
+            msg={
+                href_id:author_row[href_id],
+                local_path_id:album_path,
+                title_id:author_row[title_id],
+                
+                parent_xlsx_path_id:author_xlsx_path,
+                parent_sheet_name_id:author_name,                   
+            }
+            if album_name:=author_row.get(album_id,None):
+                msg[album_id]=album_name
+            
+            
+            msg_lst.append(msg)
 
-            
-            
-            
+
+    
+        return msg_lst
 
 
     @exception_decorator(error_state=False)
     def continue_album(self):
-        catalog_xlsx_path,catalog_name,catalog_df=self.manager.catalog_df
-        if df_empty(catalog_df) :
-            return
-        self.logger.update_time(UpdateTimeType.STAGE)
-        
-        msg_lst=[]
-        for _,catalog_row in catalog_df.iterrows():
-            author_path= catalog_row[local_path_id]
-            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
-            # if not author_status.can_download:
-            #     continue
-            
-            author_df=self.manager.get_df(author_path,album_id)
-            if df_empty(author_df) :
-                continue
-            self.manager.cache_author_df(author_path,album_id,author_df)
-            for author_index,author_row in author_df.iterrows():
-                album_path= author_row[local_path_id]
-                if not isinstance(album_path,str) or not album_path:
-                    continue
-                
-                album_status=TaskStatus.from_value(author_row[downloaded_id]).clear_temp_canceled.clear_error
-                if not album_status.can_download:
-                    continue              
-                msg={
-                    href_id:author_row[href_id],
-                    local_path_id:album_path,
-                    title_id:author_row[title_id],
-                    
-                    parent_xlsx_path_id:author_path,
-                    parent_sheet_name_id:album_id,
-
-                    
-                }
-                if album_name:=author_row.get(album_id,None):
-                    msg[album_id]=album_name
-                
-                
-                msg_lst.append(msg)
-
-        if not msg_lst:
-            return 
-        
-        self.add_album_msg(msg_lst)
+        for author_xlsx_path,author_name,author_df in self.manager.filter_author_df:
+            msg_lst=AudioApp.continue_album_impl(author_xlsx_path,author_name,author_df )
+            if msg_lst:
+                self.add_album_msg(msg_lst)
         
     @exception_decorator(error_state=False)
     def continue_audio(self):
-        
-        xlsx_path,name,catalog_df=self.manager.catalog_df
-        if df_empty(catalog_df) :
-            return
-        self.logger.update_time(UpdateTimeType.STAGE)
-        
-        msg_lst=[]
-        for _,catalog_row in catalog_df.iterrows():
-            author_path= catalog_row[local_path_id]
-            author_status=TaskStatus.from_value(catalog_row[downloaded_id])
-            if not author_status.can_download:
-                continue
-            
-            author_df=self.manager.get_df(author_path,album_id)
-            if df_empty(author_df) :
-                continue
-            self.manager.cache_author_df(author_path,album_id,author_df)
-            for author_index,author_row in author_df.iterrows():
-                album_path= author_row[local_path_id]
-                if not isinstance(album_path,str) or not album_path:
-                    continue
-                
-                album_status=TaskStatus.from_value(author_row[downloaded_id])
-                if not album_status.can_download:
-                    continue
-                #修正路径问题（遗留+）
-                cur_path=Path(album_path)
-                if cur_path.stem.replace("_album","")==cur_path.parent.stem:
-                    album_path=str(cur_path.parent.parent /cur_path.name)
-                    author_df.loc[author_index,local_path_id]=album_path
+        for album_xlsx_path,album_name,album_df in self.manager.filter_album_df:
+            if msg_lst:=AudioManager.continue_audio_impl(album_df,album_xlsx_path,album_name):
+                self.add_audio_msg(msg_lst)
 
-                if lst:=self.continue_audio_impl(album_path,audio_sheet_name):
-                    msg_lst.extend(lst)
-
-        if not msg_lst:
-            return 
-        
-        
-        self.add_audio_msg(msg_lst)
-        
 
 
 
@@ -281,8 +223,8 @@ def main():
     
     #筛选sound
     app.force_init_ignore_sound(True)
-    app.continue_author()
-    # app.continue_album()
+    # app.continue_author()
+    app.continue_album()
     # app.continue_audio()
     app.run()
     

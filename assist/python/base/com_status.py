@@ -30,7 +30,8 @@ class TaskStatus(IntFlag):
         return TaskStatus.CoreMask() | TaskStatus.ReasonMask()
         
     def ReasonMask():
-        return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
+        # return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
+        return  TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
     
     @classmethod
     def from_value(cls, value: Union[int, str, 'TaskStatus']) -> 'TaskStatus':

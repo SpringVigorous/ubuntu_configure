@@ -90,7 +90,7 @@ class xlsx_manager(metaclass=abc.ABCMeta):
                         if  df_empty(df) or not sheet_name:
                             continue
                         df.to_excel(w, sheet_name=sheet_name, index=False)
-                        names.append(sheet_name)
+                        names.append(f"{sheet_name}:共{df.shape[0]}行")
                 self.logger.info("成功","|".join(names))
             return True
     

@@ -194,6 +194,15 @@ def convert_seconds_to_datetime(seconds:int):
     
     return formatted_date
     
+
+def convert_time_str_to_seconds(time_str:str):
+
+    time_obj = datetime.strptime(time_str, "%M:%S")
+
+    # 创建timedelta对象计算秒数
+    time_delta = timedelta(seconds=time_obj.second, minutes=time_obj.minute)
+    total_seconds = time_delta.total_seconds()
+    return total_seconds
 # 定义转换函数
 def convert_seconds_to_time_str(t):
     # 处理总秒数（整数部分）和毫秒（小数部分）
