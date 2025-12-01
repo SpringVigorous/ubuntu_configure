@@ -68,7 +68,7 @@ class AudioApp():
         self.logger.update_time(UpdateTimeType.STAGE)
         with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：共{len(msg_lst)}个") as outer_logger:
             for index,msg in enumerate(msg_lst):
-                with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：{index+1}个{msg}") as inner_logger:
+                with self.logger.raii_target(detail=f"第{self.album_msg_index}：{index+1}个{msg}") as inner_logger:
                     self.album_url_queue.put(msg)
                     inner_logger.trace("成功",update_time_type=UpdateTimeType.STEP)
             outer_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
@@ -146,10 +146,12 @@ class AudioApp():
                 parent_xlsx_path_id:author_xlsx_path,
                 parent_sheet_name_id:author_name,                   
             }
-            if album_name:=author_row.get(album_id,None):
-                msg[album_id]=album_name
             
-            
+            album_name=author_row.get(album_id,None)
+            if not album_name:
+                album_name=get_album_name(author_row[title_id])
+            msg[album_id]=album_name
+
             msg_lst.append(msg)
 
 

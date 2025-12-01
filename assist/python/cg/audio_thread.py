@@ -835,7 +835,9 @@ class InteractAlbum(ThreadTask):
         
         xlsx_path=Path(xlsx_path)
         author_name=data.get(author_id)
-
+        if not author_name:
+            author_name=Path(xlsx_path).parent.stem
+            pass
         html_path=""
         df=None
         self._msg_count+=1

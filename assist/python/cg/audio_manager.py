@@ -159,7 +159,7 @@ class AudioManager(xlsx_manager):
         }
         
         for media in AudioManager.media_suffix():
-            suffix[media]=AudioManager.media_root()
+            suffix_dict[media]=AudioManager.media_root()
         
               
         suffix= Path(file_name).suffix
