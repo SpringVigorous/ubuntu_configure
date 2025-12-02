@@ -82,7 +82,7 @@ def download_mp3():
     success= download_sync(url,dest_path,headers=headers)
     print(success)
 
-def sound_by_album_content(xml_content)->list:
+def sound_by_album_content(xml_content)->tuple[bool,list]:
     # 2. 解析 XML/HTML
     tree = etree.HTML(xml_content)  # 用 etree.HTML 解析（兼容 HTML 格式）
 
@@ -133,6 +133,7 @@ def sound_by_album_content(xml_content)->list:
     """
     # 4. 遍历每个音频项，提取目标数据
     result = []
+    num_items=None
     for index,item in enumerate(audio_items):
         
         try:
@@ -173,7 +174,7 @@ def sound_by_album_content(xml_content)->list:
         except Exception as e:
             pass
 
-    return result
+    return bool(num_items),result
 
 
 def get_title_name(name:str):

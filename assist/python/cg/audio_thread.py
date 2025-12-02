@@ -362,7 +362,7 @@ class InteractImp():
     def _handle_album_url(self, url)->tuple[list[dict],TaskStatus]: #html
         results=[]
         self._msg_count+=1
-
+        has_index:bool=True
         with self._lock:
             with self._logger.raii_target(f"收到专辑消息",f"{url}") as logger:
                 
@@ -384,7 +384,8 @@ class InteractImp():
                         
                         
                         
-                        if result:=sound_by_album_content(self.wp.html):
+                        has_index,result=sound_by_album_content(self.wp.html)
+                        if result:
                             results.extend(result)
                             
                             
@@ -401,7 +402,11 @@ class InteractImp():
                         
                 except Exception as e:
                     logger.error("失败",f"滚动失败{e}",update_time_type=UpdateTimeType.STAGE)
-
+        #重新编号
+        if not has_index:
+            for index,result in enumerate(results):
+                result[num_id]=index+1
+        
         return results,Success()
     def close(self):
         with self._lock:
