@@ -88,7 +88,49 @@ def sound_by_album_content(xml_content)->list:
 
     # 3. 定位所有音频项的根节点 <li class="_nO">
     audio_items = tree.xpath('//li[@class="_nO"]')
-
+    """
+    <li class="_nO">
+        <div class="icon-wrapper _nO">
+            <div class="all-icon default _nO">
+                <div class="defaultDOM _nO">
+                    <i class="xuicon xuicon-web_album_ic_lock lockIcon _nO"></i>
+                </div>
+                <div class="xui-playing _nO">
+                    <i></i>&nbsp;
+                    <i></i>&nbsp;
+                    <i></i>&nbsp;
+                    <i></i>
+                </div>
+                <i class="xuicon xuicon-web_album_btn_stop pauseIcon _nO"></i>
+                <i class="xuicon xuicon-web_album_btn_play_s playIcon _nO"></i>
+            </div>
+        </div>
+        <div class="text _nO">
+            <a title="《中华上下五千年》08 商殷文明" href="/sound/235839975">
+                <span class="title _nO">《中华上下五千年》08 商殷文明</span>
+            </a>
+        </div>
+        <div class="right _nO">
+            <div class="operate  _nO">
+                <div class="btns _nO">
+                    <div class="btn _nO">
+                        <i class="xuicon xuicon-web_album_btn_like_n _nO"></i>
+                    </div>
+                    <div class="btn _nO">
+                        <i class="xuicon xuicon-web_album_btn_share_ _nO"></i>
+                    </div>
+                    <div class="btn _nO">
+                        <i class="xuicon xuicon-web_album_btn_commen _nO"></i>
+                    </div>
+                </div>
+                <span class="count _nO">
+                    <i class="xuicon xuicon-erji1 _nO"></i>760
+                </span>
+            </div>
+            <span class="time _nO">2019-12</span>
+        </div>
+    </li>
+    """
     # 4. 遍历每个音频项，提取目标数据
     result = []
     for index,item in enumerate(audio_items):
@@ -113,6 +155,12 @@ def sound_by_album_content(xml_content)->list:
             
             #<span class="time _nO">2023-06</span>
             release_time=item.xpath('.//span[@class="time _nO"]/text()')[0]
+            
+            #<div class="icon-wrapper _nO"><div class="all-icon default _nO"><div class="defaultDOM _nO"><i class="xuicon xuicon-web_album_ic_lock lockIcon _nO"></i></div><div class="xui-playing _nO"><i></i>&nbsp;<i></i>&nbsp;<i></i>&nbsp;<i></i></div><i class="xuicon xuicon-web_album_btn_stop pauseIcon _nO"></i><i class="xuicon xuicon-web_album_btn_play_s playIcon _nO"></i></div></div>
+            locked=item.xpath('.//div[@class="defaultDOM _nO"]/i[contains(@class,"lockIcon")]')
+            
+            status=Undownloaded().set_charged if locked else TaskStatus.UNDOWNLOADED
+            
             # 存入结果列表
             result.append({
                 title_id: title,
@@ -120,7 +168,7 @@ def sound_by_album_content(xml_content)->list:
                 view_count_id: view_count,
                 release_time_id:release_time,
                 num_id:int(num),
-                downloaded_id:TaskStatus.UNDOWNLOADED
+                downloaded_id:status
             })
         except Exception as e:
             pass

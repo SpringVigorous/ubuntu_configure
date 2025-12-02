@@ -865,23 +865,27 @@ class InteractAlbum(ThreadTask):
                 
                 # 强制忽略(只针对新增的)
                 if self.manager.force_ignore_sound:
-                    df[downloaded_id]=(TaskStatus.UNDOWNLOADED | TaskStatus.TEMP_CANCELED) .value
+                    
+                    mask=df[downloaded_id].apply(lambda x:TaskStatus.from_value(x).can_download)
+                    for index,row in df[mask].iterrows():
+                        df.loc[index,downloaded_id]=(TaskStatus.UNDOWNLOADED | TaskStatus.TEMP_CANCELED) .value
                     self.logger.info("强制忽略","忽略新增的音频消息")
                     
                 return df
 
             self._helper.set_df_latter_func(df_latter)
             df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
-
+            
+            #如果有收费的，则整个专辑添加收费标签
+            if any(df[downloaded_id].apply(lambda x:TaskStatus.from_value(x).is_charged)):
+                    status=status.set_charged
             #更新状态
-            if status.has_reason:
+            if status.has_reason :
                 parent_xlsx_path=data.get(parent_xlsx_path_id)
                 parent_sheet_name=data.get(parent_sheet_name_id)
 
                 self.manager.update_status(parent_xlsx_path,parent_sheet_name,url,status)
-            
-            
-            
+
             
             if not df_empty(df):
                 # self._xlsx_lsts.append((xlsx_path,audio_sheet_name))
