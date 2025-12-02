@@ -26,7 +26,7 @@ class AudioApp():
         self.interact_album.start()
         self.interact_audio.start()
         
-        self.logger=logger_helper(self.__class__.__name__)
+        self.logger=logger_helper(self.__class__.__name__,"获取音频")
 
         
         self.manager=AudioManager()
@@ -169,7 +169,7 @@ class AudioApp():
     @exception_decorator(error_state=False)
     def continue_audio(self):
         for album_xlsx_path,album_name,album_df in self.manager.filter_album_df:
-            if msg_lst:=AudioManager.continue_audio_impl(album_df,album_xlsx_path,album_name):
+            if msg_lst:=AudioApp.continue_audio_impl(album_df,album_xlsx_path,album_name):
                 self.add_audio_msg(msg_lst)
 
 
@@ -226,8 +226,8 @@ def main():
     #筛选sound
     app.force_init_ignore_sound(True)
     # app.continue_author()
-    app.continue_album()
-    # app.continue_audio()
+    # app.continue_album()
+    app.continue_audio()
     app.run()
     
     

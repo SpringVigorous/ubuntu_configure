@@ -246,6 +246,8 @@ class InteractImp():
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                     return suffix,status,media_url,info
 
+                #监听
+                self.wp.listen.start(listent_shop_api)
                 
                 #获取播放按钮，并单击
                 play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=10)
@@ -261,11 +263,11 @@ class InteractImp():
                     if buy_button:
                         self._buy_lst.append(param_dict)
                     
-                    return suffix,fail_status.set_error,media_url,info
+                    has_error,status=self.web_error
+                    status=status if has_error else fail_status.set_error
+                    return suffix,status,media_url,info
                 play_button.click()
                 
-                #监听
-                self.wp.listen.start(listent_shop_api)
                 
                 audio_wait_time=20
                 info=extract_audio_info(self.wp.html)
@@ -308,7 +310,7 @@ class InteractImp():
                 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    return content,Undownloaded().set_error
+                    return content,Undownloaded().set_not_found
 
 
                 # logger.update_time(UpdateTimeType.STAGE)
