@@ -21,6 +21,7 @@ class TaskStatus(IntFlag):
     CONVERT_ERROR = 1<<6   # 64： 网页信息转换失败
     POST_ERROR = 1<<7   # 128： 后续处理失败
     TEMP_CANCELED = 1<<8   # 256 临时取消
+    NEED_CERTIFY = 1<<9   # 512 需要认证
     @staticmethod
     def CoreMask():
         return TaskStatus.UNDOWNLOADED | TaskStatus.INCOMPLETED | TaskStatus.SUCCESS 
@@ -31,7 +32,7 @@ class TaskStatus(IntFlag):
         
     def ReasonMask():
         # return TaskStatus.ERROR | TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
-        return  TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED
+        return  TaskStatus.CHARGED | TaskStatus.NOT_FOUND|TaskStatus.FETCH_ERROR|TaskStatus.CONVERT_ERROR|TaskStatus.POST_ERROR|TaskStatus.TEMP_CANCELED |TaskStatus.NEED_CERTIFY
     
     @classmethod
     def from_value(cls, value: Union[int, str, 'TaskStatus']) -> 'TaskStatus':
@@ -148,6 +149,11 @@ class TaskStatus(IntFlag):
         """是否为下载成功状态"""
         return self.value & TaskStatus.SUCCESS == TaskStatus.SUCCESS
     
+    
+    @property
+    def is_need_certify(self)->bool:
+        """是否为下载成功状态"""
+        return self.value & TaskStatus.NEED_CERTIFY == TaskStatus.NEED_CERTIFY
     @property
     def set_error(self) -> 'TaskStatus':
         """设置错误状态（仅非SUCCESS状态有效）"""

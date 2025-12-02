@@ -248,7 +248,10 @@ class InteractImp():
 
                 #监听
                 self.wp.listen.start(listent_shop_api)
-                
+                #再次检查
+                if error:
+                    logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
+                    return suffix,status,media_url,info
                 #获取播放按钮，并单击
                 play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=10)
                 
