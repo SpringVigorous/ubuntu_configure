@@ -91,7 +91,7 @@ class xlsx_manager(metaclass=abc.ABCMeta):
                             continue
                         df.to_excel(w, sheet_name=sheet_name, index=False)
                         names.append(f"{sheet_name}:共{df.shape[0]}行")
-                logger.info("成功","|".join(names),update_time_type=UpdateTimeType.STEP)
+                logger.trace("成功","|".join(names),update_time_type=UpdateTimeType.STEP)
             return True
     
         with self.lock:
@@ -103,7 +103,7 @@ class xlsx_manager(metaclass=abc.ABCMeta):
             
             with self.logger.raii_target("保存数据",backup_file_path) as logger:
                 if success: 
-                    logger.info("成功","备份成功",update_time_type=UpdateTimeType.STEP)
+                    logger.trace("成功","备份成功",update_time_type=UpdateTimeType.STEP)
                 else:
                     logger.error("失败","备份失败",update_time_type=UpdateTimeType.STEP)
             return success

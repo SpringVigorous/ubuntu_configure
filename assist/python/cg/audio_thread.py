@@ -30,7 +30,7 @@ from base import (
     write_to_txt_utf8,
     singleton,
     postfix,
-    TaskStatus,Success,Undownloaded,Incompleted,TempCanceled,
+    TaskStatus,Success,Undownloaded,Incompleted,TempCanceled,FetchError,
     audio_root,
     sanitize_filename,
     convert_time_str_to_seconds,
@@ -122,8 +122,7 @@ class InteractImp():
         self._logger=logger_helper()
         self._lock=threading.Lock()
         self._msg_count:int=0
-        self._failed_lst=[]
-        self._buy_lst=[]
+
 
     @property
     def has_closed(self):
@@ -232,24 +231,23 @@ class InteractImp():
             logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
             listent_shop_api=AudioManager.media_suffix()
             
-            fail_status:TaskStatus= TaskStatus.UNDOWNLOADED
+
             logger_detail_str:str=""
             with self._lock:
                 # self.wp.listen.stop()# 操作完成后释放资源
 
                 if not self.wp.get(url):
                     logger.error("失败","url失败",update_time_type=UpdateTimeType.STAGE)
-                    self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_not_found,media_url,info
-                error,status=self.web_error
-                if error:
-                    logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
-                    return suffix,status,media_url,info
+
+                    return suffix,NotFound(),media_url,info
+                info=extract_audio_info(self.wp.html)
+
 
                 #监听
                 self.wp.listen.start(listent_shop_api)
                 #再次检查
-                if error:
+                has_error,status=self.web_error
+                if has_error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                     return suffix,status,media_url,info
                 #获取播放按钮，并单击
@@ -259,22 +257,15 @@ class InteractImp():
                     play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=2)
                 if not play_button:
                     logger.error("失败","找不到播放按钮",update_time_type=UpdateTimeType.STAGE)
-                    self._failed_lst.append(param_dict)
-                    
-                    #<div class="price-btn buy-vip-btn kn_">6元开会员，免费听</div>
-                    buy_button=self.wp.ele((By.XPATH,buy_vip_xpath),timeout=3)
-                    if buy_button:
-                        self._buy_lst.append(param_dict)
-                    
-                has_error,status=self.web_error
-                status=status if has_error else fail_status.set_error
-                return suffix,status,media_url,info
-            
+                    has_error,status=self.web_error
+                    if has_error:
+                        status=status if has_error else FetchError()
+                    return suffix,status ,media_url,info
+
                 play_button.click()
-                
+
                 
                 audio_wait_time=20
-                info=extract_audio_info(self.wp.html)
                 if info :
                     if duration:=info.get(duration_id):
                         seconds=  convert_time_str_to_seconds(duration)
@@ -283,25 +274,35 @@ class InteractImp():
                 packet = self.wp.listen.wait(timeout=audio_wait_time)
                 if not packet:
                     logger.error("失败","获取不到.m4a信息",update_time_type=UpdateTimeType.STAGE)
-                    self._failed_lst.append(param_dict)
-                    return suffix,fail_status.set_error ,media_url,info
+                    #试验网页内容
+                    # open(audio_root/"123.html","w",encoding="utf-8").write(self.wp.html)
+                    has_error,status=self.web_error
+                    if has_error:
+                        status=status if has_error else FetchError()
+                    return suffix,status ,media_url,info
+                
+                
                 response=packet.response
                 body=response.body
                 media_url=response.url
                 suffix=postfix(media_url,".m4a") 
                 dest_path=Path(audio_path)
-                if dest_path.suffix !=suffix:
-                    audio_path=str(dest_path.with_suffix(suffix))
-                    logger_detail_str=f"修改最终路径：\n{audio_path}\n"
-
-            write_to_bin(audio_path,body)
-            logger.info("成功",logger_detail_str,update_time_type=UpdateTimeType.STAGE)
-            
-            #获取时长、发布时间、点赞数
-            
-            # cur_info= self.audio_info
-            
-            return suffix,TaskStatus.SUCCESS,media_url,info
+                    
+                if body:
+                    write_to_bin(audio_path,body)
+                    if dest_path.suffix !=suffix:
+                        audio_path=str(dest_path.with_suffix(suffix))
+                        logger_detail_str=f"修改最终路径：\n{audio_path}\n"
+                    logger.info("成功",logger_detail_str,update_time_type=UpdateTimeType.STAGE)
+                else:
+                    logger.error("失败",update_time_type=UpdateTimeType.STAGE)
+        #获取时长、发布时间、点赞数
+        
+        # cur_info= self.audio_info
+        
+        status=TaskStatus.SUCCESS if body else Undownloaded()
+        
+        return suffix,status,media_url,info
 
 
     @exception_decorator(error_state=False)
@@ -433,14 +434,7 @@ class InteractAudio(ThreadTask):
         pass
         self.manager=AudioManager()
     
-    @property
-    def fail_param_lst(self):
-        return self._impl._failed_lst
-    
-    @property
-    def buy_param_lst(self):
-        return self._impl._buy_lst
-    
+
     """
     data:dict={
         url_id:str,

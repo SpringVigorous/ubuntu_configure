@@ -196,7 +196,7 @@ class AudioManager(xlsx_manager):
                     
 
                 self.cache_catalog_df(xlsx_path,sheet_name,df)
-                logger.info("完成","从文件读取" if has_df else "直接初始化",update_time_type=UpdateTimeType.STAGE)
+                logger.trace("完成","从文件读取" if has_df else "直接初始化",update_time_type=UpdateTimeType.STAGE)
     @exception_decorator(error_state=False,error_return=None)
     def load(self):
         self.logger.update_time(UpdateTimeType.ALL)
@@ -227,9 +227,9 @@ class AudioManager(xlsx_manager):
                                 continue
 
                             self.cache_album_df(album_path,audio_sheet_name,album_df)
-                            album_logger.info("成功",update_time_type=UpdateTimeType.STEP)
+                            album_logger.trace("成功",update_time_type=UpdateTimeType.STEP)
                 
-                    author_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
+                    author_logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
         catalog_logger.info("成功",f"共{len(self._df_dict)}个表",update_time_type=UpdateTimeType.ALL)
     @exception_decorator(error_state=False,error_return=None)
     def _filter_dfs(self,df_type:SheetType)->list[tuple[str,str,pd.DataFrame]]:
@@ -560,6 +560,7 @@ class AudioManager(xlsx_manager):
         if df_empty(df):
             return 
         AudioManager.clear_df_temp_canceled(df)
+
 
         
     @exception_decorator(error_state=False)
