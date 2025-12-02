@@ -518,7 +518,7 @@ class InteractHelper():
         # 尝试从缓存读取
         df = self.manager.get_df(xlsx_path, sheet_name=sheet_name)
         if not df_empty(df):
-            self.logger.info("忽略交互", f"直接从{xlsx_path}读取,sheetname={sheet_name}")
+            self.logger.trace("忽略交互", f"直接从{xlsx_path}读取,sheetname={sheet_name}")
             return df, TaskStatus.SUCCESS
 
         # 获取数据

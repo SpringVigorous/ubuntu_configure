@@ -63,9 +63,8 @@ class AudioManager(xlsx_manager):
         self._df_flags={}
         self._ignore_sound=False
         self._ignore_album=False
-        #初始化
-        self._init_catalog()
-        self.load_dfs()
+
+        self.load()
 
     def set_ignore_album(self,ignore:bool):
         self._ignore_album=ignore
@@ -179,52 +178,59 @@ class AudioManager(xlsx_manager):
     def _init_catalog(self):
         if SheetType.CATALOG not in self._df_flags.values():
             xlsx_path,sheet_name=AudioManager.catalog_xlsx_info()
-            df=self.get_df(xlsx_path,sheet_name)
-            if not is_df(df): 
-                df=pd.DataFrame(columns=[     
-                        href_id,
-                        author_id,
-                        downloaded_id,
-                        local_path_id,
-                        album_count_id,
-                        downloaded_count_id,
-                        status_id,
-                        ])
-                
-
-            self.cache_catalog_df(xlsx_path,sheet_name,df)
-    @exception_decorator(error_state=False,error_return=None)
-    def load_dfs(self):
-        
-        #catalog
-        xlsx_path,name,catalog_df=self.catalog_df
-        if df_empty(catalog_df) :
-            return
-        #author
-        self.logger.update_time(UpdateTimeType.STAGE)
-        for _,catalog_row in catalog_df.iterrows():
-            author_path= catalog_row[local_path_id]
-            with self.logger.raii_target("读取xlsx",author_path) as author_logger:
-                author_df=self.get_df(author_path,album_id)
-                if df_empty(author_df) :
-                    author_logger.debug("不存在",update_time_type=UpdateTimeType.STAGE)
-                    continue
-                self.cache_author_df(author_path,album_id,author_df)
-
-                #album
-                for _,author_row in author_df.iterrows():
-                    album_path= author_row[local_path_id]               
-                    with self.logger.raii_target(detail=album_path) as album_logger:
-                        album_df=self.get_df(album_path,audio_sheet_name)
-                        if df_empty(album_df):
-                            album_logger.debug("不存在",update_time_type=UpdateTimeType.STEP)
-                            continue
-
-                        self.cache_album_df(album_path,audio_sheet_name,album_df)
-                        album_logger.info("成功",update_time_type=UpdateTimeType.STEP)
             
-                author_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
-        pass
+            with self.logger.raii_target(detail=xlsx_path) as logger:
+            
+                df=self.get_df(xlsx_path,sheet_name)
+                has_df=is_df(df)
+                if not has_df: 
+                    df=pd.DataFrame(columns=[     
+                            href_id,
+                            author_id,
+                            downloaded_id,
+                            local_path_id,
+                            album_count_id,
+                            downloaded_count_id,
+                            status_id,
+                            ])
+                    
+
+                self.cache_catalog_df(xlsx_path,sheet_name,df)
+                logger.info("完成","从文件读取" if has_df else "直接初始化",update_time_type=UpdateTimeType.STAGE)
+    @exception_decorator(error_state=False,error_return=None)
+    def load(self):
+        self.logger.update_time(UpdateTimeType.ALL)
+        with self.logger.raii_target("读取xlsx") as catalog_logger:
+            #初始化
+            self._init_catalog()
+            #catalog
+            xlsx_path,name,catalog_df=self.catalog_df
+            if df_empty(catalog_df) :
+                return
+            #author
+            for _,catalog_row in catalog_df.iterrows():
+                author_path= catalog_row[local_path_id]
+                with self.logger.raii_target(detail=author_path) as author_logger:
+                    author_df=self.get_df(author_path,album_id)
+                    if df_empty(author_df) :
+                        author_logger.debug("不存在",update_time_type=UpdateTimeType.STAGE)
+                        continue
+                    self.cache_author_df(author_path,album_id,author_df)
+
+                    #album
+                    for _,author_row in author_df.iterrows():
+                        album_path= author_row[local_path_id]               
+                        with self.logger.raii_target(detail=album_path) as album_logger:
+                            album_df=self.get_df(album_path,audio_sheet_name)
+                            if df_empty(album_df):
+                                album_logger.debug("不存在",update_time_type=UpdateTimeType.STEP)
+                                continue
+
+                            self.cache_album_df(album_path,audio_sheet_name,album_df)
+                            album_logger.info("成功",update_time_type=UpdateTimeType.STEP)
+                
+                    author_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
+        catalog_logger.info("成功",f"共{len(self._df_dict)}个表",update_time_type=UpdateTimeType.ALL)
     @exception_decorator(error_state=False,error_return=None)
     def _filter_dfs(self,df_type:SheetType)->list[tuple[str,str,pd.DataFrame]]:
         results=[]
@@ -720,28 +726,31 @@ class AudioManager(xlsx_manager):
         pass
     
     @staticmethod
-    def _filter_df(df)->pd.DataFrame:
+    def _can_download_df(df)->pd.DataFrame:
         if df_empty(df) :
             return
-        mask=df[local_path_id].apply(lambda x:TaskStatus.from_value(x).can_download)
+        mask=df[downloaded_id].apply(lambda x:TaskStatus.from_value(x).can_download)
         return df[mask]
+    @staticmethod
+    def _can_download_dfs(dfs:list[tuple[str,str,pd.DataFrame]])->list[tuple[str,str,pd.DataFrame]]:
+        results=[]
+        for xlsx_path,name,album_df in dfs:
+            df=AudioManager._can_download_df(album_df)
+            if df_empty(df): continue
+            results.append((xlsx_path,name,df))
+        return results
+        
 
     @property
     def filter_catalog_df(self)->tuple[str,str,pd.DataFrame]:
-        xlsx_path,name,catalog_df=self.catalog_df
-        return xlsx_path,name,AudioManager._filter_df(catalog_df)
+        if results:= AudioManager._can_download_dfs([self.catalog_df]):
+            return results[0]
     
     
     @property
     def filter_author_df(self)->list[tuple[str,str,pd.DataFrame]]:
-        results=[]
-        for xlsx_path,name,author_df in self.author_dfs:
-            results.append((xlsx_path,name,AudioManager._filter_df(author_df)))
-        return results
+        return AudioManager._can_download_dfs( self.author_dfs)
     
     @property
     def filter_album_df(self)->list[tuple[str,str,pd.DataFrame]]:
-        results=[]
-        for xlsx_path,name,album_df in self.album_dfs:
-            results.append((xlsx_path,name,AudioManager._filter_df(album_df)))
-        return results
+        return AudioManager._can_download_dfs( self.album_dfs)
