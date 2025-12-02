@@ -200,6 +200,11 @@ class TaskStatus(IntFlag):
     def set_temp_canceled(self)->'TaskStatus':
         return TaskStatus(self.value | TaskStatus.TEMP_CANCELED) if not self.is_success else self
     
+    
+    @property
+    def set_need_certify(self)->'TaskStatus':
+        return TaskStatus(self.value | TaskStatus.NEED_CERTIFY) if not self.is_success else self
+    
     @property
     def clear_error(self) -> 'TaskStatus':
         """清除错误状态"""
@@ -235,11 +240,16 @@ class TaskStatus(IntFlag):
     def clear_temp_canceled(self)->'TaskStatus':
         return TaskStatus(self.value & ~TaskStatus.TEMP_CANCELED)
     
+    @property
+    def clear_need_certify(self)->'TaskStatus':
+        return TaskStatus(self.value & ~TaskStatus.NEED_CERTIFY)
+    
     @classmethod
     def create(cls, base_status: 'TaskStatus', error: bool = False, 
                charged: bool = False, not_found: bool = False,
                fetch_error: bool = False, convert_error: bool = False,
-               post_error: bool = False,temp_canceled:bool=False
+               post_error: bool = False,temp_canceled:bool=False,
+               need_certify:bool=False,
                ) -> 'TaskStatus':
         """创建新的任务状态对象
         
@@ -271,7 +281,8 @@ class TaskStatus(IntFlag):
             status = status | cls.POST_ERROR
         if temp_canceled:
             status = status | cls.TEMP_CANCELED
-            
+        if need_certify:
+            status = status | cls.NEED_CERTIFY
             
         return status
     
@@ -298,6 +309,8 @@ class TaskStatus(IntFlag):
             flags.append("后续处理失败")
         if self.is_temp_canceled:
             flags.append("临时取消")
+        if self.is_need_certify:
+            flags.append("需要认证")
             
         flags_desc = "+".join(flags) if flags else ""
         
@@ -320,6 +333,26 @@ def Incompleted()->TaskStatus:
 
 def TempCanceled()->TaskStatus:
     return Undownloaded() | TaskStatus.TEMP_CANCELED 
+
+def NeedCertify()->TaskStatus:
+    return Undownloaded() | TaskStatus.NEED_CERTIFY
+
+def Charged()->TaskStatus:
+    return Undownloaded() | TaskStatus.CHARGED
+
+def NotFound()->TaskStatus:
+    return Undownloaded() | TaskStatus.NOT_FOUND
+
+def FetchError()->TaskStatus:
+    return Undownloaded() | TaskStatus.FETCH_ERROR
+
+def ConvertError()->TaskStatus:
+    return Undownloaded() | TaskStatus.CONVERT_ERROR
+
+def PostError()->TaskStatus:
+    return Undownloaded() | TaskStatus.POST_ERROR
+
+
     
 if __name__=="__main__":   
     

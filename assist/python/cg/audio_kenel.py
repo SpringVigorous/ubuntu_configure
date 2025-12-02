@@ -23,6 +23,10 @@ from base import (
     Undownloaded,
     Incompleted,
     sanitize_filename,
+    NeedCertify,
+    TempCanceled,
+    NotFound,
+    Charged,
 )
 
 
@@ -403,38 +407,47 @@ def extract_audio_info(html_content):
     return result
 
 
-def _audio_info_content(html_content)->str:
+def _audio_info_content(html_content)->tuple[str,str]:
     try:
         tree = html.fromstring(html_content)
         #<div class="detail-wrapper z_i">
-        info=tree.xpath('//div[@class="detail-wrapper z_i"]')
+        info_node=tree.xpath('//div[@class="detail-wrapper z_i"]')
         #<div class="sound-container kn_">
-        if not info:
-            info=tree.xpath('//div[@class="sound-container kn_"]')
+        if not info_node:
+            info_node=tree.xpath('//div[@class="sound-container kn_"]')
         #<div class="album-info clearfix z_i">
-        if not info:
-            info=tree.xpath('//div[@class="album-info clearfix z_i"]')
+        if not info_node:
+            info_node=tree.xpath('//div[@class="album-info clearfix z_i"]')
             
         #<div class="sound-info clearfix kn_">
-        if not info:
-            info=tree.xpath('//div[@class="sound-info clearfix kn_"]')
+        if not info_node:
+            info_node=tree.xpath('//div[@class="sound-info clearfix kn_"]')
         
-        if not info:
+        if not info_node:
             return html_content
-        return etree.tostring(info[0], encoding='unicode', pretty_print=True)
+        
+        def to_str(node)->str:
+            etree.tostring(node, encoding='unicode', pretty_print=True) if node else html_content
+        
+        certify_node=tree.xpath('.//div[contains(@class,"geetest_footer")]')
+        
+        
+        return to_str(info_node),to_str(certify_node)
     except:
-        return html_content
+        return html_content,html_content
 
 
 def web_status(web_content:str)->TaskStatus:
-    info_content=_audio_info_content(web_content)
-        
-    if "无法访问" in info_content or "下架" in info_content:
-        return TaskStatus.UNDOWNLOADED.set_not_found
-    if "开会员" in info_content or "VIP" in info_content or "购买" in info_content:
-        return TaskStatus.UNDOWNLOADED.set_charged
-    if "下架" in info_content:
-        return TaskStatus.UNDOWNLOADED.set_not_found
+    info_content,certify_content=_audio_info_content(web_content)
+    if info_content:
+        if "无法访问" in info_content or "下架" in info_content or "下架" in info_content:
+            return NotFound()
+        if "开会员" in info_content or "VIP" in info_content or "购买" in info_content:
+            return Charged()
+    elif certify_content:
+        if "验证" in certify_content:
+            return NeedCertify()
+    
     return TaskStatus.SUCCESS
 
 if __name__ == '__main__':
