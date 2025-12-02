@@ -423,13 +423,13 @@ def _audio_info_content(html_content)->tuple[str,str]:
         if not info_node:
             info_node=tree.xpath('//div[@class="sound-info clearfix kn_"]')
         
-        if not info_node:
-            return html_content
+        # if not info_node:
+        #     return html_content
         
-        def to_str(node)->str:
-            etree.tostring(node, encoding='unicode', pretty_print=True) if node else html_content
+        def to_str(nodes,default_result="")->str:
+            return etree.tostring(nodes[0], encoding='unicode', pretty_print=True) if nodes else default_result
         
-        certify_node=tree.xpath('.//div[contains(@class,"geetest_footer")]')
+        certify_node=tree.xpath('//div[contains(@class,"geetest_footer")]')
         
         
         return to_str(info_node),to_str(certify_node)
@@ -440,7 +440,7 @@ def _audio_info_content(html_content)->tuple[str,str]:
 def web_status(web_content:str)->TaskStatus:
     info_content,certify_content=_audio_info_content(web_content)
     
-    status=TaskStatus.UNDOWNLOADED()
+    status=Undownloaded()
     
     if info_content:
         if "无法访问" in info_content or "下架" in info_content or "下架" in info_content:

@@ -253,10 +253,10 @@ class InteractImp():
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                     return suffix,status,media_url,info
                 #获取播放按钮，并单击
-                play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=10)
+                play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=5)
                 
                 if not play_button:
-                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=10)
+                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=2)
                 if not play_button:
                     logger.error("失败","找不到播放按钮",update_time_type=UpdateTimeType.STAGE)
                     self._failed_lst.append(param_dict)
@@ -266,9 +266,10 @@ class InteractImp():
                     if buy_button:
                         self._buy_lst.append(param_dict)
                     
-                    has_error,status=self.web_error
-                    status=status if has_error else fail_status.set_error
-                    return suffix,status,media_url,info
+                has_error,status=self.web_error
+                status=status if has_error else fail_status.set_error
+                return suffix,status,media_url,info
+            
                 play_button.click()
                 
                 
