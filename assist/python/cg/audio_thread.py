@@ -250,6 +250,9 @@ class InteractImp():
                 if has_error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
                     return suffix,status,media_url,info
+                if not info:
+                    info=extract_audio_info(self.wp.html)
+                    
                 #获取播放按钮，并单击
                 play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=5)
                 
@@ -269,7 +272,7 @@ class InteractImp():
                 if info :
                     if duration:=info.get(duration_id):
                         seconds=  convert_time_str_to_seconds(duration)
-                        audio_wait_time=min(4,max(1,math.ceil(seconds/180.0)))*audio_wait_time
+                        audio_wait_time=min(2.5,max(1,math.ceil(seconds/300.0)))*audio_wait_time
                 
                 packet = self.wp.listen.wait(timeout=audio_wait_time)
                 if not packet:
@@ -277,8 +280,8 @@ class InteractImp():
                     #试验网页内容
                     # open(audio_root/"123.html","w",encoding="utf-8").write(self.wp.html)
                     has_error,status=self.web_error
-                    if has_error:
-                        status=status if has_error else FetchError()
+                    if not has_error:
+                        status= FetchError()
                     return suffix,status ,media_url,info
                 
                 

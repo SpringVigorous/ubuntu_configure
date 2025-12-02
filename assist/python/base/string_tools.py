@@ -194,14 +194,19 @@ def convert_seconds_to_datetime(seconds:int):
     
     return formatted_date
     
-
+@exception_decorator(error_state=False,error_return=-1)
 def convert_time_str_to_seconds(time_str:str):
-
-    time_obj = datetime.strptime(time_str, "%M:%S")
-
-    # 创建timedelta对象计算秒数
-    time_delta = timedelta(seconds=time_obj.second, minutes=time_obj.minute)
-    total_seconds = time_delta.total_seconds()
+    total_seconds=0
+    try:
+        time_obj = datetime.strptime(time_str, "%M:%S")
+        # 创建timedelta对象计算秒数
+        time_delta = timedelta(seconds=time_obj.second, minutes=time_obj.minute)
+        total_seconds = time_delta.total_seconds()
+    except:
+        index=0
+        for val in map(lambda x: int(x.strip())  ,reversed(time_str.split(":"))):
+            total_seconds+=val* (60**index)
+            index+=1
     return total_seconds
 # 定义转换函数
 def convert_seconds_to_time_str(t):
