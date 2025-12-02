@@ -877,8 +877,11 @@ class InteractAlbum(ThreadTask):
             df,status=self._helper.fetch_df(xlsx_path,audio_sheet_name,url,html_path)
             
             #如果有收费的，则整个专辑添加收费标签
-            if any(df[downloaded_id].apply(lambda x:TaskStatus.from_value(x).is_charged)):
-                    status=status.set_charged
+            if not df_empty(df) and any(df[downloaded_id].apply(lambda x:TaskStatus.from_value(x).is_charged)):
+                if status.is_success:
+                    status=Undownloaded()
+
+                status=status.set_charged 
             #更新状态
             if status.has_reason :
                 parent_xlsx_path=data.get(parent_xlsx_path_id)
