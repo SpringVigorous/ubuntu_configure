@@ -237,15 +237,15 @@ def main():
     # app.add_audio_url(msgs_from_xlsx(xlsx_path,sheet_name))
     #筛选album
     # app.force_init_ignore_album()
-    
+
     #筛选sound
     
     app.force_init_ignore_sound(True)
     
-    app.continue_download()
+    # app.continue_download()
     # app.continue_author()
     # app.continue_album()
-    # app.continue_audio()
+    app.continue_audio()
     app.run()
     
     

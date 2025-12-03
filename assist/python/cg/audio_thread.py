@@ -951,6 +951,11 @@ class DownloadVideo(ThreadTask):
     def _handle_data(self, data:list[tuple[str,str]]):
 
         self.logger.update_time(UpdateTimeType.STAGE)
+
+        self.pool.submit(self._download,data)
+
+    def _download(self,data):
+        
         headers = {
                     'Accept': '*/*',
                     'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -965,16 +970,14 @@ class DownloadVideo(ThreadTask):
                     'sec-ch-ua-mobile': '?0',
                     'sec-ch-ua-platform': '"Windows"',
                 }
-        self.pool.submit(self._download,data,headers=headers)
-
-    def _download(self,data):
+        
         for index,(url,audio_path) in enumerate(data):
             self._msg_count+=1
             with self.logger.raii_target(detail=f"第{index+1}个消息：{url}->{audio_path}") as logger:
                 if os.path.exists(audio_path):
                     self.logger.info("跳过",f"音频文件已存在：{audio_path}")
                     continue
-                sucess=download_sync(url,audio_path)
+                sucess=download_sync(url,audio_path,headers=headers)
                 if sucess:
                     logger.trace("下载成功",update_time_type=UpdateTimeType.STAGE)
                 else:
