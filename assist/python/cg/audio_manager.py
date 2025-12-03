@@ -394,54 +394,7 @@ class AudioManager(xlsx_manager):
                 logger.info("成功")
             except Exception as e:
                 logger.error("更新失败",e)
-    #更新本地文件后缀名
-    @exception_decorator(error_state=False)
-    def update_suffix(self,xlsx_path,sheet_name,href_val:str,suffix:str):
-        if not suffix or suffix==base_suffix:
-            return
-        with self.logger.raii_target("更新下载文件后缀",f"{xlsx_path}:{sheet_name}:{href_val}:{suffix}") as logger:
 
-            df=self.get_df(xlsx_path,sheet_name)
-            if df_empty(df):
-                logger.debug("忽略更新","df不存在")
-                return
-            try:
-            
-                for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
-                    df.loc[index,local_path_id]=str(Path(row[local_path_id]).with_suffix(suffix))
-                logger.trace("成功")
-            except Exception as e:
-                logger.error("更新失败",e)
-    #更新下载状态
-    @exception_decorator(error_state=False)
-    def update_status_suffix_url(self,xlsx_path,sheet_name,href_val:str,status:TaskStatus,suffix:str,media_url:str):
-        logger_info={
-            "xlsx_path":xlsx_path,
-            "sheet_name":sheet_name,
-            "url":href_val,
-            "status":status,
-            "suffix":suffix,
-            "media_url":media_url
-        }
-        
-        with self.logger.raii_target("更新下载状态及文件后缀",f"{logger_info}") as logger:
-            df=self.get_df(xlsx_path,sheet_name)
-            if df_empty(df):
-                logger.debug("忽略更新","df不存在")
-                return
-            try:
-                for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
-                    if status is not None:
-                        df.loc[index,downloaded_id]=status.value #转换为整型
-                    if suffix:
-                        if cur_path:=row[local_path_id]:
-                            df.loc[index,local_path_id]=str(Path(cur_path).with_suffix(suffix))
-                    if media_url:
-                        df.loc[index,media_url_id]=media_url
-                            
-                logger.trace("成功")
-            except Exception as e:
-                logger.error("更新失败",e)
     #更新下载状态
     @exception_decorator(error_state=False)
     def update_album_df(self,info:AlbumUpdateMsg):
@@ -472,9 +425,10 @@ class AudioManager(xlsx_manager):
                     if info.view_count_valid:
                         df.loc[index,view_count_id]=arabic_numbers(info.view_count)
                             
-                logger.trace("成功")
+                logger.trace("成功",update_time_type=UpdateTimeType.STEP)
+
             except Exception as e:
-                logger.error("更新失败",e)
+                logger.error("更新失败",e,update_time_type=UpdateTimeType.STEP)
     #更新博主专辑数
     @exception_decorator(error_state=False)
     def update_author_album_count(self,href_val:str,count:int):
@@ -490,9 +444,9 @@ class AudioManager(xlsx_manager):
             try:
                 for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
                         df.loc[index,album_count_id]=count
-                logger.trace("成功")
+                logger.trace("成功",update_time_type=UpdateTimeType.STEP)
             except Exception as e:
-                logger.error("更新失败",e)
+                logger.error("更新失败",e,update_time_type=UpdateTimeType.STEP)
             pass
         
     

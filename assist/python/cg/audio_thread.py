@@ -36,6 +36,7 @@ from base import (
     convert_time_str_to_seconds,
     ThreadPool,
     download_sync,
+    normal_path
 )
 
 
@@ -125,7 +126,7 @@ class InteractImp():
         self._lock=threading.Lock()
         self._msg_count:int=0
 
-
+        
     @property
     def has_closed(self):
         try:
@@ -438,7 +439,19 @@ class InteractAudio(ThreadTask):
         self._logger.update_target(self.__class__.__name__,"交互获取音频")
         pass
         self.manager=AudioManager()
-    
+        
+        
+        self._charged_dir=[]
+
+    def contains_charged(self,audio_path:str):
+        cur_dir=normal_path(str(Path(audio_path).parent))
+        return cur_dir in self._charged_dir
+
+        
+    def add_charged(self,audio_path:str):
+        cur_dir=normal_path(str(Path(audio_path).parent))
+        if cur_dir not in self._charged_dir:
+            self._charged_dir.append(cur_dir)
 
     """
     data:dict={
@@ -451,7 +464,8 @@ class InteractAudio(ThreadTask):
     """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
-        if self._impl.has_closed or self._msg_count>210:
+        # if self._impl.has_closed or self._msg_count>210:
+        if self._impl.has_closed:
             self.clear_input()
             return
         
@@ -463,13 +477,22 @@ class InteractAudio(ThreadTask):
         
         
         
-        os.makedirs(os.path.dirname(dest_path),exist_ok=True)
         
         self._msg_count+=1
+        #遇到收费的，提前结束
+        if self.contains_charged(dest_path):
+            msg=AlbumUpdateMsg(xlsx_path,sheet_name,url,Charged())
+            self.manager.update_album_df(msg)
+            return
         
+        os.makedirs(os.path.dirname(dest_path),exist_ok=True)
         #更新状态
         if success:=self._impl._handle_audio_url(url,dest_path):
             suffix,status,media_url,info=success
+            if status.is_charged:
+                self.add_charged(dest_path)
+            
+            
             if not info:
                 info={}
             info.update({
@@ -480,17 +503,16 @@ class InteractAudio(ThreadTask):
             })
             
             
-            
             msg=AlbumUpdateMsg(xlsx_path,sheet_name,url,status,suffix,info.get(duration_id),info.get(release_time_id),info.get(view_count_id),media_url)
             
             self.manager.update_album_df(msg)
-            # self.manager.update_status_suffix_url(xlsx_path,sheet_name,url,status,suffix,media_url)
+
             #判断是否成功
             if media_url:
                 self._success_count+=1
         else:
             pass
-            # self.manager.update_status(xlsx_path,sheet_name,url,TaskStatus.UNDOWNLOADED)
+
             
         
         
@@ -919,9 +941,7 @@ class InteractAlbum(ThreadTask):
             
                 self._output_count+=result
             
-        #不要搞得太多，只处理这么多
-        # if self._output_count>200:
-        #     self.clear_input()
+
             
             
 

@@ -244,8 +244,8 @@ def main():
     
     # app.continue_download()
     # app.continue_author()
-    # app.continue_album()
-    app.continue_audio()
+    app.continue_album()
+    # app.continue_audio()
     app.run()
     
     
