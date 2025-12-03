@@ -638,7 +638,7 @@ class AudioManager(xlsx_manager):
         #在汇总表中筛选数据，并做其他处理
 
         
-        filter_str="成语"
+        filter_str="英语"
         
         mask= summary_df[local_path_id].str.contains(filter_str) |summary_df[album_path_id].str.contains(filter_str) |summary_df[album_name_id].str.contains(filter_str) 
         #筛选后结果
@@ -767,11 +767,15 @@ class AudioManager(xlsx_manager):
                 pass
             
             try:
-                mask=  album_df.apply(lambda row:  bool(row[media_url_id]) and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
+                album_df=album_df[album_df[media_url_id].notna]
+                
+                mask=  album_df.apply(lambda row:  bool(row[media_url_id])   and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
                 df=album_df[mask]
-                if df_empty(df): continue
+                if df_empty(df): 
+                    continue
                 for _,row in df.iterrows():
-                    results.append((row[media_url_id],row[local_path_id]))
+                    if url:=row[media_url_id]:
+                        results.append((url,row[local_path_id]))
             except:
                 pass
 

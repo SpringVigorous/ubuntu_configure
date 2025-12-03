@@ -950,7 +950,7 @@ class DownloadVideo(ThreadTask):
     @exception_decorator(error_state=False)
     def _handle_data(self, data:list[tuple[str,str]]):
 
-        self.logger.update_time(update_time_type=UpdateTimeType.STAGE)
+        self.logger.update_time(UpdateTimeType.STAGE)
         self.pool.submit(self._download,data)
 
     def _download(self,data):
