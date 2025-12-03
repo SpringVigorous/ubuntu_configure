@@ -34,6 +34,8 @@ from base import (
     audio_root,
     sanitize_filename,
     convert_time_str_to_seconds,
+    ThreadPool,
+    download_sync,
 )
 
 
@@ -926,3 +928,44 @@ class InteractAlbum(ThreadTask):
     def _final_run_after(self):
         # self._impl.close()
         self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
+        
+        
+        
+class DownloadVideo(ThreadTask):
+    def __init__(self,input_queue,stop_event):
+        super().__init__(input_queue,stop_event=stop_event,output_queue=None,out_stop_event=None)
+        self.set_thread_name(self.__class__.__name__)
+        self._pool:ThreadPool=None
+        self.logger.update_target("音频下载",self.__class__.__name__)
+        self._msg_count:int=0
+    @property
+    def pool(self):
+        if not self._pool:
+            self._pool=ThreadPool(root_thread_name=self.thread_name)
+        return self._pool   
+    def _final_run_after(self):
+        self.pool.join()
+        self.logger.info("完成",f"下载{self._msg_count}个音频消息",update_time_type=UpdateTimeType.ALL)
+        
+    @exception_decorator(error_state=False)
+    def _handle_data(self, data:list[tuple[str,str]]):
+
+        self.logger.update_time(update_time_type=UpdateTimeType.STAGE)
+        self.pool.submit(self._download,data)
+
+    def _download(self,data):
+        for index,(url,audio_path) in enumerate(data):
+            self._msg_count+=1
+            with self.logger.raii_target(detail=f"第{index+1}个消息：{url}->{audio_path}") as logger:
+                if os.path.exists(audio_path):
+                    self.logger.info("跳过",f"音频文件已存在：{audio_path}")
+                    continue
+                sucess=download_sync(url,audio_path)
+                if sucess:
+                    logger.trace("下载成功",update_time_type=UpdateTimeType.STAGE)
+                else:
+                    logger.error("下载失败",update_time_type=UpdateTimeType.STAGE)
+        
+
+            
+

@@ -9,23 +9,24 @@ class AudioApp():
         self.audio_url_queue=Queue()
         self.bz_url_queue=Queue()
         self.album_url_queue=Queue() 
-        
+        self.download_queue=Queue()
         
         self.bz_stop_envent=threading.Event()#博主所有专辑 停止事件
         album_stop_envent=threading.Event()#专辑所有声音 停止事件
         audio_stop_envent=threading.Event()
-
+        self.download_stop_event=threading.Event()
 
 
         self.interact_bz=InteractBoZhu(self.bz_url_queue,self.album_url_queue,self.bz_stop_envent,album_stop_envent)
         self.interact_album=InteractAlbum(self.album_url_queue,self.audio_url_queue,album_stop_envent,audio_stop_envent)
         self.interact_audio=InteractAudio(self.audio_url_queue,audio_stop_envent)
+        self.download_thread=DownloadVideo(self.download_queue,self.download_stop_event)
         
                 
         self.interact_bz.start()
         self.interact_album.start()
         self.interact_audio.start()
-        
+        self.download_thread.start()
         self.logger=logger_helper(self.__class__.__name__,"获取音频")
 
         
@@ -172,17 +173,31 @@ class AudioApp():
             if msg_lst:=AudioApp.continue_audio_impl(album_df,album_xlsx_path,album_name):
                 self.add_audio_msg(msg_lst)
 
+    @exception_decorator(error_state=False)
+    def continue_download(self):
+        msg_lst= self.manager.fail_has_media_url_audios
+        if not msg_lst: return
+
+        with self.logger.raii_target("添加Download消息",f"共{len(msg_lst)}个") as logger:
+            self.download_queue.put(msg_lst)
+            logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
+
 
 
 
     def run(self):
         self.bz_stop_envent.set()
-
-
+        self.download_stop_event.set()
+        
+        self.download_queue.join()
         self.bz_url_queue.join()
         self.album_url_queue.join()
         self.audio_url_queue.join()
         
+        
+        
+        
+        self.download_thread.join()
         self.interact_bz.join()
         self.interact_bz.join()
         self.interact_album.join()
@@ -224,10 +239,13 @@ def main():
     # app.force_init_ignore_album()
     
     #筛选sound
+    
     app.force_init_ignore_sound(True)
+    
+    app.continue_download()
     # app.continue_author()
     # app.continue_album()
-    app.continue_audio()
+    # app.continue_audio()
     app.run()
     
     

@@ -757,7 +757,10 @@ def filter_folder(file_base_name:str):
 if __name__=="__main__":
 
     from base import kid_root
-    force_merge(kid_root\r"拼音练习\1",kid_root\r"拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
+    cur_dir=kid_root/r"拼音练习"
+    
+    
+    force_merge(cur_dir/"9",cur_dir/"09_aieiui_王诗玥.mp4",[".mp4"])
     exit()
 
     # filter_folder("汪汪队立大功")

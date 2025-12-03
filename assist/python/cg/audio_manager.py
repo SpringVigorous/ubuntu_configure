@@ -755,3 +755,24 @@ class AudioManager(xlsx_manager):
     @property
     def filter_album_df(self)->list[tuple[str,str,pd.DataFrame]]:
         return AudioManager._can_download_dfs( self.album_dfs)
+
+
+    #含有media_url 可是失败的项目
+    @property
+    def fail_has_media_url_audios(self)->list[tuple[str,str]]:
+        results=[]
+        for xlsx_path,name,album_df in self.album_dfs:
+            
+            if path_equal(xlsx_path,r"E:\旭尧\有声读物\xlsx\17玩英语\幼儿英语启蒙-_26个英文字母_album.xlsx"):
+                pass
+            
+            try:
+                mask=  album_df.apply(lambda row:  bool(row[media_url_id]) and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
+                df=album_df[mask]
+                if df_empty(df): continue
+                for _,row in df.iterrows():
+                    results.append((row[media_url_id],row[local_path_id]))
+            except:
+                pass
+
+        return results
