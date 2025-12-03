@@ -353,7 +353,7 @@ def fetch_sync(url ,max_retries=3,timeout=300,**args):
         try:
             with requests.get(url,timeout=timeout,**args) as response:
 
-                if response.status_code == 200:
+                if response.status_code in [200,206]:
                     hearders=response.headers
                     content_length=int(hearders.get('Content-Length', 0))
                     received_data =  response.content

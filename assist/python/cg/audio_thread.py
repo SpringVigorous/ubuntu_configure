@@ -951,7 +951,21 @@ class DownloadVideo(ThreadTask):
     def _handle_data(self, data:list[tuple[str,str]]):
 
         self.logger.update_time(UpdateTimeType.STAGE)
-        self.pool.submit(self._download,data)
+        headers = {
+                    'Accept': '*/*',
+                    'Accept-Language': 'zh-CN,zh;q=0.9',
+                    'Connection': 'keep-alive',
+                    'Range': 'bytes=0-',
+                    'Referer': 'https://www.ximalaya.com/',
+                    'Sec-Fetch-Dest': 'audio',
+                    'Sec-Fetch-Mode': 'no-cors',
+                    'Sec-Fetch-Site': 'cross-site',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+                    'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                }
+        self.pool.submit(self._download,data,headers=headers)
 
     def _download(self,data):
         for index,(url,audio_path) in enumerate(data):

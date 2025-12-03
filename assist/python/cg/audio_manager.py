@@ -767,9 +767,9 @@ class AudioManager(xlsx_manager):
                 pass
             
             try:
-                album_df=album_df[album_df[media_url_id].notna]
+
                 
-                mask=  album_df.apply(lambda row:  bool(row[media_url_id])   and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
+                mask=  album_df[media_url_id].notna() & album_df.apply(lambda row:  bool(row[media_url_id])   and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
                 df=album_df[mask]
                 if df_empty(df): 
                     continue
