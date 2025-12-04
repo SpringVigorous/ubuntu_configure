@@ -4,13 +4,16 @@ import pandas as pd
 import sys
 import os
 from pathlib import Path
-
+import ast
 
 
 
 
 from base.path_tools import get_all_files_pathlib
+from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,download_async
+import asyncio
 
+from audio_manager import *
 
 def url_data(json_path:str):
     try:
@@ -224,12 +227,131 @@ def handle_info_from_log(log_path:str):
     org_path=Path(log_path)
     log_df.to_excel(org_path.parent.joinpath(org_path.stem+"_info.xlsx"))
     return log_df
+
+@exception_decorator(error_state=False)
+def str_to_dict(cleaned_str:str):
+    try:
+        # 使用 ast.literal_eval 安全转换
+        return ast.literal_eval(cleaned_str)
+    except (ValueError, SyntaxError) as e:
+        # 如果转换失败，尝试修复常见问题
+        try:
+            # 尝试将单引号转换为双引号（JSON格式）
+            json_str = cleaned_str.replace("'", "\"")
+            import json
+            return json.loads(json_str)
+        except:
+            pass
         
+        
+@exception_decorator(error_state=False)
+def handle_audio_from_log(log_path:str)->list[dict]:
+    if not log_path or not os.path.exists(log_path):
+        return
+
+    lst=[]
+    data=None
+    with open(log_path, 'r', encoding='utf-8-sig') as file:
+        data = file.read()
+        
+    # 正则表达式模式
+    msg_pattern=r"更新下载状态及文件后缀】-【成功】详情：(.*?),耗时："
+    matches = re.findall(msg_pattern, data)
     
+    path_reg=re.compile( r"WindowsPath\(('[^']*'|\"[^\"]*\")\)")
+    # 1. 修复未加引号的字符串值
+    
+    status_reg=re.compile( r"('status':\s*)([^,]*)" )
+    for match in matches:
+        if not match:
+            continue
+        
+        msg=path_reg.sub(r"\1", match)
+        msg=status_reg.sub( r'\1"\2"', msg)
+        
+        if result:=str_to_dict(msg):
+            lst.append(result)
+    return lst
+
+def handle_audio_from_logs(log_paths:list[str]):
+    results=[]
+    for log_path in log_paths:
+        if result:=handle_audio_from_log(log_path):
+            results.extend(result)
+    
+    df=pd.DataFrame(results)
+    if df_empty(df):
+        return
+    
+    mask=(df["status"]!="下载成功") & df["media_url"].notna()
+    
+    df=df[mask]
+    df.to_excel(Path(log_paths[0]).with_suffix(".xlsx"),index=False)
+from asyncio import Semaphore
+
+async def download_with_limit(semaphore, url, dest):
+    headers = {
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'keep-alive',
+            'Range': 'bytes=0-',
+            'Referer': 'https://www.ximalaya.com/',
+            'Sec-Fetch-Dest': 'audio',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+            'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+        }
+
+    async with semaphore:
+        return await download_async(url, dest,headers=headers)
+
+
+    
+
+async def download_task():
+    
+    df=pd.read_excel(logger_root/r"audio_app\audio_app-trace.xlsx")
+    manager=  AudioManager()
+    lst=[]
+    for index,row in df.iterrows():
+        xlsx_path,sheet_name,media_url,sound_url=row["xlsx_path"],row["sheet_name"],row["media_url"],row["sound_url"]
+        album_df=manager.get_df(xlsx_path,sheet_name)
+        if df_empty(album_df):
+            continue
+        for index,dest_row in find_rows_by_col_val(album_df,href_id,sound_url).iterrows():
+            dest_path=dest_row[local_path_id]
+            if os.path.exists(dest_path):
+                continue
+            lst.append((media_url,dest_path))
+            
+    if not lst:
+        return 
+    # 限制最大并发数（根据系统资源调整）
+    max_concurrent = 10
+    semaphore = Semaphore(max_concurrent)
+    tasks=[download_with_limit(semaphore, url, dest) for url, dest in lst]
+    return await asyncio.gather(*tasks, return_exceptions=True)
+    
+
 if __name__ == "__main__":
-    df=handle_info_from_log(worm_root/r"logs\playlist_app\playlist_app-trace.log")
     
-    xlsx_path=worm_root/r"player\video.xlsx"
+    # handle_audio_from_logs([logger_root/r"audio_app\audio_app-trace.log",
+                            
+    #                         logger_root/r"audio_app\audio_app-trace-1.log",
+                            
+    #                         ])
+    
+    asyncio.run(download_task())
+        
+
+        
+    exit()
+    df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-trace.log")
+    
+    xlsx_path=player_root/r"video.xlsx"
     org_df=pd.read_excel(xlsx_path,sheet_name="video")
     from base import concat_dfs
     dest_df=concat_dfs([org_df,df])

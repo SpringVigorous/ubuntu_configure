@@ -245,7 +245,7 @@ async def __fetch_async(url ,session,max_retries=3,**kwargs):
             await asyncio.sleep(5)  # 等待 5 秒后重试
         except Exception as e:
             async_logger.error("失败",  f"{retries+1} times,Request failed: {except_stack()}",UpdateTimeType.ALL)
-            # retries += 1
+            retries += 1
             # await asyncio.sleep(5)  # 等待 5 秒后重试
     return None
     # raise Exception("Max retries exceeded")
