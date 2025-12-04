@@ -1,4 +1,4 @@
-﻿from base import TaskStatus,ccur_datetime_normal_str
+﻿from base import TaskStatus,cur_datetime_normal_str
 from audio_kenel import *
 class AlbumUpdateMsg:
 

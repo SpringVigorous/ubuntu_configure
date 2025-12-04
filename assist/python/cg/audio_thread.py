@@ -785,7 +785,7 @@ class InteractBoZhu(ThreadTask):
                     return cur_path
 
                 df[local_path_id] =df.apply(lambda row: dest_path(row[album_id]),axis=1)
-                df[create_time_id]=cur_datetime_normal_str()
+                # df[create_time_id]=cur_datetime_normal_str()
                 return self.manager.update_summary_df(df)
 
             self._helper.set_df_latter_func(df_latter)
@@ -913,7 +913,7 @@ class InteractAlbum(ThreadTask):
                 df[album_name_id]=album_name
                 df[view_count_id]=-1
                 df[duration_id]=""
-                df[create_time_id]=cur_datetime_normal_str()
+                # df[create_time_id]=cur_datetime_normal_str()
                 
                 
                 # 强制忽略(只针对新增的)

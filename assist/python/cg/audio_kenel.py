@@ -27,6 +27,7 @@ from base import (
     TempCanceled,
     NotFound,
     Charged,
+    cur_datetime_normal_str,
 )
 
 
@@ -176,7 +177,8 @@ def sound_by_album_content(xml_content)->tuple[bool,list]:
                 view_count_id: view_count,
                 release_time_id:release_time,
                 num_id:int(num),
-                downloaded_id:status
+                downloaded_id:status,
+                create_time_id:cur_datetime_normal_str(),
             })
         except Exception as e:
             pass
@@ -349,7 +351,7 @@ def _get_album_impl(root)->dict:
         play_count=arabic_numbers(play_count)[0]
     
     
-    return {href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value}
+    return {href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value,create_time_id:cur_datetime_normal_str()}
 
 
 @exception_decorator(error_state=False,error_return=[None,Undownloaded().set_convert_error])
