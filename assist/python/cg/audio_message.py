@@ -1,5 +1,39 @@
 ﻿from base import TaskStatus,cur_datetime_normal_str
-from audio_kenel import *
+downloaded_id="downloaded"
+href_id="href"
+album_id="album"
+name_id="name"
+num_id="num"
+url_id="url"
+dest_path_id="dest_path"
+album_name_id="专辑名称"
+title_id="音频标题"
+duration_id="时长"
+view_count_id="播放量"
+release_time_id="发布时间"
+local_path_id="local_path"
+episode_count_id="集数"
+downloaded_count_id="已下载数"
+media_url_id="media_url"
+parent_xlsx_path_id="parent_xlsx_path"
+parent_sheet_name_id="parent_sheet_name"
+parent_url_id="parent_url"
+album_path_id="album_path"
+author_id="author"
+album_count_id="专辑数"
+suffix_id="suffix"
+status_id="status"
+
+create_time_id="create_time"
+modify_time_id="modify_time"
+
+xlsx_path_id="xlsx_path"
+sheet_name_id="sheet_name"
+
+audio_sheet_name="audio"
+album_sheet_name="album"
+
+base_suffix=".m4a"
 class AlbumUpdateMsg:
 
     def __init__(self,xlsx_path:str=None,sheet_name:str=None,url:str=None,status:TaskStatus=TaskStatus.UNDOWNLOADED,suffix:str=".m4a",duration:str="-1",release_time:str="-1",view_count:str="-1",media_url:str=""):

@@ -31,41 +31,16 @@ from base import (
 )
 
 
-downloaded_id="downloaded"
-href_id="href"
-album_id="album"
-name_id="name"
-num_id="num"
-url_id="url"
-dest_path_id="dest_path"
-album_name_id="专辑名称"
-title_id="音频标题"
-duration_id="时长"
-view_count_id="播放量"
-release_time_id="发布时间"
-local_path_id="local_path"
-episode_count_id="集数"
-downloaded_count_id="已下载数"
-media_url_id="media_url"
-parent_xlsx_path_id="parent_xlsx_path"
-parent_sheet_name_id="parent_sheet_name"
-parent_url_id="parent_url"
-album_path_id="album_path"
-author_id="author"
-album_count_id="专辑数"
-suffix_id="suffix"
-status_id="status"
+from audio_message import *
 
-create_time_id="create_time"
-modify_time_id="modify_time"
+def get_create_modify_dict():
+    cur_val=cur_datetime_normal_str()
+    
+    return {
+        create_time_id:cur_val,
+        modify_time_id:cur_val
+    }
 
-xlsx_path_id="xlsx_path"
-sheet_name_id="sheet_name"
-
-audio_sheet_name="audio"
-album_sheet_name="album"
-
-base_suffix=".m4a"
 
 #喜马拉雅睡前故事
 def download_mp3():
@@ -140,7 +115,7 @@ def sound_by_album_content(xml_content)->tuple[bool,list]:
     </li>
     """
     # 4. 遍历每个音频项，提取目标数据
-    result = []
+    results = []
     num_items=None
     for index,item in enumerate(audio_items):
         
@@ -171,19 +146,20 @@ def sound_by_album_content(xml_content)->tuple[bool,list]:
             status=Undownloaded().set_charged if locked else TaskStatus.UNDOWNLOADED
             
             # 存入结果列表
-            result.append({
+            result={
                 title_id: title,
                 href_id: href,
                 view_count_id: view_count,
                 release_time_id:release_time,
                 num_id:int(num),
                 downloaded_id:status,
-                create_time_id:cur_datetime_normal_str(),
-            })
+            }
+            result.update(get_create_modify_dict())
+            results.append()
         except Exception as e:
             pass
 
-    return bool(num_items),result
+    return bool(num_items),results
 
 
 def get_title_name(name:str):
@@ -350,8 +326,11 @@ def _get_album_impl(root)->dict:
     if play_count:
         play_count=arabic_numbers(play_count)[0]
     
+    result={href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value}
     
-    return {href_id: href, title_id: title, episode_count_id: episode_count, view_count_id: play_count,downloaded_id:TaskStatus.UNDOWNLOADED.value,create_time_id:cur_datetime_normal_str()}
+    result.update(get_create_modify_dict())
+
+    return result
 
 
 @exception_decorator(error_state=False,error_return=[None,Undownloaded().set_convert_error])

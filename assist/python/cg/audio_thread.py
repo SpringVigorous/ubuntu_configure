@@ -38,7 +38,7 @@ from base import (
     download_sync,
     normal_path,
     unique,
-    cur_datetime_normal_str,
+
 )
 
 
@@ -721,17 +721,17 @@ class InteractBoZhu(ThreadTask):
         
         
         status=  TempCanceled()  if self.manager.ignore_album else TaskStatus.UNDOWNLOADED
-        catalog_result=[
-                {
+        
+        result= {
                     href_id:url,
                     author_id:author,
                     downloaded_id: status. value,
                     local_path_id:local_path,
                     album_count_id:count,
                     downloaded_count_id:0,
-                    create_time_id:cur_datetime_normal_str()
                 }
-            ]
+        result.update(get_create_modify_dict())
+        catalog_result=[result]
         
         cur_df=pd.DataFrame(catalog_result)
         
@@ -785,7 +785,7 @@ class InteractBoZhu(ThreadTask):
                     return cur_path
 
                 df[local_path_id] =df.apply(lambda row: dest_path(row[album_id]),axis=1)
-                # df[create_time_id]=cur_datetime_normal_str()
+
                 return self.manager.update_summary_df(df)
 
             self._helper.set_df_latter_func(df_latter)
@@ -913,7 +913,7 @@ class InteractAlbum(ThreadTask):
                 df[album_name_id]=album_name
                 df[view_count_id]=-1
                 df[duration_id]=""
-                # df[create_time_id]=cur_datetime_normal_str()
+
                 
                 
                 # 强制忽略(只针对新增的)

@@ -34,7 +34,7 @@ import pandas as pd
 from audio_kenel import *
 import os
 from enum import IntFlag
-from audio_message import AlbumUpdateMsg
+from audio_message import *
 class SheetType(IntFlag):
     ALBUM=0
     AUDIO=1
