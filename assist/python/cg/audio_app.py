@@ -228,7 +228,7 @@ def main():
 
 
              ]
-    app.add_bz_msg(bz_urls)
+    # app.add_bz_msg(bz_urls)
 
     #筛选album
     # app.force_init_ignore_album()
@@ -240,7 +240,7 @@ def main():
     # app.continue_download()
     # app.continue_author()
     # app.continue_album()
-    # app.continue_audio()
+    app.continue_audio()
     app.run()
     
     

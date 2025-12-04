@@ -488,6 +488,9 @@ class InteractAudio(ThreadTask):
         xlsx_path=data.get(xlsx_path_id)
         sheet_name=data.get(sheet_name_id)
         
+        #已存在就忽略
+        if dest_path and os.path.exists(dest_path):
+            return
         
         
         
@@ -530,10 +533,15 @@ class InteractAudio(ThreadTask):
 
             
         
-        
+    
+    @exception_decorator(error_state=False)
     def _final_run_after(self):
         self._impl.close()
-        logger_infos=[f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",f'收费的文件夹如下：\n{"\n".join(self._charged_dir)}']
+        
+        logger_infos=[f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个"]
+        if self._charged_dir:
+            logger_infos.append(f'收费的文件夹如下：\n{"\n".join(self._charged_dir)}')
+        
         self._logger.info("统计信息",f"\n{','.join(logger_infos)}\n",update_time_type=UpdateTimeType.ALL)
 
 class InteractHelper():
@@ -834,6 +842,7 @@ class InteractBoZhu(ThreadTask):
             self._helper.handle_df(df, self.output_queue)
 
         
+    @exception_decorator(error_state=False)
     def _final_run_after(self):
         # self._impl.close()
         self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
@@ -966,6 +975,7 @@ class InteractAlbum(ThreadTask):
             
             
 
+    @exception_decorator(error_state=False)
     def _final_run_after(self):
         # self._impl.close()
         self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
@@ -984,6 +994,7 @@ class DownloadVideo(ThreadTask):
         if not self._pool:
             self._pool=ThreadPool(root_thread_name=self.thread_name)
         return self._pool   
+    @exception_decorator(error_state=False)
     def _final_run_after(self):
         self.pool.join()
         self.logger.info("完成",f"下载{self._msg_count}个音频消息",update_time_type=UpdateTimeType.ALL)
