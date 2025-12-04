@@ -224,17 +224,12 @@ def main():
     app:AudioApp= AudioApp()
 
     bz_urls=[
-        "https://www.ximalaya.com/zhubo/6460629",
-        "https://www.ximalaya.com/zhubo/90400568",
-        "https://www.ximalaya.com/zhubo/62273426",
-        "https://www.ximalaya.com/zhubo/67632526",
-        "https://www.ximalaya.com/zhubo/52023510",
-        "https://www.ximalaya.com/zhubo/163605621",
+        "https://www.ximalaya.com/zhubo/65689410",
+
 
              ]
-    # app.add_bz_url(bz_urls)
-    # app.add_bz_url(bz_urls)
-    # app.add_audio_url(msgs_from_xlsx(xlsx_path,sheet_name))
+    app.add_bz_msg(bz_urls)
+
     #筛选album
     # app.force_init_ignore_album()
 
@@ -244,7 +239,7 @@ def main():
     
     # app.continue_download()
     # app.continue_author()
-    app.continue_album()
+    # app.continue_album()
     # app.continue_audio()
     app.run()
     

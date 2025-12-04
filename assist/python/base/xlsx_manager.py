@@ -17,14 +17,22 @@ class xlsx_manager(metaclass=abc.ABCMeta):
         self.logger=logger_helper(self.__class__.__name__)
         self.lock = threading.Lock()
         self._df_dict={} #path: list[sheetname,df]
+        self._search_dict={}
 
+    def is_first_search(self,xlsx_path:str)->bool:
+        if xlsx_path not in self._search_dict:
+            self._search_dict[xlsx_path]=1
+        else:
+            self._search_dict[xlsx_path]+=1
+        return self._search_dict[xlsx_path]==1
     def read_dfs(self,xlsx_path:str)->dict[str,pd.DataFrame]:
         logger=self.logger
         xlsx_path=str(xlsx_path)
         
         with self.logger.raii_target("读取数据",xlsx_path) as logger:
             if xlsx_path in self._df_dict:
-                logger.trace("已缓存",update_time_type=UpdateTimeType.STAGE)
+                if self.is_first_search(xlsx_path):
+                    logger.trace("已缓存",update_time_type=UpdateTimeType.STAGE)
                 return self._df_dict[xlsx_path]
 
             if not os.path.exists(xlsx_path):

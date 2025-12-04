@@ -504,7 +504,7 @@ class AudioManager(xlsx_manager):
         
         
         for index,row in df.iterrows():
-            df.loc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).clear_temp_canceled.value
+            df.loc[index,downloaded_id]=TaskStatus.from_value(row[downloaded_id]).clear_temp_canceled.clear_convert_error.value
             
         return df
     
@@ -590,85 +590,88 @@ class AudioManager(xlsx_manager):
                 self.logger.info("完成",f"{album_xlsx_path}中:{audio_path}->{dest_path}")
         
         #在汇总表中筛选数据，并做其他处理
+        def _handle_filter(filter_str:str):
+            if not filter_str:
+                return
+            with self.logger.raii_target("筛选关键词",filter_str) as logger:
+                
+                mask= summary_df[local_path_id].str.contains(filter_str) |summary_df[album_path_id].str.contains(filter_str) |summary_df[album_name_id].str.contains(filter_str) 
+                #筛选后结果
+                filter_df=summary_df[mask].copy()
+                if df_empty(filter_df):
+                    return
+                
+                # filter_df=filter_df.drop_duplicates(subset=[album_path_id])
+                
+                @exception_decorator(error_state=False)
+                def _get_author_path(album_path:str):
+                    album=Path(album_path)
+                    
+                    dest=album.parent.parent/f"{album.parent.stem}.xlsx"
+                    return str(dest)
+                
+                filter_df["author_path"]=filter_df[album_path_id].apply(_get_author_path)
+                
+                dfs_dict={}
+                
+                #按照 _album.xlsx  进行去重处理
+                # filter_df.drop_duplicates(subset=[album_path_id],inplace=True)
+                
+                for _,row in filter_df.iterrows():
+                    status:TaskStatus=TaskStatus.from_value(row[downloaded_id])
+                    if status.is_success:
+                        continue
+                    url=row[href_id]
+                    album_xlsx_path=row[album_path_id]
+                    album_df=self.get_df(album_xlsx_path,audio_sheet_name)
+                    if df_empty(album_df):
+                        continue
+                    # #修改 album_df 的状态
+                    album_result_df=find_rows_by_col_val(album_df,href_id,url)
+                    if df_empty(album_result_df):
+                        logger.debug("修改 album_df 的状态失败")
+                        
+                        
+                        continue
+                    for index,result_row in album_result_df.iterrows():
+                        album_df.loc[index,downloaded_id]=status.clear_temp_canceled.value
+                        
 
-        
-        filter_str="英语"
-        
-        mask= summary_df[local_path_id].str.contains(filter_str) |summary_df[album_path_id].str.contains(filter_str) |summary_df[album_name_id].str.contains(filter_str) 
-        #筛选后结果
-        filter_df=summary_df[mask].copy()
-        if df_empty(filter_df):
-            return
-        
-        # filter_df=filter_df.drop_duplicates(subset=[album_path_id])
-        
-        @exception_decorator(error_state=False)
-        def _get_author_path(album_path:str):
-            album=Path(album_path)
-            
-            dest=album.parent.parent/f"{album.parent.stem}.xlsx"
-            return str(dest)
-        
-        filter_df["author_path"]=filter_df[album_path_id].apply(_get_author_path)
-        
-        dfs_dict={}
-        
-        #按照 _album.xlsx  进行去重处理
-        # filter_df.drop_duplicates(subset=[album_path_id],inplace=True)
-        
-        for _,row in filter_df.iterrows():
-            status:TaskStatus=TaskStatus.from_value(row[downloaded_id])
-            if status.is_success:
-                continue
-            url=row[href_id]
-            album_xlsx_path=row[album_path_id]
-            album_df=self.get_df(album_xlsx_path,audio_sheet_name)
-            if df_empty(album_df):
-                continue
-            # #修改 album_df 的状态
-            album_result_df=find_rows_by_col_val(album_df,href_id,url)
-            if df_empty(album_result_df):
-                self.logger.debug("修改 album_df 的状态失败")
-                
-                
-                continue
-            for index,result_row in album_result_df.iterrows():
-                album_df.loc[index,downloaded_id]=status.clear_temp_canceled.value
-                
+                    dfs_dict[album_xlsx_path]=album_df
 
-            dfs_dict[album_xlsx_path]=album_df
-
-        #清除所有的临时取消 状态
-        for _,album_df in dfs_dict.items():
-            AudioManager.clear_df_temp_canceled(album_df)
-        
-        
-        #修改 author_df 的状态
-        album_path_lst=filter_df[album_path_id].drop_duplicates().tolist()
-        for album_xlsx_path in  album_path_lst:
-            album_xlsx_path=str(album_xlsx_path)
-            author_xlsx_path=_get_author_path(album_xlsx_path)
-            author_df=self.get_df(author_xlsx_path,album_id)
-            author_result_df=find_rows_by_col_val(author_df,local_path_id,album_xlsx_path)
-            if df_empty(author_result_df):
-                self.logger.debug("修改 author_df 的状态失败",f"author_xlsx_path:{author_xlsx_path}")
-                continue
-            for author_index,author_row in author_result_df.iterrows():
-                author_status=TaskStatus.from_value(author_row[downloaded_id])
-                if author_status.is_success:
-                    continue
-                author_df.loc[author_index,downloaded_id]=author_status.clear_temp_canceled.value
-                
-                pass
-        def _get_folder(cur_path):
-            
-                temp_path=Path(cur_path)
-                cur_path=str(temp_path.parent/temp_path.stem.replace("_album",""))
-                return cur_path.replace("xlsx","audio")
+                #清除所有的临时取消 状态
+                for _,album_df in dfs_dict.items():
+                    AudioManager.clear_df_temp_canceled(album_df)
                 
                 
-        self.logger.info(f"筛选'{filter_str}'成功",f"\n{'\n'.join(map(_get_folder,album_path_lst))}\n",update_time_type=UpdateTimeType.STAGE)
+                #修改 author_df 的状态
+                album_path_lst=filter_df[album_path_id].drop_duplicates().tolist()
+                for album_xlsx_path in  album_path_lst:
+                    album_xlsx_path=str(album_xlsx_path)
+                    author_xlsx_path=_get_author_path(album_xlsx_path)
+                    author_df=self.get_df(author_xlsx_path,album_id)
+                    author_result_df=find_rows_by_col_val(author_df,local_path_id,album_xlsx_path)
+                    if df_empty(author_result_df):
+                        logger.debug("修改 author_df 的状态失败",f"author_xlsx_path:{author_xlsx_path}")
+                        continue
+                    for author_index,author_row in author_result_df.iterrows():
+                        author_status=TaskStatus.from_value(author_row[downloaded_id])
+                        if author_status.is_success:
+                            continue
+                        author_df.loc[author_index,downloaded_id]=author_status.clear_temp_canceled.value
+                        
+                        pass
+                def _get_folder(cur_path):
+                    
+                        temp_path=Path(cur_path)
+                        cur_path=str(temp_path.parent/temp_path.stem.replace("_album",""))
+                        return cur_path.replace("xlsx","audio")
+                        
+                        
+                logger.info("成功",f"\n{'\n'.join(map(_get_folder,album_path_lst))}\n",update_time_type=UpdateTimeType.STAGE)
         
+        for filter_str in ["英语","成语","拼音","寓言","古诗","三字经"]:
+            _handle_filter(filter_str)
         
     def clear_temp_cancled(self,xlsx_path):
         for temp_path,sheet_name,df in self.df_lst:

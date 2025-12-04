@@ -36,7 +36,8 @@ from base import (
     convert_time_str_to_seconds,
     ThreadPool,
     download_sync,
-    normal_path
+    normal_path,
+    unique,
 )
 
 
@@ -228,7 +229,7 @@ class InteractImp():
         
         media_url=""
         info={}
-        with self._logger.raii_target(f"第{self._msg_count}个audio消息",f"{url}->{audio_path}") as logger:
+        with self._logger.raii_target(f"第{self._msg_count}个audio消息",f"{url} -> {audio_path}") as logger:
             param_dict={url_id:url,dest_path_id:audio_path}
             # logger.update_time(UpdateTimeType.STAGE)
             logger.trace(f"收到新消息",update_time_type=UpdateTimeType.STAGE)
@@ -252,6 +253,7 @@ class InteractImp():
                 has_error,status=self.web_error
                 if has_error:
                     logger.error("失败",status,update_time_type=UpdateTimeType.STAGE)
+                    status=status if has_error else FetchError()
                     return suffix,status,media_url,info
                 if not info:
                     info=extract_audio_info(self.wp.html)
@@ -398,7 +400,13 @@ class InteractImp():
                         
                         
                         has_index,result=sound_by_album_content(self.wp.html)
-                        if result:
+                        if result:   
+                            # href_lst=list(map(lambda x:x[href_id],results))
+                            # for item in result:
+                            #     if item[href_id] in href_lst:
+                            #         continue
+                            #     results.append(item)
+                                                 
                             results.extend(result)
                             
                             
@@ -415,12 +423,16 @@ class InteractImp():
                         
                 except Exception as e:
                     logger.error("失败",f"滚动失败{e}",update_time_type=UpdateTimeType.STAGE)
+                    
+        #去重
+        results=unique(results,lambda x:x[href_id])
+        
         #重新编号
         if not has_index:
             for index,result in enumerate(results):
                 result[num_id]=index+1
         
-        return results,Success()
+        return results,Success() if results else FetchError()
     def close(self):
         with self._lock:
             if  self.wp:
@@ -464,8 +476,8 @@ class InteractAudio(ThreadTask):
     """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
-        # if self._impl.has_closed or self._msg_count>210:
-        if self._impl.has_closed:
+        if self._impl.has_closed or self._msg_count>210:
+        # if self._impl.has_closed:
             self.clear_input()
             return
         
@@ -478,17 +490,19 @@ class InteractAudio(ThreadTask):
         
         
         
-        self._msg_count+=1
         #遇到收费的，提前结束
         if self.contains_charged(dest_path):
             msg=AlbumUpdateMsg(xlsx_path,sheet_name,url,Charged())
             self.manager.update_album_df(msg)
             return
         
+        self._msg_count+=1
         os.makedirs(os.path.dirname(dest_path),exist_ok=True)
         #更新状态
         if success:=self._impl._handle_audio_url(url,dest_path):
             suffix,status,media_url,info=success
+            
+            #记录收费的专辑
             if status.is_charged:
                 self.add_charged(dest_path)
             
@@ -518,8 +532,8 @@ class InteractAudio(ThreadTask):
         
     def _final_run_after(self):
         self._impl.close()
-        self._logger.info("统计信息",f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",update_time_type=UpdateTimeType.ALL)
-
+        logger_infos=[f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个",f'收费的文件夹如下：\n{"\n".join(self._charged_dir)}']
+        self._logger.info("统计信息",f"\n{','.join(logger_infos)}\n",update_time_type=UpdateTimeType.ALL)
 
 class InteractHelper():
     def __init__(self,logger:logger_helper,
@@ -877,7 +891,10 @@ class InteractAlbum(ThreadTask):
         with self.logger.raii_target(f"第{self._msg_count}个专辑消息",f"{url}") as logger:
             @exception_decorator(error_state=False)
             def df_latter(df:pd.DataFrame)->pd.DataFrame:
-                df.drop_duplicates(subset=[title_id,num_id],inplace=True)
+                
+                df.drop_duplicates(subset=[href_id],inplace=True)
+                df.reset_index(drop=True, inplace=True)
+                
                 df[href_id]=df[href_id].apply(lambda x:fill_url(x,url))
                 total=len(df)
                 df[title_id]=df[title_id].apply(lambda x: sanitize_filename(x))
@@ -892,7 +909,7 @@ class InteractAlbum(ThreadTask):
                 df[local_path_id]=df[name_id].apply(lambda x:str(AudioManager.file_path(file_name=f"{x}.m4a",author_name=author_name,album_name=album_name) ))
                 df[album_name_id]=album_name
                 df[view_count_id]=-1
-                df[duration_id]=-1
+                df[duration_id]=""
                 
                 
                 # 强制忽略(只针对新增的)
