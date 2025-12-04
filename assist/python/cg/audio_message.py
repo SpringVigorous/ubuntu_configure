@@ -1,5 +1,5 @@
-﻿from base import TaskStatus
-
+﻿from base import TaskStatus,ccur_datetime_normal_str
+from audio_kenel import *
 class AlbumUpdateMsg:
 
     def __init__(self,xlsx_path:str=None,sheet_name:str=None,url:str=None,status:TaskStatus=TaskStatus.UNDOWNLOADED,suffix:str=".m4a",duration:str="-1",release_time:str="-1",view_count:str="-1",media_url:str=""):
@@ -118,7 +118,6 @@ class AlbumUpdateMsg:
         if self.media_url_valid: result["media_url"]=self.media_url
 
         result.update({
-            
             "status":self.status,
             "suffix":self.suffix,
             "release_time":self.release_time,

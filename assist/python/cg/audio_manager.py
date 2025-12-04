@@ -18,13 +18,17 @@ from base import (
     find_rows_by_col_val,
     find_last_value_by_col_val,
     arabic_numbers,
+    cur_datetime_normal_str,
     # 业务枚举
     TaskStatus,
     UpdateTimeType,
     
     # 路径配置
     audio_root,
-    normal_path
+    normal_path,
+    
+    file_created_time_normal_str,
+    file_modified_time_normal_str,
 )
 import pandas as pd
 from audio_kenel import *
@@ -65,7 +69,29 @@ class AudioManager(xlsx_manager):
         self._ignore_album=False
 
         self.load()
+        #添加 列标签
+        self.after_load()
+    def after_load(self):
+        for xlsx_path ,sheet_name ,df in self.df_lst:
+            if create_time_id in df.columns:
+                continue
+            org_create_time_str=file_created_time_normal_str(xlsx_path)
+            
+            df[create_time_id]=org_create_time_str
+            df[modify_time_id]=org_create_time_str
+            
+            for _,row in df.iterrows():
+                local_path=row[local_path_id]
+                if not os.path.exists(local_path):
+                    continue
+                row[create_time_id]=file_created_time_normal_str(local_path)
+                row[modify_time_id]=file_modified_time_normal_str(local_path)
 
+
+            
+
+        
+        
     def set_ignore_album(self,ignore:bool):
         self._ignore_album=ignore
     @property
@@ -391,6 +417,8 @@ class AudioManager(xlsx_manager):
                     return
                 for index,row in result_df.iterrows():
                     df.loc[index,downloaded_id]=status.value
+                    #修正 修改时间
+                    df.loc[index,modify_time_id]=cur_datetime_normal_str()  
                 logger.info("成功")
             except Exception as e:
                 logger.error("更新失败",e)
@@ -424,6 +452,9 @@ class AudioManager(xlsx_manager):
                         df.loc[index,release_time_id]=info.release_time
                     if info.view_count_valid:
                         df.loc[index,view_count_id]=arabic_numbers(info.view_count)
+                    #修正 修改时间
+                    df.loc[index,modify_time_id]=cur_datetime_normal_str()     
+                        
                             
                 logger.trace("成功",update_time_type=UpdateTimeType.STEP)
 
@@ -443,7 +474,9 @@ class AudioManager(xlsx_manager):
         with self.logger.raii_target("更新博主专辑数",f"{logger_info}") as logger:
             try:
                 for index,row in find_rows_by_col_val(df,href_id,href_val).iterrows():
-                        df.loc[index,album_count_id]=count
+                    df.loc[index,album_count_id]=count
+                    #修正 修改时间
+                    df.loc[index,modify_time_id]=cur_datetime_normal_str()  
                 logger.trace("成功",update_time_type=UpdateTimeType.STEP)
             except Exception as e:
                 logger.error("更新失败",e,update_time_type=UpdateTimeType.STEP)

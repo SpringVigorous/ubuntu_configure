@@ -55,6 +55,9 @@ album_count_id="专辑数"
 suffix_id="suffix"
 status_id="status"
 
+create_time_id="create_time"
+modify_time_id="modify_time"
+
 xlsx_path_id="xlsx_path"
 sheet_name_id="sheet_name"
 

@@ -11,6 +11,8 @@ import uuid
 import math
 from base.math_tools import float_to_int_if_approx
 import getpass
+import time
+
 def current_user():
     return getpass.getuser()
 
@@ -416,9 +418,31 @@ def bit_fuzzy_search(val,src_lst):
                 break
     return dest_name
     
-import time
+def timestamp_to_datetime(timestamp:int)->datetime:
+    return datetime.fromtimestamp(timestamp)
+def datetime_normal_str(curtime:datetime):
+    # 使用 strftime 方法将其格式化为指定的字符串
+    # 格式说明：
+    # %Y - 四位数的年份（如 2025）
+    # %m - 两位数的月份（01-12）
+    # %d - 两位数的日期（01-31）
+    # %H - 24小时制的小时（00-23）
+    # %M - 分钟（00-59）
+    # %S - 秒（00-59）
+    return curtime.strftime("%Y-%m-%d %H:%M:%S")
+def cur_datetime_normal_str():
+    return datetime_normal_str(datetime.now())
 
 
+def file_created_time_normal_str(file_path:str)->str:
+    if not os.path.exists(file_path):
+        return ""
+    return datetime_normal_str(datetime.fromtimestamp(os.path.getctime(file_path)))
+
+def file_modified_time_normal_str(file_path:str)->str:
+    if not os.path.exists(file_path):
+        return ""
+    return datetime_normal_str(datetime.fromtimestamp(os.path.getmtime(file_path)))
 
 def str2time(str_val:str,format_str:str="%Y-%m-%d %H:%M:%S")->datetime:
     return datetime.strptime(str_val, format_str)
