@@ -24,13 +24,13 @@ def find_values_by_col_val(df, col_name,val,dest_name,default_val=pd.Series()):
 
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找,返回【{dest_name}】列,默认值:{default_val}")
     try:
-        matches=df[col_name] == val
-        match_df=find_sub_df_by_col_val(results,col_name,val)
+
+        match_df=find_sub_df_by_col_val(df,col_name,val)
         if df_empty(match_df):
             log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
             return default_val
         
-        results= df[dest_name]
+        results= match_df[dest_name]
         if results.empty:
             log.info("失败",f"没有找到匹配的值，返回默认值{default_val}")
             return default_val
@@ -102,6 +102,8 @@ def find_last_value_by_col_val(df, col_name,val,dest_name,default_val=None):
     if isinstance(vals,pd.DataFrame) or isinstance(vals,pd.Series):
         if vals.empty:
             return default_val
+        if isinstance(vals,pd.Series):
+            return list(filter(lambda x:x ,vals))[-1]
         return vals.iloc[-1]
     return vals
 

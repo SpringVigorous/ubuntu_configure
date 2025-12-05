@@ -87,7 +87,8 @@ class AudioManager(xlsx_manager):
                 row[create_time_id]=file_created_time_normal_str(local_path)
                 row[modify_time_id]=file_modified_time_normal_str(local_path)
 
-
+        for xlsx_path ,sheet_name ,df  in self.album_dfs:
+            pass
             
 
         

@@ -3,6 +3,7 @@ from audio_thread import *
 from audio_kenel import *
 from base import exception_decorator,backup_xlsx,unique,envent_sequence,read_from_txt_utf8_sig,audio_root
 from audio_manager import AudioManager
+import time
 class AudioApp():
     def __init__(self) -> None:
         
@@ -249,6 +250,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # for i in range(30):
+    #     main()
+    #     time.sleep(120)
     # os.system(f"shutdown /s /t {5}")
     
     exit()

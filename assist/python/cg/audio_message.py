@@ -37,7 +37,7 @@ base_suffix=".m4a"
 class AlbumUpdateMsg:
 
     def __init__(self,xlsx_path:str=None,sheet_name:str=None,url:str=None,status:TaskStatus=TaskStatus.UNDOWNLOADED,suffix:str=".m4a",duration:str="-1",release_time:str="-1",view_count:str="-1",media_url:str=""):
-        self._xlsx_path:str=xlsx_path
+        self._xlsx_path:str=str(xlsx_path)
         self._sheet_name:str=sheet_name
         self._status:TaskStatus=status
         self._suffix:str=suffix
@@ -56,7 +56,7 @@ class AlbumUpdateMsg:
         
     
     def set_xlsx_path(self,xlsx_path:str):
-        self._xlsx_path=xlsx_path
+        self._xlsx_path=str(xlsx_path)
         
     def set_sheet_name(self,sheet_name:str):
         self._sheet_name=sheet_name
@@ -106,7 +106,9 @@ class AlbumUpdateMsg:
     @property
     def media_url_valid(self)->bool:
         return bool(self._media_url)
-    
+    @property
+    def suffix_valid(self)->bool:
+        return bool(self._suffix)
     
     @property
     def release_time_valid(self)->bool:
@@ -143,20 +145,19 @@ class AlbumUpdateMsg:
     def __repr__(self) -> str:
         
         result={}
-        if self.xlsx_path_valid: result["xlsx_path"]=self.xlsx_path
+        if self.xlsx_path_valid: result["xlsx_path"]=str(self.xlsx_path)
         if self.sheet_name_valid: result["sheet_name"]=self.sheet_name
         if self.sound_url_valid: result["sound_url"]=self.sound_url
         if self.duration_valid: result["duration"]=self.duration
 
         if self.view_count_valid: result["view_count"]=self.view_count
         if self.media_url_valid: result["media_url"]=self.media_url
+        if self.suffix_valid: result["suffix"]=self.suffix
 
         result.update({
             "status":self.status,
-            "suffix":self.suffix,
-            "release_time":self.release_time,
 
-            
+            "release_time":self.release_time,
             
         })
         

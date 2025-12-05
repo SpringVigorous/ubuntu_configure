@@ -158,6 +158,8 @@ def pkl_files(dest_dir,is_recurse=True)->list[str]:
 def srt_files(dest_dir,is_recurse=True)->list[str]:
     return spceial_suffix_files(dest_dir,".srt",is_recurse=is_recurse)
 
+def log_files(dest_dir,is_recurse=True)->list[str]:
+    return spceial_suffix_files(dest_dir,".log",is_recurse=is_recurse)
 img_extensions= [
     # 常见格式
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp",

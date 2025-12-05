@@ -49,7 +49,7 @@ from audio_manager import AudioManager
 from audio_message import *
 
     
-
+import time
 
 @exception_decorator(error_state=False)
 def dest_path(dest_dir:Path,album:str,name:str)->str:
@@ -436,8 +436,11 @@ class InteractImp():
         return results,Success() if results else FetchError()
     def close(self):
         with self._lock:
-            if  self.wp:
-                self.wp.close()
+            try:
+                if  self.wp:
+                    self.wp.close()
+            except:
+                pass
 
 
 class InteractAudio(ThreadTask):
@@ -477,11 +480,13 @@ class InteractAudio(ThreadTask):
     """
     @exception_decorator(error_state=False)
     def _handle_data(self, data:dict):
-        if self._impl.has_closed or self._msg_count>210:
+        if self._impl.has_closed :
         # if self._impl.has_closed:
             self.clear_input()
             return
-        
+        if self._msg_count>0 and self._msg_count % 210==0:
+            time.sleep(120)
+            
         
         url=data.get(url_id)
         dest_path=data.get(dest_path_id)
@@ -536,6 +541,7 @@ class InteractAudio(ThreadTask):
     
     @exception_decorator(error_state=False)
     def _final_run_after(self):
+
         self._impl.close()
         
         logger_infos=[f"成功{self._success_count}个,失败{self._msg_count-self._success_count}个"]

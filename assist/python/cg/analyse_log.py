@@ -10,7 +10,7 @@ import ast
 
 
 from base.path_tools import get_all_files_pathlib
-from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,download_async
+from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,download_async,log_files,find_last_value_by_col_val
 import asyncio
 
 from audio_manager import *
@@ -273,20 +273,45 @@ def handle_audio_from_log(log_path:str)->list[dict]:
             lst.append(result)
     return lst
 
-def handle_audio_from_logs(log_paths:list[str]):
+def handle_audio_from_logs(log_paths:list[str])->pd.DataFrame:
     results=[]
     for log_path in log_paths:
         if result:=handle_audio_from_log(log_path):
             results.extend(result)
+        # break
     
     df=pd.DataFrame(results)
     if df_empty(df):
         return
-    
+    df.dropna(subset=[])
+    df.drop_duplicates(subset=["sound_url"],inplace=True)
     mask=(df["status"]!="下载成功") & df["media_url"].notna()
+    df=df[mask].copy()
+    manager=  AudioManager()
     
-    df=df[mask]
+    dfs=[]
+    for xlsx_path,group in df.groupby("xlsx_path", group_keys=False):
+        row=group.iloc[0]
+        sheet_name=row["sheet_name"]
+        album_df=manager.get_df(xlsx_path,sheet_name)
+        if df_empty(album_df):
+            continue
+        
+        def find_local_path(sound_url:str):
+            
+            dest_path=find_last_value_by_col_val(album_df,href_id,sound_url,local_path_id)
+            #有效，但未下载
+            return dest_path if dest_path and  not os.path.exists(dest_path) else None
+
+        
+        group[local_path_id]=group["sound_url"].apply(find_local_path)
+        group[name_id]=group[local_path_id].apply(lambda x: Path(x).stem if x else None)
+        dfs.append(group)
+        
+    df=concat_dfs(dfs)
+    df.dropna(subset=[name_id],inplace=True)
     df.to_excel(Path(log_paths[0]).with_suffix(".xlsx"),index=False)
+    return df
 from asyncio import Semaphore
 
 async def download_with_limit(semaphore, url, dest):
@@ -338,13 +363,12 @@ async def download_task():
 
 if __name__ == "__main__":
     
-    # handle_audio_from_logs([logger_root/r"audio_app\audio_app-trace.log",
-                            
-    #                         logger_root/r"audio_app\audio_app-trace-1.log",
-                            
-    #                         ])
+    log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "trace" in Path(file_path).stem]
+
+        
+    handle_audio_from_logs(log_lst)
     
-    asyncio.run(download_task())
+    # asyncio.run(download_task())
         
 
         
