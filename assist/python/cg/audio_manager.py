@@ -9,6 +9,7 @@ from base import (
     exception_decorator,
     global_logger,
     path_equal,
+    unique,
     
     # 数据处理模块
     xlsx_manager,
@@ -71,6 +72,7 @@ class AudioManager(xlsx_manager):
         self.load()
         #添加 列标签
         self.after_load()
+    @exception_decorator(error_state=False)
     def after_load(self):
         for xlsx_path ,sheet_name ,df in self.df_lst:
             if create_time_id in df.columns:
@@ -88,7 +90,42 @@ class AudioManager(xlsx_manager):
                 row[modify_time_id]=file_modified_time_normal_str(local_path)
 
         for xlsx_path ,sheet_name ,df  in self.album_dfs:
-            pass
+            nums=list(df[num_id])
+            count=len(nums)
+            if count==len(unique(nums)):
+                continue
+            
+            df[num_id]=range(1,count+1)
+
+            df[title_id]=df[title_id].apply(lambda x: sanitize_filename(x))
+            df[name_id]=df.apply(
+                lambda row:dest_title_name(
+                    row[num_id],
+                    row[title_id],
+                    count
+                    ),
+                axis=1
+                )
+            
+            org_lst=list(df[local_path_id])
+            
+            df[local_path_id]=df.apply(
+                lambda row: str(Path(row[local_path_id]).with_stem(row[name_id])),
+                axis=1
+                )
+            
+            for org_file,new_file in zip(org_lst,list(df[local_path_id])):
+                if path_equal(org_file,new_file) or not os.path.exists(org_file):
+                    continue
+                with self.logger.raii_target("重命名文件",f"{org_file}==>{new_file}") as logger:
+                    if os.path.exists(new_file):
+                        os.remove(new_file)
+                    os.rename(org_file,new_file)
+                    
+                    logger.info("成功")
+                
+            
+                
             
 
         
