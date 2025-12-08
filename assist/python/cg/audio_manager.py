@@ -711,8 +711,8 @@ class AudioManager(xlsx_manager):
                     dfs_dict[album_xlsx_path]=album_df
 
                 #清除所有的临时取消 状态
-                for _,album_df in dfs_dict.items():
-                    AudioManager.clear_df_temp_canceled(album_df)
+                # for _,album_df in dfs_dict.items():
+                #     AudioManager.clear_df_temp_canceled(album_df)
                 
                 
                 #修改 author_df 的状态
