@@ -39,4 +39,4 @@ def except_stack()->str:
     if _fatal_link_error(error_info):
         global _link_error
         _link_error=True
-    return error_info 
+    return f"堆栈信息如下：\n{error_info }"

@@ -3,6 +3,7 @@ from audio_thread import *
 from audio_kenel import *
 from base import exception_decorator,backup_xlsx,unique,envent_sequence,read_from_txt_utf8_sig,audio_root
 from audio_manager import AudioManager
+from analyse_log import download_audio_by_log
 import time
 class AudioApp():
     def __init__(self) -> None:
@@ -34,21 +35,58 @@ class AudioApp():
         self.manager=AudioManager()
         
         
-        self.author_msg_index:int=0
-        self.album_msg_index:int=0
-        self.audio_msg_index:int=0
+        self.msg_index_lst:list=[0]*3
+        
+
+    
+        
+    
+    def _msg_count(self,index:int,add_val:int=0)->int:
+        if index<0 or index+1>len(self.msg_index_lst):
+            return -1
+        self.msg_index_lst[index]+=add_val
+        return self.msg_index_lst[index]
+    
+    @property
+    def author_msg_index(self)->int:
+        return 0
+    
+
+    @property
+    def album_msg_index(self)->int:
+        return 1
+
+        
+
+    @property
+    def audio_msg_index(self)->int:
+        return 2
+
+    
+    
+    
+    @exception_decorator(error_state=False)
+    def _add_msg(self,msg_lst:list|str|dict,msg_index,target_name,msg_queue:Queue):
+        if not msg_lst: return
+        if not isinstance(msg_lst,list):
+            msg_lst=[msg_lst]
+            
+            
+        self.logger.update_time(UpdateTimeType.STAGE)
+        with self.logger.raii_target(f"添加{target_name}消息",f"共{len(msg_lst)}个") as outer_logger:
+            cur_index=self._msg_count(msg_index,1)
+            for index,url in enumerate(msg_lst):
+                with self.logger.raii_target(detail=f"第{cur_index}次：第{index+1}个{url} ") as inner_logger:
+                    msg_queue.put(url)
+                    inner_logger.trace("成功",update_time_type=UpdateTimeType.STEP)
+            inner_logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
+
+        
         
     @exception_decorator(error_state=False)
     def add_bz_msg(self,urls:str|list[str]):
-        if not urls: return
-        
-        self.author_msg_index+=1
-        
-        if isinstance(urls,str):
-            urls=[urls]
-        for index,url in enumerate(urls):
-            with self.logger.raii_target(f"添加博主消息",f"第{self.author_msg_index}：{index+1}个{url}") as logger:
-                self.bz_url_queue.put(url)
+        self._add_msg(urls,self.author_msg_index,"博主",self.bz_url_queue)
+
 
     """
     data:dict={           
@@ -62,18 +100,8 @@ class AudioApp():
     """
     @exception_decorator(error_state=False)
     def add_album_msg(self,msg_lst:dict|list[dict]):
-        if not msg_lst: return
-        self.album_msg_index+=1
-        if isinstance(msg_lst,dict):
-            msg_lst=[msg_lst]
-            
-        self.logger.update_time(UpdateTimeType.STAGE)
-        with self.logger.raii_target(f"添加专辑消息",f"第{self.album_msg_index}：共{len(msg_lst)}个") as outer_logger:
-            for index,msg in enumerate(msg_lst):
-                with self.logger.raii_target(detail=f"第{self.album_msg_index}：{index+1}个{msg}") as inner_logger:
-                    self.album_url_queue.put(msg)
-                    inner_logger.trace("成功",update_time_type=UpdateTimeType.STEP)
-            outer_logger.info("成功",update_time_type=UpdateTimeType.STAGE)
+        self._add_msg(msg_lst,self.album_msg_index,"专辑",self.album_url_queue)
+
             
         
     """
@@ -88,16 +116,8 @@ class AudioApp():
 
     @exception_decorator(error_state=False)
     def add_audio_msg(self,msg_lst:dict|list[dict]):   
-        if not msg_lst: return
-        self.audio_msg_index+=1
-        
-        if isinstance(msg_lst,dict):
-            msg_lst=[msg_lst]
-        
-        for index,msg in enumerate(msg_lst):
-            with self.logger.raii_target(f"添加音频消息",f"第{self.audio_msg_index}：{index+1}个{msg}") as logger:
-                self.audio_url_queue.put(msg)
-                logger.trace("成功","加入下载队")
+        self._add_msg(msg_lst,self.audio_msg_index,"音频",self.audio_url_queue)
+
     @staticmethod
 
     def continue_audio_impl(album_df,album_xlsx_path,audio_sheet_name):
@@ -118,15 +138,9 @@ class AudioApp():
         xlsx_path,name,catalog_df=self.manager.filter_catalog_df
         if df_empty(catalog_df) :
             return
-        urls=list(filter(lambda x:x ,catalog_df[href_id]))
-        
-        self.logger.update_time(UpdateTimeType.STAGE)
-        with self.logger.raii_target("添加Author消息",f"共{len(urls)}个") as logger:
-            for index,url in enumerate(urls):
-                self.add_bz_msg(url)
-                logger.trace("成功",f"第{index}个：{url}")
+        if urls:=list(filter(lambda x:x ,catalog_df[href_id])):
+            self.add_bz_msg(urls)
 
-            logger.trace("成功",update_time_type=UpdateTimeType.STAGE)
             
             
     @staticmethod
@@ -204,10 +218,13 @@ class AudioApp():
         self.interact_album.join()
         self.interact_audio.join()
         
+        #通过日志信息，下载未下载成功的音频
+        download_audio_by_log()
         
         #保存xlsx
         self.save_xlsx()
         self.logger.info("结束",update_time_type=UpdateTimeType.ALL)
+        
         
     @exception_decorator(error_state=False)
     def save_xlsx(self):
@@ -225,11 +242,25 @@ def main():
     app:AudioApp= AudioApp()
 
     bz_urls=[
+        "https://www.ximalaya.com/zhubo/460372713",
+        "https://www.ximalaya.com/zhubo/29434986",
+        "https://www.ximalaya.com/zhubo/181500128",
+        "https://www.ximalaya.com/zhubo/58841314",
+        "https://www.ximalaya.com/zhubo/235830385",
+        "https://www.ximalaya.com/zhubo/51763868",
+        "https://www.ximalaya.com/zhubo/43361493",
+        "https://www.ximalaya.com/zhubo/10553948",
+        "https://www.ximalaya.com/zhubo/55168786",
+        "https://www.ximalaya.com/zhubo/6460629",
+        "https://www.ximalaya.com/zhubo/90400568",
+        "https://www.ximalaya.com/zhubo/62273426",
+        "https://www.ximalaya.com/zhubo/67632526",
+        "https://www.ximalaya.com/zhubo/52023510",
+        "https://www.ximalaya.com/zhubo/163605621",
         "https://www.ximalaya.com/zhubo/65689410",
 
-
              ]
-    # app.add_bz_msg(bz_urls)
+    app.add_bz_msg(bz_urls)
 
     #筛选album
     # app.force_init_ignore_album()
@@ -239,9 +270,9 @@ def main():
     app.force_init_ignore_sound(True)
     
     # app.continue_download()
-    # app.continue_author()
+    app.continue_author()
     # app.continue_album()
-    app.continue_audio()
+    # app.continue_audio()
     app.run()
     
     

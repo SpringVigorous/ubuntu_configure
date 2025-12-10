@@ -10,7 +10,7 @@ import ast
 
 
 from base.path_tools import get_all_files_pathlib
-from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,download_async,log_files,find_last_value_by_col_val
+from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,downloads_async,log_files,find_last_value_by_col_val,logger_helper,UpdateTimeType,global_logger,read_from_txt
 import asyncio
 
 from audio_manager import *
@@ -255,7 +255,7 @@ def handle_audio_from_log(log_path:str)->list[dict]:
         data = file.read()
         
     # 正则表达式模式
-    msg_pattern=r"更新下载状态及文件后缀】-【成功】详情：(.*?),耗时："
+    msg_pattern=r"(.*?)-TRACE-.*?更新下载状态及文件后缀】-【成功】详情：(.*?),耗时："
     matches = re.findall(msg_pattern, data)
     
     path_reg=re.compile( r"WindowsPath\(('[^']*'|\"[^\"]*\")\)")
@@ -265,13 +265,35 @@ def handle_audio_from_log(log_path:str)->list[dict]:
     for match in matches:
         if not match:
             continue
-        
-        msg=path_reg.sub(r"\1", match)
+        msg_time=match[0]
+        msg=path_reg.sub(r"\1", match[1])
         msg=status_reg.sub( r'\1"\2"', msg)
         
         if result:=str_to_dict(msg):
+            result["msg_time"]=msg_time
             lst.append(result)
     return lst
+
+@exception_decorator(error_state=False)
+def fetch_author_url_from_log(log_path:str)->list[str]:
+    data=read_from_txt(log_path)
+    if not data:
+        return    
+        
+    # 正则表达式模式
+    msg_pattern=r"(https://www.ximalaya.com/zhubo/[a-zA-Z0-9]+)"
+    matches = re.findall(msg_pattern, data)
+
+    return matches
+
+@exception_decorator(error_state=False)
+def fetch_author_url_from_logs(log_paths:list[str])->list[str]:
+    results=[]
+    for log_path in log_paths:
+        if result:=fetch_author_url_from_log(log_path):
+            results.extend(result)
+    return unique(results)
+
 
 def handle_audio_from_logs(log_paths:list[str])->pd.DataFrame:
     results=[]
@@ -283,8 +305,8 @@ def handle_audio_from_logs(log_paths:list[str])->pd.DataFrame:
     df=pd.DataFrame(results)
     if df_empty(df):
         return
-    df.dropna(subset=[])
-    df.drop_duplicates(subset=["sound_url"],inplace=True)
+    # df.dropna(subset=[])
+    df.drop_duplicates(subset=["sound_url"],inplace=True,keep="last")
     mask=(df["status"]!="下载成功") & df["media_url"].notna()
     df=df[mask].copy()
     manager=  AudioManager()
@@ -310,28 +332,12 @@ def handle_audio_from_logs(log_paths:list[str])->pd.DataFrame:
         
     df=concat_dfs(dfs)
     df.dropna(subset=[name_id],inplace=True)
-    df.to_excel(Path(log_paths[0]).with_suffix(".xlsx"),index=False)
+    try:
+        df.to_excel(Path(log_paths[0]).with_suffix(".xlsx"),index=False)
+    except:
+        pass
     return df
-from asyncio import Semaphore
 
-async def download_with_limit(semaphore, url, dest):
-    headers = {
-            'Accept': '*/*',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Range': 'bytes=0-',
-            'Referer': 'https://www.ximalaya.com/',
-            'Sec-Fetch-Dest': 'audio',
-            'Sec-Fetch-Mode': 'no-cors',
-            'Sec-Fetch-Site': 'cross-site',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
-            'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-        }
-
-    async with semaphore:
-        return await download_async(url, dest,headers=headers)
 
 
     
@@ -354,21 +360,44 @@ async def download_task():
             
     if not lst:
         return 
-    # 限制最大并发数（根据系统资源调整）
-    max_concurrent = 10
-    semaphore = Semaphore(max_concurrent)
-    tasks=[download_with_limit(semaphore, url, dest) for url, dest in lst]
-    return await asyncio.gather(*tasks, return_exceptions=True)
+    url_lst,dest_lst=zip(*lst)
+    headers = {
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'keep-alive',
+            'Range': 'bytes=0-',
+            'Referer': 'https://www.ximalaya.com/',
+            'Sec-Fetch-Dest': 'audio',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+            'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+        }
+    return await downloads_async(url_lst,dest_lst,headers=headers)
     
+
+@exception_decorator(error_state=False)
+def download_audio_by_log():
+    log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "trace" in Path(file_path).stem]
+    # log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "audio_app-trace"== Path(file_path).stem]
+    
+    logger=logger_helper("通过日志信息下载音频",f'日志路径为：\n{"\n".join(log_lst)}\n')
+    
+    results=fetch_author_url_from_logs(log_lst)
+    logger.info("完成",f"\n{'\n'.join(results)}\n",update_time_type=UpdateTimeType.ALL)
+    return
+    
+    df=handle_audio_from_logs(log_lst)
+    if df_empty(df) :
+        return
+    result=asyncio.run(download_task())
+    logger.info("完成",f"共{len(df)}个,{result}",update_time_type=UpdateTimeType.ALL)
 
 if __name__ == "__main__":
     
-    log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "trace" in Path(file_path).stem]
-
-        
-    handle_audio_from_logs(log_lst)
-    
-    # asyncio.run(download_task())
+    download_audio_by_log()
         
 
         

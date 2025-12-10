@@ -155,7 +155,7 @@ def sound_by_album_content(xml_content)->tuple[bool,list]:
                 downloaded_id:status,
             }
             result.update(get_create_modify_dict())
-            results.append()
+            results.append(result)
         except Exception as e:
             pass
 

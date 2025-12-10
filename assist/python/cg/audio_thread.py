@@ -263,7 +263,7 @@ class InteractImp():
                 play_button=self.wp.ele((By.XPATH,sound_play_xpath),timeout=5)
                 
                 if not play_button:
-                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=2)
+                    play_button=self.wp.ele((By.XPATH,video_play_xpath),timeout=5)
                 if not play_button:
                     logger.error("失败","找不到播放按钮",update_time_type=UpdateTimeType.STAGE)
                     has_error,status=self.web_error
@@ -304,7 +304,9 @@ class InteractImp():
                         logger_detail_str=f"修改最终路径：\n{audio_path}\n"
                     logger.info("成功",logger_detail_str,update_time_type=UpdateTimeType.STAGE)
                 else:
-                    logger.error("失败",update_time_type=UpdateTimeType.STAGE)
+                    #后续统一下载，此处不用管
+                    
+                    logger.error("失败","body为空,后续继续下载",update_time_type=UpdateTimeType.STAGE)
         #获取时长、发布时间、点赞数
         
         # cur_info= self.audio_info
@@ -514,7 +516,11 @@ class InteractAudio(ThreadTask):
             #记录收费的专辑
             if status.is_charged:
                 self.add_charged(dest_path)
-            
+            elif status.is_undownloaded and media_url:
+                #下载
+                
+                
+                pass
             
             if not info:
                 info={}

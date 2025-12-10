@@ -1,7 +1,7 @@
 ﻿from base import string_tools as st
 from base import path_tools as pt
 from base import com_decorator as cd
-from base.com_log import logger_helper,UpdateTimeType
+from base.com_log import logger_helper,UpdateTimeType,global_logger
 from base.except_tools import except_stack
 from base.com_decorator import exception_decorator
 import chardet
@@ -226,7 +226,7 @@ async def __fetch_async(url ,session,max_retries=3,**kwargs):
             async with session.get(url,**kwargs) as response:
                 # response = await client.get(url, **kwargs)
 
-                if response.status == 200:
+                if response.status in [200,206]:
                     content_length = int(response.headers.get('Content-Length', 0))
                     received_data = await response.read()
                     if len(received_data) == content_length:
@@ -334,7 +334,7 @@ async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
     async with aiohttp.ClientSession() as session:
         # tasks = [_download_async(session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths)]
         tasks = [_download_async_semaphore(semaphore,session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths) if url and dest_path]
-        await asyncio.gather(*tasks)
+        return await asyncio.gather(*tasks)
 
 @cd.exception_decorator(error_state=False)
 def fetch_sync(url ,max_retries=3,timeout=300,**args):
@@ -546,10 +546,22 @@ def write_to_txt(file_path,data,**file_kwargs):
 
 @exception_decorator(error_state=False)
 def read_from_txt(file_path,**file_kwargs):
-    if not os.path.exists(file_path):
-        return None
-    with open(file_path,"r",**file_kwargs) as f:
-        return f.read()
+    with global_logger().raii_target("读取文件",f"{file_path}:{file_kwargs}") as logger:
+        if not os.path.exists(file_path):
+            logger.debug("失败","文件不存在")
+            return None
+
+        if "encoding" not in file_kwargs:
+            if encoding:=detect_encoding(file_path):
+                file_kwargs["encoding"]=encoding
+                logger.trace("修正encoding",f"推断编码为:{encoding}")
+
+        try:
+            with open(file_path,"r",**file_kwargs) as f:
+                return f.read()
+            logger.trace("成功")
+        except Exception as e:
+            logger.error("失败",f"{e}:{except_stack()}")
 
 
 @exception_decorator(error_state=False)

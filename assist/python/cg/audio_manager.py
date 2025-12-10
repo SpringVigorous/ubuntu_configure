@@ -340,6 +340,7 @@ class AudioManager(xlsx_manager):
     def cache_author_df(self,xlsx_path,sheet_name,df:pd.DataFrame):
         AudioManager.init_df_status(df)
         df=self.update_summary_df(df)
+        df=self.update_df_status(df,False)
         self.cache_df(xlsx_path,sheet_name,df)
         self._df_flags[(xlsx_path,sheet_name)]=SheetType.ALBUM
     
@@ -377,7 +378,7 @@ class AudioManager(xlsx_manager):
             df[media_url_id] = ""
     #根据是否存在，更新状态
     @staticmethod
-    def update_df_status(df):
+    def update_df_status(df,check_exist:bool=True):
         if df_empty(df):
             return
         
@@ -390,7 +391,10 @@ class AudioManager(xlsx_manager):
         def update_flag(row):
             try:
                 cur_path=row[local_path_id]
-                return TaskStatus.SUCCESS.value if isinstance(cur_path,str) and os.path.exists(cur_path) else row[downloaded_id]
+                status=TaskStatus.SUCCESS if check_exist and isinstance(cur_path,str) and os.path.exists(cur_path) else TaskStatus.from_value(row[downloaded_id]).clear_fetch_error
+                
+                
+                return status.value
             except:
                 global_logger().error("任务状态错误", "|".join(map(str, row.index)))
                 return row[downloaded_id]
@@ -457,7 +461,7 @@ class AudioManager(xlsx_manager):
                     df.loc[index,downloaded_id]=status.value
                     #修正 修改时间
                     df.loc[index,modify_time_id]=cur_datetime_normal_str()  
-                logger.info("成功")
+                logger.trace("成功")
             except Exception as e:
                 logger.error("更新失败",e)
 
@@ -705,7 +709,7 @@ class AudioManager(xlsx_manager):
                         
                         continue
                     for index,result_row in album_result_df.iterrows():
-                        album_df.loc[index,downloaded_id]=status.clear_temp_canceled.value
+                        album_df.loc[index,downloaded_id]=status.clear_temp_canceled.clear_fetch_error.clear_need_certify. value
                         
 
                     dfs_dict[album_xlsx_path]=album_df
@@ -716,7 +720,7 @@ class AudioManager(xlsx_manager):
                 
                 
                 #修改 author_df 的状态
-                album_path_lst=filter_df[album_path_id].drop_duplicates().tolist()
+                album_path_lst=unique(filter_df[album_path_id].drop_duplicates().tolist())
                 for album_xlsx_path in  album_path_lst:
                     album_xlsx_path=str(album_xlsx_path)
                     author_xlsx_path=_get_author_path(album_xlsx_path)
@@ -790,13 +794,11 @@ class AudioManager(xlsx_manager):
     def fail_has_media_url_audios(self)->list[tuple[str,str]]:
         results=[]
         for xlsx_path,name,album_df in self.album_dfs:
-            
             if path_equal(xlsx_path,r"E:\旭尧\有声读物\xlsx\17玩英语\幼儿英语启蒙-_26个英文字母_album.xlsx"):
                 pass
             
             try:
 
-                
                 mask=  album_df[media_url_id].notna() & album_df.apply(lambda row:  bool(row[media_url_id])   and not (TaskStatus.from_value(row[downloaded_id]).is_success or os.path.exists(row[local_path_id])),axis=1)
                 df=album_df[mask]
                 if df_empty(df): 

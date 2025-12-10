@@ -37,7 +37,7 @@ def organize_files_with_complex_rules(directory_a, real_move=False):
     
     # 步骤2: 处理 .mp4 和 .m4a 文件 -> audio目录
     print("\n=== 处理音频文件 ===")
-    audio_extensions = {'.mp4', '.m4a'}
+    audio_extensions = {'.mp4', '.m4a',".acc"}
     for full_path, relative_path, filename in file_list_b:
         file_ext = Path(filename).suffix.lower()
         if file_ext in audio_extensions:
