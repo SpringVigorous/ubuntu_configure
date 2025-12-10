@@ -270,9 +270,9 @@ def main():
     app.force_init_ignore_sound(True)
     
     # app.continue_download()
-    app.continue_author()
+    # app.continue_author()
     # app.continue_album()
-    # app.continue_audio()
+    app.continue_audio()
     app.run()
     
     

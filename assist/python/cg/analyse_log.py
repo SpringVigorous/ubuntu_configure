@@ -380,20 +380,21 @@ async def download_task():
 
 @exception_decorator(error_state=False)
 def download_audio_by_log():
-    log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "trace" in Path(file_path).stem]
-    # log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "audio_app-trace"== Path(file_path).stem]
+    # log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "trace" in Path(file_path).stem]
+    log_lst=[file_path for file_path in log_files(logger_root/r"audio_app") if  "audio_app-trace"== Path(file_path).stem]
     
     logger=logger_helper("通过日志信息下载音频",f'日志路径为：\n{"\n".join(log_lst)}\n')
     
-    results=fetch_author_url_from_logs(log_lst)
-    logger.info("完成",f"\n{'\n'.join(results)}\n",update_time_type=UpdateTimeType.ALL)
-    return
+    # results=fetch_author_url_from_logs(log_lst)
+    # logger.info("完成",f"\n{'\n'.join(results)}\n",update_time_type=UpdateTimeType.ALL)
+    # return
     
     df=handle_audio_from_logs(log_lst)
     if df_empty(df) :
         return
     result=asyncio.run(download_task())
-    logger.info("完成",f"共{len(df)}个,{result}",update_time_type=UpdateTimeType.ALL)
+    
+    logger.info("完成",f"共{len(df)}个,{result.count(True)}",update_time_type=UpdateTimeType.ALL)
 
 if __name__ == "__main__":
     
