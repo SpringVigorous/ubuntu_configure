@@ -199,7 +199,7 @@ VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆
 def forece_merge_test():
     
     from base import kid_root
-    force_merge(kid_root\r"拼音练习\1",kid_root\r"拼音练习\07_zhchshr_王诗玥.mp4",[".mp4"])
+    force_merge(kid_root/r"拼音练习/1",kid_root/r"拼音练习/07_zhchshr_王诗玥.mp4",[".mp4"])
 
 if  __name__ == '__main__':
     
