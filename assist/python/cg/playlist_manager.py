@@ -67,7 +67,11 @@ class playlist_manager(file_manager):
     def video_df(self):
         return self._set_df_name(self._video_df,video_sheet_name) 
     
+    def _get_df_name(self, df: pd.DataFrame) -> str:
+        return super()._get_df_name(df)
     
+    def _set_df_name(self, df: pd.DataFrame, name: str) -> pd.DataFrame:
+        return super()._set_df_name(df, name)
     
     
     

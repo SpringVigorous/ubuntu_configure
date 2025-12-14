@@ -339,7 +339,7 @@ class DecodeVideo(ThreadTask):
         url_lst_org=[(urls[0],get_real_url(urls[2],m3u8_url))  for urls in info_list]
         index_lst,url_lst=zip(*url_lst_org)
         
-        logger.debug(f"总时长:{total_len}s,共{len(url_lst)}个",update_time_type=UpdateTimeType.STAGE)
+        logger.info(f"总时长:{total_len}s,共{len(url_lst)}个",update_time_type=UpdateTimeType.STAGE)
         temp_hash_name=video_hash_name(video_name)
 
         temp_dir=temp_video_dir(video_name)

@@ -72,7 +72,7 @@ class playlist_app:
         logger.trace("开始处理",update_time_type=UpdateTimeType.STAGE)
         for index,url in enumerate( urls):
             self.url_queue.put(url)
-            logger.trace(f"消息入队",f"第{index+1}条：\n【{url}】",update_time_type=UpdateTimeType.STEP)
+            logger.trace(f"消息入队",f"第{index+1}条：/n【{url}】",update_time_type=UpdateTimeType.STEP)
 
     
     @exception_decorator(error_state=False)
@@ -162,21 +162,24 @@ def main():
     app=playlist_app()
 
     raw_urls=[
-        # VideoUrlInfo(url="https://www.laihuashow.com/hot/972606.html"),
+        # VideoUrlInfo(url="http://www.yingliyt.com/vod/play/394720-1-1.html"),
+        # VideoUrlInfo(url="https://www.wixin.vip/xin/116717.html"),
+        VideoUrlInfo(url="https://yenchuang.com/d/63889/68464604789fc.html"),
         ]
 
    
     m3u8_urls=[
 
 
-VideoUrlInfo(m3u8_url='https://pcvideoydott.titan.mgtv.com/c1/2025/05/14_0/228FAA06FA3BFED44798421AA486E01B_20250514_1_1_793_mp4/438D0380E470114011645FB00E2A138A.m3u8?arange=0&pm=temJU5Mzk25XffhwMqz3lwnmOcCxyHEQIRkzFB~bR~3rVw~BAi6sOvNLweSBNzk95W5k~Fw4qynyICbeeKbKtN0yCUBS3PFMGDM8eIN9Z6VCE0cbeOXkAsOH_kLVnBqFPISKG1TMnurAES_jlyft82qeJf2H~kJYJ1j6MLp_ov3S6oUQsLCoDz706YFzOMvPilOQXDuAGkrUHE2hFXatLwAo_21RRjvx5kROPJLIrenRCIy8zJH_YJS9Cw2bpWg4wbOacU~6~ompHENz5sv1TnmK6w42hK8icsNGmNIiHbL5G3KiyYgP7TGHkZPSALTG9kBiwQ9rqZB7Q~SpoWPpkpLpAPhFiVl99_tRJUB6znI573Ifnb_oJgb5gjNXuC_wJtP4wb0VcF33Ba2WxbM3DxlN7O8_QbJW&mr=qtaAqu4Hsj7FJLWcIhvpez_mwlFBWVLfOZ7sRVgdUMEUJkkjkm8jCEsupjUlyZGicOkjkwxqTnw9kK_r9vnRm7V~f~gjBkJP95Mhzo5xAy9lJxE5UOiXPzUvzDefEP7Tmloffk45J8tj~0HwiYNF5bktHH48O30p4P7eIQiSRjh80w_0yz~N5U8j2RroyyIX3~D_FdcBKWsSgVxk09fR3ifxguZlp~FZnWzKVfOJD43Fet6X~VdaEyfdVTPqNVV7lAbdPaNtHc0zDE4c~~uQYJT3JL_NINFtzyQcGea_zrBFv23m8wC~fdtzy0yWAkE1JOyM423iTDa8nyqHbZH1DWodYYAKKrMvVJlY2XOsY5RiHRp1egJX3qN0uG~dLWKsNWuIhKXPDnOB0nYT3L6Zwp0pUTgxdFheuGiAIi0fbevipd1dj1xpS4wDPr81SupxYZvwDNptORqqrvC7mSvAsfFsZ1LPTJCo9eCH6_bX1i9WNrKMsnx6ZAlc5bZwuOOWJVhxxPe_3_jIFXMof3Jhn7irl_IhhqSf4kuPcyhQZyvNKkVDVaRXWTOxcY0mewGbyCPYvtgMxQZEXZeHr64FYMLI51OKdwZwjV74s3CxmDjjm0jcacouvy_q0SiX9m09B6U6r0B84MUmKOWVi7TiDw--&uid=null&term=4&def=2&vc=AVC&scid=25066&cpno=6i06rp&ruid=ae0260278a1e4bcd&sh=1&ftc=webO1&sftc=v6.7.92ds0_vtp1', title='宝宝巴士之奇妙汉字第二季 第1集 房子从天降'),
+VideoUrlInfo(m3u8_url='https://cdn.yddsha2.com/m3u87/share/1481145/1650779/20240524/050607/360/master.m3u8?sign=0bc20ad293f5d0e3a28be11fdfcf354d&t=1765702378', title='昆虫总动员2-来自远方的后援军'),
+VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆虫总动员'),
 
     ]
 
     # app.send_msg(m3u8_urls) #直接提供m3u8_url
-    # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
+    app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
-    app.continue_decode() # 继续解码,前提是确保编码未处理
+    # app.continue_decode() # 继续解码,前提是确保编码未处理
     
     # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
@@ -201,7 +204,7 @@ def forece_merge_test():
 if  __name__ == '__main__':
     
     
-    forece_merge_test()
-    exit()
+    # forece_merge_test()
+    # exit()
     
     main()

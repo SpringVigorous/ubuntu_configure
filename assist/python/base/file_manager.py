@@ -84,12 +84,13 @@ class file_manager(metaclass=abc.ABCMeta):
     
     
     #设置df的sheet_name
-    @abc.abstractmethod
+    @exception_decorator(error_state=False)
+    # @abc.abstractmethod
     def _set_df_name(self,df:pd.DataFrame,name:str):
         return set_attr(df,file_manager.sheet_name_flag,name)
 
     @exception_decorator(error_state=False)
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def _get_df_name(self,df:pd.DataFrame)->str:
         return get_attr(df,file_manager.sheet_name_flag)
     
