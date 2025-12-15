@@ -307,8 +307,6 @@ def main(reference_xlsx_path,src_dir,dest_dir):
         
 if __name__ == "__main__":
     # 创建使用示例对象
-
-    
     local_dir=audio_root
     local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
     export_dir_file_infos(local_dir,local_xlsx_path)
@@ -317,5 +315,5 @@ if __name__ == "__main__":
     # 获取目录结构差异
     outer_xlsx_path=local_dir/ "book_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
-    diff_backup(outer_xlsx_path,local_xlsx_path,local_dir,dest_dir)
+    diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir)
     
