@@ -11,7 +11,7 @@ class FileSyncUtil:
     文件同步工具类，提供文件遍历、比较和同步功能
     """
     
-    def __init__(self):
+    def __init__(self,consider_time:bool=True):
         """
         初始化工具类
         
@@ -19,6 +19,7 @@ class FileSyncUtil:
             logger: 日志工具实例
         """
         self.logger = logger_helper(self.__class__.__name__)
+        self.consider_time:bool=consider_time
     
     @exception_decorator(error_state=False)
     def scan(self, folder)-> list[dict]:
@@ -108,8 +109,10 @@ class FileSyncUtil:
                         common_newer.append(dict_f[path])
             
             # 合并结果[7](@ref)
-            list_g = only_in_f + common_newer
             self.logger.info("成功",f"独有的文件 {len(only_in_f)} 个, 更新的文件 {len(common_newer)} 个")
+            list_g = only_in_f
+            if self.consider_time:
+                list_g+= common_newer
             return [ str(i["relative_path"]) for i in  list_g]
             
         except Exception as e:
@@ -261,7 +264,7 @@ if __name__ == "__main__":
     local_json_path=local_dir/ f"{current_user()}_file_list.json"
     scan_export_file(local_dir,local_json_path)
     
-    
+    exit()
     # 获取目录结构差异
     outer_json_path=local_dir/ "book_file_list.json"
     dest_dir=local_dir.parent/"clone"
