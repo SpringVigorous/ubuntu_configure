@@ -5,7 +5,7 @@ from base.com_log import global_logger
 
 
 def exe_path_from_environment(exe_name:str):
-   with global_logger.raii_target(f"查找{exe_name}的路径") as logger:
+   with global_logger().raii_target(f"查找{exe_name}的路径") as logger:
         # 获取环境变量 PATH 的值
         path_dirs = os.environ['PATH'].split(os.pathsep)
         lst=[]

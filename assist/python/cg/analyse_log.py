@@ -170,28 +170,22 @@ def handle_urls():
     merge_df.sort_values(by="len",ascending=True,inplace=True)
     merge_df.to_excel(os.path.join(url_path,"merge_urls.xlsx"))
     
-def handle_info_from_log(log_path:str):
+def video_info_from_log(log_path:str):
     lst=[]
     data=read_from_txt_utf8_sig(log_path)
     if not data:
         return
         
     # 正则表达式模式
-    #【更新xlsx】-【成功】详情：收到第24个消息:title:朋友妈妈：无法忍受的日子HD中字完整在线观看___午夜福利影院 url:https://yenchuang.com/d/103546/6847620974287.html m3u8_url:https://s1.bfllvip.com/video/pengyoumamawufarenshouderizi/HD%E4%B8%AD%E5%AD%97/index.m3u8 download:-1 m3u8_hash:33c490e5fdd468d60e36fa75387a3f166c755f6961f957953d42bb86caedd375,key:None,
-
-
-    # pattern=r"【更新xlsx】-【成功】详情：【收到第\d+个消息:(.*),\w"
-    pattern=r"【更新xlsx】-【成功】详情：【收到第\d+个消息:title:(.*?) url:(.*?) m3u8_url:(.*?) download:-1 m3u8_hash:(.*?),"
+    #【更新xlsx】-【成功】详情：收到第24个消息:title:HD中字完整在线观看 url:https://yenchuang.com/d/103546/6847620974287.html m3u8_url:https://s1.bfllvip.com/video/pengyoumamawufarenshouderizi/HD%E4%B8%AD%E5%AD%97/index.m3u8 download:-1 m3u8_hash:33c490e5fdd468d60e36fa75387a3f166c755f6961f957953d42bb86caedd375,key:None,
+    pattern=r"【更新xlsx】-【成功】详情：收到第\d+个消息:title:(.*?) url:(.*?) m3u8_url:(.*?) download:(.*?) m3u8_hash:(.*?),key:(.*?)(?:,|\n)"
     matches = re.findall(pattern, data)
     
     for match in matches:
         if not match:
             continue
-        title=match[0]
-        url = match[1]
-        m3u8_url=match[2]
-        m3u8_hash=match[3]
-        lst.append({"title": title, "url": url, "m3u8_url": m3u8_url, "m3u8_hash": m3u8_hash, 'download':-1})
+        title, url, m3u8_url, download, m3u8_hash, key = [item.strip() if item != 'None' else None for item in match]
+        lst.append({"title": title, "url": url, "m3u8_url": m3u8_url, "m3u8_hash": m3u8_hash, 'download':download})
     log_df=pd.json_normalize(lst) 
     pattern=r"【更新下载状态】-【已下载】详情：(.*?),耗时"
     matches = re.findall(pattern, data)
@@ -407,7 +401,8 @@ if __name__ == "__main__":
 
         
     # exit()
-    df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-info.log.2025-12-14.log")
+    # df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-info.log.2025-12-14.log")
+    df=video_info_from_log(logger_root/r"playlist_app\playlist_app-info.log")
     
     xlsx_path=player_root/r"video.xlsx"
     org_df=pd.read_excel(xlsx_path,sheet_name="video")

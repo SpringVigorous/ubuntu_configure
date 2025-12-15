@@ -5,6 +5,245 @@ import concurrent.futures
 import gc
 from collections.abc import Iterable
 from base.com_decorator import exception_decorator
+
+
+import pandas as pd
+import numpy as np
+from typing import Tuple, Dict, List, Optional
+def default_sheet_name()->str:
+    return "Sheet1"
+class DataFrameComparator:
+    """
+    用于比较两个具有相同列名的DataFrame的类
+    支持根据指定列分离独有行、共有行，并提供详细的差异分析
+    """
+    
+    def __init__(self, df1: pd.DataFrame, df2: pd.DataFrame, key_columns: str|list[str]):
+        """
+        初始化比较器
+        
+        参数:
+            df1: 第一个DataFrame
+            df2: 第二个DataFrame  
+            key_column: 用于比较的关键列名
+        """
+        self.df1 = df1.copy()
+        self.df2 = df2.copy()
+        self.set_key_columns(key_columns)
+        
+        # 存储比较结果
+        self._merge_result = None
+        self._dest_result = None
+        self.logger=logger_helper("pandas.DataFrame 数据对比")
+        
+    def _special_result(self,type_key:str)->pd.DataFrame:
+        """获取df1独有的行"""
+        if self._dest_result is None:
+            self.compare_dataframes()
+        return self._dest_result[type_key] if type_key in self._dest_result.keys() else None
+    @property
+    def df1_only(self) -> pd.DataFrame:
+        """获取df1独有的行"""
+        return  self._special_result("df1_only")
+
+    @property
+    def df2_only(self) -> pd.DataFrame:
+        """获取df2独有的行"""
+        return  self._special_result("df2_only")
+    
+    @property
+    def df_common(self) -> pd.DataFrame:
+        """获取共有行"""
+        return self._special_result("common")
+
+    @property
+    def df_org_common(self) -> pd.DataFrame:
+        """获取共有行"""
+        return self._special_result("org_common")
+    
+    @property
+    def df1_suffix(self) -> pd.DataFrame:
+        """获取df1的独有行"""
+        return "_df1"
+
+    @property
+    def df2_suffix(self) -> pd.DataFrame:
+        """获取df2的独有行"""
+        return "_df2"
+    
+    def df1_column_name(self,name:str):
+        return f"{name}_{self.df1_suffix}"
+
+    def df2_column_name(self,name:str):
+        return f"{name}_{self.df2_suffix}"
+    def set_key_columns(self, key_columns: str|list[str]) -> None:
+        self.key_columns = key_columns if isinstance(key_columns ,list) else [key_columns]
+    
+        
+    @property
+    def valid(self) -> bool:
+        """验证两个DataFrame的结构是否一致"""
+        if not self.df1.columns.equals(self.df2.columns):
+            self.logger.error("异常","列名不完全一致，无法进行比较")
+            return False
+        def _check_key_columns(df: pd.DataFrame) -> bool:
+            return all(col in df.columns for col in self.key_columns)
+        
+        if not( _check_key_columns(self.df1) and _check_key_columns(self.df2)):
+            self.logger.error("异常",f"关键列 '{self.key_columns}' 不在DataFrame的列中")
+            return False
+            
+        return True
+    
+    def compare_dataframes(self, how: str = 'outer') -> Dict[str, pd.DataFrame]:
+        """
+        比较两个DataFrame并返回分类结果
+        
+        参数:
+            how: 合并方式 ('outer', 'inner', 'left', 'right')
+            
+        返回:
+            包含分类结果的字典
+        """
+        # 执行合并操作
+        self._merge_result = pd.merge(
+            self.df1, self.df2, 
+            on=self.key_columns, 
+            how=how, 
+            indicator=True,
+            suffixes=(self.df1_suffix, self.df2_suffix)
+        )
+        
+        # 分类结果
+        df1_only = self._merge_result[self._merge_result['_merge'] == 'left_only'].copy()
+        df2_only = self._merge_result[self._merge_result['_merge'] == 'right_only'].copy()
+        org_common = self._merge_result[self._merge_result['_merge'] == 'both'].copy()
+        
+        # 还原列名（移除后缀）
+        df1_only = self._restore_column_names(df1_only, include_suffix=self.df1_suffix,exclude_suffix=self.df2_suffix)
+        df2_only = self._restore_column_names(df2_only, include_suffix=self.df2_suffix,exclude_suffix=self.df1_suffix)
+        common = self.restore_common_columns(org_common)
+        
+        self._dest_result = {
+            'df1_only': df1_only,
+            'df2_only': df2_only,
+            'common': common,
+            'org_common':org_common,
+        }
+        
+        return self._dest_result
+
+    
+    def _restore_column_names(self, df: pd.DataFrame, include_suffix: str,exclude_suffix:str=None) -> pd.DataFrame:
+        """还原单个DataFrame的列名（针对独有部分）"""
+        result_df = df.copy()
+        
+        # 选择包含指定后缀的列
+        suffix_columns = [col for col in result_df.columns if col.endswith(include_suffix)]
+        
+        for col in suffix_columns:
+            original_col = col.replace(include_suffix, '')
+            if original_col not in self.key_columns:  # 关键列没有后缀
+                result_df[original_col] = result_df[col]
+                result_df.drop(columns=[col], inplace=True)
+        
+        if exclude_suffix:  # 删除指定后缀的列
+            result_df.drop(columns=[col for col in result_df.columns if col.endswith(exclude_suffix)], inplace=True)
+        
+        
+        # 删除辅助列
+        if '_merge' in result_df.columns:
+            result_df.drop(columns=['_merge'], inplace=True)
+            
+        return result_df
+    
+    # 智能选择：优先选择非空值，如果都非空则 按照keep_df1选择（True:df1 False:df2）的值
+    def restore_common_columns(self, df: pd.DataFrame,keep_df1:bool=True) -> pd.DataFrame:
+        """还原共有DataFrame的列名（智能选择策略）"""
+        result_df = df.copy()
+        
+        # 获取所有非关键列的原列名
+        data_columns = [col for col in self.df1.columns if col not in self.key_columns]
+        
+        def _dest_result(row,col_name1:str,col_name2:str):
+            if keep_df1:
+                return row[col_df1] if pd.notna(row[col_df1]) else row[col_df2]
+            else:
+                return row[col_df2] if pd.notna(row[col_df2]) else row[col_df1]
+        
+        for col in data_columns:
+            col_df1 = f"{col}_df1"
+            col_df2 = f"{col}_df2"
+            if col_df1 in result_df.columns and col_df2 in result_df.columns:
+                # 创建新列，智能选择值
+                result_df[col] = result_df.apply(
+                    lambda row: _dest_result(row,col_df1,col_df2), 
+                    axis=1
+                )
+                
+                # 删除带后缀的列
+                result_df.drop(columns=[col_df1, col_df2], inplace=True)
+        
+        # 删除辅助列
+        if '_merge' in result_df.columns:
+            result_df.drop(columns=['_merge'], inplace=True)
+            
+        return result_df
+    
+
+    def get_detailed_differences(self) -> pd.DataFrame:
+        """
+        获取共有行中具体内容的差异[1,4](@ref)
+        
+        使用DataFrame.compare方法进行精确的元素级比较
+        """
+        if self._dest_result is None:
+            self.compare_dataframes()
+        
+        common_df = self._dest_result['common']
+        if len(common_df) == 0:
+            return pd.DataFrame()
+        
+        # 设置关键列为索引
+        df1_indexed = self.df1.set_index(self.key_columns)
+        df2_indexed = self.df2.set_index(self.key_columns)
+        
+        # 获取共有的键值
+        common_keys = common_df[self.key_columns].unique()
+        df1_common = df1_indexed.loc[common_keys]
+        df2_common = df2_indexed.loc[common_keys]
+        
+        try:
+            # 使用compare方法进行精确比较[1](@ref)
+            differences = df1_common.compare(df2_common, align_axis=0)
+            if not differences.empty:
+                differences = differences.droplevel(-1, axis=1).reset_index()
+            return differences
+        except Exception as e:
+            print(f"详细比较时出现错误: {e}")
+            return pd.DataFrame()
+    
+
+    def save_comparison_results(self, filepath: str) -> None:
+        """将比较结果保存到Excel文件"""
+        if self._dest_result is None:
+            self.compare_dataframes()
+        
+        with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+            self._dest_result['df1_only'].to_excel(writer, sheet_name='df1_独有', index=False)
+            self._dest_result['df2_only'].to_excel(writer, sheet_name='df2_独有', index=False)
+            self._dest_result['common'].to_excel(writer, sheet_name='两表共有', index=False)
+            
+            # 保存详细差异
+            detailed_diff = self.get_detailed_differences()
+            if not detailed_diff.empty:
+                detailed_diff.to_excel(writer, sheet_name='详细差异', index=False)
+        
+        print(f"比较结果已保存到: {filepath}")
+
+
+
+
 def find_rows_by_col_val(df, col_name,val,default_val=pd.DataFrame()):
 
     log=logger_helper(f"二次查找:{val}",f"【{col_name}】列中查找【{val}】")
@@ -427,3 +666,43 @@ def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
 @exception_decorator(error_state=False)
 def get_df(xlsx_path:str,sheet_name:str)->pd.DataFrame:
     return read_xlsx_dfs(xlsx_path).get(sheet_name,None)
+
+
+
+
+# 使用示例
+if __name__ == "__main__":
+    # 创建示例数据
+    data1 = {
+        'relative_path_id': ['001', '002', '003', '004'],
+        'file_name': ['a.txt', 'b.txt', 'c.txt', 'd.txt'],
+        'file_size': [100, 200, 300, 400],
+        'modification_time': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04']
+    }
+    
+    data2 = {
+        'relative_path_id': ['002', '003', '005', '006'],
+        'file_name': ['b.txt', 'c_modified.txt', 'e.txt', 'f.txt'],
+        'file_size': [200, 350, 500, 600],  # 003的file_size不同
+        'modification_time': ['2023-01-02', '2023-01-05', '2023-01-05', '2023-01-06']
+    }
+    
+    df1 = pd.DataFrame(data1)
+    df2 = pd.DataFrame(data2)
+    
+    # 使用比较器
+    comparator = DataFrameComparator(df1, df2, key_columns='relative_path_id')
+    
+    
+    # 访问具体结果
+    print("\nDF1 独有数据:")
+    print(comparator.df1_only)
+    
+    print("\nDF2 独有数据:")
+    print(comparator.df2_only)
+    
+    print("\n两表共有数据:")
+    print(comparator.df_common)
+    
+    print("\n合并数据:")
+    print(comparator._merge_result)

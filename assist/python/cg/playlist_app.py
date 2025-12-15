@@ -162,31 +162,27 @@ def main():
     app=playlist_app()
 
     raw_urls=[
-        # VideoUrlInfo(url="http://www.yingliyt.com/vod/play/394720-1-1.html"),
-        # VideoUrlInfo(url="https://www.wixin.vip/xin/116717.html"),
-        VideoUrlInfo(url="https://yenchuang.com/d/111904/686e34a821074.html"),
+
+        VideoUrlInfo(url="https://www.kuaidimap.com/jubo/108771-2-1.html"),
         ]
 
-   
     m3u8_urls=[
 
-
-VideoUrlInfo(m3u8_url='https://cdn.yddsha2.com/m3u87/share/1481145/1650779/20240524/050607/360/master.m3u8?sign=0bc20ad293f5d0e3a28be11fdfcf354d&t=1765702378', title='昆虫总动员2-来自远方的后援军'),
 VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆虫总动员'),
 
     ]
 
-    # app.send_msg(m3u8_urls) #直接提供m3u8_url
-    app.send_msg(raw_urls) #原始url，交互获取m3u8_url
+    app.send_msg(m3u8_urls) #直接提供m3u8_url
+    # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
     # app.continue_decode() # 继续解码,前提是确保编码未处理
     
-    app.continue_merge() # 继续合并,前提是 已删除 加入的片段
+    # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
     
     # app.continue_handle_url() #继续交互
 
-    app.continue_download() #继续下载
+    # app.continue_download() #继续下载
     
     # app.stop_merge_event.set() #关闭合并功能，手动删除多余片段后，再开启
     

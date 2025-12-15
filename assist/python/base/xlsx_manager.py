@@ -5,7 +5,7 @@ from base.com_log import logger_helper,UpdateTimeType
 import threading
 import pandas as pd
 import os
-from base.df_tools import get_attr,concat_unique,sub_df,content_same,df_empty,set_attr,read_xlsx_dfs,is_df
+from base.df_tools import get_attr,concat_unique,sub_df,content_same,df_empty,set_attr,read_xlsx_dfs,is_df,default_sheet_name
 from base.except_tools import except_stack
 from base.file_tools import sequence_num_file_path
 
@@ -68,6 +68,8 @@ class xlsx_manager(metaclass=abc.ABCMeta):
     # 还可以覆盖
     def cache_df(self,xlsx_path:str,sheet_name:str,df:pd.DataFrame):
         xlsx_path=str(xlsx_path)
+        if not sheet_name:
+            sheet_name=default_sheet_name()
         if not xlsx_path or not sheet_name or not is_df(df): 
             return
         # if not xlsx_path or not sheet_name or df_empty( df): return
@@ -78,11 +80,24 @@ class xlsx_manager(metaclass=abc.ABCMeta):
                 self._df_dict[xlsx_path]={}
             self._df_dict[xlsx_path][sheet_name]=df    
 
-    def get_df(self,xlsx_path:str,sheet_name:str)->pd.DataFrame:
+    def get_df(self,xlsx_path:str,sheet_name:str=None)->pd.DataFrame:
         dfs=self.read_dfs(xlsx_path)
+        if not sheet_name:
+            sheet_name=default_sheet_name()
         if not dfs or not sheet_name in dfs: return
         return dfs[sheet_name]
 
+
+    @exception_decorator(error_state=False)
+    def save_df(self,xlsx_path:str,df:pd.DataFrame,sheet_name:str=None):
+        if not xlsx_path or not is_df(df): 
+            return
+        if not sheet_name: 
+            sheet_name=default_sheet_name()
+        self.save_dfs(xlsx_path,{sheet_name:df})
+    
+    
+    
     @exception_decorator(error_state=False)
     def save_dfs(self,xlsx_path:str,dfs:dict[str,pd.DataFrame]):
         @exception_decorator(error_state=False)

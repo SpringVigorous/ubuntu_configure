@@ -90,17 +90,15 @@ class playlist_manager(file_manager):
         
     @exception_decorator(error_state=False)
     def save_xlsx_df(self):
-        logger=self.logger
-        logger.update_time(UpdateTimeType.STAGE)
-        with logger.raii_target("保存数据","输出到xlsx文件"):
+
+        with self.logger.raii_target("保存数据","输出到xlsx文件") as logger:
+            logger.update_time(UpdateTimeType.STAGE)
             logger.trace("开始")
             self.update_status()
             def _save_imp(xlsx_path:str):
                 logger.update_target(detail=xlsx_path)
-                self._save_df_xlsx_imp([self.video_df],xlsx_path)
-            try:
-                _save_imp(video_xlsx)
-            except:
+                return self._save_df_xlsx_imp([self.video_df],xlsx_path)
+            if not _save_imp(video_xlsx):
                 xlsx_path=sequence_num_file_path(video_xlsx)
                 logger.error("失败",f"备份到{xlsx_path},具体错误信息入下：\n{except_stack()}\n", update_time_type=UpdateTimeType.STAGE)
                 logger.update_time(UpdateTimeType.STAGE)

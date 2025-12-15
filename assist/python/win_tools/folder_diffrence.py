@@ -1,9 +1,45 @@
-﻿import os
-import json
+﻿import json
+import os
 import shutil
-from pathlib import Path
 from datetime import datetime
-from base import logger_helper,audio_root,singleton,write_to_json_utf8_sig,read_from_json_utf8_sig,UpdateTimeType,exception_decorator,current_user
+from pathlib import Path
+
+import pandas as pd
+
+from base import (
+    UpdateTimeType,
+    audio_root,
+    current_user,
+    exception_decorator,
+    except_stack,
+    logger_helper,
+    read_from_json_utf8_sig,
+    singleton,
+    write_to_json_utf8_sig,
+    intersect_df,
+    sub_df,
+    DataFrameComparator,
+    df_empty,
+    xlsx_manager,
+    unique,
+    concat_dfs,
+    path_equal,
+)
+
+relative_path_id="relative_path"
+mod_time_id="mod_time"
+readable_time_id="readable_time"
+
+class FileSyncManager(xlsx_manager):
+    """
+    文件同步管理类，继承自xlsx_manager
+    """
+    def __init__(self):
+        super().__init__()
+    def before_save(self)->bool:
+        return True
+
+
 
 @singleton
 class FileSyncUtil:
@@ -11,7 +47,7 @@ class FileSyncUtil:
     文件同步工具类，提供文件遍历、比较和同步功能
     """
     
-    def __init__(self,consider_time:bool=True):
+    def __init__(self):
         """
         初始化工具类
         
@@ -19,10 +55,11 @@ class FileSyncUtil:
             logger: 日志工具实例
         """
         self.logger = logger_helper(self.__class__.__name__)
-        self.consider_time:bool=consider_time
+
+        self.manager=FileSyncManager()
     
     @exception_decorator(error_state=False)
-    def scan(self, folder)-> list[dict]:
+    def scan_folder(self, folder)-> pd.DataFrame:
         if not folder or not os.path.exists(folder):
             return []
         
@@ -35,89 +72,60 @@ class FileSyncUtil:
             output_json_path: JSON输出路径(可选)
             
         Returns:
-            list[dict]: 文件信息列表
+            pd.DataFrame: 文件信息列表
         """
         self.logger.update_time(UpdateTimeType.STAGE)
-        self.logger.update_target(detail=f"扫描目录: {folder}")
-        
-        try:
-            folder = Path(folder)           
+        with self.logger.raii_target(f"扫描目录: {folder}") as logger:
+            
             file_list = []
-            # 使用os.walk递归遍历目录[1,2](@ref)
-            for root, dirs, files in os.walk(folder):
-                for file in files:
-                    file_path = Path(root) / file
-                    
-                    # 获取相对路径[1](@ref)
-                    try:
-                        relative_path = file_path.relative_to(folder)
-                    except ValueError:
-                        # 处理路径计算异常
-                        continue
-                    
-                    # 获取文件修改时间[3,5](@ref)
-                    try:
-                        mod_time = os.path.getmtime(file_path)
-                        # 转换为可读格式（可选）
-                        readable_time = datetime.fromtimestamp(mod_time).isoformat()
-                    except OSError as e:
-                        self.logger.error("无法获取文件时间",f"当前文件{file_path}{e}")
-                        continue
-                    
-                    file_info = {
-                        "relative_path": str(relative_path),
-                        "mod_time": mod_time,
-                        "readable_time": readable_time
-                    }
-                    file_list.append(file_info)
-            
-            self.logger.info("扫描完成",f"找到 {len(file_list)} 个文件",update_time_type=UpdateTimeType.STAGE)
-            return file_list
-            
-        except Exception as e:
-            self.logger.error("错误",f"{e}")
-            return []
-    
+            try:
+                folder = Path(folder)           
+                # 使用os.walk递归遍历目录[1,2](@ref)
+                for root, dirs, files in os.walk(folder):
+                    for file in files:
+                        file_path = Path(root) / file
+                        with self.logger.raii_target(detail= f"当前文件{file_path}") as file_logger:
+                            
+                            # 获取相对路径[1](@ref)
+                            try:
+                                relative_path = file_path.relative_to(folder)
+                            except ValueError:
+                                # 处理路径计算异常
+                                continue
+                            
+                            # 获取文件修改时间[3,5](@ref)
+                            try:
+                                mod_time = os.path.getmtime(file_path)
+                                # 转换为可读格式（可选）
+                                readable_time = datetime.fromtimestamp(mod_time).isoformat()
+                            except OSError as e:
+                                file_logger.warn("忽略",f"无法获取文件时间\n{e}\n{except_stack()}")
+                                continue
+                            
+                            file_info = {
+                                relative_path_id: str(relative_path),
+                                mod_time_id: mod_time,
+                                readable_time_id: readable_time
+                            }
+                            file_list.append(file_info)
+                
+                logger.info("完成",f"找到 {len(file_list)} 个文件",update_time_type=UpdateTimeType.STAGE)               
+            except Exception as e:
+                logger.error("错误",f"{e}\n{except_stack()}")
+            finally:
+                return pd.DataFrame(file_list)
+    #相对于df2来说，df1 特有的，以及 最新的
     @exception_decorator(error_state=False)
-    def fetch_diff_results(self, list_d, list_f)->list[str]:
-        """
-        功能2: 比较两个文件列表的差异
-        
-        Args:
-            list_d: 第一个文件列表(list[dict])
-            list_f: 第二个文件列表(list[dict])
+    def diff_results(self, df1:pd.DataFrame, df2:pd.DataFrame)->tuple[pd.DataFrame,pd.DataFrame]:
+        # 使用比较器
+        comparator = DataFrameComparator(df1, df2, key_columns=relative_path_id)
+        df1_only=comparator.df1_only
+        df_common=comparator.df_org_common
+        if not df_empty(df_common):
+            mask=df_common[comparator.df1_column_name(mod_time_id)] > df2[comparator.df2_column_name(mod_time_id)]
+            df_common=comparator.restore_common_columns(df_common[mask])
             
-        Returns:
-            dict: 包含差异结果
-        """
-        self.logger.update_time(UpdateTimeType.STAGE)
-        self.logger.update_target(detail="比较文件列表")
-        try:
-            
-            # 创建路径到文件信息的映射[7](@ref)
-            dict_d = {item["relative_path"]: item for item in list_d}
-            dict_f = {item["relative_path"]: item for item in list_f}
-            
-            # 找出F中有而D中没有的文件[7,8](@ref)
-            only_in_f = [dict_f[path] for path in dict_f if path not in dict_d]
-            
-            # 找出共有的且F的修改时间晚于D的文件[7,8](@ref)
-            common_newer = []
-            for path in dict_f:
-                if path in dict_d:
-                    if dict_f[path]["mod_time"] > dict_d[path]["mod_time"]:
-                        common_newer.append(dict_f[path])
-            
-            # 合并结果[7](@ref)
-            self.logger.info("成功",f"独有的文件 {len(only_in_f)} 个, 更新的文件 {len(common_newer)} 个")
-            list_g = only_in_f
-            if self.consider_time:
-                list_g+= common_newer
-            return [ str(i["relative_path"]) for i in  list_g]
-            
-        except Exception as e:
-            self.logger.error("错误",f"{e}")
-            return 
+        return df1_only,df_common
     @exception_decorator(error_state=False)
     def backup_files(self, rel_path_lst, src_dir, dest_dir):
         
@@ -171,84 +179,125 @@ class FileSyncUtil:
             
             
     @exception_decorator(error_state=False)
-    def merge_folders(self, src_dir, dest_dir):
+    def merge_folders(self,rel_path_lst, src1_dir,src2_dir, dest_dir,key_columns:list[str]):
+        if not rel_path_lst or not src1_dir or not src2_dir or not dest_dir:
+            return
+        src1_dir,src2_dir=Path(src1_dir),Path(src2_dir)
         
         
-        def file_lst(list_dir:str):
-            list_dict=self.scan(folder=list_dir)
-            if not list_dict: return []
-            return [file_dict["relative_path"] for file_dict in list_dict]
+        for file in rel_path_lst:
+            src1_file=src1_dir/file
+            src2_file=src1_dir/file
+            dest_file=dest_dir/file
         
-        lst1=file_lst(src_dir)
-        lst2=file_lst(dest_dir)
-        
-        
-        for file in lst1:
-            src_file=Path(src_dir)/file
-            if src_file.suffix==".xlsx":
+            if not (src1_file.exists() and src2_file.exists()):
                 continue
-            
-            
-            
-        
-        
-        
-        
-        
-        
+            with self.logger.raii_target("合并文件",f"{src1_file} 和 {src2_file} -> {dest_file}") as logger:
+                cur_suffix=src1_file.suffix
+                if cur_suffix==".xlsx":
+                    dfs1=self.manager.read_dfs(src1_file)
+                    dfs2=self.manager.read_dfs(src2_file)
+
+                    keys=list(dfs1.keys())
+                    keys.extend(list(dfs2.keys()))
+                    keys=unique(keys)
+                    
+                    for key in keys:
+                        if key in dfs1 and key in dfs2:
+                            df1=dfs1[key]
+                            df2=dfs2[key]
+                            compare= DataFrameComparator(df1,df2,key_columns)
+                            df=concat_dfs([compare.df1,compare.df2,compare.df_common])
+                            dfs1[key]=df
+                        if key not in dfs1:
+                            dfs1[key]=dfs2[key]
+                    self.manager.save_dfs(dest_file,dfs1)
+                    logger.info("完成",update_time_type=UpdateTimeType.STEP)
+                else:
+                    equal_first=path_equal(src1_file,dest_file)
+
+                    infos=[f"类型{cur_suffix}未实现" ]
+                    if not equal_first:
+                        infos.append(f"直接拷贝文件：{src1_file}")
+                    try:
+                        logger.debug("忽略",",".join(infos),update_time_type=UpdateTimeType.STEP)
+                        if not equal_first:
+                            shutil.copy2(src1_file, dest_file)
+                    except Exception as e:
+                        logger.error("失败",f"{e}\n{except_stack()}")
+
         pass
 
 @exception_decorator(error_state=False)
-def scan_export_file(root_dir,json_file_path)->list[dict]:
+def export_dir_file_infos(root_dir,dest_xlsx_path:str=None)->pd.DataFrame:
     utily = FileSyncUtil()
-    
     # 扫描目录并保存结果
-    fresh_list = utily.scan(
-        folder=local_dir,
+    df = utily.scan_folder(
+        folder=root_dir,
     )
-    write_to_json_utf8_sig(json_file_path,fresh_list)
-    return fresh_list
+    if dest_xlsx_path:
+        utily.manager.save_df(dest_xlsx_path,df)
+
+    return df
+
 
 @exception_decorator(error_state=False)
-def diff_backup(src1_json_path,src2_json_path,src_dir,dest_dir):
+def backup_files(df1,df2,src_dir,dest_dir,dest_xlsx_path:str=None):
+    utily = FileSyncUtil()
+    df1_only,df_common = utily.diff_results(df1,df2)
+    if dest_xlsx_path:
+        utily.manager.save_dfs(dest_xlsx_path,{"df1_only":df1_only,"df_common":df_common})
+    #拷贝文件
+    if not df_empty(df1_only):
+        utily.backup_files(df1_only[relative_path_id],
+            src_dir=src_dir,
+            dest_dir=dest_dir
+        )
+
+    #合并
+    if not df_empty(df_common):
+        utily.merge_folders(df_common[relative_path_id],
+            src1_dir=src_dir,
+            src2_dir=dest_dir,
+            dest_dir=dest_dir
+        )
+            
+    
+#返回差异文件信息 路径
+@exception_decorator(error_state=False)
+def diff_backup(src1_xlsx_path,src2_xlsx_path,src_dir,dest_dir)->str:
     
     # 获取目录结构差异
-    lst1=read_from_json_utf8_sig(src1_json_path)
-    lst2=read_from_json_utf8_sig(src2_json_path)
-    
+
     utily = FileSyncUtil()
-    diff_result = utily.fetch_diff_results(lst1,lst2)
+    df1=utily.manager.get_df(src1_xlsx_path)
+    df2=utily.manager.get_df(src2_xlsx_path)
     
-    diff_file_path=Path(src1_json_path).with_stem("file_diff")
-    write_to_json_utf8_sig(diff_file_path,diff_result)
-    os.makedirs(dest_dir,exist_ok=True)
+
+    diff_xlsx_path=Path(src1_xlsx_path).with_stem("file_diff")
     
-    #拷贝文件
-    utily.backup_files(diff_result,
-        src_dir=src_dir,
-        dest_dir=dest_dir
-    )
+    
+    backup_files(df1,df1,src_dir,dest_dir,diff_xlsx_path)
+    
 
-
+            
+    return str(diff_xlsx_path)
 #直接参考 json 文件，进行拷贝,顺便把最终结果输出到本地 cur_lst.json
-def main(local_json_path,src_dir,dest_dir):
-    lst1=read_from_json_utf8_sig(local_json_path)
+def main(reference_xlsx_path,src_dir,dest_dir):
     utily = FileSyncUtil()
+    df1=utily.manager.get_df(reference_xlsx_path)
     # 扫描目录并保存结果
-    lst2 = utily.scan(
+    df2 = utily.scan_folder(
         folder=src_dir,
     )
-    diff_result = utily.fetch_diff_results(lst1,lst2)
+    diff_result = utily.diff_results(df1,df2)
     utily.backup_files(diff_result,
         src_dir=src_dir,
         dest_dir=dest_dir
     )
-    path2=Path(local_json_path).with_stem("cur_lst")
-    
-    dest= utily.scan(
-        folder=src_dir,
-    )
-    write_to_json_utf8_sig(path2,dest)
+    diff_xlsx_path=Path(reference_xlsx_path).with_stem("cur_lst")
+    backup_files(df1,df1,src_dir,dest_dir,diff_xlsx_path)
+
     
     
     
@@ -261,12 +310,12 @@ if __name__ == "__main__":
 
     
     local_dir=audio_root
-    local_json_path=local_dir/ f"{current_user()}_file_list.json"
-    scan_export_file(local_dir,local_json_path)
+    local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
+    export_dir_file_infos(local_dir,local_xlsx_path)
     
     exit()
     # 获取目录结构差异
-    outer_json_path=local_dir/ "book_file_list.json"
+    outer_xlsx_path=local_dir/ "book_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
-    diff_backup(outer_json_path,local_json_path,local_dir,dest_dir)
+    diff_backup(outer_xlsx_path,local_xlsx_path,local_dir,dest_dir)
     

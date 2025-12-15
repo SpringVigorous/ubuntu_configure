@@ -39,24 +39,24 @@ class file_manager(metaclass=abc.ABCMeta):
 
             return [ get_df(name)  for  name in sheet_names]
             
+    @exception_decorator(error_state=False)
     def _save_df_xlsx_imp(self,dfs:list[pd.DataFrame],xlsx_path:str):
-        if not dfs: return
-        
-        logger=self.logger
-        dfs=list(filter(lambda x:not df_empty(x),dfs))
-        if not dfs: return
-        with self.lock:
-            with pd.ExcelWriter(xlsx_path,mode="w") as w:
-                for df in dfs:
-                    if  df_empty(df):
-                        continue
-                    df.to_excel(w, sheet_name=self._get_df_name(df), index=False)
-
-        
-        
-        pass
-    
-    
+        if not dfs: return True
+        with self.logger.raii_target(f"保存{xlsx_path}") as logger:
+            dfs=list(filter(lambda x:not df_empty(x),dfs))
+            if not dfs: return True
+            try:
+                with self.lock:
+                    with pd.ExcelWriter(xlsx_path,mode="w") as w:
+                        for df in dfs:
+                            if  df_empty(df):
+                                continue
+                            df.to_excel(w, sheet_name=self._get_df_name(df), index=False)
+                pass
+            except Exception as e:
+                logger.error("异常",f"{e}\n{except_stack()}")
+                return False
+        return  True
     
     def __del__(self):
 
