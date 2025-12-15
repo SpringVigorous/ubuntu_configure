@@ -10,7 +10,7 @@ import ast
 
 
 from base.path_tools import get_all_files_pathlib
-from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,downloads_async,log_files,find_last_value_by_col_val,logger_helper,UpdateTimeType,global_logger,read_from_txt
+from base import logger_root,player_root,df_empty,exception_decorator,concat_dfs,find_rows_by_col_val,downloads_async,log_files,find_last_value_by_col_val,logger_helper,UpdateTimeType,global_logger,read_from_txt,read_from_txt_utf8_sig
 import asyncio
 
 from audio_manager import *
@@ -172,12 +172,16 @@ def handle_urls():
     
 def handle_info_from_log(log_path:str):
     lst=[]
-    data=None
-    with open(log_path, 'r', encoding='utf-8') as file:
-        data = file.read()
+    data=read_from_txt_utf8_sig(log_path)
+    if not data:
+        return
         
     # 正则表达式模式
-    pattern=r"【收到第\d+个消息:title:(.*?) url:(.*?) m3u8_url:(.*?) download:-1 m3u8_hash:(.*?)】"
+    #【更新xlsx】-【成功】详情：收到第24个消息:title:朋友妈妈：无法忍受的日子HD中字完整在线观看___午夜福利影院 url:https://yenchuang.com/d/103546/6847620974287.html m3u8_url:https://s1.bfllvip.com/video/pengyoumamawufarenshouderizi/HD%E4%B8%AD%E5%AD%97/index.m3u8 download:-1 m3u8_hash:33c490e5fdd468d60e36fa75387a3f166c755f6961f957953d42bb86caedd375,key:None,
+
+
+    # pattern=r"【更新xlsx】-【成功】详情：【收到第\d+个消息:(.*),\w"
+    pattern=r"【更新xlsx】-【成功】详情：【收到第\d+个消息:title:(.*?) url:(.*?) m3u8_url:(.*?) download:-1 m3u8_hash:(.*?),"
     matches = re.findall(pattern, data)
     
     for match in matches:
@@ -394,16 +398,16 @@ def download_audio_by_log():
         return
     result=asyncio.run(download_task())
     
-    logger.info("完成",f"共{len(df)}个,{result.count(True)}",update_time_type=UpdateTimeType.ALL)
+    logger.info("完成",f"共{len(df)}个,成功{result.count(True)}个",update_time_type=UpdateTimeType.ALL)
 
 if __name__ == "__main__":
     
-    download_audio_by_log()
+    # download_audio_by_log()
         
 
         
-    exit()
-    df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-trace.log")
+    # exit()
+    df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-info.log.2025-12-14.log")
     
     xlsx_path=player_root/r"video.xlsx"
     org_df=pd.read_excel(xlsx_path,sheet_name="video")

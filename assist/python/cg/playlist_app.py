@@ -164,7 +164,7 @@ def main():
     raw_urls=[
         # VideoUrlInfo(url="http://www.yingliyt.com/vod/play/394720-1-1.html"),
         # VideoUrlInfo(url="https://www.wixin.vip/xin/116717.html"),
-        VideoUrlInfo(url="https://yenchuang.com/d/63889/68464604789fc.html"),
+        VideoUrlInfo(url="https://yenchuang.com/d/111904/686e34a821074.html"),
         ]
 
    
@@ -181,12 +181,12 @@ VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆
 
     # app.continue_decode() # 继续解码,前提是确保编码未处理
     
-    # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
+    app.continue_merge() # 继续合并,前提是 已删除 加入的片段
     
     
     # app.continue_handle_url() #继续交互
 
-    # app.continue_download() #继续下载
+    app.continue_download() #继续下载
     
     # app.stop_merge_event.set() #关闭合并功能，手动删除多余片段后，再开启
     

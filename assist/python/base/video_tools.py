@@ -268,6 +268,7 @@ def cover_video_pic(video_path,output_path):
     _= subprocess.run(command, capture_output=True, text=True,errors="ignore",check=True)
     
 
+@exception_decorator(error_state=False)
 def merge_video(temp_paths,output_path):
     #合并前，手动筛选,添加断点
     if not temp_paths or not output_path:

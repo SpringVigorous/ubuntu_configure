@@ -341,7 +341,7 @@ class logger_helper:
     
     
 __global_logger_:logger_helper=None
-def global_logger():
+def global_logger()->logger_helper:
     global __global_logger_
     if __global_logger_ is None:
         __global_logger_=logger_helper()

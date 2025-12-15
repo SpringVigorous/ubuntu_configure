@@ -318,10 +318,13 @@ async def _download_async(session:aiohttp.ClientSession,url,dest_path,lat_fun=No
 async def _download_async_semaphore(semaphore,session:aiohttp.ClientSession,url,dest_path,lat_fun=None,covered=False,**kwargs):
     async with semaphore:
         return await _download_async(session,url,dest_path,lat_fun,covered,**kwargs)
-
+def no_ssl_connector():
+    return aiohttp.TCPConnector(verify_ssl=False) 
 
 async def download_async(url,dest_path,lat_fun=None,covered=False,**kwargs):
-    async with aiohttp.ClientSession() as session:
+    # 创建忽略SSL验证的连接器
+
+    async with aiohttp.ClientSession(connector=no_ssl_connector()) as session:
         result= await _download_async(session,url,dest_path,lat_fun,covered,**kwargs)
         return result
 
@@ -331,7 +334,7 @@ async def downloads_async(urls,dest_paths,lat_fun=None,covered=False,**kwargs):
 
     semaphore = asyncio.Semaphore(50)
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=no_ssl_connector()) as session:
         # tasks = [_download_async(session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths)]
         tasks = [_download_async_semaphore(semaphore,session,url, dest_path, lat_fun,covered,**kwargs) for url, dest_path in zip(urls, dest_paths) if url and dest_path]
         return await asyncio.gather(*tasks)
