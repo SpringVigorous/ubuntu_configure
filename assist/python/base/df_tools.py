@@ -72,10 +72,10 @@ class DataFrameComparator:
         return "_df2"
     
     def df1_column_name(self,name:str):
-        return f"{name}_{self.df1_suffix}"
+        return f"{name}{self.df1_suffix}"
 
     def df2_column_name(self,name:str):
-        return f"{name}_{self.df2_suffix}"
+        return f"{name}{self.df2_suffix}"
     def set_key_columns(self, key_columns: str|list[str]) -> None:
         self.key_columns = key_columns if isinstance(key_columns ,list) else [key_columns]
     

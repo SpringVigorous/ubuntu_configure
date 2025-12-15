@@ -115,14 +115,14 @@ class FileSyncUtil:
             finally:
                 return pd.DataFrame(file_list)
     #相对于df2来说，df1 特有的，以及 最新的
-    @exception_decorator(error_state=False)
+    @exception_decorator(error_state=False,error_return=[pd.DataFrame(),pd.DataFrame()])
     def diff_results(self, df1:pd.DataFrame, df2:pd.DataFrame)->tuple[pd.DataFrame,pd.DataFrame]:
         # 使用比较器
         comparator = DataFrameComparator(df1, df2, key_columns=relative_path_id)
         df1_only=comparator.df1_only
         df_common=comparator.df_org_common
         if not df_empty(df_common):
-            mask=df_common[comparator.df1_column_name(mod_time_id)] > df2[comparator.df2_column_name(mod_time_id)]
+            mask=df_common[comparator.df1_column_name(mod_time_id)] > df_common[comparator.df2_column_name(mod_time_id)]
             df_common=comparator.restore_common_columns(df_common[mask])
             
         return df1_only,df_common
@@ -244,7 +244,10 @@ def export_dir_file_infos(root_dir,dest_xlsx_path:str=None)->pd.DataFrame:
 @exception_decorator(error_state=False)
 def backup_files(df1,df2,src_dir,dest_dir,dest_xlsx_path:str=None):
     utily = FileSyncUtil()
-    df1_only,df_common = utily.diff_results(df1,df2)
+    result=  utily.diff_results(df1,df2)
+    if not result:
+        return
+    df1_only,df_common=result
     if dest_xlsx_path:
         utily.manager.save_dfs(dest_xlsx_path,{"df1_only":df1_only,"df_common":df_common})
     #拷贝文件
@@ -301,19 +304,22 @@ def main(reference_xlsx_path,src_dir,dest_dir):
     
     
     
-    
+
 
 
         
 if __name__ == "__main__":
-    # 创建使用示例对象
+    # lst=read_from_json_utf8_sig(r"E:\旭尧\有声读物\1_file_list.json")
+    # pd.DataFrame(lst).to_excel(r"E:\旭尧\有声读物\1_file_list.xlsx",index=False)
+    # exit()
+    # # 创建使用示例对象
     local_dir=audio_root
     local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
-    export_dir_file_infos(local_dir,local_xlsx_path)
+    # export_dir_file_infos(local_dir,local_xlsx_path)
     
-    exit()
+    # exit()
     # 获取目录结构差异
-    outer_xlsx_path=local_dir/ "book_file_list.xlsx"
+    outer_xlsx_path=local_dir/ "1_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
     diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir)
     
