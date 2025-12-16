@@ -385,18 +385,17 @@ class AudioManager(xlsx_manager):
         
         
         # mask = df[downloaded_id] !=TaskStatus.TaskStatus.SUCCESS.value
-        mask = df[downloaded_id].apply(lambda x: not TaskStatus.from_value(x).has_reason )
+        mask = df[downloaded_id].apply(lambda x: not TaskStatus.from_value(x).clear_need_certify.has_reason )
         if not mask.any():
             return df
         def update_flag(row):
             try:
                 cur_path=row[local_path_id]
                 status=TaskStatus.SUCCESS if check_exist and isinstance(cur_path,str) and os.path.exists(cur_path) else TaskStatus.from_value(row[downloaded_id]).clear_fetch_error
-                
-                
                 return status.value
             except:
-                global_logger().error("任务状态错误", "|".join(map(str, row.index)))
+                with global_logger().raii_target("update_df_status",f"{row}") as logger:
+                    logger.error("任务状态错误", "|".join(map(str, row.index)))
                 return row[downloaded_id]
         # 仅对掩码为 True 的行应用赋值（axis=1 表示按行处理）
         df.loc[mask, downloaded_id] = df.loc[mask].apply( update_flag,
