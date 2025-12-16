@@ -268,23 +268,15 @@ def backup_files(df1,df2,src_dir,dest_dir,dest_xlsx_path:str=None):
     
 #返回差异文件信息 路径
 @exception_decorator(error_state=False)
-def diff_backup(src1_xlsx_path,src2_xlsx_path,src_dir,dest_dir)->str:
+def diff_backup(src1_xlsx_path,src2_xlsx_path,src_dir,dest_dir,diff_xlsx_path):
     
     # 获取目录结构差异
-
     utily = FileSyncUtil()
     df1=utily.manager.get_df(src1_xlsx_path)
     df2=utily.manager.get_df(src2_xlsx_path)
-    
 
-    diff_xlsx_path=Path(src1_xlsx_path).with_stem("file_diff")
-    
-    
-    backup_files(df1,df1,src_dir,dest_dir,diff_xlsx_path)
-    
+    backup_files(df1,df2,src_dir,dest_dir,diff_xlsx_path)
 
-            
-    return str(diff_xlsx_path)
 #直接参考 json 文件，进行拷贝,顺便把最终结果输出到本地 cur_lst.json
 def main(reference_xlsx_path,src_dir,dest_dir):
     utily = FileSyncUtil()
@@ -293,13 +285,9 @@ def main(reference_xlsx_path,src_dir,dest_dir):
     df2 = utily.scan_folder(
         folder=src_dir,
     )
-    diff_result = utily.diff_results(df1,df2)
-    utily.backup_files(diff_result,
-        src_dir=src_dir,
-        dest_dir=dest_dir
-    )
+
     diff_xlsx_path=Path(reference_xlsx_path).with_stem("cur_lst")
-    backup_files(df1,df1,src_dir,dest_dir,diff_xlsx_path)
+    backup_files(df1,df2,src_dir,dest_dir,diff_xlsx_path)
 
     
     
@@ -309,17 +297,16 @@ def main(reference_xlsx_path,src_dir,dest_dir):
 
         
 if __name__ == "__main__":
-    # lst=read_from_json_utf8_sig(r"E:\旭尧\有声读物\1_file_list.json")
-    # pd.DataFrame(lst).to_excel(r"E:\旭尧\有声读物\1_file_list.xlsx",index=False)
-    # exit()
+
     # # 创建使用示例对象
     local_dir=audio_root
     local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
-    # export_dir_file_infos(local_dir,local_xlsx_path)
-    
-    # exit()
-    # 获取目录结构差异
     outer_xlsx_path=local_dir/ "1_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
-    diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir)
+    diff_xlsx_path=local_xlsx_path.with_stem("diff_file_list")
+    
+    
+    export_dir_file_infos(local_dir,local_xlsx_path)
+    exit()
+    diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir,diff_xlsx_path)
     
