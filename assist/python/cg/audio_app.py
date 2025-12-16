@@ -260,7 +260,7 @@ def main():
         "https://www.ximalaya.com/zhubo/65689410",
 
              ]
-    app.add_bz_msg(bz_urls)
+    # app.add_bz_msg(bz_urls)
 
     #筛选album
     # app.force_init_ignore_album()

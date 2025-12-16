@@ -385,7 +385,7 @@ class AudioManager(xlsx_manager):
         
         
         # mask = df[downloaded_id] !=TaskStatus.TaskStatus.SUCCESS.value
-        mask = df[downloaded_id].apply(lambda x: not TaskStatus.from_value(x).has_reason)
+        mask = df[downloaded_id].apply(lambda x: not TaskStatus.from_value(x).has_reason )
         if not mask.any():
             return df
         def update_flag(row):
@@ -567,7 +567,13 @@ class AudioManager(xlsx_manager):
                 return
             
             os.makedirs(audio_summary_xlsx_path.parent,exist_ok=True)
-            summary_df.to_excel(audio_summary_xlsx_path,sheet_name="audio",index=False)
+            # 创建ExcelWriter对象并设置engine_kwargs参数
+            with pd.ExcelWriter(audio_summary_xlsx_path, engine='xlsxwriter', 
+                            engine_kwargs={'options': {'strings_to_urls': False}}) as writer:
+                summary_df.to_excel(writer, sheet_name="audio", index=False)
+            
+            
+            # summary_df.to_excel(audio_summary_xlsx_path,sheet_name="audio",index=False)
             logger.info("成功",f"共{summary_df.shape[0]}条",update_time_type=UpdateTimeType.STEP)
         return summary_df
         
