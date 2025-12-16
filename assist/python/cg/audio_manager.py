@@ -20,6 +20,9 @@ from base import (
     find_last_value_by_col_val,
     arabic_numbers,
     cur_datetime_normal_str,
+
+    move_file,
+    
     # 业务枚举
     TaskStatus,
     UpdateTimeType,
@@ -53,9 +56,6 @@ class SheetType(IntFlag):
     def is_catalog(self)->bool:
         return self==SheetType.CATALOG
 
-audio_xlsx_root=audio_root/"xlsx"
-audio_html_root=audio_root/"html"
-audio_media_root=audio_root/"media"
 
 
 
@@ -72,6 +72,33 @@ class AudioManager(xlsx_manager):
         self.load()
         #添加 列标签
         self.after_load()
+        
+    @exception_decorator(error_state=False)
+    def move_extern_audio_files(self):
+        for xlsx_path ,sheet_name ,df in self.album_dfs:
+            if df_empty(df):
+                continue
+            local_paths:list=df[local_path_id].apply(normal_path).values
+            cur_dir=Path(local_paths[0]).parent
+            
+            
+            temp_dir=AudioManager.media_root()/"temp"/cur_dir.relative_to(AudioManager.media_root())
+            for file in os.listdir(cur_dir):
+                full_path=normal_path(os.path.join(cur_dir, file))
+                if full_path  not in local_paths:
+                    move_file(full_path,temp_dir)
+                
+
+
+                
+                
+            
+            
+
+
+        
+    
+    
     @exception_decorator(error_state=False)
     def after_load(self):
         for xlsx_path ,sheet_name ,df in self.df_lst:
@@ -545,7 +572,7 @@ class AudioManager(xlsx_manager):
     
     @exception_decorator(error_state=False)
     def export_summary_df(self)->pd.DataFrame:
-        audio_summary_xlsx_path=audio_xlsx_root/"summary"/"summary.xlsx"
+        audio_summary_xlsx_path=AudioManager.xlsx_root()/"summary"/"summary.xlsx"
 
         
         summary_df=None
@@ -600,6 +627,9 @@ class AudioManager(xlsx_manager):
         
     @exception_decorator(error_state=False)
     def before_save(self)->bool:
+        
+        self.move_extern_audio_files()
+        
         def _update_df_status(xlsx_path,sheet_name,df):
             if df_empty(df): return
             df:pd.DataFrame=self.update_summary_df(df)

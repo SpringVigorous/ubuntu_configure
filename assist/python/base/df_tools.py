@@ -1,5 +1,6 @@
 ﻿import pandas as pd
-from base.com_log import logger_helper
+from base.com_log import logger_helper,global_logger
+from base.except_tools import except_stack
 import os
 import concurrent.futures
 import gc
@@ -655,12 +656,16 @@ def update_df(src_df:pd.DataFrame,dest_df:pd.DataFrame,unique_cols:str|Iterable[
 @exception_decorator(error_state=False)
 def read_xlsx_dfs(xlsx_path:str)->dict[str,pd.DataFrame]:
     results={}
-    with pd.ExcelFile(xlsx_path) as reader:
-        for name in reader.sheet_names:
-            df=reader.parse(name)
-            if df_empty(df):
-                continue
-            results[name]=df   
+    with global_logger().raii_target("读取数据",xlsx_path) as logger:
+        try:
+            with pd.ExcelFile(xlsx_path, engine='openpyxl') as reader:
+                for name in reader.sheet_names:
+                    df=reader.parse(name)
+                    if df_empty(df):
+                        continue
+                    results[name]=df   
+        except Exception as e:
+            logger.error("异常",f"{e}\n {except_stack()}")
     return results
 
 

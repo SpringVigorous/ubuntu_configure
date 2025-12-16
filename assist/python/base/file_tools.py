@@ -409,12 +409,17 @@ def download_sync(url,dest_path,lat_fun=None,covered=False,**kwargs):
     return True
 
 
-def move_file(source_file,destination_file)->bool:
-    move_logger= logger_helper("移动文件",f"{source_file} -> {destination_file}")
+def move_file(source_file,dest_path)->bool:
+    move_logger= logger_helper("移动文件",f"{source_file} -> {dest_path}")
     # 移动文件
     try:
-        result= shutil.move(source_file, destination_file)
-        move_logger.debug("成功")
+        if Path(source_file).is_file() and not Path(dest_path).is_file():
+            dest_path=os.path.join(dest_path,Path(source_file).name)
+            
+            
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        result= shutil.move(source_file, dest_path)
+        move_logger.trace("成功")
         return True
     except FileNotFoundError:
         move_logger.error("失败",f"{source_file} 不存在")
@@ -481,6 +486,7 @@ def copy_file(source_file:str|list[str],destination_file:str|list[str],override=
 
         # 拷贝文件
         try:
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
             result= shutil.copy2(file, dest)
             copy_logger.trace("成功")
         except FileNotFoundError:

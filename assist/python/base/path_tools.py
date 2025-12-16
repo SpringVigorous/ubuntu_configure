@@ -135,7 +135,8 @@ def special_files(dest_dir,func:Callable[[str],bool]=None,is_recurse=True)->list
 
 def spceial_suffix_files(dest_dir,suffixs:list[str]|str,is_recurse=True)->list[str]:
     if isinstance(suffixs,str):
-        suffixs=unique([suffixs])
+        suffixs=[suffixs]
+    suffixs=unique(suffixs)
     return special_files(dest_dir,lambda x:Path(x).suffix in suffixs,is_recurse=is_recurse)
 
 def mp4_files(dest_dir,is_recurse=True)->list[str]:
