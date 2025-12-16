@@ -115,7 +115,7 @@ class InteractImp():
     @exception_decorator(error_state=False)
     def handle_url(self, info:VideoUrlInfo):
         if not info.has_m3u8_url:  # 不存在m3u8_url
-            return self.handle_imp(info)
+            return self.handle_imp(info.url)
         else:
             return self.cache_url(info)
 

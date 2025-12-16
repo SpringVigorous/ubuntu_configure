@@ -413,7 +413,7 @@ def move_file(source_file,dest_path)->bool:
     move_logger= logger_helper("移动文件",f"{source_file} -> {dest_path}")
     # 移动文件
     try:
-        if Path(source_file).is_file() and not Path(dest_path).is_file():
+        if Path(source_file).is_file() and not Path(dest_path).suffix:
             dest_path=os.path.join(dest_path,Path(source_file).name)
             
             
@@ -705,7 +705,7 @@ def pickle_load(file_path):
 
 
 if __name__ == '__main__':
-
+    move_file(r"F:\worm_practice\player\video\微观小世界第一季_01.mp4",r"F:\worm_practice\player\1.mp4")
     replace_tuples=[
     ('法撒', 'A'),
     ('潍坊', 'CDE')

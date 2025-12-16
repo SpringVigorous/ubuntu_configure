@@ -163,8 +163,10 @@ def main():
 
     raw_urls=[
 
-        VideoUrlInfo(url="https://www.kuaidimap.com/jubo/108771-2-1.html"),
+        VideoUrlInfo(url="https://www.ds388.com/play/115396-1-1.html"),
         ]
+
+    raw_urls=[VideoUrlInfo(url=f"https://www.ds388.com/play/115396-1-{i+1}.html") for i in range(81)]
 
     m3u8_urls=[
 
@@ -172,8 +174,8 @@ VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆
 
     ]
 
-    app.send_msg(m3u8_urls) #直接提供m3u8_url
-    # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
+    # app.send_msg(m3u8_urls) #直接提供m3u8_url
+    app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
     # app.continue_decode() # 继续解码,前提是确保编码未处理
     
