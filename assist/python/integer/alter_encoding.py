@@ -36,7 +36,7 @@ def operate_imp(source_path,dest_path,dest_encoding,operate_func):
         return  ReturnState.FAILED
     state=ReturnState.from_state(ft.operate_content_diff_encode(source_path,dest_path,source_encoding,dest_encoding,operate_func)) 
 
-    func=helper.info if state else helper.error
+    func=helper.trace if state else helper.error
     func(state.description) 
 
 

@@ -26,6 +26,14 @@ class ThreadPool:
         self._thread_name:str=root_thread_name
         
         self._error_lst = []  # 任务队列
+        self._count:int=0
+    @property
+    def count(self):
+        return self._count
+    @property
+    def add_count(self):
+        self._count+=1
+        return self.count
       
     @property
     def thread_name(self):
@@ -98,6 +106,7 @@ class ThreadPool:
         logger=logger_helper(threading.current_thread().name)
 
         logger.trace("线程开始")
+        cur_index:int=0
         while True:
             # 退出条件：停止事件被触发且队列为空
             if self._stop_event.is_set() and self._task_queue.empty():
@@ -123,35 +132,34 @@ class ThreadPool:
             
             args_str=f"{args}"
             kwargs_str=f"{kwargs}"
-            
-            logger.update_target(detail=f"func:{func.__name__},args:*{only_keywords(args_str)},kwargs:**{only_keywords(kwargs_str)}")
-            logger.update_time(UpdateTimeType.STAGE)
+            cur_index+=1
+            with logger.raii_target(detail=f"第{cur_index}/{self.add_count}个消息-func:{func.__name__},args:*{only_keywords(args_str)},kwargs:**{only_keywords(kwargs_str)}") as out_logger:
+                out_logger.update_time(UpdateTimeType.STAGE)
 
-            logger.trace("收到消息",update_time_type=UpdateTimeType.STAGE)
-            result = None
-            error = None
-            try:
-                result=func(*args, **kwargs)  # 执行任务
-                logger.debug("完成",f"结果是：{result}",update_time_type=UpdateTimeType.STEP)
-            except Exception as e:
-                logger.error("异常",f"Task execution failed: {e}",update_time_type=UpdateTimeType.STEP)
-                error=e
-                self._error_lst.append(data)
-            finally:
-                # 如果有回调则执行回调
-                if callback is not None:
+                out_logger.trace("收到消息",update_time_type=UpdateTimeType.STAGE)
+                result = None
+                error = None
+                try:
+                    result=func(*args, **kwargs)  # 执行任务
+                    out_logger.debug("完成",f"结果是：{result}",update_time_type=UpdateTimeType.STEP)
+                except Exception as e:
+                    out_logger.error("异常",f"Task execution failed: {e}",update_time_type=UpdateTimeType.STEP)
+                    error=e
+                    self._error_lst.append(data)
+                finally:
+                    # 如果有回调则执行回调
+                    if callback is not None:
 
-                    logger.update_target(detail=f"func:{callback.__name__},args:{(result,error)}")
-                    logger.trace("回调开始",update_time_type=UpdateTimeType.STEP)
-                    try:
-                        callback(result, error)
-                        logger.debug("回调完成",update_time_type=UpdateTimeType.STEP)
-                    except Exception as e:
-                        logger.error("回调异常",f"Callback failed: {e}")
-                
-
-
-        logger.debug("线程结束",update_time_type=UpdateTimeType.ALL)
+                        with out_logger.raii_target(detail=f"func:{callback.__name__},args:{(result,error)}") as in_logger:
+                            in_logger.trace("回调开始",update_time_type=UpdateTimeType.STEP)
+                            try:
+                                callback(result, error)
+                                in_logger.trace("回调完成",update_time_type=UpdateTimeType.STEP)
+                            except Exception as e:
+                                in_logger.error("回调异常",f"Callback failed: {e}")
+                    
+        logger.update_target(detail=f"当前线程共{cur_index}个消息")
+        logger.info("线程结束",update_time_type=UpdateTimeType.ALL)
 
     def join_impl(self):
         
@@ -175,7 +183,7 @@ class ThreadPool:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
                     
-
+        self._logger.info("完成",f"共处理{self.count}消息",update_time_type=UpdateTimeType.STAGE)
 
     @exception_decorator(error_state=False)
     def restart(self):
