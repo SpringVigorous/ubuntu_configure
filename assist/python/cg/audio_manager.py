@@ -402,7 +402,8 @@ class AudioManager(xlsx_manager):
         df.loc[mask, downloaded_id] = df.loc[mask].apply( update_flag,
             axis=1
         )
-
+        #更新显示状态
+        df[status_id]=df[downloaded_id].apply(lambda x: str(TaskStatus.from_value(x)) )
         return df
     #更新专辑状态及已下载数
     @exception_decorator(error_state=False)
