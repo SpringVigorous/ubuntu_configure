@@ -127,7 +127,7 @@ class FileSyncUtil:
             
         return df1_only,df_common
     @exception_decorator(error_state=False)
-    def backup_files(self, rel_path_lst, src_dir, dest_dir):
+    def backup_files(self, rel_path_lst:list, src_dir, dest_dir):
         
         if not rel_path_lst or not src_dir or not dest_dir:
             return
@@ -179,7 +179,7 @@ class FileSyncUtil:
             
             
     @exception_decorator(error_state=False)
-    def merge_folders(self,rel_path_lst, src1_dir,src2_dir, dest_dir,key_columns:list[str]):
+    def merge_folders(self,rel_path_lst:list, src1_dir,src2_dir, dest_dir,key_columns:str|list[str]):
         if not rel_path_lst or not src1_dir or not src2_dir or not dest_dir:
             return
         src1_dir,src2_dir=Path(src1_dir),Path(src2_dir)
@@ -187,7 +187,7 @@ class FileSyncUtil:
         
         for file in rel_path_lst:
             src1_file=src1_dir/file
-            src2_file=src1_dir/file
+            src2_file=src2_dir/file
             dest_file=dest_dir/file
         
             if not (src1_file.exists() and src2_file.exists()):
@@ -197,20 +197,24 @@ class FileSyncUtil:
                 if cur_suffix==".xlsx":
                     dfs1=self.manager.read_dfs(src1_file)
                     dfs2=self.manager.read_dfs(src2_file)
-
-                    keys=list(dfs1.keys())
-                    keys.extend(list(dfs2.keys()))
-                    keys=unique(keys)
+                    if df_empty(dfs1) or df_empty(dfs2):
+                        continue
                     
-                    for key in keys:
-                        if key in dfs1 and key in dfs2:
-                            df1=dfs1[key]
-                            df2=dfs2[key]
+                    
+                    column_names=list(dfs1.keys())
+                    column_names.extend(list(dfs2.keys()))
+                    column_names=unique(column_names)
+                    
+                    for column_name in column_names:
+                        if column_name in dfs1 and column_name in dfs2:
+                            df1=dfs1[column_name]
+                            df2=dfs2[column_name]
                             compare= DataFrameComparator(df1,df2,key_columns)
                             df=concat_dfs([compare.df1,compare.df2,compare.df_common])
-                            dfs1[key]=df
-                        if key not in dfs1:
-                            dfs1[key]=dfs2[key]
+                            if not df_empty(df):
+                                dfs1[column_name]=df
+                        if column_name not in dfs1:
+                            dfs1[column_name]=dfs2[column_name]
                     self.manager.save_dfs(dest_file,dfs1)
                     logger.info("完成",update_time_type=UpdateTimeType.STEP)
                 else:
@@ -259,10 +263,11 @@ def backup_files(df1,df2,src_dir,dest_dir,dest_xlsx_path:str=None):
 
     #合并
     if not df_empty(df_common):
-        utily.merge_folders(df_common[relative_path_id],
+        utily.merge_folders(list(df_common[relative_path_id]),
             src1_dir=src_dir,
             src2_dir=dest_dir,
-            dest_dir=dest_dir
+            dest_dir=dest_dir,
+            key_columns=relative_path_id
         )
             
     
@@ -301,12 +306,12 @@ if __name__ == "__main__":
     # # 创建使用示例对象
     local_dir=audio_root
     local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
-    outer_xlsx_path=local_dir/ "1_file_list.xlsx"
+    outer_xlsx_path=local_dir/ "desktop_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
     diff_xlsx_path=local_xlsx_path.with_stem("diff_file_list")
     
     
     export_dir_file_infos(local_dir,local_xlsx_path)
-    exit()
+    # exit()
     diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir,diff_xlsx_path)
     

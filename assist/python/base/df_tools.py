@@ -36,6 +36,7 @@ class DataFrameComparator:
         self._dest_result = None
         self.logger=logger_helper("pandas.DataFrame 数据对比")
         
+    @exception_decorator(error_state=False,error_return=pd.DataFrame())
     def _special_result(self,type_key:str)->pd.DataFrame:
         """获取df1独有的行"""
         if self._dest_result is None:
