@@ -80,7 +80,8 @@ class AudioManager(xlsx_manager):
                 continue
             local_paths:list=df[local_path_id].apply(normal_path).values
             cur_dir=Path(local_paths[0]).parent
-            
+            if not cur_dir.exists():
+                continue
             
             temp_dir=AudioManager.media_root()/"temp"/cur_dir.relative_to(AudioManager.media_root())
             for file in os.listdir(cur_dir):
