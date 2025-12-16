@@ -183,7 +183,7 @@ class ThreadPool:
                 if thread.is_alive():
                     thread.join()  # 等待所有线程退出
                     
-        self._logger.info("完成",f"共处理{self.count}消息",update_time_type=UpdateTimeType.STAGE)
+        self._logger.info("完成",f"共处理{self.count}消息",update_time_type=UpdateTimeType.ALL)
 
     @exception_decorator(error_state=False)
     def restart(self):

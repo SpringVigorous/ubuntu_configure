@@ -17,7 +17,7 @@ import base.file_tools as  ft
 
 import base.fold_tools as fo
 import base.path_tools as pt
-from base.com_log import logger_helper
+from base.com_log import logger_helper,UpdateTimeType
 import base.com_decorator as dr 
 from base.task.threadpool import ThreadPool
 
@@ -129,7 +129,7 @@ def main():
                 pool.submit(operate_imp,org_file_path, dest_file_path,dest_encoding,operate_func)
                 # operate_imp(org_file_path, dest_file_path,dest_encoding,operate_func)    
         pool.join()
-    encode_logger.info("成功",f"{input_agrs} 处理成功")
+    encode_logger.info("成功",update_time_type=UpdateTimeType.ALL)
 #仅修改编码模式
 if __name__ == '__main__':
     main()
