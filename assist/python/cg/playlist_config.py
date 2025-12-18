@@ -59,7 +59,7 @@ def title(path_stem:str):
     
 
 
-listent_shop_api=["hls/mixed.m3u8","hls/index.m3u8","index.m3u8","master.m3u8","*/master.m3u8","*mixed.m3u8","*/index.m3u8","*.m3u8"]
+listent_shop_api=["hls/mixed.m3u8","hls/index.m3u8","index.m3u8","master.m3u8","*/master.m3u8","*mixed.m3u8","*/index.m3u8","*.m3u8",".m3u8"]
 # 
 # listent_shop_api=["*/index.m3u8"]
 
@@ -121,10 +121,15 @@ class VideoUrlInfo:
     def m3u8_hash(self)->str:
         if self._m3u8_hash:
             return self._m3u8_hash
-        if self.info:
+        if self.info and self.info.m3u8_hash:
             self._m3u8_hash=self.info.m3u8_hash
-            return self._m3u8_hash
-    
+
+        if not self._m3u8_hash:
+            val=video_hash_name(self.title,max_length=128)
+            self.info.m3u8_hash=val
+            self._m3u8_hash=val
+            
+        return self._m3u8_hash
     @property
     def has_raw_url(self)->bool:
         return bool(self._url)

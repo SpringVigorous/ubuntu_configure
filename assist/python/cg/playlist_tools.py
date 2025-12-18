@@ -102,7 +102,7 @@ def decode_playlist_async(temp_paths,key,iv):
 
 
 @exception_decorator(error_state=False)
-def handle_playlist_async(url_list,temp_paths,key,iv):
+def handle_playlist_async(url_list,temp_paths,key,iv,**kwargs):
     if not url_list or not temp_paths:
         return False
     
@@ -120,7 +120,10 @@ def handle_playlist_async(url_list,temp_paths,key,iv):
     async def download(semaphore,args:list|tuple):
         async with semaphore:
             url, temp_path=args
-            result=  await download_async(url, temp_path,decode()) 
+                    
+
+            
+            result=  await download_async(url, temp_path,decode(),**kwargs) 
             
             #转换为标准的mp4,看需求 转换
             # is_convert=True
@@ -153,7 +156,7 @@ def handle_playlist_async(url_list,temp_paths,key,iv):
 
 #同步方式下载
 @exception_decorator(error_state=False)
-def handle_playlist(url_list,temp_paths,key,iv):
+def handle_playlist(url_list,temp_paths,key,iv,**kwargs):
     if not url_list or not temp_paths:
         return False
     
@@ -163,21 +166,6 @@ def handle_playlist(url_list,temp_paths,key,iv):
     playlist_logger.trace("开始")
     decry_inst= AES_128(key,iv)
     
-    #替换为真实的文件头
-    headers = {
-        'authority': 'v.cdnlz19.com',
-        'accept': '*/*',
-        'accept-language': 'zh-CN,zh;q=0.9',
-        'origin': 'https://v.youku.com',
-        'referer': 'https://v.youku.com',
-        'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'cross-site',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
-    }
 
 
     lst=[(url,path) for url,path in zip(url_list,temp_paths) if not os.path.exists(path) ]
@@ -188,7 +176,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
     # 使用 ThreadPoolExecutor 创建线程池，max_workers 指定最大线程数
     with ThreadPoolExecutor(max_workers=10) as executor:
         # 使用 submit 方法将任务提交到线程池，返回 Future 对象
-        future_to_url = {executor.submit(download_sync,url,path,decry_inst.decrypt,headers=headers):url for url,path in lst}
+        future_to_url = {executor.submit(download_sync,url,path,decry_inst.decrypt,**kwargs):url for url,path in lst}
         # 使用 as_completed 获取已完成的任务结果
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
@@ -204,7 +192,7 @@ def handle_playlist(url_list,temp_paths,key,iv):
 
 
 
-def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, dest_hash):
+def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, dest_hash,**kwargs):
     play_logger=logger_helper(f"{dest_name}")
     
     download_time=1
@@ -223,9 +211,9 @@ def process_playlist(url_list, all_path_list, key, iv, root_path, dest_name, des
         play_logger.debug("开始", update_time_type=UpdateTimeType.ALL)
         
         if async_type:
-            success = handle_playlist_async(urls, temp_paths, key, iv)    #异步方式
+            success = handle_playlist_async(urls, temp_paths, key, iv,**kwargs)    #异步方式
         else:
-            success = handle_playlist(urls, temp_paths, key, iv)    #同步方式
+            success = handle_playlist(urls, temp_paths, key, iv,**kwargs)    #同步方式
 
         play_logger.debug("完成", update_time_type=UpdateTimeType.ALL)
         download_time+=1

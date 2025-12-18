@@ -127,20 +127,12 @@ class InteractImp():
         logger.update_target("更新xlsx",f"收到第{self.msg_count}个消息:{info}")
         logger.info("成功",f"{'\n'*5}{"\t"*5}交互成功：{self.wp.url},key:{info.key},title:{info.title}{'\n'*5}")
 
-        
-        
-        
-        org_df=pd.DataFrame([info.to_dict])
-        # return
-        # if self.manager.has_downloaded_by_m3u8_hash(info.m3u8_hash):  # 已下载
-        
         exist_df=self.manager.sub_df_by_m3u8_hash(info.m3u8_hash)
-        
         if not df_empty(exist_df):  # 已下载
             exist_info=str(exist_df.tail(1).to_dict(orient="records")[0])
             logger.info("忽略",f"m3u8信息已下载,m3u8_hash信息重复\n{info}\n已有信息为：{exist_info}")
             return
-        
+        org_df=pd.DataFrame([info.to_dict])
         df=self.manager.update_video_df(org_df)
         if df_empty(df):
             df=org_df
@@ -362,12 +354,12 @@ class DecodeVideo(ThreadTask):
 
 
 class DownloadVideo(ThreadTask):
-    def __init__(self,input_queue,output_queue,stop_event,out_stop_event):
+    def __init__(self,input_queue,output_queue,stop_event,out_stop_event,headers=None):
         super().__init__(input_queue,stop_event=stop_event,output_queue=output_queue,out_stop_event=out_stop_event)
         self.set_thread_name(self.__class__.__name__)
         self.manager:playlist_manager=playlist_manager()
         self._pool:ThreadPool=None
-        
+        self._headers=headers
     @property
     def pool(self):
         if not self._pool:
@@ -414,7 +406,11 @@ class DownloadVideo(ThreadTask):
         temp_path_list=temp_video_paths_by_prefix_index(index_lst,temp_video_dir(video_name),postfix(url_lst[0]))
         logger.update_time(UpdateTimeType.STAGE)
         logger.debug("开始")
-        result= process_playlist(url_lst, temp_path_list, key, iv, root_path, video_name, temp_hash_name)
+        
+        
+        
+        
+        result= process_playlist(url_lst, temp_path_list, key, iv, root_path, video_name, temp_hash_name,headers=self._headers)
         if not result:
             return
         
@@ -473,7 +469,9 @@ class MergeVideo(ThreadTask):
         logger.update_time(UpdateTimeType.STAGE)
         
         logger.debug("开始","合并",update_time_type=UpdateTimeType.STEP)
-        merge_video(success_paths,temp_video_path)
+        if not merge_video(success_paths,temp_video_path):
+            logger.error("失败","合并",update_time_type=UpdateTimeType.STEP)
+            return
         logger.debug("完成","合并",update_time_type=UpdateTimeType.STEP)
         logger.update_time(UpdateTimeType.STEP)
         logger.update_target("合并视频+清理",dest_video)

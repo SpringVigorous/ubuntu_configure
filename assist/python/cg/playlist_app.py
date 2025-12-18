@@ -21,7 +21,7 @@ from enum import Enum
     
     
 class playlist_app:
-    def __init__(self) -> None:
+    def __init__(self,headers:None) -> None:
 
         class_name=self.__class__.__name__
         self.logger=logger_helper(class_name)
@@ -50,7 +50,7 @@ class playlist_app:
         self.handle_m3u8=HandleUrl(self.m3u8_queue,self.download_queue,m3u8_stop_event,out_stop_event=download_stop_event)
         #解码
         self.handle_decode=DecodeVideo(self.decode_queue,self.merge_queue,self.decode_stop_event,decoded_event)       
-        self.handle_download=DownloadVideo(self.download_queue,self.merge_queue,download_stop_event,downloaded_event)
+        self.handle_download=DownloadVideo(self.download_queue,self.merge_queue,download_stop_event,downloaded_event,headers=headers)
         self.handle_merge=MergeVideo(self.merge_queue,self.stop_merge_event)
         pass
 
@@ -72,7 +72,7 @@ class playlist_app:
         logger.trace("开始处理",update_time_type=UpdateTimeType.STAGE)
         for index,url in enumerate( urls):
             self.url_queue.put(url)
-            logger.trace(f"消息入队",f"第{index+1}条：/n【{url}】",update_time_type=UpdateTimeType.STEP)
+            logger.trace(f"消息入队",f"第{index+1}条：\n【{url}】",update_time_type=UpdateTimeType.STEP)
 
     
     @exception_decorator(error_state=False)
@@ -158,24 +158,23 @@ class playlist_app:
 
 
 
-def main():
-    app=playlist_app()
+def main(headers:None):
+    app=playlist_app(headers=headers)
 
     raw_urls=[
 
-        VideoUrlInfo(url="https://www.ds388.com/play/115396-1-1.html"),
+        VideoUrlInfo(url="https://www.jkys.app/play/266445-4-1.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/dy/1291bd206fbd16ed3060606bc630321f.m3u8', title='轻于鸿毛'),
         ]
 
-    raw_urls=[VideoUrlInfo(url=f"https://www.ds388.com/play/115396-1-{i+1}.html") for i in range(81)]
+    # raw_urls=[VideoUrlInfo(url=f"https://www.ds388.com/play/115396-1-{i+1}.html") for i in range(81)]
 
     m3u8_urls=[
-
-VideoUrlInfo(m3u8_url='https://s.xlzys.com/play/RdGOzLdD/index.m3u8', title='昆虫总动员'),
-
+VideoUrlInfo(url="https://www.jkys.app/video/280274.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/ff/b04db98b8590da7057a3873fccbcc933.m3u8', title='迷失的欲望'),
+# VideoUrlInfo(url="https://www.jkys.app/play/675-8-1.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/ff/3b4cf8279ac4439b0dedeb5d9d79f87d.m3u8', title='爱的艺术'),
     ]
 
-    # app.send_msg(m3u8_urls) #直接提供m3u8_url
-    app.send_msg(raw_urls) #原始url，交互获取m3u8_url
+    app.send_msg(m3u8_urls) #直接提供m3u8_url
+    # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
     # app.continue_decode() # 继续解码,前提是确保编码未处理
     
@@ -204,5 +203,17 @@ if  __name__ == '__main__':
     
     # forece_merge_test()
     # exit()
-    
-    main()
+    headers = {
+        'authority': 'vip.dytt-cine.com',
+        'accept': '*/*',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'origin': 'https://jkchee.679ks.com',
+        'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'cross-site',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 SE 2.X MetaSr 1.0',
+    }
+    main(headers=headers)

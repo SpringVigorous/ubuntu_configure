@@ -1,5 +1,6 @@
 {
   "configurations": [
+
     {
       "name": "Python 调试程序: 包含参数的当前文件",
       "type": "debugpy",
@@ -11,7 +12,8 @@
       // "args": " -r F:/test  -r F:/test  -p joy_project -m data -f data.student -t"
       "args": "-o F:/test/joy_project/test/test/test_cerel -d F:/test/joy_project/test/test/test_cerel -r assist/replace_params_animal.json",
       "stopOnEntry": false,
-      "showReturnValue": true
+      "showReturnValue": true,
+
     },
     {
       "name": "C/C++ Runner: Debug Session",

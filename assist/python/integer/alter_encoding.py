@@ -135,7 +135,7 @@ if __name__ == '__main__':
     main()
 
 
-# 使用方法
+# 使用方法 
 # python alter_encoding.py -i F:/test/ubuntu_configure/assist/c++/im_export_macro -o F:/test/test_c -r F:/test/ubuntu_configure/assist/c++/im_export_macro_copy 
 
 # python "F:/test/ubuntu_configure/assist/python/integer/alter_encoding.py" -i F:/教程/python/不基础的python基础/1  

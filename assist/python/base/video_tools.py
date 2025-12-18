@@ -269,7 +269,7 @@ def cover_video_pic(video_path,output_path):
     
 
 @exception_decorator(error_state=False)
-def merge_video(temp_paths,output_path):
+def merge_video(temp_paths,output_path)->bool:
     #合并前，手动筛选,添加断点
     if not temp_paths or not output_path:
         return
@@ -313,14 +313,12 @@ def merge_video(temp_paths,output_path):
     # 获取标准输出和标准错误
     stdout = result.stdout
     stderr = result.stderr
-
-
-
-
     if stderr:
         merge_logger.error("失败",f"\n{stderr}\n",update_time_type=UpdateTimeType.ALL)
     if stdout:
         merge_logger.debug("成功",f"\n{stdout}\n",update_time_type=UpdateTimeType.ALL)
+        
+    return os.path.exists(output_path)
 
 
 def force_merge(src_dir_path,dest_path,suffix_lst=[".ts"]):
