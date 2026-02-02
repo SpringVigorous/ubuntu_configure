@@ -13,8 +13,8 @@ from pathlib import Path
 
 
 
-from  com_log import  logger_helper
-from  com_decorator import exception_decorator
+from  base.com_log import  logger_helper
+from  base.com_decorator import exception_decorator
 from base.file_tools import detect_encoding
 from base.string_tools import exe_dir,hash_text
 from base.path_tools import is_image_file

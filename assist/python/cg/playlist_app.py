@@ -160,37 +160,37 @@ class playlist_app:
 
 def main(headers:None):
     app=playlist_app(headers=headers)
+    try:
+        raw_urls=[
 
-    raw_urls=[
+            VideoUrlInfo(url="https://www.jkys.app/play/266445-4-1.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/dy/1291bd206fbd16ed3060606bc630321f.m3u8', title='轻于鸿毛'),
+            ]
 
-        VideoUrlInfo(url="https://www.jkys.app/play/266445-4-1.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/dy/1291bd206fbd16ed3060606bc630321f.m3u8', title='轻于鸿毛'),
+        # raw_urls=[VideoUrlInfo(url=f"https://www.ds388.com/play/115396-1-{i+1}.html") for i in range(81)]
+
+        m3u8_urls=[
+    VideoUrlInfo(url="https://www.jkys.app/video/280274.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/ff/b04db98b8590da7057a3873fccbcc933.m3u8', title='迷失的'),
         ]
 
-    # raw_urls=[VideoUrlInfo(url=f"https://www.ds388.com/play/115396-1-{i+1}.html") for i in range(81)]
+        # app.send_msg(m3u8_urls) #直接提供m3u8_url
+        # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
 
-    m3u8_urls=[
-VideoUrlInfo(url="https://www.jkys.app/video/280274.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/ff/b04db98b8590da7057a3873fccbcc933.m3u8', title='迷失的欲望'),
-# VideoUrlInfo(url="https://www.jkys.app/play/675-8-1.html",m3u8_url='https://jkchee.679ks.com/cheeoo/cache/ff/3b4cf8279ac4439b0dedeb5d9d79f87d.m3u8', title='爱的艺术'),
-    ]
+        # app.continue_decode() # 继续解码,前提是确保编码未处理
+        8
+        app.continue_merge() # 继续合并,前提是 已删除 加入的片段
+        
+        
+        # app.continue_handle_url() #继续交互
 
-    app.send_msg(m3u8_urls) #直接提供m3u8_url
-    # app.send_msg(raw_urls) #原始url，交互获取m3u8_url
-
-    # app.continue_decode() # 继续解码,前提是确保编码未处理
-    
-    # app.continue_merge() # 继续合并,前提是 已删除 加入的片段
-    
-    
-    # app.continue_handle_url() #继续交互
-
-    # app.continue_download() #继续下载
-    
-    # app.stop_merge_event.set() #关闭合并功能，手动删除多余片段后，再开启
-    
-    # app.stop_interact_event.set() #手动添加停止事件，关门手动网页交互功能;也可以直接关闭网页，起到相同效果
-    
-    app.run()
-    app.save_df()
+        # app.continue_download() #继续下载
+        
+        # app.stop_merge_event.set() #关闭合并功能，手动删除多余片段后，再开启
+        
+        # app.stop_interact_event.set() #手动添加停止事件，关门手动网页交互功能;也可以直接关闭网页，起到相同效果
+        
+        app.run()
+    finally:
+        app.save_df()
     pass
 
 def forece_merge_test():

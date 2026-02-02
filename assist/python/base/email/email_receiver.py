@@ -12,7 +12,7 @@ import re
 
 
 
-from  com_log import  logger_helper
+from  base.com_log import  logger_helper
 import codecs
 
 

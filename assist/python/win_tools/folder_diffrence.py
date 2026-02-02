@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-
+import re
 from base import (
     UpdateTimeType,
     audio_root,
@@ -24,6 +24,7 @@ from base import (
     unique,
     concat_dfs,
     path_equal,
+    move_file,
 )
 
 relative_path_id="relative_path"
@@ -296,22 +297,66 @@ def main(reference_xlsx_path,src_dir,dest_dir):
 
     
     
+
+
+def filter_special_paths(path):
+    
+    if not Path(path).suffix:
+        return ""
+    
+    """
+    分割路径并保留包含非英文字母、数字、下划线、横杠的元素
+    
+    Args:
+        path (str): 输入的路径字符串
+        
+    Returns:
+        list: 过滤后的路径列表
+    """
+    # 使用正则表达式按反斜杠分割路径
+    # 注意：反斜杠需要双重转义，或者使用原始字符串
+    path_list = re.split(r'\\', path)
+    
+    # 过滤列表：保留不全为英文字母、数字、下划线、横杠的元素
+    # 使用正则表达式匹配：至少包含一个非这些字符的元素
+    filtered_list = [item for item in path_list if item and re.search(r'[^a-zA-Z0-9_-]' , item)]
+    return "/".join(filtered_list)
+def test_rename(xlsx_path:Path,dest_dir:Path):
+    df=pd.read_excel(xlsx_path)
+    if df_empty(df):
+        return
+    
+    df["new_path"]=df["relative_path"].apply(filter_special_paths)
+    # df["dir"]=df["new_path"].apply(lambda x:x.split("/")[0] if x else "")
+    src_dir=Path(xlsx_path).parent
+    
+    df["cmd"]=df.apply(lambda row: f"move {src_dir}\\{row['relative_path']} {dest_dir}\\{row['new_path']}" if row['new_path'] else "",axis=1)
+    for _,row in df.iterrows():
+        if not row['new_path']:
+            continue
+        move_file(src_dir/row['relative_path'],dest_dir/row['new_path'])
+    
+    df.to_excel(xlsx_path,index=False)
+    
+    
+    pass
     
 
-
-
-        
 if __name__ == "__main__":
 
     # # 创建使用示例对象
-    local_dir=audio_root
+    # local_dir=audio_root
+    local_dir=Path("E:\音乐\师兄u盘备份/.File_Recycle")
     local_xlsx_path=local_dir/ f"{current_user()}_file_list.xlsx"
     outer_xlsx_path=local_dir/ "desktop_file_list.xlsx"
     dest_dir=local_dir.parent/"clone"
     diff_xlsx_path=local_xlsx_path.with_stem("diff_file_list")
     
     
+    test_rename(local_xlsx_path,Path(diff_xlsx_path).parent.parent)
+    exit()
+    
     export_dir_file_infos(local_dir,local_xlsx_path)
-    # exit()
+    exit()
     diff_backup(local_xlsx_path,outer_xlsx_path,local_dir,dest_dir,diff_xlsx_path)
     

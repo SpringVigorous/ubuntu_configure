@@ -402,6 +402,9 @@ if __name__ == "__main__":
         
     # exit()
     # df=handle_info_from_log(logger_root/r"playlist_app\playlist_app-info.log.2025-12-14.log")
+    
+    
+    #日志中的信息 合并到 vidoe.xlsx中
     df=video_info_from_log(logger_root/r"playlist_app\playlist_app-info.log")
     
     xlsx_path=player_root/r"video.xlsx"

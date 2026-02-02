@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from base.path_tools import normal_path,windows_path
 from base.com_exe_path import ffmpeg_path
-
+from base.root_config import merge_info_root
 
 from base.com_log import logger_helper,UpdateTimeType
 import subprocess
@@ -17,7 +17,7 @@ from base.path_tools import cache_temp_path
 from base.chinese_tools import has_chinese
 import json
 import ffmpeg
-
+from datetime import datetime 
 @exception_decorator(error_state=False)
 def get_video_metadata_ffmpeg(video_path):
     probe = ffmpeg.probe(video_path)
@@ -299,25 +299,47 @@ def merge_video(temp_paths,output_path)->bool:
     
     #创建文件夹
     os.makedirs(Path(output_path).parent, exist_ok=True)
+    cmd_info=" ".join(command)
     
-    merge_logger.update_target(detail=" ".join(command))
+    merge_logger.update_target(detail=cmd_info)
     merge_logger.trace("参数")
 
     # subprocess.run(command, check=True)
     # 运行命令并获取返回值
     # result = subprocess.run(command, capture_output=True, text=True,encoding="utf-8",errors="ignore",check=True)
-    result = subprocess.run(command, capture_output=True, text=True,errors="ignore",check=True)
+    # result = subprocess.run(command, capture_output=True, text=True,errors="ignore",check=True)
+    # 打开文件，重定向stdout/stderr
+    os.makedirs(merge_info_root, exist_ok=True)
+    
+    with open(merge_info_root/f"merge_{Path(output_path).stem}.log", "w", encoding="utf-8") as f:
+        # 可选：写入分隔符+时间戳，方便区分不同次执行的日志
+        f.write(f"\n{'='*50} 执行时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'='*50}\n{cmd_info}\n")
+        try:
+            # 重定向stdout和stderr到文件，避免缓冲区满
+            result = subprocess.run(
+                command,
+                stdout=f,       # 标准输出写入文件
+                stderr=f,       # 标准错误也写入文件（FFmpeg主要输出到stderr）
+                text=True,
+                check=True,
+                timeout=300     # 可选：设置超时时间（5分钟），避免无限卡住
+            )
+            merge_logger.debug("命令执行成功！")
+        except subprocess.TimeoutExpired:
+            merge_logger.error("命令执行超时！")
+        except subprocess.CalledProcessError as e:
+            merge_logger.error(f"命令执行失败，退出码：{e.returncode}")
 
-
-
-    # 获取标准输出和标准错误
-    stdout = result.stdout
-    stderr = result.stderr
-    if stderr:
-        merge_logger.error("失败",f"\n{stderr}\n",update_time_type=UpdateTimeType.ALL)
-    if stdout:
-        merge_logger.debug("成功",f"\n{stdout}\n",update_time_type=UpdateTimeType.ALL)
-        
+        try:
+            # 获取标准输出和标准错误
+            stdout = result.stdout
+            stderr = result.stderr
+            if stderr:
+                merge_logger.error("失败",f"\n{stderr}\n",update_time_type=UpdateTimeType.ALL)
+            if stdout:
+                merge_logger.debug("成功",f"\n{stdout}\n",update_time_type=UpdateTimeType.ALL)
+        except:
+            pass
     return os.path.exists(output_path)
 
 

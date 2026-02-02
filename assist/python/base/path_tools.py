@@ -138,7 +138,8 @@ def spceial_suffix_files(dest_dir,suffixs:list[str]|str,is_recurse=True)->list[s
         suffixs=[suffixs]
     suffixs=unique(suffixs)
     return special_files(dest_dir,lambda x:Path(x).suffix in suffixs,is_recurse=is_recurse)
-
+def mp3_files(dest_dir,is_recurse=True)->list[str]:
+    return spceial_suffix_files(dest_dir,".mp3",is_recurse=is_recurse)
 def mp4_files(dest_dir,is_recurse=True)->list[str]:
     return spceial_suffix_files(dest_dir,".mp4",is_recurse=is_recurse)
 

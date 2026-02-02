@@ -58,11 +58,24 @@ def repay_days_sheet_df(df,current_date)->pd.DataFrame:
     # 输出 HTML 表格
     return  df
 
+
+def rearrage_df(org_df)->dict:
+    
+    df_dict={}
+    for owner,df in org_df.groupby("owner"):
+        df_dict[owner]=df.copy()
+    all_df=org_df.copy()
+    all_df["credit"]=all_df.apply(lambda row: f'{row["owner"]}_{row['credit']}',axis=1)
+    all_df["owner"]="all"
+    df_dict["all"]=all_df
+    return  df_dict
+
 def repay_days_sheet_dfs(org_df,current_date)->dict:
 
     df_dict={}
-    for owner,df in org_df.groupby("owner"):
+    for owner,df in rearrage_df(org_df).items():
         df_dict[owner]=repay_days_sheet_df(df,current_date)
+
         
     # 输出 HTML 表格
     return  df_dict
@@ -125,7 +138,7 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
     
     # 设置图形大小为 2560x1440 像素，假设 DPI 为 100
     figure_dict={}
-    for owner,df in all_df.groupby("owner"):
+    for owner,df in rearrage_df(all_df).items():
         
         df.drop(columns=["billing_day","repayment_day","billday_included","limit"], inplace=True)
         
@@ -174,7 +187,7 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
                     
         for key, credit_nums in title_dict.items():
             first_x, first_y = key
-            plt.text(first_x, first_y+.2, f'{"\n".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom')
+            plt.text(first_x, first_y+.2, f'{";".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom')
             # for index,credit_num in enumerate(credit_nums):
 
         
@@ -212,7 +225,7 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
     
     
 
-#N天的推荐用卡
+#N天的推荐用卡u
 def main(day_duration=1):
     file_path = os.path.join(exe_dir(),'credit_info.xlsx')
     sheet_name = 'credit_info'

@@ -7,6 +7,7 @@ worm_root=Path(r"F:\worm_practice")
 train_tiket_root=worm_root/"train_ticket"
 cookie_root=worm_root/"cookie"
 player_root=worm_root/"player"
+merge_info_root=player_root/"merge_info"
 taobao_root=worm_root/"taobao"
 logger_root=worm_root/"logs"
 douyin_root=worm_root/"douyin"
