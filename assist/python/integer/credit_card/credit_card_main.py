@@ -65,7 +65,7 @@ def rearrage_df(org_df)->dict:
     for owner,df in org_df.groupby("owner"):
         df_dict[owner]=df.copy()
     all_df=org_df.copy()
-    all_df["credit"]=all_df.apply(lambda row: f'{row["owner"]}_{row['credit']}',axis=1)
+    all_df["credit"]=all_df.apply(lambda row: f'{row.name:02d}:{row["owner"]}_{row['credit']}',axis=1)
     all_df["owner"]="all"
     df_dict["all"]=all_df
     return  df_dict
@@ -124,6 +124,47 @@ plt.rcParams['font.sans-serif'] = ['SimHei']  # 或者 ['Microsoft YaHei']
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 
+# 30种颜色 - 相邻色差极大序列（跨色系轮询排列，视觉区分度最高）
+high_contrast_30_colors = [
+    # 第1轮跨色系：红→蓝→绿→橙→紫→深棕
+    "#e74c3c",  # 红（红色系）
+    "#3498db",  # 亮蓝（蓝紫系）
+    "#2ecc71",  # 草绿（绿色系）
+    "#f39c12",  # 亮橙（橙黄系）
+    "#9b59b6",  # 玫紫（蓝紫系）
+    "#34495e",  # 深灰（中性系）
+    # 第2轮跨色系：深红→深蓝→深绿→深橙→深紫→炭黑
+    "#c0392b",  # 深红（红色系）
+    "#2980b9",  # 深蓝（蓝紫系）
+    "#27ae60",  # 深绿（绿色系）
+    "#e67e22",  # 深橙（橙黄系）
+    "#8e44ad",  # 深紫（蓝紫系）
+    "#2c3e50",  # 炭黑（中性系）
+    # 第3轮跨色系：砖红→藏蓝→茶绿→土黄→茄紫→咖啡
+    "#d35400",  # 砖红（红色系）
+    "#000080",  # 藏蓝（蓝紫系）
+    "#16a085",  # 茶绿（绿色系）
+    "#d4ac0d",  # 土黄（橙黄系）
+    "#6c3483",  # 茄紫（蓝紫系）
+    "#795548",  # 咖啡（中性系）
+    # 第4轮跨色系：玫红→钴蓝→薄荷绿→金黄→紫罗兰→深棕
+    "#ec407a",  # 玫红（红色系）
+    "#4169e1",  # 钴蓝（蓝紫系）
+    "#1abc9c",  # 薄荷绿（绿色系）
+    "#f1c40f",  # 金黄（橙黄系）
+    "#9932cc",  # 紫罗兰（蓝紫系）
+    "#5d4037",  # 深棕（中性系）
+    # 第5轮跨色系：橙红→湖蓝→青绿→亮黄→纯紫→藏青
+    "#ff7f0e",  # 橙红（红色系/橙黄系过渡）
+    "#00bfff",  # 湖蓝（蓝紫系）
+    "#38ada9",  # 青绿（绿色系）
+    "#ff7f0e",  # 亮黄（橙黄系，补充）
+    "#800080",  # 纯紫（蓝紫系）
+    "#003366"   # 藏青（中性系/蓝紫系过渡）
+]
+def get_color(i:int):
+    return  high_contrast_30_colors[i%len(high_contrast_30_colors)]
+
 def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
 
     
@@ -167,12 +208,15 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
             plt.vlines(x, y_min, y_max, colors='gray', linestyles='dashed', linewidth=1)
             
         title_dict={}
-
+        color_index=0
+        color_dict={}
         for credit_num, item_df in df.groupby("credit_num"):
+            color=get_color(color_index)
+            color_index+=1
             item_df.sort_values(by='cur_date', ascending=True, inplace=True)
             cur_date_item=item_df['cur_date']
             rest_item=item_df['next_rest_day']
-            plt.step(cur_date_item, rest_item, label=f'{credit_num}', marker='o', where='post')
+            plt.step(cur_date_item, rest_item, label=f'{credit_num}', marker='o', where='post',color=color)
             
             
             # 在第一个数据点的顶部添加 credit_num 文字
@@ -180,6 +224,9 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
                 first_x = cur_date_item.iloc[0]
                 first_y =rest_item.iloc[0]
                 pos=(first_x, first_y)
+                
+                color_dict[pos]=color
+                
                 if title_dict.get(pos, None) is None:
                     title_dict[pos]=[credit_num]
                 else:
@@ -187,7 +234,7 @@ def arrage_month_figure(org_df:pd.DataFrame,duration=31)->dict:
                     
         for key, credit_nums in title_dict.items():
             first_x, first_y = key
-            plt.text(first_x, first_y+.2, f'{";".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom')
+            plt.text(first_x, first_y+.2, f'{";".join(credit_nums)}\n', fontsize=9, ha='center', va='bottom',color=color_dict[key])
             # for index,credit_num in enumerate(credit_nums):
 
         

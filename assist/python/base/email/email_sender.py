@@ -172,14 +172,14 @@ class EmailSender:
                 if not attachment or not os.path.exists(attachment):
                     continue
                 
-                attachment_name = Path(attachment).name
+                attachment_name = Header(Path(attachment).name, "UTF-8").encode()
                 try:
                     with open(attachment, 'rb') as file:
                         data=file.read()
                         #若是图片,顺便添加到正文，即设置id
                         if is_image_file(attachment) and image_mode.can_insert:
                             
-                            part = MIMEImage(data)
+                            part = MIMEImage(data, _subtype="jpeg")
                             part.add_header('Content-ID', f'<{hash_text(attachment)}>')  # CID与HTML中一致
                             # part.add_header('Content-Disposition', 'inline', filename=attachment_name)  # 关键修改
                             #后续证明，没有什么用

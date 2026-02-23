@@ -3,13 +3,13 @@ from DrissionPage import WebPage
 from pathlib import Path
 import os
 import time
-
+from playlist_fetch_urls import extract_href_and_text_from_html
 
 
 from base import (
     ThreadTask,get_param_from_url,find_last_value_by_col_val,get_next_filepath,write_to_json_utf8_sig,RetryOperater,fatal_link_error,logger_helper,UpdateTimeType,
     download_sync,UrlChangeMonitor,recycle_bin,sanitize_filename,BrowserClosedMonitor,set_link_error,ThreadPool,
-    write_to_txt_utf8_sig,df_empty,read_from_txt_utf8_sig
+    write_to_txt_utf8_sig,df_empty,read_from_txt_utf8_sig,fill_url
 )
 from base import random_sleep
 from base.except_tools import except_stack
@@ -19,6 +19,7 @@ from playlist_tools import *
 from playlist_config import *
 from playlist_data import *
 from playlist_manager import playlist_manager
+from queue import Queue
 
 
 
@@ -29,7 +30,8 @@ class InteractImp():
         self._logger=logger_helper(self.__class__.__name__)
         self._msg_count:int=0
         self._retry_operater=RetryOperater(3)
-
+        #剩余从网页获取的url
+        self.urls:list=[]
         self.output_queue=output_queue
         self.url_watcher:UrlChangeMonitor=None
         self.url_changed=False
@@ -38,6 +40,8 @@ class InteractImp():
 
         self.web_closed_watcher:BrowserClosedMonitor=None
         self.web_closed:bool=False
+        
+
     def stop_watch(self):
         self.url_watcher.stop()
         self.web_closed_watcher.stop()
@@ -103,13 +107,21 @@ class InteractImp():
 
     def handle_loop(self):
         while not (self.stop_event.is_set() or self.web_closed):
+            url=None
+            while self.urls:
+                url=self.urls.pop()
+                result=self.handle_imp(url)
+                if not result:
+                    continue
+                self.output_queue.put(result)
+                
             result=self.handle_imp()
             if not result:
                 continue
             
-
-                
             self.output_queue.put(result)
+
+                    
  
 
     @exception_decorator(error_state=False)
@@ -185,6 +197,15 @@ class InteractImp():
                 if has_url:
                     logger.info("url已存在，忽略此消息")
                     return
+
+                urls=[{"url":fill_url(cur_url["href"],url),"title":cur_url["text"] }for cur_url in extract_href_and_text_from_html(self.wp.html) if cur_url["href"]  not in self.manager.urls and cur_url["href"]  not in self.urls]
+                if urls:
+                    urls_info="\n".join(map(str,urls))
+                    logger.info("获取到新的url",f"\n{urls_info}\n")
+                    self.urls.extend(map(lambda x:x["url"],urls))
+                            
+
+                
                 self.url_changed=False
                 #等待，直到url更新
                 while not self.url_changed:
